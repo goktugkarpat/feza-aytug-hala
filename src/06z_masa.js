@@ -913,6 +913,7 @@ MASA.kur = function (L, api) {
   });
   // pasta
   if (L.cakeSpot) CAKE.build(api, L.cakeSpot);
+  if (!L._title) setTimeout(() => { if (typeof HUB !== 'undefined' && HUB.warm) HUB.warm(); }, 2500);   // panel resimleri boşta hazırlanır
 };
 
 BOLUM.define('masa', {

@@ -46,6 +46,7 @@ Object.assign(AUD.LINES, {
   // çıkartma albümü
   "album_tanit": "Çıkartma albümün! Neşelendirdiğin her huysuz burada.",
   "album_bos": "Bu çıkartmayı daha bulmadık. Hadi maceraya!",
+  "album_yeni": "Bak bak, yeni çıkartmalar var! Parlıyorlar.",
   "cikartma_genel": "Ne güzel bir çıkartma!",
   "ck_tozTavsani": "Bu Toz Tavşanı! Hoplaya zıplaya geldi.",
   "ck_kumanda": "Bu Haylaz Kumanda!",

@@ -161,7 +161,7 @@ const HUB = (() => {
   }
   // ── DOM yardımcıları ──
   const el = (tag, cls, parent, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; if (parent) parent.appendChild(e); return e; };
-  const S = { root: null, cur: null, closing: false, decor: null };
+  const S = { root: null, cur: null, closing: false, decor: null, seen: null };
   function rootEl() {
     if (S.root) return S.root;
     S.root = el('div', 'hb-root', document.body);
@@ -299,7 +299,9 @@ const HUB = (() => {
     for (const id in C) if (!(id in CIKARTMA) && C[id] && (C[id].bolum === 'masa' || !ODALAR.some(o => o.id === C[id].bolum))) out.push({ id, tur: 'gizli', ad: tr(id), ikon: '⭐', have: true });
     return out;
   }
+  function seenInit() { if (S.seen) return; S.seen = new Set(Object.keys(PP().cikartmalar || {})); }
   function openAlbum(sayfa) {
+    seenInit();
     const { body, card } = panel('album', 'Çıkartma Albümü', '📒', '#3a7fd8');
     const tabs = el('div', 'hb-tabs', body), page = el('div', 'hb-page', body);
     const P = PP();
@@ -312,8 +314,9 @@ const HUB = (() => {
       const top = el('div', 'hb-pagetop', page);
       el('div', 'hb-pageikon', top, pages[i].o.ikon);
       const bar = el('div', 'hb-count', top); for (let k = 0; k < list.length; k++) el('span', k < have ? 'on' : '', bar, '');
-      const grid = el('div', 'hb-sgrid', page);
+      const grid = el('div', 'hb-sgrid', page); let newAny = false;
       list.forEach((s, k) => {
+        const isNew = s.have && !S.seen.has(s.id); if (s.have) S.seen.add(s.id);
         const img = s.have ? (s.tur === 'kayip' ? imgKayip(s.kayip) : s.tur === 'huysuz' || s.tur === 'boss' ? imgHuysuz(s.id) : null) : null;
         const b = el('button', 'hb-stk' + (s.have ? ' have' : '') + (s.big ? ' big' : '') + ' t-' + s.tur, grid);
         b.style.setProperty('--rot', ((k * 37) % 9 - 4) + 'deg'); b.style.animationDelay = (k * 0.05) + 's';
@@ -324,9 +327,11 @@ const HUB = (() => {
           if (sil) { const im = el('img', 'sil', pic); im.src = sil; im.draggable = false; } else el('div', 'hb-emo sil', pic, '❓');
         }
         if (s.tur === 'boss') el('div', 'hb-crown', b, '👑');
+        if (isNew) { b.classList.add('yeni'); el('div', 'hb-new', b, '✨'); newAny = true; }
         b.addEventListener('click', () => zoom(s, b, img));
       });
       if (have === list.length && list.length) el('div', 'hb-full', page, '🌟');
+      if (newAny) { setTimeout(() => sfx('star', { vol: 0.7 }), 300); say('album_yeni', 3); }
     };
     pages.forEach((p, i) => {
       const t = el('button', 'hb-tab', tabs); t.style.setProperty('--tc', p.o.renk);
@@ -472,7 +477,7 @@ const HUB = (() => {
       b.classList.add('hold'); sfx('click', { vol: 0.5 });
       moveGhost(e.clientX, e.clientY);
     }
-    function moveGhost(x, y) { if (!drag) return; drag.gh.style.transform = `translate(${x}px, ${y - 70}px)`; drag.hit = D.pick(x, y - 70); D.preview(drag.id, drag.hit); }
+    function moveGhost(x, y) { if (!drag) return; drag.gh.style.left = (x - 60) + 'px'; drag.gh.style.top = (y - 130) + 'px'; drag.hit = D.pick(x, y - 70); D.preview(drag.id, drag.hit); drag.gh.style.opacity = drag.hit ? '0.2' : '1'; }
     window.addEventListener('pointermove', onMove, true); window.addEventListener('pointerup', onUp, true); window.addEventListener('pointercancel', onUp, true);
     function onMove(e) { if (!drag || e.pointerId !== drag.pid) return; if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 12) drag.moved = true; moveGhost(e.clientX, e.clientY); }
     function onUp(e) {
@@ -624,6 +629,21 @@ const HUB = (() => {
       },
     };
   }
+  // ── Küçük resimleri boşta önceden hazırla (ilk panel açılışı takılmasın): masada, oyun akarken, 150 ms'de bir ──
+  let warmQ = null;
+  function warm() {
+    if (warmQ) return;
+    warmQ = [].concat(CAKE.ORDER.map(id => () => imgSus(id)), KOSTUM.map(k => () => imgKostum(k.id)), AKSESUAR.map(k => () => imgAks(k.id)),
+      Object.keys(KAYIP_MODEL).map(id => () => imgKayip(id)));
+    const P = PP(); for (const id in P.cikartmalar || {}) if (P.cikartmalar[id].tur !== 'gizli') warmQ.push(() => imgHuysuz(id));
+    const tick = () => {
+      const g = Gm();
+      if (!warmQ.length) { warmQ = null; return; }
+      if (g && g.state === 'play' && !S.cur && g.P.zone === 0) { const f = warmQ.shift(); try { f(); } catch (e) { /* yok */ } }
+      setTimeout(tick, 150);
+    };
+    setTimeout(tick, 150);
+  }
   // ── Giriş noktası (UI 'station') ──
   const OPEN = { pasta: openPasta, gardirop: openGardirop, bilbo: openBilbo, album: () => openAlbum(), mini: openMini, surpriz: openSurpriz };
   function open(id, st) {
@@ -631,9 +651,10 @@ const HUB = (() => {
     const g = Gm(); if (!g || g.state !== 'play' || g.P.dead) return;
     if (typeof UI !== 'undefined' && (UI.menu || UI.mode !== 'play')) return;
     if (typeof MINIGAME !== 'undefined' && MINIGAME.active) return;
+    seenInit();
     const f = OPEN[id]; if (!f) return;
     try { f(st); } catch (e) { console.warn('[HUB] open ' + id, e); close(true); }
   }
-  return { open, close, say, KOSTUM, AKSESUAR, CIKARTMA, ODALAR, thumb, imgSus, imgHuysuz, imgKostum, imgAks, imgKayip,
+  return { open, close, say, warm, KOSTUM, AKSESUAR, CIKARTMA, ODALAR, thumb, imgSus, imgHuysuz, imgKostum, imgAks, imgKayip,
     get current() { return S.cur ? S.cur.id : null; }, _S: S, _openAlbum: openAlbum };
 })();

@@ -123,6 +123,19 @@ Feza bir istasyonun içine girince GAME `station` yayar (çıkıp tekrar girince
 `kind:'mini'` + `mini:id` → MINIGAME.start, diğerleri → `HUB.open(id, station)` (merkez ajanı kendi ekranlarını burada açar; yer tutucu: toast).
 Bölüm içine de istasyon konabilir (yerlesim'de `L.stations`). `CAKE.build(api, spot)` (masa kur'unda), `CAKE.setStage(n)` (0..4 kat),
 `CAKE.decorate(itemId, {a, h})`; yeniden kurulunca durumu `GAME.cakeStage()` ve `P.pastaSusleri`'nden okur.
+**Merkez (uygulandı, merkez ajanı):** `src/06z_masa.js` → `MASA` (yerleşim sabitleri `MASA.T`, doku çizicileri, `MASA.kur`), `CAKE`
+(`makeModel(stage, {candles})` → `{group, R, y0, top, surf, deco, setDecos(list), dispose}`: dünya ve süsleme ekranı aynı model; `ITEMS` süs katalogu
+(cilek, kremaCicek, serpme, yildiz, kalp, mum, bogurtlen, cikolata, kiraz, bilboKurabiye, harfF, makaron), `ORDER`, `unlocked(P)` (ilk 6 açık, sonra her
+2 çıkartmada bir + `P.acikSusler`), `surfPoint/surfParam`: süs konumu `{a, h}` — h < `CAKE.SIDE` (0.45) yan yüz, üstü üst yüz kenardan ortaya).
+Masa kendi yürünür alanını çizer: yerlesim api'sine `regrid(W, H, fn(x,z)→bool)` eklendi (06_level; dWall/SAT yeniden kurulur). Kuzey kenarda 4 oda kapısı
+(`kapi_*`, yerde oda madalyonu), ortada pasta (`pasta` istasyonu: pastaya değince süsleme), Gardırop, Bilbo'nun Köşesi, Çıkartma Albümü, Mini Oyun Köşesi,
+Günün Sürprizi; oyuncaklar (zıplatan sünger, yuvarlanan bezelye/şeker top, müzik kutusu). Masada kamera ×1,2 geride (bölümden çıkınca eski uzaklık).
+`src/09h_hub.js` + `src/hub.css` → `HUB`: `open(id, st)` (pasta | gardirop | bilbo | album | mini | surpriz), `close()`, `say(key)`, `warm()` (panel resimleri
+boşta), kataloglar `HUB.KOSTUM` / `HUB.AKSESUAR` (`{id, ad, renk}`; id'ler: pastaci, superKahraman, sovalye, kasif, astronot / tasma, bandana, sapka, gozluk,
+papyon — Feza/Bilbo ajanları aynı id'leri `H.setCostume` / `Bilbo.setAccessory` için kullanmalı), `HUB.CIKARTMA[id] = {ad, ikon}` (gizli çıkartma adı/simgesi).
+Panel açıkken `UI.setPaused(true)` (09_ui dönüşüne eklendi). Mini oyun kartı `MINIGAME.register` tanımından: `ad`, `ikon` (emoji) ya da `resim` (url),
+`renk`, `kilitli` (açılana dek kilit), `yildiz(skor)` → 0..3 ya da `yildizlar: [a, b, c]`. Kayıt: `P.acikSusler {id:true}` (07 KOL_OBJ'a eklendi).
+Sesler: `src/02l_masa.js` (masa_*, susle_*, gardirop_*, bilbo_*, album_*, ck_<huysuz/boss id>, mini_*, surpriz_*, oyuncak_*).
 
 ### Mini oyunlar (MINIGAME, src/08m_minigame.js)
 `MINIGAME.register(id, { ad, holdsWorld: true, start(ctx), update(dt, ctx) → 'done'|undefined, end(ctx) → skor })`; `ctx = { id, root (kendi DOM
