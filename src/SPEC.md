@@ -149,6 +149,12 @@ gizler (eşyanın gücü sürer). Kayıttan yüklenince `applyLooks()` (07_game)
 ara sıra sevinç, boss gelince kararlılık, eşya/kayıp eşya/malzeme/altın şekerde şaşkınlık → sevinç, seviye atlayınca göz kırpma, boştayken ara sıra göz kırpma.
 **Binme**: `H.update(dt, { …, ride: 0..1 })` → Bilbo'nun sırtında oturma pozu (bacaklar iki yana, eller öne, gövde öne eğik; vuruş yine yapılır).
 Oyun `H.root.position.y`'yi Bilbo'nun eyer yüksekliğine koyar; poz kasığı köke oturtur.
+**Dövüş**: seri 3 vuruş — sağdan, soldan, 3.'sü (`C.swing.big`, `HST.big`) iki elle yukarıdan aşağı: zıplar, iner, dikey iz (`FX.slash(..., {vertical:true})`) ve yerde küçük dalga + toz.
+Vuruş anında gövde öne atılır; oklava/kepçe gibi silahlar elde döner (`SPIN_W`); değnek sihri eski CAST pozu. Koşarken vuruş bacakları yumuşak karışır.
+**Takım Hamlesi (Feza tarafı)**: `H.teamJump(süre=0.95, taraf)` — çömelme, el ele zıplama (Hala tarafındaki el yana uzanır, öbür kol havada), iniş.
+`GAME.teamMove()` bunu kendisi çağırır (taraf: Hala Feza'nın solundaysa +1); HALA kendi zıplamasını aynı anda yapar (tekrar çağırmak zararsız).
+**Mutlu anlar**: Feza ~9 s boş kalınca sıradan kıpırtılar arasında Bilbo'yu sever (yakınsa; kalpler), sevinçle üç kez zıplar, Hala'ya dönüp el sallar,
+kılıcını başının üstünde döndürüp kahraman pozu verir (parıltı). Binerken Feza'nın x-ray gölgesi gizlenir.
 **Eşya setleri**: silah + şapka + pelerin aynı sete (`ITEMS.setOf(item)`, `ITEMS.SETS[set].renk`) aitse Feza'nın çevresinde setin renginde
 parıltılar döner (`H.setComplete` = set id), Hala `set_tamam` der. **Eşya kaydı** `ITEMS.register / paintCape / clearBases / setStarter / BOSS_GIFT / SETS / KIT`
 (ayrıntı: src/04_feza.js `const ITEMS` üstündeki açıklama; ev temalı eşyalar src/04_esyalar.js'de).

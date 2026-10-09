@@ -2048,6 +2048,19 @@ const { FEZA, ITEMS } = (function () {
       D: K({ cRY: -0.66, hRY: -0.26, bRX: 0.1, bZ: 0.06, bY: -0.02, aRX: -1.18, aRY: -1.85, aRZ: 0, fR: -0.2, fRZ: 0.3, wX: 2.78, wY: 0, wZ: 0.3, aLX: -0.35, aLY: 0.4, aLZ: 0.3, fL: -0.9, kRY: 0.32, kRX: -0.18, tLX: -0.4, sL: 0.25, tRX: 0.32, sR: 0.3 }),
     },
   };
+  // Dev Ev: serinin 3. vuruşu — iki elle yukarı kaldırıp zıplar, yukarıdan aşağı indirir (yere dalga)
+  const OVERHEAD = {
+    B: K({ bY: -0.06, bRX: -0.16, cRX: -0.1, cRY: 0, hRY: 0, kRX: -0.25, kRY: 0, aRX: -2.95, aRY: -0.2, aRZ: 0.12, fR: -0.35, fRZ: 0, aLX: -2.85, aLY: 0.2, aLZ: -0.1, fL: -0.45,
+      wX: 2.9, wY: 0, wZ: 0, tLX: -0.35, tRX: -0.35, sL: 0.75, sR: 0.75, tLZ: 0.08, tRZ: -0.08 }),
+    C: K({ bY: 0.04, bZ: 0.12, bRX: 0.34, cRX: 0.12, cRY: 0, hRY: 0, kRX: 0.05, kRY: 0, aRX: -0.75, aRY: -0.25, aRZ: 0.1, fR: -0.15, fRZ: 0, aLX: -0.8, aLY: 0.25, aLZ: -0.1, fL: -0.25,
+      wX: 2.75, wY: 0, wZ: 0, tLX: -0.55, tRX: 0.25, sL: 0.55, sR: 0.45, tLZ: 0.1, tRZ: -0.1 }),
+    D: K({ bY: -0.05, bZ: 0.1, bRX: 0.3, cRX: 0.1, cRY: 0, hRY: 0, kRX: 0.0, kRY: 0, aRX: -0.7, aRY: -0.25, aRZ: 0.1, fR: -0.2, fRZ: 0, aLX: -0.75, aLY: 0.25, aLZ: -0.1, fL: -0.3,
+      wX: 2.7, wY: 0, wZ: 0, tLX: -0.7, tRX: 0.3, sL: 0.9, sR: 0.6, tLZ: 0.12, tRZ: -0.12 }),
+  };
+  // döndürerek savrulan silahlar (oklava, kepçe…): elde fırıl fırıl döner
+  const SPIN_W = { oklava: 1, kepce: 1, pastakurek: 1, gokkusagiseker: 1 };
+  // uzun beklemede Feza'nın kendi kendine yaptığı tatlı şeyler (FIDGETS'ten sonra, idleT > 9 s)
+  const HAPPY = ['petBilbo', 'hops', 'waveHala', 'swordShow'];
   const CAST = {   // gather → both hands thrust forward, the sword pointed at the target like a magic wand
     G: K({ aLX: 0.45, aRX: 0.35, aLY: 0, aRY: 0, aLZ: 0.45, aRZ: -0.45, fL: -1.4, fR: -1.5, fLZ: 0, fRZ: 0, bY: -0.045, bRX: -0.1, kRX: -0.2, cRX: -0.06, wX: 2.2, wZ: 0 }),
     T: K({ aLX: -1.5, aLY: -0.5, aLZ: 0.05, aRX: -1.55, aRY: 0.12, aRZ: -0.05, fL: -0.2, fR: -0.06, fLZ: 0, fRZ: 0, bRX: 0.15, bZ: 0.05, bY: 0, kRX: -0.22, cRX: 0.06, wX: 3.05, wZ: 0, tLX: -0.3, sL: 0.2, tRX: 0.2, sR: 0.1 }),
@@ -2351,7 +2364,7 @@ const { FEZA, ITEMS } = (function () {
       hOff: v3(), hVel: v3(), hPrev: null, hPrevV: v3(), flow: 0, side: 0,
       eq: { weapon: null, offhand: null, hat: null, cape: null }, cache: {}, xray: false, capeU: null, fixed: null,
       bl: { e: 1, tgt: 1, t: 9, fx: false, sleep: false, dead: false },   // lightsaber blade: extension 0..1 → target
-      expr: null, exprT: 0, exprD: 1, exprNext: null, winkT: 0, wRide: 0, sub: false,
+      expr: null, exprT: 0, exprD: 1, exprNext: null, winkT: 0, wRide: 0, sub: false, teamT: 0, teamD: 1, teamSide: 1, atkBig: false, fidSlot: -1, fidName: null, fidYaw: 0, fidFx: 0,
     };
     const SETG = { obj: null, mat: null, id: null };
     const U = skinMat.userData.fz, HU = hairMat.userData.fz;
@@ -2392,6 +2405,39 @@ const { FEZA, ITEMS } = (function () {
     }
     function fidget(p, name, u, env, face) {
       const E = env, ss2 = Math.sin(u * TAU);
+      if (name === 'petBilbo') {   // Bilbo'ya döner, çömelir, başını okşar
+        const pet = sstep(0.15, 0.3, u) * (1 - sstep(0.85, 0.97, u)), rub = Math.sin(u * 40) * pet;
+        p[C.bRY] += S.fidYaw * E; p[C.kRY] -= 0.15 * S.fidYaw * E;
+        p[C.bY] += (-0.12 * pet) * E; p[C.sL] += 0.9 * pet * E; p[C.sR] += 0.9 * pet * E; p[C.tLX] -= 0.55 * pet * E; p[C.tRX] -= 0.55 * pet * E; p[C.bRX] += 0.3 * pet * E;
+        p[C.aLX] += (-1.2 - p[C.aLX]) * pet * E; p[C.aLZ] += (0.15 + 0.08 * rub - p[C.aLZ]) * pet * E; p[C.fL] += (-0.25 + 0.15 * rub - p[C.fL]) * pet * E;
+        p[C.kRX] += 0.25 * pet * E; face.happy = Math.max(face.happy, pet * E); face.grin = Math.max(face.grin, E); face.blush = Math.max(face.blush, 0.7 * E);
+        if (pet > 0.5 && S.fidFx <= 0 && typeof GAME !== 'undefined' && GAME.Bilbo && typeof FX !== 'undefined' && FX.burst) {
+          S.fidFx = 0.7; GAME.Bilbo.root.getWorldPosition(_w); try { FX.burst('cheer', _w.x, _w.y + 0.95, _w.z, { count: 4 }); } catch (e) { /* isteğe bağlı */ }
+        }
+        return;
+      }
+      if (name === 'hops') {   // sevinçten üç zıplama, kollar havada
+        const h = Math.abs(Math.sin(u * Math.PI * 3)), up = sstep(0.05, 0.15, u) * (1 - sstep(0.88, 1, u));
+        p[C.bY] += 0.16 * h * up * E; p[C.sL] += 0.5 * (1 - h) * up * E; p[C.sR] += 0.5 * (1 - h) * up * E; p[C.tLX] -= 0.25 * (1 - h) * up * E; p[C.tRX] -= 0.25 * (1 - h) * up * E;
+        p[C.aLX] += (-2.6 - p[C.aLX]) * up * E; p[C.aRX] += (-2.5 - p[C.aRX]) * up * E; p[C.aLZ] += 0.35 * up * E; p[C.aRZ] -= 0.35 * up * E; p[C.bRY] += 0.5 * Math.sin(u * Math.PI * 3) * up * E;
+        face.happy = Math.max(face.happy, E); face.grin = Math.max(face.grin, E); face.blush = Math.max(face.blush, 0.6 * E);
+        return;
+      }
+      if (name === 'waveHala') {   // Aytuğ Hala'ya döner ve kocaman el sallar
+        p[C.bRY] += S.fidYaw * E; p[C.aLX] += (-2.75 - p[C.aLX]) * E; p[C.aLZ] += (0.45 + 0.35 * Math.sin(u * Math.PI * 9) - p[C.aLZ]) * E; p[C.fL] += (-0.35 - p[C.fL]) * E;
+        p[C.bY] += 0.025 * Math.abs(Math.sin(u * Math.PI * 4)) * E; p[C.kRZ] += 0.12 * E;
+        face.grin = Math.max(face.grin, E); face.happy = Math.max(face.happy, 0.6 * E); face.blush = Math.max(face.blush, 0.5 * E);
+        return;
+      }
+      if (name === 'swordShow') {   // kılıcıyla gösteri: başının üstünde iki tur döndürür, sonra kahraman pozu
+        const tw = sstep(0.1, 0.25, u) * (1 - sstep(0.62, 0.72, u)), pose = sstep(0.68, 0.78, u) * (1 - sstep(0.92, 1, u));
+        p[C.aRX] += (-2.9 - p[C.aRX]) * tw * E; p[C.fR] += (-0.2 - p[C.fR]) * tw * E; p[C.wY] += u * TAU * 3 * tw * E; p[C.kRX] -= 0.2 * tw * E;
+        p[C.aRX] += (-2.4 - p[C.aRX]) * pose * E; p[C.aRZ] += (-0.5 - p[C.aRZ]) * pose * E; p[C.aLX] += (-0.2 - p[C.aLX]) * pose * E; p[C.aLZ] += (1.0 - p[C.aLZ]) * pose * E; p[C.fL] += (-1.6 - p[C.fL]) * pose * E;
+        p[C.tLX] -= 0.3 * pose * E; p[C.sL] += 0.2 * pose * E; p[C.bRY] += 0.35 * pose * E; p[C.cRX] -= 0.08 * pose * E;
+        face.lookY = 0.8 * tw; face.lookX = -0.3 * tw; face.look = tw * E; face.grin = Math.max(face.grin, E); face.browR = Math.max(face.browR, 0.6 * pose * E);
+        if (pose > 0.5 && S.fidFx <= 0 && typeof FX !== 'undefined' && FX.burst) { S.fidFx = 3; try { FX.burst('sparkle', H.tip.x, H.tip.y, H.tip.z, { count: 12 }); } catch (e) { /* isteğe bağlı */ } }
+        return;
+      }
       if (name === 'look') { p[C.kRY] += 0.55 * ss2 * E; p[C.kRX] += 0.05 * E; face.lookX = ss2 * 1.2 * E; face.look = E; }
       else if (name === 'bounce') { const h = Math.abs(Math.sin(u * Math.PI * 6)); p[C.bY] += 0.035 * h * E; p[C.sL] += 0.25 * (1 - h) * E; p[C.sR] += 0.25 * (1 - h) * E; p[C.aLZ] += 0.25 * h * E; p[C.aRZ] -= 0.15 * h * E; face.happy = E; }   // full ^ (a held partial blend reads as grey, half-shut eyes)
       else if (name === 'sword') { p[C.aRX] += (-1.05 - p[C.aRX]) * E; p[C.aRY] += (0.35 - p[C.aRY]) * E; p[C.fR] += (-1.45 - p[C.fR]) * E; p[C.wX] += (0.3 + 0.25 * Math.sin(u * 14) - p[C.wX]) * E; p[C.wY] += 0.6 * Math.sin(u * 9) * E; p[C.kRX] += 0.2 * E; p[C.kRY] -= 0.2 * E; face.lookX = -0.6 * E; face.lookY = -0.6 * E; face.look = E; face.grin = 0.6 * E; }
@@ -2426,22 +2472,41 @@ const { FEZA, ITEMS } = (function () {
       let fidTarget = 0;
       if (idleT > 2.5 && S.wRun < 0.05 && !dead && !spin && !cheer) {
         const ft = idleT - 2.5, per = 4.4, act = 2.6, i = Math.floor(ft / per), u = (ft - i * per) / act;
-        if (u < 1) { S.fidI = i % FIDGETS.length; S.fidU = u; fidTarget = 1; }
+        if (u < 1) {
+          const happy = ft > 6.5 && (i & 1), name = happy ? HAPPY[(i >> 1) % HAPPY.length] : FIDGETS[i % FIDGETS.length];
+          if (S.fidSlot !== i) { S.fidSlot = i; S.fidName = name; S.fidYaw = 0; S.fidFx = 0;
+            const tgt = name === 'petBilbo' ? (typeof GAME !== 'undefined' && GAME.Bilbo ? GAME.Bilbo.root : null) : name === 'waveHala' ? 'hala' : null;
+            if (tgt) {   // hedefe dönme açısı (gövde, köke göre)
+              let tx, tz;
+              if (tgt === 'hala') { const hs = typeof HALA !== 'undefined' && HALA && HALA._S; if (hs) { tx = hs.x; tz = hs.z; } }
+              else { tgt.getWorldPosition(_w); tx = _w.x; tz = _w.z; }
+              if (Number.isFinite(tx)) { root.getWorldPosition(_a); S.fidYaw = clamp(wrapPI(Math.atan2(tx - _a.x, tz - _a.z) - root.rotation.y), -1.6, 1.6); }
+              if (name === 'petBilbo' && (!Number.isFinite(tx) || Math.hypot(tx - _a.x, tz - _a.z) > 3.4)) S.fidName = 'hops';   // Bilbo uzaktaysa zıplar
+            }
+          }
+          S.fidI = 0; S.fidU = u; fidTarget = 1;
+        }
       }
       S.fidW = dmp(S.fidW, fidTarget, fidTarget ? 6 : 10);
-      if (S.fidW > 0.01 && S.fidI >= 0) { const u = S.fidU; fidget(P, FIDGETS[S.fidI], u, S.fidW * sstep(0, 0.18, u) * (1 - sstep(0.82, 1, u)), face); }
+      S.fidFx = (S.fidFx || 0) - dt;
+      if (S.fidW > 0.01 && S.fidName) { const u = S.fidU; fidget(P, S.fidName, u, S.fidW * sstep(0, 0.18, u) * (1 - sstep(0.82, 1, u)), face); }
       // attack (horizontal slash, alternating direction)
       if (st.attack >= 0 && !dead) { S.atkK = st.attack; S.atkDir = st.swingDir < 0 ? -1 : 1; S.atkW = 1; }
       else S.atkW = dmp(S.atkW, 0, 14);
       if (S.atkW > 0.01 && S.atkK >= 0) {
-        const k = S.atkK, A = SLASH[S.atkDir > 0 ? 1 : '-1'];
+        if (st.attack >= 0) S.atkBig = !!st.big;
+        const k = S.atkK, A = S.atkBig ? OVERHEAD : SLASH[S.atkDir > 0 ? 1 : '-1'];
         if (k < 0.16) keysBetween(Q, P, {}, A.B, easeOut(k / 0.16));
         else if (k < 0.46) { keysBetween(Q, P, A.B, A.C, easeIO((k - 0.16) / 0.3)); }
         else if (k < 0.62) { keysBetween(Q, P, A.C, A.D, easeOut((k - 0.46) / 0.16)); }
         else keysBetween(Q, P, A.D, A.D, 0);
         const w = S.atkW * (1 - sstep(0.62, 1, k));
-        lerpInto(P, Q, w, w * (1 - 0.7 * S.wRun));
-        if (k > 0.1 && k < 0.7) { face.grin = Math.max(face.grin, w); face.browT = -0.8 * w; face.squint = 0.25 * w; }
+        lerpInto(P, Q, w, w * (1 - (S.atkBig ? 0.35 : 0.7) * S.wRun));
+        if (S.atkBig) P[C.bY] += 0.2 * Math.sin(Math.PI * clamp((k - 0.06) / 0.42, 0, 1)) * w;   // zıplama: yukarıda kaldırır, inerken vurur
+        else P[C.bZ] += 0.06 * Math.sin(Math.PI * clamp((k - 0.12) / 0.5, 0, 1)) * w;            // vuruş anında gövde öne atılır
+        const wid = S.eq.weapon ? baseId(S.eq.weapon.item) : null;
+        if (wid && SPIN_W[wid]) P[C.wY] += TAU * 2 * easeOut(clamp((k - 0.1) / 0.6, 0, 1)) * w;   // oklava elde döner
+        if (k > 0.1 && k < 0.7) { face.grin = Math.max(face.grin, w); face.browT = -0.8 * w; face.squint = 0.25 * w; if (S.atkBig) face.o = Math.max(face.o, sstep(0.3, 0.45, k) * w); }
       }
       // cast (both hands forward)
       if (st.cast >= 0 && !dead) { S.castK = st.cast; S.castW = 1; } else S.castW = dmp(S.castW, 0, 12);
@@ -2515,6 +2580,20 @@ const { FEZA, ITEMS } = (function () {
         L(C.aLX, -1.0, arms); L(C.aRX, -1.0, arms); L(C.aLZ, 0.22, arms); L(C.aRZ, -0.22, arms); L(C.aLY, 0, arms); L(C.aRY, 0, arms);
         L(C.fL, -0.5, arms); L(C.fR, -0.5, arms); L(C.kRX, -0.22 - 0.03 * bob); L(C.cRX, 0.05);
         face.happy = Math.max(face.happy, w * (0.5 + 0.5 * (bob > 0.3 ? 1 : 0))); face.grin = Math.max(face.grin, w); face.blush = Math.max(face.blush, 0.6 * w);
+      }
+      // Takım Hamlesi: Aytuğ Hala ile el ele zıplama (H.teamJump(süre, taraf): taraf +1 = Hala Feza'nın solunda)
+      if (S.teamT > 0) {
+        S.teamT = Math.max(0, S.teamT - dt);
+        const u = 1 - S.teamT / S.teamD, sd = S.teamSide, crouch = sstep(0, 0.2, u) * (1 - sstep(0.2, 0.3, u)), air = Math.sin(Math.PI * clamp((u - 0.22) / 0.6, 0, 1)), land = sstep(0.8, 0.88, u) * (1 - sstep(0.9, 1, u));
+        const w = Math.min(1, u / 0.12, (1 - u) / 0.1 + 0.01);
+        P[C.bY] += (-0.08 * crouch + 0.42 * air - 0.05 * land) * w; P[C.sL] += (0.8 * crouch + 0.6 * air * 0.5 + 0.7 * land) * w; P[C.sR] += (0.8 * crouch + 0.3 * air + 0.7 * land) * w;
+        P[C.tLX] -= (0.4 * crouch + 0.35 * air + 0.4 * land) * w; P[C.tRX] -= (0.4 * crouch + 0.2 * air + 0.4 * land) * w;
+        // Hala tarafındaki el yana-aşağı uzanır (el ele), öbür kol havada
+        const hand = sd > 0 ? 'L' : 'R', free = sd > 0 ? 'R' : 'L', sg = sd > 0 ? 1 : -1;
+        P[C['a' + hand + 'X']] += (-0.35 - P[C['a' + hand + 'X']]) * w; P[C['a' + hand + 'Z']] += (sg * 0.85 - P[C['a' + hand + 'Z']]) * w; P[C['f' + hand]] += (-0.15 - P[C['f' + hand]]) * w;
+        P[C['a' + free + 'X']] += (-2.7 - P[C['a' + free + 'X']]) * air * w; P[C['a' + free + 'Z']] += (-sg * 0.3 - P[C['a' + free + 'Z']]) * air * w;
+        P[C.bRY] += sd * 0.35 * (1 - air) * w; P[C.kRY] += sd * 0.3 * w;
+        face.happy = Math.max(face.happy, air * w); face.grin = Math.max(face.grin, w); face.blush = Math.max(face.blush, 0.8 * w);
       }
       // ifadeler: sevinç, şaşkınlık, kararlılık (H.express) + göz kırpma
       if (S.exprT > 0 && !dead) {
@@ -2614,6 +2693,7 @@ const { FEZA, ITEMS } = (function () {
       S.flow = dmp(S.flow, Math.max(S.wRun * 1.05, S.wSpin * 1.35, S.atkW * 0.3, jump * 0.7, S.hurt * 0.4, S.castW * 0.25), 4.5);
       S.side = dmp(S.side, clamp(-S.yawRate * 0.06, -0.7, 0.7) - 0.5 * S.wSpin, 5);
       if (S.capeU) { S.capeU.cpFlow.value = S.flow; S.capeU.cpSide.value = S.side; S.capeU.cpTime.value = t; }
+      if (S.xray) proxy.visible = S.wRide < 0.3;
       if (KOST.capeU) { KOST.capeU.cpFlow.value = S.flow; KOST.capeU.cpSide.value = S.side; KOST.capeU.cpTime.value = t; }
       if (SETG.obj && SETG.obj.visible) { SETG.obj.rotation.y = t * 1.6; SETG.obj.position.y = 0.05 * Math.sin(t * 2.2); SETG.mat.opacity = 0.75 + 0.25 * Math.sin(t * 5); }
       // oyun olaylarına yüz tepkisi (bir kez abone olunur)
@@ -2787,6 +2867,7 @@ const { FEZA, ITEMS } = (function () {
       // yüz ifadesi: 'sevinc' | 'saskin' | 'kararli' (dur s); then: ardından gelecek ifade
       express(kind, dur = 1.2, then = null) { S.expr = kind; S.exprT = S.exprD = Math.max(0.2, dur); S.exprNext = then; },
       wink() { if (S.winkT <= 0) S.winkT = 0.42; },
+      teamJump(dur = 0.95, side = 1) { if (S.teamT > 0.2) return; S.teamT = S.teamD = Math.max(0.4, dur); S.teamSide = side < 0 ? -1 : 1; },
       setXray(on) {
         S.xray = !!on;
         if (S.xray) for (const k of ['weapon', 'offhand', 'hat', 'cape']) { const e = S.eq[k]; if (e) addXrayItem(e.obj, e.xkey); }
