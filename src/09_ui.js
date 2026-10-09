@@ -3182,7 +3182,7 @@ const UI = (() => {
   }
 
   return {
-    boot, ready: readyP, fade, banner, toast, itemCard, openBag, openPause, closeMenu, showVictory, showTitle, startGame,
+    boot, ready: readyP, fade, banner, toast, itemCard, openBag, openPause, closeMenu, showVictory, showTitle, startGame, setPaused,   // setPaused: merkez panelleri (09h_hub)
     refreshPortrait, subtitle, setPref, openDreamMap, closeDreamMap, travelTo, showDreamTravel,
     get mode() { return S.mode; }, get menu() { return S.menu; }, get paused() { return S.paused; },
     _S: S, _D: D, _TC: TITLE_CAM, _DC: DRG_CAM, _BF: BOSS_FIT, _BS: BOSS_SHAPE, _FIT: FIT, _FL: FL,

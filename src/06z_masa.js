@@ -260,8 +260,8 @@ const CAKE = (() => {
     const D = DIM[stage], R = D.R, top = Y0 + D.H;
     // Porselen kek standı: ayak, sap, tabak (pembe şerit + altın kenar)
     const stand = new Kit();
-    const sp = [[0.001, 0], [1.5, 0], [1.55, 0.06], [1.2, 0.14], [0.45, 0.22], [0.32, 0.38], [0.3, 0.44], [0.6, 0.48], [3.2, 0.5], [3.35, 0.56], [3.36, 0.6], [3.2, 0.62], [0.001, 0.62]];
-    stand.add(lathe('stand', sp, 56), (x, y, z) => { const r = Math.hypot(x, z); return r > 3.18 && y > 0.5 ? C(0xe6c46a) : r > 2.9 && y > 0.5 ? C(0xffc6d8) : C(0xfffcf8); });
+    const sp = [[0.001, 0], [1.5, 0], [1.55, 0.06], [1.2, 0.14], [0.45, 0.22], [0.32, 0.38], [0.3, 0.44], [0.6, 0.48], [2.7, 0.5], [2.75, 0.5], [2.95, 0.5], [3.0, 0.5], [3.18, 0.5], [3.25, 0.52], [3.35, 0.56], [3.36, 0.6], [3.3, 0.62], [3.2, 0.62], [3.0, 0.62], [2.95, 0.62], [2.75, 0.62], [2.7, 0.62], [0.001, 0.62]];
+    stand.add(lathe('stand2', sp, 64), (x, y, z) => { const r = Math.hypot(x, z); return r > 3.22 ? C(0xe6c46a) : r > 2.72 && r < 2.98 && y > 0.49 ? C(0xffb3cc) : C(0xfffcf8); });
     g.add(mesh(stand, M.porc));
     if (stage === 0) {   // boş tabak + kalıp halkası + biraz un
       const ring = new THREE.Mesh(geos.ring || (geos.ring = keepG(new THREE.CylinderGeometry(2.5, 2.5, 1.0, 56, 1, true))), M.metal);
@@ -291,9 +291,9 @@ const CAKE = (() => {
       const rr = 0.22, pts = [[0.001, top], [R - rr, top]];
       for (let i = 1; i <= 6; i++) { const a = i / 6 * Math.PI / 2; pts.push([R - rr + Math.sin(a) * rr, top - rr + Math.cos(a) * rr]); }
       pts.push([R, Y0 + 0.02], [0.001, Y0 + 0.02]);
-      cream.add(lathe('frost4', pts, 72), (x, y, z) => C(0xffeef4).lerp(C(0xffc9dc), Math.min(1, Math.max(0, (top - y) / (top - Y0)) * 1.1)));
-      gloss.add(G.cyl(1, 1, 64), () => C(0xe8344f), [0, top + 0.015, 0], null, [R * 0.72, 0.04, R * 0.72]);
-      for (let i = 0; i < 22; i++) { const a = (i + 0.3) * TAU2 / 22, l = 0.3 + hash(i, 4, 1) * 0.7; gloss.add(G.capsule(1, 8), () => C(0xe8344f), [Math.sin(a) * (R + 0.02), top - 0.12 - l / 2, Math.cos(a) * (R + 0.02)], null, [0.11, l * 0.5, 0.11]); }
+      cream.add(lathe('frost4', pts.reverse(), 72), (x, y, z) => C(0xffeef4).lerp(C(0xffc9dc), Math.min(1, Math.max(0, (top - y) / (top - Y0)) * 1.1)));
+      gloss.add(G.sphere(40, 10), () => C(0xe8344f), [0, top + 0.01, 0], null, [R * 0.42, 0.08, R * 0.42]);
+      for (let i = 0; i < 16; i++) { const a = (i + 0.3) * TAU2 / 16, l = 0.15 + hash(i, 4, 1) * 0.45, rr2 = R + 0.005; gloss.add(G.cyl(1, 1, 10), () => C(0xe8344f), [Math.sin(a) * rr2, top - 0.1 - l / 2, Math.cos(a) * rr2], null, [0.07, l, 0.07]); gloss.add(G.sphere(10, 8), () => C(0xe8344f), [Math.sin(a) * rr2, top - 0.1 - l, Math.cos(a) * rr2], null, [0.1, 0.12, 0.1]); }
       for (let i = 0; i < 16; i++) { const a = i * TAU2 / 16; cream.add(rosetteG(), () => C(0xfff4f8), [Math.sin(a) * (R - 0.3), top - 0.02, Math.cos(a) * (R - 0.3)], [0, a, 0], [0.62, 0.62, 0.62]); }
       for (let i = 0; i < 30; i++) { const a = i * TAU2 / 30; cream.add(rosetteG(), () => C(0xffd6e4), [Math.sin(a) * (R + 0.04), Y0, Math.cos(a) * (R + 0.04)], [0, a, 0], [0.42, 0.34, 0.42]); }
       for (let i = 0; i < 8; i++) { const a = (i + 0.5) * TAU2 / 8; berries.add(berryG(), 0xffffff, [Math.sin(a) * (R - 0.3), top + 0.36, Math.cos(a) * (R - 0.3)], [0.5, a, 0], 0.8); }
@@ -398,7 +398,7 @@ const CAKE = (() => {
   // süs: pos = { a: açı (rad), h: 0..1 }; GAME.addCakeDecoration kayda yazdıktan sonra çağırır → dünyadaki pastayı yenile
   function decorate(itemId, pos = {}) { if (S.world) S.world.setDecos(decosNow()); }
   function refresh() { if (S.world) S.world.setDecos(decosNow()); }
-  return { build, setStage, decorate, refresh, makeModel, surfPoint, surfParam, setDecos, ITEMS, ORDER, unlocked, SIDE, DIM, Y0,
+  return { build, setStage, decorate, refresh, makeModel, surfPoint, surfParam, setDecos, ITEMS, ORDER, unlocked, SIDE, DIM, Y0, _berryG: berryG, _mats: mats,
     get stage() { return S.stage; }, get spot() { return S.spot; }, _S: S };
 })();
 
