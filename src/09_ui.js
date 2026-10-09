@@ -451,7 +451,7 @@ const UI = (() => {
     D.bagBtn = el('button', 'u-rbtn', sb, '<span class="u-emo">🎒</span><span class="u-dot"></span>');
     D.pauseBtn = el('button', 'u-rbtn', sb, SVG.pause + '<span class="u-hold"></span>');   // 0.5 s hold
     D.dreamBtn = el('button', 'u-rbtn u-dream-open u-hide', sb, '<span class="u-emo">🗺️</span><span class="u-dream-label">Harita</span>');
-    D.dreamBtn.setAttribute('aria-label', FEZA_LANG.t('Hayal haritasını aç'));
+    D.dreamBtn.setAttribute('aria-label', FEZA_LANG.t('Ev haritasını aç'));
     const mini = D.mini = el('div', 'u-mini', tr);
     D.map = el('canvas', '', mini);
 
@@ -525,7 +525,7 @@ const UI = (() => {
     const bt = D.tbtns = el('div', 'u-tbtns', t);
     D.playBtn = el('button', 'u-btn g', bt, SVG.play + '<span>Oyna</span>');   // always: a new game (a saved game is never touched)
     D.contBtn = el('button', 'u-btn b', bt, SVG.cont + '<span>Devam Et</span>');   // only with a save (Mola › Kaydet)
-    D.titleMap = el('button', 'u-btn p u-title-map u-hide', bt, '<span>🗺️ Hayal Haritası</span>');
+    D.titleMap = el('button', 'u-btn p u-title-map u-hide', bt, '<span>🗺️ Ev Haritası</span>');
     const tg = el('div', 'u-ttog', t);
     D.tMus = el('button', 'u-rbtn', tg, SVG.note + '<span class="u-slash"></span>'); D.tMus.dataset.tog = 'music';   // sound effects: pause menu only
   }
@@ -604,7 +604,7 @@ const UI = (() => {
     D.resume = el('button', 'u-btn g wide', m, SVG.play + '<span>Devam Et</span>');
     D.difficultyBtn = el('button', 'u-btn p wide', m, '<span>Zorluk: Normal</span>');
     D.saveBtn = el('button', 'u-btn b wide', m, SVG.save + '<span>Kaydet</span>');
-    D.pauseMap = el('button', 'u-btn p wide u-hide', m, '<span>🗺️ Hayal Haritası</span>');
+    D.pauseMap = el('button', 'u-btn p wide u-hide', m, '<span>🗺️ Ev Haritası</span>');
     D.restart = el('button', 'u-btn o wide', m, SVG.again + '<span>Baştan Başla</span>');
     const dif = el('div', 'u-difficulty', p);
     el('div', 'u-difficulty-hint', dif, 'Seçimin hemen uygulanır.<br> İlerlemen ve eşyaların korunur.');
@@ -2524,6 +2524,13 @@ const UI = (() => {
         fade(0, 0.7, null);
       } finally { S.busy = false; }
     });
+    // Dev Ev: masadaki kapılar bölüme götürür; diğer istasyonlar HUB.open (src/06z_masa.js); bölüm içi mini oyun işaretleri
+    on('station', st => {
+      if (st.kind === 'kapi') { const i = (M.ZONES || []).findIndex(z => z.id === st.zone); if (i >= 0) travelTo(i, { kapi: true }); return; }
+      if (st.kind === 'mini' && st.mini && typeof MINIGAME !== 'undefined') { safe('MINIGAME.start', () => MINIGAME.start(st.mini, { from: 'zone' })); return; }
+      if (typeof HUB !== 'undefined' && HUB.open) safe('HUB.open', () => HUB.open(st.id, st));
+    });
+    on('area', a => { if (a.index > 0) banner({ kind: 'zone', title: a.ad, small: a.boss ? 'Boss Arenası' : (a.index + 1) + '. alan', dur: 2 }); });
     on('levelup', d => {
       banner({ kind: 'level', icon: '⭐', title: `Seviye ${d.lvl}!`, sub: 'Daha da güçlendin!', rays: true, dur: 2.2 });
       bump(D.lvl, 1.35); portraitSoon(0.2);
@@ -3208,6 +3215,7 @@ window.__qa = {
     const P = GAME.P, L = GAME.L, Z = ZONES[P.zone];
     return { state: GAME.state, mode: UI.mode, menu: UI.menu, zone: P.zone, id: Z && Z.id, x: +P.pos.x.toFixed(2), z: +P.pos.z.toFixed(2), hp: P.hp, maxHp: P.maxHp,
       dead: P.dead, enemies: GAME.enemies.length, boss: GAME.boss && GAME.boss.type, start: L && L.start, exit: L && L.exit, bossAt: L && L.boss,
-      malzemeler: P.malzemeler, bossNese: P.bossNese, charge: GAME.teamCharge, hala: typeof HALA !== 'undefined' && HALA._S ? { x: HALA._S.x, z: HALA._S.z, mode: HALA._S.mode } : null };
+      malzemeler: P.malzemeler, bossNese: P.bossNese, charge: GAME.teamCharge, area: P.area, areas: L && L.areas ? L.areas.length : 0,
+      stations: L && L.stations ? L.stations.map(s => s.id) : [], cikartma: Object.keys(P.cikartmalar || {}).length, mini: typeof MINIGAME !== 'undefined' ? MINIGAME.current : null, hala: typeof HALA !== 'undefined' && HALA._S ? { x: HALA._S.x, z: HALA._S.z, mode: HALA._S.mode } : null };
   },
 };

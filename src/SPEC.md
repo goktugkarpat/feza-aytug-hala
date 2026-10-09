@@ -1,12 +1,137 @@
-# Feza Huysuzlara Karşı — teknik sözleşme (SPEC)
+# Feza, Bilbo ve Aytuğ Hala: Dev Ev Macerası — teknik sözleşme (SPEC)
 
-## Turkish and English localization (latest)
+## Dev Ev API (EN GÜNCEL — eski bölümlerin önüne geçer; altındaki eski metin "Huysuzlara Karşı" tabanını anlatır)
 
-- `src/00_i18n.js` loads before gameplay modules. `window.FEZA_LANG.language()` returns `tr` or `en`; `t(text)` and `html(markup)` translate output only. Item IDs, stored names, classes, map IDs and save keys remain unchanged. Do not translate identifiers or mutate catalog data.
-- Initial startup presents a bilingual language dialog before 3D construction. The title language button can reopen it; changing language rebuilds the UI by reloading the same game, without deleting or overwriting progress. The preference lives in `fezaHuysuz.language.v1`. `?lang=tr` / `?lang=en` selects a locale directly for silent QA.
-- DOM text is translated at explicit UI output boundaries, canvas world signs and enemy tags before measurement/drawing, and FX words before their width estimate. There is no DOM observer, per-frame scanning or growing text cache (512 entries maximum).
-- `sesler-en.js` embeds 114 trimmed English recordings and their exact English texts/durations. AUD caches decoding by language and line key; subtitle callbacks include `(text, key)` so boss icons work in either language. English labels and narration share ability and merchant names.
-- `manifest-en.webmanifest` supplies the English installation name; both manifests and both embedded voice banks are offline precached. The service worker deletes only this game's old caches.
+Oyun: "Feza, Bilbo ve Aytuğ Hala: Dev Ev Macerası" (kısa: "Dev Ev Macerası"). Yalnız Türkçe (`src/00_i18n.js` artık metni
+olduğu gibi döndüren zararsız bir kalıntı; `FEZA_LANG.t/html` çağrıları kalabilir). Kayıt anahtarı `fezaAytugHala.v1`, ayarlar
+`fezaAytugHala.ayar`. Önbellek `sw.js` CACHE `feza-aytug-hala-vN` (yeni dosya → `SRC` listesine ekle, sürümü artır).
+
+### Dosyalar ve yükleme sırası (hepsi klasik `<script>`, index.html'deki sırayla)
+```
+vendor/three.js · src/00_i18n.js · sesler.js · bilbo-ses.js · 00_core · 01_textures · 02_audio · 03_fx · 04_feza · 04_bilbo · 04_bilbo_follow
+src/04_hala.js          HALA      Aytuğ Hala (yer tutucu kırmızı karakter + kancalar)
+src/05_enemies.js       EDEF, EMODEL (eski modeller; yer tutucu olarak kullanılıyor)
+src/05a_huysuz_kayit.js HUYSUZ    huysuz/boss kayıt API'si (EDEF'e yazar, EMODEL.build'i sarar)
+src/05h_huysuzlar.js    —         normal huysuzlar + bölüm listeleri (HUYSUZ.type / HUYSUZ.zone)
+src/05b_bosslar.js      —         bosslar (HUYSUZ.boss / HUYSUZ.zone(id, {boss}))
+src/06a_bolum_kayit.js  ZONE_DEFS, BOLUM   bölüm kaydı, ZONES üretimi, kilit kuralı, ortak yer tutucu görünüm
+src/06z_oturma.js · 06z_mutfak.js · 06z_buzdolabi.js · 06z_pasta.js   birer bölüm (BOLUM.define)
+src/06z_masa.js         CAKE, HUB merkez "Aytuğ Hala'nın Mutfak Masası" (bölge 0) + büyüyen pasta + istasyonlar
+src/06_level.js         ZONES (= BOLUM.zones()), LEVEL
+src/07_game.js          GAME · src/08_skills.js SKILLS
+src/08m_minigame.js     MINIGAME  mini oyun çerçevesi
+src/10_story.js         STORY     hikâye kancaları (09_ui'den ÖNCE yüklenir)
+src/09_ui.js            UI, boot, ana döngü, window.__step / window.__qa (QA)
+```
+Kural: her dosya yalnız kendi genel adını açar; aynı üst düzey ad iki dosyada olursa oyun açılmaz. Büyük iş yeni dosyaya,
+ortak dosyalarda (07_game, 09_ui, 06_level, index.html) küçük cerrahi değişiklik.
+
+### Bölüm kaydı (BOLUM / ZONE_DEFS)
+Sıra (= kayıttaki bölge numarası): `masa`(0, merkez), `oturma`(1), `mutfak`(2), `buzdolabi`(3), `pasta`(4, final).
+```js
+BOLUM.define('oturma', {
+  ad: 'Oturma Odası',
+  taban: 'bathroom',      // eski zemin/ışık teması: 'bathroom' | 'moon' | 'forest' | 'dairy' (cave/volcano/town çizicileri silindi; castle farklı yerleşim üretir, kullanma)
+  size: 90, side: 2,      // yan oda sayısı
+  areas: [{ id: 'a1', ad: 'Halı Ormanı', rooms: 2 }, { id: 'a2', ad: 'Parke Ovası', rooms: 2 }, { id: 'a3', ad: 'Kitap Kuleleri', rooms: 2 }],
+                          // 3 alt alan; ana oda zinciri = alanların odaları + en sonda boss arenası (areas yoksa rooms: N)
+  muzik: 'orman',         // AUD müzik teması
+  malzeme: 'un',          // boss neşelenince P.malzemeler.un = 'oturma' ('un'|'yumurta'|'cilek'|'krema')
+  kayipEsya: 'gozluk',    // Bilbo'nun bu bölümde bulacağı eşya (GAME.foundLostItem)
+  final: false, hub: false,
+  isik: { fog: [renk, yakın, uzak], hemiSky, hemiGround, hemi, sunColor, sun, sunOffset, env: [gök, ufuk, yer, şiddet], bloom, exposure, sat, vig, fezaLight },  // THEME[taban] üstüne
+  zemin: { tA, tB, tC, out, outAmt, macro },   // zemin dokusu renk tonları (FLOOR[taban] üstüne): A ana zemin, B yol, C plaza, out yürünmez alan
+  minimap: { zemin: '#c9b48e' },
+  harita: { ad, detay, renk, x, y, simge },    // Ev Haritası adası (x,y yüzde; simge emoji yer tutucu)
+  huysuzlar: {...}, elitler: [...], boss: 'id', // YEDEK liste: asıl liste HUYSUZ.zone(id, …) (05h/05b)
+  yerlesim(L, api) {},    // saf veri, LEVEL.generate sonunda: L.start, L.spawns[{type,x,z,elite,pack,room}], L.boss, L.exit, L.stations, katı engel
+                          //   api: { isFloor, circleFree, linkDist, randomFloorNear(x,z,rmin,rmax), solid(x,z,r,tag), rnd(), main: ana odalar, arena }
+  kur(L, api) {},         // görsel kurulum (eski tema dekoru YERİNE; zemin ondan önce kurulur)
+  kurSon(L, api) {},      // sandık/kapı/kontrol noktası kurulduktan sonra (L.portalObj, L.chestObjs, L.cpObjs yeniden süslenebilir)
+});
+```
+`kur` api: `{ L, B, group, rnd, THREE, G, mat4, lin, keep, floor (zemin mesh'i; kendi zeminini kurarsan floor.visible=false),
+put(geo,x,y,z,sx,sy,sz,renk,yaw,rx,rz,matKey='shiny') (birleştirilmiş statik süs, chunk başına tek çizim), box(x,y,z,w,h,d,renk,yaw),
+ball(x,y,z,sx,sy,sz,renk), cyl(x,y,z,r,h,renk), solid(x,z,r,tag), glow(x,z,r,renk,k) (zemine pişmiş ışık), light(x,y,z,renk,şiddet,menzil,titreme)
+(4 havuz ışığından en yakınları), anim(fn(dt, fezaX, fezaZ)), add(obj3d) (bölüm değişince disposeTree), dispose(x), tmp(geo), noDecor(x,z),
+isFloor, linkDist, circleFree, dreamEdge() (yürünür alan kenarına alçak bordür) }`. `BOLUM.yerTutucu(L, api, {kutu, kapi, isik})` ortak yer tutucu.
+Dünya kuralları değişmedi: 1 birim = 1 m, kamera +z'den bakar → güney (büyük z) tarafı ALÇAK olmalı. Feza ≈ 1,45 m: ev ölçeği DEV olmalı.
+Seviye verisi: `L.rooms` (0 = başlangıç, `Z.rooms-1` = boss arenası, `kind:'side'` yan odalar), `L.path`, `L.areas = [{index,id,ad,rooms:[oda no],
+gate:{x,z}|null (önceki alandan geçit), boss?}]` (son eleman arena), `L.checkpoints` (her alanın ilk odasında + arenadan önce bir ara kayıt),
+`L.exit` (kapı; final bölümde yok → `L.crystalSpot`), `L.stations` (etkileşim noktaları), `L.floorMesh`.
+Kilit: `BOLUM.isOpen(id, P)` — `pasta` ancak 3 malzeme ya da 3 neşelenen boss ile açılır; diğerleri hep açık. QA için `?hepsiacik`.
+Akış: oyun `masa`'da başlar; masadaki kapılar (istasyon `kind:'kapi'`) odalara götürür; oda bossu neşelenince kapı açılır ve
+`GAME.nextZoneIndex()` merkeze (masa) döndürür; masanın kendi kapısı (portal) sıradaki bitmemiş odaya götürür.
+
+### Huysuz kaydı (HUYSUZ)
+```js
+HUYSUZ.type('tozTavsani', { ad: 'Toz Tavşanı', base: 'jole', variant: 'purple', saldiri: 'ziplayan', boyut: 1,
+  stats: { hp, dmg, speed, r, height, atkRange, atkCd, windup, aggro, shot: { kind, speed, r } },   // EDEF alanları (base'in üstüne)
+  model(o) { return m; },   // isteğe bağlı kendi modeli; yoksa base'in eski modeli. o = { variant, elite }
+  ilkSoz: 'ilk_toz' });     // ilk görüşte Aytuğ Hala'nın söyleyeceği ses anahtarı (isteğe bağlı)
+HUYSUZ.boss('uykucuSupurge', { ad: 'Uykucu Süpürge', base: 'kraljole', model(o) {}, lines: { giris, bitti, yarim },
+  bossKit: { add: 'tozTavsani', at: [0.5], n: [2], col: '#9fb4cf', roar: 1.2, summonAt, addHp, addDmg } });
+HUYSUZ.zone('oturma', { enemies: { tozTavsani: 4, kumanda: 3 }, elites: ['tozTavsani'], variants: { tip: ['varyant'] }, boss: 'uykucuSupurge' });
+```
+saldiri → EDEF.kind: `yakin`=melee, `uzak`=ranged (stats.shot), `ziplayan`=hop, `yuvarlanan`=roll, `kayan`=glide, `agir`=slam,
+`kazici`=burrow, `ucan`=melee+fly. `base`: davranışı (ve model yoksa görünüşü) ödünç alınan eski tip (jole, goblin, yogurt, kaymak, kopuk,
+nobetci, cisdamlasi, yildizcik, mantar, golem…; bosslar: kraljole, kefirdev, lavkaplumbaga, kostebekusta, sovalye, ejderha). 07_game başlarken
+tipin davranış tablolarını base'den kopyalar (`GAME.ALIAS[id] = base`, `GAME.isT(type, 'jole')`). Final bölümün bossu neşelenince
+kristal çıkar → zafer (base 'ejderha' ise yumurta/ejderha yavrusu davranışı da gelir).
+Model sözleşmesi (EMODEL ile aynı): `{ root (ayak y=0, +z'ye bakar), height, radius, anim(dt, st), setMood('grumpy'|'happy'), flash(a, renk),
+setTint(renk|null), muzzle() → Vector3, dispose() }`; `st = { move, windup, attack, hurt, frozen, dying (0..1 neşelenip kaybolma), t, … }`.
+Korkutucu hiçbir şey yok: kaşsız/somurtmasız, sevimli, gülümseyen; neşelenince kalpler/konfeti.
+
+### Aytuğ Hala (HALA, src/04_hala.js)
+07_game'in çağırdıkları (hepsi isteğe bağlı, hata yutulur):
+- `HALA.create(scene)` — GAME.init'te bir kez; modeli sahneye ekle.
+- `HALA.update(dt, ctx)` — her kare (oyun ve başlık). `ctx` = tek, yeniden kullanılan nesne: `{ P, H (Feza modeli), L, enemies, boss, Bilbo,
+  state, dt, t, dead, title, api }`. `ctx.api` = `{ isFloor, circleFree, los, moveXZ(o,dx,dz,r), routeTo, say(key,prio), hasLine, sfx, burst, fx,
+  heal(frac), enemiesNear, nearestEnemy, damage(e,n,o) (Pasta Topu vb.), heroDamage(), spawnProjectile(o), revive(frac), shield(s) (Polar Kalkan:
+  P.shield saniye), emit }`. ctx.L değişince yeni bölüm: Feza'nın yanında başla.
+- `HALA.onFezaHurt({amount, fromX, fromZ, frac})` · `HALA.onFezaLow({frac})` (can < %35; sarılma) · `HALA.onCheer({type,x,z,boss,elite})`.
+- `HALA.onFezaDown({x,z})` — Feza'nın canı bitti. Ölüm/baştan başlama YOK: dönen sayı = kaç s sonra Feza OLDUĞU YERDE kalkar
+  (Hala istersen `ctx.api.revive(frac)` ile erken kaldırır). Kanca yoksa 1,2 s sonra animasyonsuz kalkar.
+- `HALA.charge` (0..1, Takım Hamlesi dolumu; UI okur) · `HALA.teamReady()` · `HALA.teamMove({ blast, P, H })` — true dön; `blast(x,z,r)`
+  yakındaki her huysuzu neşelendirir (bossa %12 hasar) — zıplamanın tepesinde çağır.
+- `HALA.pointTo(x, z)` — bölüme girince yolun ilerisini, boss neşelenince kapıyı gösterir. `HALA.say(lineKey)`.
+Hala hasar almaz, düşmanlar onu hedeflemez. UI: sağ altta saldırı düğmesinin solunda **Takım** düğmesi (`.u-team`, CSS `--fill` 0..1,
+`.ready` parlar, klavye T) → `GAME.teamMove()`.
+
+### Hikâye (STORY, src/10_story.js)
+`STORY.intro({zone})` → s (yeni oyun) · `STORY.zone({index,id})` · `STORY.area(areaObj)` · `STORY.ingredient(id)` (boss neşelendikten 2,5 s sonra) ·
+`STORY.lostItem({id,zone})` · `STORY.locked({index})` · `STORY.station(st)` · `STORY.ending()` (true dönerse eski 'son' cümlesi söylenmez) ·
+`STORY.buildTitle(L, api)` (tanımlanırsa başlık ekranı sahnesi bölüm kur()'u yerine bunu kurar; başlık = bölge 0 masa). Sesler: `AUD.LINES`
+(02_audio.js, `/*SESLER*/` JSON) + `python3 gen_voice.py` (tr-TR-EmelNeural, sessizlik kırpılır). Kayıt yoksa yer tutucu kısa yazı (toast).
+
+### Kayda giren durum (GAME.P, `snapshot().koleksiyon`)
+`P.malzemeler {malzeme: bölümId}`, `P.bossNese {bölümId: true}`, `P.kayipEsyalar {bölümId: eşyaId}`, `P.cikartmalar {id: {tur:'huysuz'|'boss'|'gizli', bolum}}`
+(her huysuz türü/boss ilk neşelendirmede otomatik), `P.kostumler {id:true}` + `P.kostum` (giyili, null = kendi kıyafeti), `P.bilboAksesuar
+{sahip:{id:true}, takili}`, `P.miniOyunlar {id: {acik, enIyi, kez}}`, `P.pastaSusleri [{id, a (açı rad), h (0..1)}]`, `P.altinSeker` (sayı),
+`P.gununSurprizi` ('YYYY-AA-GG', son açılan gün). `P.area` (şu anki alan, kayda girmez).
+GAME işlevleri: `giveSticker(id, tur)`, `addGoldSugar(n)`, `unlockCostume(id)`, `setCostume(id|null)` (→ `H.setCostume(id)` varsa),
+`unlockBilboAccessory(id)`, `setBilboAccessory(id|null)` (→ `Bilbo.setAccessory(id)` varsa), `addCakeDecoration(id, a, h)` (→ `CAKE.decorate`),
+`cakeStage()` (0..4 = malzeme sayısı), `dailySurprise(peek)`, `miniResult(id, skor)`, `unlockMinigame(id)`, `startMinigame(id, o)`,
+`foundLostItem(id, bölümId)`, `revive(frac)`, `teamMove()`, `teamBlast(x,z,r)`, `zoneOpen(i)`, `nextZoneIndex()`, `teamCharge` (getter).
+Yeni olaylar (`GAME.on`): `ingredient {id,zone}`, `lostItem`, `sticker {id,kind}`, `goldSugar`, `costume`, `costumeNew`, `bilboAcc`, `bilboAccNew`,
+`cakeDeco`, `dailySurprise`, `miniStart`, `miniEnd`, `miniResult`, `miniNew`, `station (istasyon nesnesi)`, `area {index,id,ad,boss}`, `team`, `respawn {inPlace}`.
+
+### Merkez: Aytuğ Hala'nın Mutfak Masası (src/06z_masa.js)
+`BOLUM.define('masa', { hub: true, … })`: huysuz/boss yok. `yerlesim` → `L.cakeSpot`, `L.stations = [{ id, kind, x, z, r, zone? }]`:
+`kapi_<bölüm>` (kind 'kapi', zone), `gardirop`, `bilbo` (Bilbo'nun Köşesi), `album` (Çıkartma Albümü), `mini` (Mini Oyun Köşesi), `surpriz` (Günün Sürprizi).
+Feza bir istasyonun içine girince GAME `station` yayar (çıkıp tekrar girince yine); UI: `kapi` → o bölüme yolculuk (kilitliyse STORY.locked),
+`kind:'mini'` + `mini:id` → MINIGAME.start, diğerleri → `HUB.open(id, station)` (merkez ajanı kendi ekranlarını burada açar; yer tutucu: toast).
+Bölüm içine de istasyon konabilir (yerlesim'de `L.stations`). `CAKE.build(api, spot)` (masa kur'unda), `CAKE.setStage(n)` (0..4 kat),
+`CAKE.decorate(itemId, {a, h})`; yeniden kurulunca durumu `GAME.cakeStage()` ve `P.pastaSusleri`'nden okur.
+
+### Mini oyunlar (MINIGAME, src/08m_minigame.js)
+`MINIGAME.register(id, { ad, holdsWorld: true, start(ctx), update(dt, ctx) → 'done'|undefined, end(ctx) → skor })`; `ctx = { id, root (kendi DOM
+katmanı, #ui içinde; bitince silinir), t, score, from: 'hub'|'zone', data }`. `MINIGAME.start(id, {from, onEnd})`, `.finish()`, `.list()`, `.active`,
+`.current`. GAME.update her kare `MINIGAME.update(dt)`; holdsWorld iken dünya durur. Sonuç `GAME.miniResult` ile kayda girer. Yer tutucu: `sekerYakala`.
+
+### QA
+`window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
+cheerAll(), hurt(n), down(), info() }`. Python: `scratchpad/qa/hala_qa.py` (sınıf `Hala`, kullanım dosyanın başında), duman testi `hala_smoke.py`.
 
 ## Open Dream Map and entry-level balance (8 October 2026; overrides earlier map locks and gear/zone scaling)
 

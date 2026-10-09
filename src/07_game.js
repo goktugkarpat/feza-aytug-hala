@@ -727,7 +727,7 @@ const GAME = (() => {
     P.bag = [P.equip.weapon, P.equip.offhand, P.equip.hat, P.equip.cape].filter(Boolean);
     for (const s of GAME.skills) { s.unlocked = false; s.cd = 0; }
     F = { zl: {}, kapi: {} }; skillQ.length = 0; removeMoustache();
-    P.malzemeler = {}; P.kayipEsyalar = {}; P.bossNese = {};   // Dev Ev hikâyesi: malzeme → bölüm id, bölüm id → true
+    resetKoleksiyon();   // Dev Ev: hikâye + koleksiyon durumları (kayda girer)
     recalcStats(); P.hp = P.maxHp;
     if (H) H.setEquip(P.equip);
   }
@@ -1116,6 +1116,7 @@ const GAME = (() => {
     if (Z.music) aud('music', Z.music);
     if (i > 0 && Z.line) later(introDelay + 0.8, () => { if (say(Z.line, 3)) F.zl[i] = true; });
     later(introDelay + 1.5, () => { const p = L && L.path && L.path[Math.min(L.path.length - 1, 3)]; if (p && GAME.state === 'play') hala('pointTo', p.x, p.z); });
+    P.area = -1;
     story('zone', { index: i, id: Z.id });
     skillAt = gt + introDelay + 1.2;   // a new skill's line held back from the last boss: right after this zone's name
   }
@@ -4498,6 +4499,7 @@ const GAME = (() => {
     }
     dying.push(e);
     hala('onCheer', { type: e.type, x: e.x, z: e.z, boss: !!e.boss, elite: !!e.elite });
+    giveSticker(e.type, e.boss ? 'boss' : 'huysuz');
     if (e.boss) bossCheered(e);
     const cy = e.y + e.height * 0.7;
     burst('cheer', e.x, cy, e.z, { scale: e.boss ? 3 : e.elite ? 1.6 : 1 });
@@ -6230,7 +6232,7 @@ const GAME = (() => {
       bag, roundPower: cleanRoundPower(P.roundPower), shopStock: cleanShop(P), shopWard: P.shopWard && P.shopWard.zone === zdef(zone).id ? Object.assign({}, P.shopWard) : null,
       equip: { weapon: P.bag.indexOf(P.equip.weapon), offhand: P.bag.indexOf(P.equip.offhand), hat: P.bag.indexOf(P.equip.hat), cape: P.bag.indexOf(P.equip.cape) },
       skills: GAME.skills.map(s => !!s.unlocked),
-      malzemeler: Object.assign({}, P.malzemeler), kayipEsyalar: Object.assign({}, P.kayipEsyalar), bossNese: Object.assign({}, P.bossNese),
+      koleksiyon: koleksiyonKaydi(),
       flags: Object.assign({ intro0: !!F.intro0, baykus: !!F.baykus, sandik: !!F.sandik, nese: !!F.nese, canta: !!F.canta, zl0: !!(F.zl && F.zl[0]), bossDone,
         yolculuk: !!F.yolculuk }, first),
     };
@@ -6350,8 +6352,7 @@ const GAME = (() => {
         if (!best) P.bag.push(starter[slot]);
       }
     }
-    const obj = v => (v && typeof v === 'object' && !Array.isArray(v) ? Object.assign({}, v) : {});
-    P.malzemeler = obj(s.malzemeler); P.kayipEsyalar = obj(s.kayipEsyalar); P.bossNese = obj(s.bossNese);
+    koleksiyonYukle(s.koleksiyon || s);
     const fl = s.flags || {};
     // Skills come from the level (saves by index are unreliable: the skill list changed from 6 to 3).
     GAME.skills.forEach((sk, i) => { sk.cd = 0; sk.unlocked = i === 0 ? !!(fl.intro0 || P.lvl >= 2 || (s.skills && s.skills[0])) : P.lvl >= (sk.def.lvl || 1); });
@@ -6567,8 +6568,13 @@ const GAME = (() => {
     GAME.time = gt;
     if (speaking()) talkAt = gt;
     runTimers();
+    if (typeof MINIGAME !== 'undefined' && MINIGAME && MINIGAME.active) {   // Dev Ev: mini oyun dünyayı durdurabilir
+      try { MINIGAME.update(dt); } catch (err) { warnOnce('MINIGAME.update', err); }
+      if (MINIGAME.active && MINIGAME.holdsWorld()) return;
+    }
     const st = GAME.state;
     flushSkillLines();
+    if (st === 'play') stationStep();
     if (st === 'play') updatePlayer(dt);
     else {
       C.hurtT = Math.max(0, C.hurtT - dt * 3); C.vel = damp(C.vel, 0, 10, dt); C.swing = null;
@@ -6576,7 +6582,7 @@ const GAME = (() => {
       if (st === 'transition' && H) { C.transT += dt; H.root.scale.setScalar(baseScale * Math.max(0.05, 1 - C.transT / 0.7)); P.face += dt * 12; }
     }
     if (L) {
-      actT -= dt; if (actT <= 0) { actT = 0.3; activate(false); flushFirst(); }
+      actT -= dt; if (actT <= 0) { actT = 0.3; activate(false); flushFirst(); areaStep(); }
       if (st === 'play' && (mooT -= dt) <= 0) {   // (the kefir valley's ambience: 'moo', rare, never in a fight)
         // Round 4 QA: one busy moment used to throw away a whole 45–90 s cycle (0 moos in 240 s of play): a moment that is
         // not calm (a fight nearby, the boss, a story, the narrator talking) retries in a few s; after a moo 25–45 s
@@ -6751,8 +6757,9 @@ const GAME = (() => {
     return !id || typeof BOLUM === 'undefined' || !BOLUM.isOpen ? true : !!BOLUM.isOpen(id, P);
   }
   function nextZoneIndex() {
-    const Z = zones() || [], done = P.bossNese || {};
-    for (let k = 1; k <= Z.length; k++) { const i = (P.zone + k) % Z.length; if (!done[Z[i].id] && zoneOpen(i) && !Z[i].final) return i; }
+    const Z = zones() || [], done = P.bossNese || {}, hub = Z.findIndex(z => z.hub);
+    if (hub >= 0 && P.zone !== hub) return hub;   // Dev Ev: bir oda bitince Aytuğ Hala'nın mutfak masasına dönülür
+    for (let k = 1; k <= Z.length; k++) { const i = (P.zone + k) % Z.length; if (!done[Z[i].id] && zoneOpen(i) && !Z[i].final && !Z[i].hub) return i; }
     for (let i = 0; i < Z.length; i++) if (Z[i].final && zoneOpen(i)) return i;
     return Math.min(Z.length - 1, P.zone + 1);
   }
@@ -6777,6 +6784,92 @@ const GAME = (() => {
     story('lostItem', { id, zone: zoneId });
     return true;
   }
+  // ── Koleksiyon ve merkez (masa) durumları ──
+  const KOL_OBJ = ['malzemeler', 'kayipEsyalar', 'bossNese', 'cikartmalar', 'kostumler', 'miniOyunlar'];
+  function resetKoleksiyon() {
+    for (const k of KOL_OBJ) P[k] = {};
+    P.kostum = null; P.bilboAksesuar = { sahip: {}, takili: null }; P.pastaSusleri = []; P.altinSeker = 0; P.gununSurprizi = null; P.area = -1;
+  }
+  function koleksiyonKaydi() {
+    const o = {};
+    for (const k of KOL_OBJ) o[k] = JSON.parse(JSON.stringify(P[k] || {}));
+    o.kostum = P.kostum || null; o.bilboAksesuar = JSON.parse(JSON.stringify(P.bilboAksesuar || { sahip: {}, takili: null }));
+    o.pastaSusleri = (P.pastaSusleri || []).map(d => ({ id: String(d.id), a: +d.a || 0, h: +d.h || 0 })); o.altinSeker = P.altinSeker | 0; o.gununSurprizi = P.gununSurprizi || null;
+    return o;
+  }
+  function koleksiyonYukle(s) {
+    resetKoleksiyon();
+    const obj = v => (v && typeof v === 'object' && !Array.isArray(v) ? JSON.parse(JSON.stringify(v)) : {});
+    for (const k of KOL_OBJ) P[k] = obj(s[k]);
+    P.kostum = typeof s.kostum === 'string' && P.kostumler[s.kostum] ? s.kostum : null;
+    const ba = obj(s.bilboAksesuar); P.bilboAksesuar = { sahip: obj(ba.sahip), takili: typeof ba.takili === 'string' && ba.sahip && ba.sahip[ba.takili] ? ba.takili : null };
+    P.pastaSusleri = Array.isArray(s.pastaSusleri) ? s.pastaSusleri.filter(d => d && d.id).map(d => ({ id: String(d.id), a: +d.a || 0, h: +d.h || 0 })) : [];
+    P.altinSeker = Math.max(0, s.altinSeker | 0); P.gununSurprizi = typeof s.gununSurprizi === 'string' ? s.gununSurprizi : null;
+  }
+  // Çıkartma: her huysuz türü / boss / gizli şey ilk neşelendirmede (ya da bulununca) albüme girer
+  function giveSticker(id, kind = 'gizli') {
+    if (!id || (P.cikartmalar && P.cikartmalar[id])) return false;
+    if (!P.cikartmalar) P.cikartmalar = {};
+    P.cikartmalar[id] = { tur: kind, bolum: zdef().id };
+    emit('sticker', { id, kind });
+    return true;
+  }
+  function addGoldSugar(n = 1) { P.altinSeker = Math.max(0, (P.altinSeker | 0) + n); emit('goldSugar', { count: P.altinSeker, add: n }); return P.altinSeker; }
+  function unlockCostume(id) { if (!id || P.kostumler[id]) return false; P.kostumler[id] = true; emit('costumeNew', { id }); return true; }
+  function setCostume(id) {   // null = kendi kıyafeti
+    if (id && !P.kostumler[id]) return false;
+    P.kostum = id || null; emit('costume', { id: P.kostum });
+    if (H && typeof H.setCostume === 'function') { try { H.setCostume(P.kostum); } catch (err) { warnOnce('setCostume', err); } }
+    return true;
+  }
+  function unlockBilboAccessory(id) { if (!id || P.bilboAksesuar.sahip[id]) return false; P.bilboAksesuar.sahip[id] = true; emit('bilboAccNew', { id }); return true; }
+  function setBilboAccessory(id) {
+    if (id && !P.bilboAksesuar.sahip[id]) return false;
+    P.bilboAksesuar.takili = id || null; emit('bilboAcc', { id: P.bilboAksesuar.takili });
+    if (Bilbo && typeof Bilbo.setAccessory === 'function') { try { Bilbo.setAccessory(P.bilboAksesuar.takili); } catch (err) { warnOnce('setAccessory', err); } }
+    return true;
+  }
+  // Pasta süsü: a = pastanın etrafında açı (rad), h = yükseklik (0..1). CAKE (src/06z_masa.js) çizer.
+  function addCakeDecoration(id, a = Math.random() * TAU, h = 1) {
+    P.pastaSusleri.push({ id: String(id), a, h }); emit('cakeDeco', { id, a, h });
+    if (typeof CAKE !== 'undefined' && CAKE && CAKE.decorate) { try { CAKE.decorate(id, { a, h }); } catch (err) { warnOnce('CAKE.decorate', err); } }
+    return P.pastaSusleri.length;
+  }
+  const cakeStage = () => Object.keys(P.malzemeler || {}).filter(k => P.malzemeler[k]).length;   // 0..4
+  // Günün sürprizi: günde bir sürpriz kutu (yerel tarih). true → bugün açılabilir ve şimdi açıldı olarak işaretlendi.
+  function dailySurprise(peek = false) {
+    const d = new Date(), day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    if (P.gununSurprizi === day) return false;
+    if (!peek) { P.gununSurprizi = day; emit('dailySurprise', { day }); }
+    return true;
+  }
+  // Mini oyun sonucu (MINIGAME çağırır): açılır, en iyi skor tutulur
+  function miniResult(id, score = 0) {
+    const r = P.miniOyunlar[id] || (P.miniOyunlar[id] = { acik: true, enIyi: 0, kez: 0 });
+    r.acik = true; r.kez = (r.kez | 0) + 1; const best = score > (r.enIyi || 0); if (best) r.enIyi = score;
+    emit('miniResult', { id, score, best });
+    return best;
+  }
+  function unlockMinigame(id) { if (P.miniOyunlar[id]) return false; P.miniOyunlar[id] = { acik: true, enIyi: 0, kez: 0 }; emit('miniNew', { id }); return true; }
+  // Etkileşim noktaları (L.stations: masadaki kapılar, gardırop… ya da bölüm içi mini oyun işaretleri): içine girilince 'station'
+  function stationStep() {
+    const ss = L && L.stations;
+    if (!ss || P.dead) return;
+    for (const s of ss) {
+      const r = s.r || 1.6, d2 = dist2(s.x, s.z, P.pos.x, P.pos.z);
+      if (!s._in && d2 < r * r) { s._in = true; emit('station', s); story('station', s); }
+      else if (s._in && d2 > (r + 0.8) * (r + 0.8)) s._in = false;
+    }
+  }
+  // Alt alan takibi (L.areas): Feza yeni bir alana girince 'area' {index, id, ad}
+  function areaStep() {
+    const A = L && L.areas;
+    if (!A || P.dead || GAME.state !== 'play') return;
+    let best = -1, bd = 1e18;
+    for (const a of A) for (const ri of a.rooms) { const rm = L.rooms[ri]; if (!rm) continue; const d = dist2(rm.x, rm.z, P.pos.x, P.pos.z); if (d < bd) { bd = d; best = a.index; } }
+    if (best >= 0 && best !== P.area) { P.area = best; const a = A[best]; emit('area', { index: best, id: a.id, ad: a.ad, boss: !!a.boss }); story('area', a); }
+  }
+
   // Test kancaları (QA): bir düşman doğur, Feza'yı bir yere koy
   function spawnEnemy(type, x, z, o = {}) {
     if (!L) return null;
@@ -6788,6 +6881,8 @@ const GAME = (() => {
 
   const GAME = {
     revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API,
+    giveSticker, addGoldSugar, unlockCostume, setCostume, unlockBilboAccessory, setBilboAccessory, addCakeDecoration, cakeStage, dailySurprise,
+    miniResult, unlockMinigame, startMinigame: (id, o) => (typeof MINIGAME !== 'undefined' && MINIGAME ? MINIGAME.start(id, o) : false),
     get teamCharge() { const v = typeof HALA !== 'undefined' && HALA ? HALA.charge : 0; return typeof v === 'number' ? v : 0; },
     P, H: null, enemies, L: null, state: 'title', paused: false, skills: [], boss: null, time: 0,
     get difficulty() { return hard ? 'hard' : 'normal'; }, setDifficulty,

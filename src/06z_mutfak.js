@@ -3,7 +3,8 @@
 BOLUM.define('mutfak', {
   ad: 'Mutfak',
   taban: 'bathroom',
-  size: 90, rooms: 6, side: 2,
+  size: 90, side: 2,
+  areas: BOLUM.UC_ALAN('Tezgâh Tepeleri', 'Lavabo Gölü', 'Un Dağları'),   // 3 alt alan (her biri 2 oda) + boss arenası
   muzik: 'kefir',
   malzeme: 'yumurta', kayipEsya: 'anahtar',
   isik: { fog: [0xf4e6d4, 36, 88], hemiSky: 0xfff8ee, hemiGround: 0xb89a7a, sunColor: 0xfff2dc, env: [0xfff0dc, 0xffe8d0, 0xa88a6a, 0.9] },

@@ -6,7 +6,7 @@ const ZONE_DEFS = {};
 const BOLUM = (() => {
   'use strict';
   // Harita / kayıt sırası. Bir kimliğin yeri kayıttaki bölge numarasıdır: sırayı değiştirme, sona ekle.
-  const ORDER = ['oturma', 'mutfak', 'buzdolabi', 'pasta'];
+  const ORDER = ['masa', 'oturma', 'mutfak', 'buzdolabi', 'pasta'];   // masa = merkez (hub), oyun buradan başlar
   const FINAL = 'pasta';
   const NEED = 3;   // pasta için gereken malzeme sayısı (ya da neşelenen boss sayısı)
   const DEF = {
@@ -36,9 +36,17 @@ const BOLUM = (() => {
   function zones() {
     return ORDER.filter(id => ZONE_DEFS[id]).map(id => {
       const d = Object.assign({}, DEF, ZONE_DEFS[id]), e = enemyList(id, d);
+      // alanlar: [{ id, ad, rooms: oda sayısı (≥1) }] → ana oda zinciri alanlara bölünür, en sonda boss arenası
+      let rooms = d.rooms, areaStarts = null;
+      if (Array.isArray(d.areas) && d.areas.length && !d.hub) {
+        areaStarts = []; let k = 0;
+        for (const a of d.areas) { areaStarts.push(k); k += Math.max(1, a.rooms | 0 || 2); }
+        rooms = k + 1;
+      }
       return {
-        id, ad: d.ad, theme: d.taban, line: d.line, music: d.muzik, size: d.size, rooms: d.rooms, side: d.side,
-        enemies: e.enemies, elites: e.elites, variants: e.variants, boss: e.boss,
+        id, ad: d.ad, theme: d.taban, line: d.line, music: d.muzik, size: d.size, rooms, side: d.side, hub: !!d.hub,
+        areas: areaStarts ? d.areas : null, areaStarts,
+        enemies: e.enemies, elites: e.elites, variants: e.variants, boss: d.hub ? null : e.boss,
         hpMult: d.hpMult, dmgMult: d.dmgMult, xpMult: d.xpMult, gold: d.gold, ilvl: d.ilvl,
         final: id === FINAL || !!d.final, malzeme: d.malzeme, kayipEsya: d.kayipEsya, def: ZONE_DEFS[id],
       };
@@ -46,7 +54,7 @@ const BOLUM = (() => {
   }
   // Pasta Krallığı ancak 3 malzeme (ya da 3 neşelenen boss) ile açılır; diğerleri hep açık (serbest seçim).
   function isOpen(id, P) {
-    if (id !== FINAL) return true;
+    if (id !== FINAL) return true;   // (masa ve odalar hep açık)
     if (typeof Q !== 'undefined' && Q.has && Q.has('hepsiacik')) return true;
     const m = P && P.malzemeler ? Object.keys(P.malzemeler).filter(k => P.malzemeler[k]).length : 0;
     const b = P && P.bossNese ? Object.keys(P.bossNese).filter(k => P.bossNese[k]).length : 0;
@@ -79,5 +87,7 @@ const BOLUM = (() => {
     }
     for (const rm of L.rooms) api.glow(rm.x, rm.z, (rm.r || 6) * 0.9, o.isik || 0xfff2dc, 0.08);
   }
-  return { ORDER, FINAL, NEED, define, get, zones, isOpen, yerTutucu };
+  // Oda bölümleri için varsayılan 3 alt alan (bölüm dosyası kendi areas listesini verebilir)
+  const UC_ALAN = (a, b, c) => [{ id: 'a1', ad: a, rooms: 2 }, { id: 'a2', ad: b, rooms: 2 }, { id: 'a3', ad: c, rooms: 2 }];
+  return { ORDER, FINAL, NEED, define, get, zones, isOpen, yerTutucu, UC_ALAN };
 })();

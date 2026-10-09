@@ -3,7 +3,8 @@
 BOLUM.define('oturma', {
   ad: 'Oturma Odası',
   taban: 'bathroom',          // eski zemin/ışık teması (yer tutucu); kendi zeminini kurarsan api.floor.visible = false
-  size: 90, rooms: 6, side: 2,
+  size: 90, side: 2,
+  areas: BOLUM.UC_ALAN('Halı Ormanı', 'Parke Ovası', 'Kitap Kuleleri'),   // 3 alt alan (her biri 2 oda) + boss arenası
   muzik: 'orman',
   malzeme: 'un', kayipEsya: 'gozluk',
   isik: { fog: [0xc9d3dc, 34, 84], hemiSky: 0xf4f6ff, hemiGround: 0x8a8f9a, sunColor: 0xfff0dc, env: [0xd8e2ee, 0xf2e8dc, 0x8a8f9a, 0.9] },

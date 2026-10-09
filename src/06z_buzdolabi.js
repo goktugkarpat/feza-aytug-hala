@@ -3,7 +3,8 @@
 BOLUM.define('buzdolabi', {
   ad: 'Buzdolabı',
   taban: 'bathroom',
-  size: 90, rooms: 6, side: 2,
+  size: 90, side: 2,
+  areas: BOLUM.UC_ALAN('Dondurma Buzulu', 'Jöle Tepeleri', 'Süt Şişesi Sütunları'),   // 3 alt alan (her biri 2 oda) + boss arenası
   muzik: 'magara',
   malzeme: 'cilek', kayipEsya: 'toka',
   isik: { fog: [0xcfe6f6, 30, 80], hemiSky: 0xe8f6ff, hemiGround: 0x6a8aa8, sunColor: 0xe0f0ff, env: [0xd0ecff, 0xe8f4ff, 0x6a8aa8, 0.9], bloom: 0.5 },
