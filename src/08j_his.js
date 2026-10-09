@@ -172,6 +172,10 @@ const HIS = (() => {
     D.upClose.addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); closeUpgrades(); });
     D.upRow = el('div', 'his-uprow', box);
     p.addEventListener('pointerdown', ev => { if (ev.target === p) closeUpgrades(); ev.stopPropagation(); });
+    addEventListener('keydown', ev => {   // klavye yedeği: Y paneli açar/kapatır, Esc kapatır; panel açıkken oyun tuşları susar
+      if (S.upOpen) { if (ev.key === 'Escape' || ev.key === 'y' || ev.key === 'Y') closeUpgrades(); ev.stopPropagation(); ev.preventDefault(); return; }
+      if ((ev.key === 'y' || ev.key === 'Y') && !ev.repeat && D.starBtn && !D.starBtn.classList.contains('his-hide') && g() && g().state === 'play') openUpgrades();
+    }, true);
   }
   function renderUpgrades() {
     const list = skillList(), have = stars();
