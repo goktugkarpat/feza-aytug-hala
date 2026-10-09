@@ -578,8 +578,8 @@ const HALA = (() => {
       const th = s > 0 ? 10 : 13, sh = th + 1, ft = th + 2, x0 = 0.095 * s;
       knit.push({ geo: lathe(LEG_P, 22, x0, 0, 1, 1, TILE), w: (x, y) => (y > 0.3 ? [th, sh, sstep(0.53, 0.45, y)] : [sh, ft, sstep(0.13, 0.075, y)]), color: NAVY });
       knit.push({ geo: kitGeo(k => {   // yumuşak ev terliği: koyu mor-gri keçe, açık renk tüylü ağız, mercan fiyonk
-        const DK = 0x3b3442, SOLE = 0x2a2530, LIN = 0x9d8f9f;
-        k.add(G.rbox(2), SOLE, [x0, 0.013, 0.036], 0, [0.09, 0.026, 0.235]);
+        const DK = 0x3b3442, LIN = 0xb3a6b4;
+        k.add(G.sphere(20, 12), 0xcdbfb4, [x0, 0.017, 0.036], 0, [0.052, 0.019, 0.124]);   // yumuşak, yuvarlak taban
         k.add(G.sphere(18), DK, [x0, 0.047, 0.056], 0, [0.05, 0.043, 0.112]);
         k.add(G.sphere(16), DK, [x0, 0.055, -0.03], 0, [0.048, 0.05, 0.055]);
         k.add(G.torus(TAU, 0.42, 24), LIN, [x0, 0.093, -0.012], [Math.PI / 2, 0, 0], [0.043, 0.046, 0.04]);
@@ -1320,7 +1320,12 @@ const HALA = (() => {
     if (api.charge >= 1 && !S.chargeWasFull) { S.chargeWasFull = true; if (S.cd.ready <= 0 && ctx.state === 'play') { S.cd.ready = 60; S.timers.push([1.2, () => sayVar2('hala_takim_hazir', 1)]); } }
     if (api.charge < 1) S.chargeWasFull = false;
     for (let i = S.timers.length - 1; i >= 0; i--) { const tm = S.timers[i]; tm[0] -= dt; if (tm[0] <= 0) { S.timers.splice(i, 1); try { tm[1](); } catch (e) { /* yut */ } } }
-    S.look = { x: P.pos.x, z: P.pos.z };
+    // bakış: Feza'ya ve oyuncuya (kameraya) sırayla; Feza koşarken/savaşta hep Feza'ya
+    S.lookT = (S.lookT || 0) - dt;
+    if (S.lookT <= 0) { S.lookFeza = !S.lookFeza; S.lookT = S.lookFeza ? 1.6 + Math.random() * 1.6 : 2.5 + Math.random() * 3; }
+    const busyF = Math.hypot(S.fvx, S.fvz) > 1 || (ctx.enemies || []).some(e => e && !e.dead && e.aggro && Math.hypot(e.x - P.pos.x, e.z - P.pos.z) < 9);
+    S.look = S.lookFeza || busyF || (S.act && S.act.look) ? (S.lookP || (S.lookP = { x: 0, z: 0 })) : null;
+    if (S.look) { S.look.x = P.pos.x; S.look.z = P.pos.z; }
     S.y = 0;
     // Feza'yı havada bıraktıysak (yarıda kesilen zıplama/fırlatma) yere indir
     if (S.liftY && !(S.act && (S.act.k === 'team' || S.act.k === 'boost'))) { P.pos.y = 0; if (ctx.H) ctx.H.root.position.y = 0; S.liftY = false; }
@@ -1330,7 +1335,7 @@ const HALA = (() => {
       const f = { x: P.pos.x + 1.0, z: P.pos.z - 0.5 };
       if (Math.hypot(f.x - S.x, f.z - S.z) > 4) { S.x = f.x; S.z = f.z; }
       const d = moveTo(A, f.x, f.z, 3, dt, 0.2);
-      if (d < 0.3) { faceTo(S.x - 0.6, S.z + 4, dt, 3); S.look = (S.t % 9) < 3 ? S.look : null; }   // başlıkta oyuncuya gülümser, ara sıra Feza'ya bakar
+      if (d < 0.3) faceTo(S.x - 0.6, S.z + 4, dt, 3);   // başlıkta oyuncuya gülümser, ara sıra Feza'ya bakar
     } else {
       if (play && !P.dead) think(dt, ctx, fmoved);
       if (!S.act) {
