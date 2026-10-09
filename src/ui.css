@@ -267,6 +267,26 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
     rgba(255, 90, 110, 0.3) calc(var(--k) * 15px) calc(var(--k) * 18px), rgba(255, 255, 255, 0) calc(var(--k) * 18px) calc(var(--k) * 34px));
   animation: u-lance 3.2s linear infinite; }
 @keyframes u-lance { from { transform: translateX(calc(var(--k) * -37.52px)); } to { transform: translateX(0); } }   /* 34 px / sin 115°: one stripe period */
+/* Dev Ev bossları (src/05b_bosslar.js): kendi renkleri + dolguda kıpır kıpır desen (süpürge: toz kabarcıkları, tencere: puantiye,
+   dondurma: renkli şeker, pasta: krema şeritleri) */
+.u-boss[data-b="uykucuSupurge"] { --bf1: #d8e0ff; --bf2: #8ea4ec; --bf3: #5d6fd0; --bn1: #f2f4ff; --bn2: #b9c7ff; --bno: #1c2468; --bi1: #e4e9ff; --bi2: #6a7ed8; }
+.u-boss[data-b="dudukluTencere"] { --bf1: #ffd0c4; --bf2: #ff7a66; --bf3: #e8404a; --bn1: #fff4ef; --bn2: #ffb3a0; --bno: #5a1018; --bi1: #ffe3dc; --bi2: #d8434a; }
+.u-boss[data-b="dondurmaKrali"] { --bf1: #c8fbe6; --bf2: #8eeac0; --bf3: #ff9fc6; --bn1: #f2fffa; --bn2: #ffc6dc; --bno: #124a3a; --bi1: #e4fff4; --bi2: #ff8fb8; }
+.u-boss[data-b="kocaPasta"] { --bf1: #ffe0ec; --bf2: #f08fb3; --bf3: #c8577e; --bn1: #fff4f8; --bn2: #ffbcd4; --bno: #5a1430; --bi1: #fff0f5; --bi2: #d0638e; }
+.u-boss.on[data-b="uykucuSupurge"] .u-bossfizz, .u-boss.on[data-b="dudukluTencere"] .u-bossfizz, .u-boss.on[data-b="dondurmaKrali"] .u-bossfizz,
+.u-boss.on[data-b="kocaPasta"] .u-bossfizz { display: block; }
+.u-boss[data-b="dudukluTencere"] .u-bossfizz i { animation-duration: 5s;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0 calc(var(--k) * 3px), rgba(255, 255, 255, 0) calc(var(--k) * 3.6px)) 0 0 / calc(var(--k) * 22px) 25%; }
+.u-boss[data-b="dondurmaKrali"] .u-bossfizz i { animation-duration: 6s;
+  background: linear-gradient(60deg, rgba(255, 255, 255, 0) 45%, rgba(255, 225, 74, 0.9) 45% 55%, rgba(255, 255, 255, 0) 55%) 0 0 / calc(var(--k) * 19px) 25%,
+    linear-gradient(-50deg, rgba(255, 255, 255, 0) 45%, rgba(95, 211, 255, 0.9) 45% 55%, rgba(255, 255, 255, 0) 55%) calc(var(--k) * 9px) 0 / calc(var(--k) * 23px) 16.667%; }
+.u-boss[data-b="kocaPasta"] .u-bossfizz i { height: 100%; right: auto; width: calc(100% + var(--k) * 38px); animation: u-lance 4s linear infinite;
+  background: repeating-linear-gradient(115deg, rgba(255, 255, 255, 0) 0 calc(var(--k) * 9px), rgba(255, 255, 255, 0.5) calc(var(--k) * 9px) calc(var(--k) * 16px),
+    rgba(255, 79, 110, 0.25) calc(var(--k) * 16px) calc(var(--k) * 19px), rgba(255, 255, 255, 0) calc(var(--k) * 19px) calc(var(--k) * 34px)); }
+.u-dimg.b-uykucuSupurge { background: radial-gradient(circle at 50% 36%, #f6f7ff, #d8e0ff 55%, #8ea4ec); }
+.u-dimg.b-dudukluTencere { background: radial-gradient(circle at 50% 36%, #fff8f4, #ffd8cc 55%, #ff8a78); }
+.u-dimg.b-dondurmaKrali { background: radial-gradient(circle at 50% 36%, #f6fffb, #d4f8e8 52%, #ff9fc6); }
+.u-dimg.b-kocaPasta { background: radial-gradient(circle at 50% 36%, #fff8fb, #ffd6e6 55%, #e07aa2); }
 .u-boss[data-b] .u-bossico { background: radial-gradient(circle at 50% 35%, var(--bi1, #d9a6ff), var(--bi2, #7a36c8)) padding-box, var(--gold) border-box; }
 .u-subico.drg { box-shadow: 0 0 0 calc(var(--k) * 2px) #ffd23f, 0 0 calc(var(--k) * 10px) rgba(255, 120, 200, 0.6); }
 .u-chip .u-dimg { display: inline-block; width: 1.5em; height: 1.5em; margin: -0.2em 0.1em -0.2em -0.35em; vertical-align: middle;
