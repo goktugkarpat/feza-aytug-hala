@@ -89,27 +89,28 @@ const ODAKIT = (() => {
     });
   }
   const K2 = i => hash(i, 77, 3);
-  // Fırçalanmış çelik (lavabo kenarı), 4 m
+  // Fırçalanmış çelik süzgeçlik (lavabo kenarı): oluklar + fırça izi, 4 m
   function steel() {
     return makeTex('steel', 512, (u, v, out) => {
-      const s = 0.86 + 0.08 * hash(Math.floor(u * 512), Math.floor(v * 8)) + 0.05 * Math.sin(v * TAU * 40 + hash(Math.floor(v * 64), 1) * 6);
-      out[0] = 0xb4 * s; out[1] = 0xbc * s; out[2] = 0xc6 * s;
+      let s = 0.86 + 0.08 * hash(Math.floor(u * 512), Math.floor(v * 8)) + 0.04 * Math.sin(v * TAU * 40 + hash(Math.floor(v * 64), 1) * 6);
+      const gu = (u * 8) % 1; s *= 0.9 + 0.16 * Math.sin(gu * Math.PI) ;   // süzgeç olukları (yarım metrede bir)
+      if (gu < 0.04 || gu > 0.96) s *= 0.78;
+      out[0] = 0xa2 * s; out[1] = 0xae * s; out[2] = 0xbc * s;
     });
   }
-  // Açık renk dolap rafı (beyaz-krem melamin + ince ahşap damar), 6 m
   function shelf() {   // dolap rafı: krem beyazı melamin, ince damar, 2 m'de bir birleşim
     return makeTex('shelf', 512, (u, v, out) => {
       const gp = u * 26 + Math.sin(v * TAU * 3) * 0.6 + Math.sin(v * TAU * 7) * 0.15;
       let s = 0.97 + 0.025 * Math.sin(gp) * Math.sin(gp * 0.13 + 2) + 0.015 * hash(Math.floor(u * 512), Math.floor(v * 512));
       const fv = (v * 3) % 1; if (fv < 0.012 || fv > 0.988) s *= 0.8;
-      out[0] = 0xf4 * s; out[1] = 0xea * s; out[2] = 0xda * s;
+      out[0] = 0xcf * s; out[1] = 0xdf * s; out[2] = 0xc6 * s;
     });
   }
   // Ocak üstü: retro krem emaye (benekli, parlak), 6 m
   function stove() {
     return makeTex('stove', 512, (u, v, out) => {
       const h = hash(Math.floor(u * 512), Math.floor(v * 512)), s = 0.96 + 0.04 * Math.sin(u * TAU * 2 + Math.sin(v * TAU) * 2) - (h > 0.993 ? 0.12 : 0);
-      out[0] = 0xf1 * s; out[1] = 0xe9 * s; out[2] = 0xd6 * s;
+      out[0] = 0x9f * s; out[1] = 0xd2 * s; out[2] = 0xc2 * s;
     });
   }
   // Kesme tahtası: sıcak kayın, enine şeritler + bıçak çizikleri, 6 m

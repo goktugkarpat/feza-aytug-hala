@@ -175,7 +175,7 @@ const MUTFAK = (() => {
       if (!a) return; const rm = R(a.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r * 0.8, hint: false, line, prio: 1, use() {} });
     });
     if (a1) { const rm = R(a1.rooms[1] ?? a1.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r, hint: false, line: 'mut_tezgah_gir', prio: 1, use() {} }); }
-    K.edge(L, api, (x, z) => (inRect(stoveQ, x, z) ? 0xc9bfa8 : inRect(cupQ, x, z) ? 0xe2c9a2 : inRect(sinkQ, x, z) ? 0xb8c2cc : 0xe6d6bc), 0.1);
+    K.edge(L, api, (x, z) => (inRect(stoveQ, x, z) ? 0x7fb8a6 : inRect(cupQ, x, z) ? 0xb9cdb0 : inRect(sinkQ, x, z) ? 0x8f9aa8 : 0xe6c89a), 0.1);
   }
 
   const sinkQ0 = L => (L.areas && L.areas[1] ? K.bbox(L, L.areas[1].rooms, 5) : null), cupQ0 = L => (L.areas && L.areas[2] ? K.bbox(L, L.areas[2].rooms, 4) : null);
@@ -287,6 +287,11 @@ const MUTFAK = (() => {
       else if (kind === 4 && maxH > 1.6) api.put(spongeGeo(), x, 0, z, 0.6, 0.6, 0.6, null, rnd() * TAU);
       else for (let j = 0; j < 5; j++) { const s2 = Math.min(0.5 + rnd() * 0.7, maxH * 0.6); api.ball(x + (rnd() - 0.5) * 1.6, s2 * 0.6, z + (rnd() - 0.5) * 1.2, s2, s2 * 0.8, s2, j % 2 ? 0xffffff : 0xf4eefc); }
     }, { skip: (x, z) => soft(cupQ0(L), x, z, 1) > 0, step: 2.6 });
+    for (const ri of L.areas[1].rooms) {   // çelikte su damlaları (süs, üstünden geçilir)
+      const r0 = L.rooms[ri];
+      for (let k = 0; k < 16; k++) { const a = rnd() * TAU, d = Math.sqrt(rnd()) * r0.r, x = r0.x + Math.sin(a) * d, z = r0.z + Math.cos(a) * d, s2 = 0.18 + rnd() * 0.3;
+        if (!K.isF(L, x, z)) continue; api.put(G.hemi(12), x, 0, z, s2, s2 * 0.55, s2 * 0.85, 0x9fd4f2); api.put(G.sphere(6, 4), x - s2 * 0.3, s2 * 0.45, z - s2 * 0.2, s2 * 0.18, s2 * 0.1, s2 * 0.14, 0xffffff); }
+    }
     if (!p) return;
     const sx = p.x, sz = p.z, steel = 0xc4ccd5;
     L._mkSink = { x0: sx - HW - 3, x1: sx + HW + 3, z0: sz - HD - 4, z1: sz + HD + 3.5 };
@@ -460,7 +465,7 @@ BOLUM.define('mutfak', {
   areas: [{ id: 'a1', ad: 'Tezgâh Tepeleri', rooms: 2 }, { id: 'a2', ad: 'Lavabo Gölü', rooms: 2 }, { id: 'a3', ad: 'Dolap İçi', rooms: 2 }],
   muzik: 'kefir',
   malzeme: 'yumurta', kayipEsya: 'anahtar',
-  isik: { fog: [0xe9dccb, 28, 76], hemiSky: 0xfff8ee, hemiGround: 0xb89a7a, sunColor: 0xfff0d8, env: [0xfff0dc, 0xffe8d0, 0xa88a6a, 0.95] },
+  isik: { fog: [0xe6d8c6, 36, 92], hemiSky: 0xfff8ee, hemiGround: 0xb89a7a, sunColor: 0xfff0d8, env: [0xfff0dc, 0xffe8d0, 0xa88a6a, 0.9], bloom: 0.3, exposure: 0.93, sat: 1.1, vig: 0.3 },
   zemin: { tA: 0xfff4e0, tB: 0xf6e2c4, tC: 0xffffff, out: 0xc89a6a, outAmt: 0.6, macro: 0xfff8ec },
   minimap: { zemin: '#efd9b4' },
   harita: { ad: 'Mutfak', detay: 'Tezgâh tepeleri, lavabo gölü ve dolap içi', renk: '#f3d49b', x: 50, y: 30, simge: '🍳' },
