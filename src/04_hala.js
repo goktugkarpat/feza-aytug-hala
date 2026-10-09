@@ -827,10 +827,28 @@ const HALA = (() => {
       vp(sh);
       sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', `float hzF = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
           outgoingLight += vec3(1.0, 0.78, 0.6) * pow(hzF, 3.0) * 0.14;
+          // saç parlaklık bandı (Kajiya-Kay benzeri): tel yönü = doku v yönü, ekran türevlerinden
+          #if NUM_DIR_LIGHTS > 0
+          {
+            vec3 hzV = normalize(vViewPosition);
+            vec2 duvx = dFdx(vNormalMapUv), duvy = dFdy(vNormalMapUv);
+            vec3 dpx = dFdx(-vViewPosition), dpy = dFdy(-vViewPosition);
+            vec3 hzT = dpx * duvy.x - dpy * duvx.x;
+            hzT = hzT - normal * dot(hzT, normal);
+            if (dot(hzT, hzT) > 1e-12) {
+              hzT = normalize(hzT);
+              vec3 hzL = directionalLights[0].direction, hzH = normalize(hzL + hzV);
+              float lit = smoothstep(-0.15, 0.45, dot(normal, hzL));
+              float t1 = dot(normalize(hzT + normal * 0.12), hzH), t2 = dot(normalize(hzT - normal * 0.22), hzH);
+              float s1 = pow(max(0.0, 1.0 - t1 * t1), 90.0), s2 = pow(max(0.0, 1.0 - t2 * t2), 18.0);
+              outgoingLight += directionalLights[0].color * lit * (vec3(1.0, 0.9, 0.78) * s1 * 0.22 + diffuseColor.rgb * s2 * 0.55);
+            }
+          }
+          #endif
           ${KNEE}
           #include <opaque_fragment>`);
     };
-    m.customProgramCacheKey = () => 'halaHair1';
+    m.customProgramCacheKey = () => 'halaHair2';
     const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
     d.onBeforeCompile = vp; d.customProgramCacheKey = () => 'halaHairD';
     m.userData.depth = d;
@@ -1066,7 +1084,8 @@ const HALA = (() => {
     for (const k in face) face[k] = 0;
     const mv = clamp(S.vel / 5.2, 0, 1), run = sstep(2.6, 4.6, S.vel);
     M.wMove = damp(M.wMove, S.vel > 0.25 ? 1 : 0, 10, dt);
-    M.ph += dt * (S.vel > 0.05 ? lerp(5.4, 11.5, run) * clamp(0.55 + S.vel / 4.5, 0.6, 1.25) : 0);
+    // adım hızı yürüme hızına bağlı (ayak kaymasın): bir döngüde ~4·bacak·sin(genlik) metre
+    M.ph += dt * (S.vel > 0.05 ? clamp(TAU * S.vel / (4 * 0.78 * Math.sin(lerp(0.48, 0.8, run))), 4.5, 15) : 0);
     idlePose(P, t);
     if (M.wMove > 0.01) { walkPose(Q, M.ph, Math.max(0.35, mv), run); for (let i = 0; i < NCH; i++) P[i] += (Q[i] - P[i]) * M.wMove; }
     // boşta kıpırdanmalar
