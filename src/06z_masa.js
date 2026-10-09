@@ -667,6 +667,47 @@ MASA.kur = function (L, api) {
   };
   const frameGeo = new THR.ExtrudeGeometry(archShape(3.3, 4.3, { w: 2.3, h: 3.4 }), { depth: 0.55, bevelEnabled: true, bevelThickness: 0.18, bevelSize: 0.16, bevelSegments: 3, curveSegments: 24 });
   const holeGeo = new THR.ShapeGeometry(archShape(2.3, 3.4), 24);
+  { const p = holeGeo.attributes.position, uv = holeGeo.attributes.uv; for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) + 1.15) / 2.3, p.getY(i) / 3.4); }
+  // kapının içinden odanın küçük resmi (okumadan anlaşılsın: kapı nereye gidiyor)
+  const roomPic = zone => () => {
+    const c = MASA.cv(256, 384), g = c.getContext('2d'), F = (col, x, y, w, h, r = 0) => { g.fillStyle = col; g.beginPath(); g.roundRect(x, y, w, h, r); g.fill(); };
+    const grad = (a, b2, y0 = 0, y1 = 384) => { const q = g.createLinearGradient(0, y0, 0, y1); q.addColorStop(0, a); q.addColorStop(1, b2); return q; };
+    if (zone === 'oturma') {
+      g.fillStyle = grad('#9fb4cf', '#dfe8f3', 0, 260); g.fillRect(0, 0, 256, 260);
+      for (let i = 0; i < 9; i++) F(i % 2 ? '#b07a4c' : '#c48a58', i * 30 - 10, 260, 34, 124);
+      g.fillStyle = '#e9e4dc'; g.beginPath(); g.ellipse(128, 320, 120, 40, 0, 0, 6.283); g.fill();
+      g.strokeStyle = '#7f95b5'; g.lineWidth = 6; g.beginPath(); for (let x = 18; x < 240; x += 18) g.lineTo(x, 320 + ((x / 18) % 2 ? -14 : 14)); g.stroke();
+      F('#6f87ad', 30, 190, 196, 70, 22); F('#8aa2c6', 40, 160, 176, 50, 20); F('#7d94b9', 22, 175, 34, 80, 14); F('#7d94b9', 200, 175, 34, 80, 14);
+      F('#2a2d36', 70, 60, 116, 74, 8); F('#79c4ff', 78, 67, 100, 60, 4); g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(128, 97, 14, 0, 6.283); g.fill();
+      F('#f2f2f2', 204, 112, 22, 40, 8); for (const [x, y, col] of [[208, 100, '#ffd23f'], [222, 96, '#ff8fb8'], [214, 88, '#ffd23f']]) { g.fillStyle = col; g.beginPath(); g.arc(x, y, 9, 0, 6.283); g.fill(); }
+    } else if (zone === 'mutfak') {
+      g.fillStyle = grad('#fff3df', '#f6e3c4', 0, 230); g.fillRect(0, 0, 256, 230);
+      for (let i = 0; i < 8; i++) for (let j = 0; j < 4; j++) F((i + j) % 2 ? '#cfeee0' : '#e3f6ec', i * 32 + 2, 120 + j * 26, 28, 22, 4);
+      F('#f7f7f4', 0, 226, 256, 18); F('#c9905a', 0, 244, 256, 140); for (let i = 0; i < 4; i++) F('#b47c48', 10 + i * 62, 256, 54, 110, 8);
+      F('#a8b2bc', 40, 160, 80, 66, 14); F('#8a949e', 40, 156, 80, 12, 6); F('#2a2a2a', 70, 146, 20, 12, 4);
+      g.fillStyle = 'rgba(255,255,255,0.8)'; for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(70 + k * 12, 128 - k * 18, 10 + k * 3, 0, 6.283); g.fill(); }
+      F('#f0e2c4', 160, 150, 60, 76, 16); F('#5d8fd6', 160, 186, 60, 16); g.fillStyle = '#fff'; g.beginPath(); g.arc(190, 146, 20, 0, 6.283); g.fill();
+      F('#ffd88a', 100, 40, 56, 56, 28); g.fillStyle = '#fff6d0'; g.beginPath(); g.arc(128, 68, 18, 0, 6.283); g.fill();
+    } else if (zone === 'buzdolabi') {
+      g.fillStyle = grad('#bfe9ff', '#eefaff'); g.fillRect(0, 0, 256, 384);
+      for (const y of [110, 220, 320]) { F('rgba(255,255,255,0.9)', 8, y, 240, 8, 4); }
+      for (let i = 0; i < 3; i++) { F('#ffffff', 24 + i * 34, 40 + 0, 26, 70, 10); F('#9fd6ef', 24 + i * 34, 30, 26, 14, 6); }
+      F('#ff8fb8', 140, 70, 70, 40, 18); F('#ffb8d0', 150, 58, 50, 18, 9);
+      for (let i = 0; i < 3; i++) { const x = 40 + i * 70; g.fillStyle = '#e8b878'; g.beginPath(); g.moveTo(x - 16, 180); g.lineTo(x + 16, 180); g.lineTo(x, 216); g.fill(); g.fillStyle = ['#ffd6e4', '#fff3c4', '#c8f0d8'][i]; g.beginPath(); g.arc(x, 172, 20, 0, 6.283); g.fill(); }
+      F('#a8e0ff', 30, 250, 60, 60, 10); F('#d0f0ff', 110, 262, 50, 48, 10); F('#a8e0ff', 180, 256, 52, 54, 10);
+      g.fillStyle = '#fff'; for (let k = 0; k < 18; k++) { const x = Math.random() * 256, y = Math.random() * 384; g.fillRect(x, y, 3, 3); }
+    } else {
+      g.fillStyle = grad('#ffd0e4', '#fff1f6'); g.fillRect(0, 0, 256, 384);
+      g.fillStyle = '#ffe7a8'; g.beginPath(); g.arc(196, 70, 30, 0, 6.283); g.fill();
+      for (const [x, y, r, col] of [[40, 300, 90, '#ffb8d0'], [200, 310, 100, '#ffc8a8'], [128, 330, 110, '#fff4f8']]) { g.fillStyle = col; g.beginPath(); g.arc(x, y, r, Math.PI, 0); g.fill(); }
+      F('#fff4f8', 76, 150, 104, 90, 12); F('#ff9ac0', 76, 186, 104, 12); F('#fff4f8', 92, 110, 72, 46, 10); F('#ff9ac0', 92, 136, 72, 10);
+      for (let i = 0; i < 4; i++) { F('#8fd0ff', 100 + i * 18, 84, 8, 28, 3); g.fillStyle = '#ffcf5a'; g.beginPath(); g.ellipse(104 + i * 18, 78, 5, 9, 0, 0, 6.283); g.fill(); }
+      for (let i = 0; i < 6; i++) { g.fillStyle = '#e8344f'; g.beginPath(); g.arc(84 + i * 18, 150, 8, 0, 6.283); g.fill(); }
+      g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(0, 360); g.quadraticCurveTo(128, 330, 256, 360); g.lineTo(256, 384); g.lineTo(0, 384); g.fill();
+    }
+    const v = g.createRadialGradient(128, 230, 60, 128, 200, 260); v.addColorStop(0, 'rgba(255,255,255,0)'); v.addColorStop(1, 'rgba(255,250,235,0.55)'); g.fillStyle = v; g.fillRect(0, 0, 256, 384);
+    return c;
+  };
   const doorZ = T.z0 - 0.9, open = id => typeof BOLUM === 'undefined' || !BOLUM.isOpen || BOLUM.isOpen(id, P);
   const doorAnims = [];
   const DK = new Kit();
@@ -675,7 +716,7 @@ MASA.kur = function (L, api) {
     const isOpen = open(d.zone), done = P && P.bossNese && P.bossNese[d.zone];
     // kapı aralığı: içerisi odanın ışıyan rengi (açık) ya da kapalı kapı kanadı (kilitli)
     const glowC = new THR.Color(d.col2);
-    const hm = own(holeGeo, isOpen ? new THR.MeshBasicMaterial({ color: glowC, fog: false }) : new THR.MeshStandardMaterial({ color: 0xf6a6c4, roughness: 0.5 }), d.x, 0.01, doorZ - 0.05, { recv: !isOpen });
+    const hm = own(holeGeo, isOpen ? new THR.MeshBasicMaterial({ map: tx('room_' + d.zone, roomPic(d.zone)), fog: false }) : new THR.MeshStandardMaterial({ color: 0xf6a6c4, roughness: 0.5 }), d.x, 0.01, doorZ - 0.05, { recv: !isOpen });
     // eşik basamağı + taban halısı
     DK.add(G.rbox(2), d.col, [d.x, 0.07, doorZ + 0.95], null, [2.8, 0.14, 1.5]);
     DK.add(G.torus(TAU3, 0.1, 32), d.col, [d.x, 0.07, T.z0 + 1.6], [Math.PI / 2, 0, 0], [1.3, 1.3, 1.3]);
@@ -693,7 +734,7 @@ MASA.kur = function (L, api) {
     med.renderOrder = 1;
     const sp = new THR.Sprite(new THR.SpriteMaterial({ map: badge, transparent: true, depthWrite: false }));
     sp.scale.set(1.8, 1.8, 1); sp.position.set(d.x, 5.15, doorZ); api.add(sp);
-    doorAnims.push({ sp, ph: d.x * 0.3, hm, open: isOpen, col: glowC });
+    doorAnims.push({ sp, ph: d.x * 0.3, hm, open: isOpen, col: new THR.Color(0xffffff) });
     if (done) {   // bitmiş oda: kemerde altın yıldız
       DK.add(G.sphere(12, 8), 0xffd23f, [d.x + 1.35, 3.9, doorZ + 0.25], null, 0.36);
     }
@@ -724,7 +765,9 @@ MASA.kur = function (L, api) {
       SK.add(G.rbox(2), 0xc9a2e6, [x + sd * 3.0, 2.9, z + 1.2], [0, sd * 0.85, 0], [2.0, 5.4, 0.25]);
       SK.add(G.sphere(10, 8), 0xf2c44a, [x + sd * 2.35, 2.9, z + 1.55], null, 0.18);
     }
-    SK.add(G.cyl(1, 1, 28), 0xf2c44a, [x + 3.6, 3.2, z + 1.95], [Math.PI / 2 - 0.15, 0, 0], [0.62, 0.08, 0.9]);
+    SK.add(G.cyl(1, 1, 28), 0xf2c44a, [x + 3.25, 3.2, z + 1.7], [Math.PI / 2, 0.85, 0], [0.7, 0.1, 1.0]);   // ayna: altın çerçeve, gümüş-mavi cam, parıltı
+    SK.add(G.cyl(1, 1, 28), 0xd6ecfa, [x + 3.3, 3.2, z + 1.75], [Math.PI / 2, 0.85, 0], [0.58, 0.1, 0.86]);
+    SK.add(G.sphere(8, 6), 0xffffff, [x + 3.15, 3.55, z + 1.95], null, [0.16, 0.08, 0.05]);
     for (let i = 0; i < 5; i++) SK.add(G.cone(8), 0xf2c44a, [x - 0.8 + i * 0.4, 6.15, z], null, [0.16, 0.5, 0.16]);
     SK.add(G.box(), 0xf2c44a, [x, 5.9, z], null, [2.0, 0.25, 0.25]);
     for (const sd of [-1, 1]) SK.add(G.rbox(2), 0x9a70c0, [x + sd * 1.7, 0.2, z], null, [0.5, 0.4, 1.8]);
@@ -754,9 +797,10 @@ MASA.kur = function (L, api) {
   }
   // Mini Oyun Köşesi: oyun tahtası (yerde), dev zarlar, topaç
   { const x = S.mini.x, z = S.mini.z; SK.push([x * 0.2, 0, z * 0.2], null, 0.8);
-    SK.add(G.rbox(2), 0xfff3dc, [x, 0.06, z], [0, 0.05, 0], [6.0, 0.12, 4.6]);
+    SK.add(G.rbox(2), 0xfff3dc, [x, 0.14, z], [0, 0.05, 0], [6.0, 0.2, 4.6]); SK.add(G.rbox(2), 0x5ac88a, [x, 0.1, z], [0, 0.05, 0], [6.4, 0.14, 5.0]);
     const bc = [0xff5d8f, 0x5ec8ff, 0xffd23f, 0x7ad16b];
-    for (let i = 0; i < 12; i++) { const a = i / 12 * TAU3; SK.add(G.cyl(1, 1, 16), bc[i % 4], [x + Math.cos(a) * 1.9, 0.14, z + Math.sin(a) * 1.5], null, [0.42, 0.06, 0.42]); }
+    for (let i = 0; i < 12; i++) { const a = i / 12 * TAU3; SK.add(G.cyl(1, 1, 16), bc[i % 4], [x + Math.cos(a) * 1.9, 0.26, z + Math.sin(a) * 1.5], null, [0.42, 0.06, 0.42]); }
+    SK.add(G.cone(16), 0xff5d8f, [x + 0.4, 0.55, z - 3.3], [Math.PI, 0, 0], [0.5, 0.9, 0.5]); SK.add(G.sphere(16, 10), 0xffd23f, [x + 0.4, 1.05, z - 3.3], null, [0.5, 0.18, 0.5]); SK.add(G.cyl(1, 1, 8), 0x5ec8ff, [x + 0.4, 1.3, z - 3.3], null, [0.08, 0.5, 0.08]);   // topaç
     SK.add(G.rbox(3), 0xffffff, [x + 3.9, 0.75, z - 1.6], [0.2, 0.5, 0.1], [1.5, 1.5, 1.5]);
     SK.add(G.rbox(3), 0xff6b6b, [x - 3.8, 0.65, z - 1.8], [0.1, 0.9, 0], [1.3, 1.3, 1.3]);
     for (const [dx, dy, dz] of [[0, 0.76, 0], [0.3, 0.76, 0.3], [-0.3, 0.76, -0.3]]) SK.add(G.sphere(8, 6), 0x2a2a2a, [x + 3.9 + dx * 0.9, 0.75 + dy * 1.0, z - 1.6 + dz * 0.9], null, 0.14);
@@ -819,9 +863,13 @@ MASA.kur = function (L, api) {
   const toyMat = new THR.MeshStandardMaterial({ vertexColors: true, roughness: 0.5 });
   const sponge = (() => { const k = new Kit(), x = 0, z = 0;
     k.add(G.rbox(3), (X, Y, Z) => new THR.Color(0xffd84a).multiplyScalar(0.86 + 0.18 * hash(Math.round(X * 4), Math.round(Y * 4), Math.round(Z * 4))), [x, 0.5, z], null, [3.8, 1.0, 2.6]);
-    k.add(G.rbox(2), 0x3fb06a, [x, 1.12, z], null, [3.8, 0.28, 2.6]);
     for (let i = 0; i < 14; i++) k.add(G.sphere(6, 4), 0xc9a032, [x - 1.6 + hash(i, 1, 1) * 3.2, 0.3 + hash(i, 2, 2) * 0.5, z + 1.31], null, [0.12, 0.1, 0.04]);
-    const m = new THR.Mesh(k.build(), toyMat); m.castShadow = true; m.receiveShadow = true; m.position.set(T.toys.sunger.x, 0, T.toys.sunger.z); api.add(m); return m; })();
+    const g = new THR.Group(), m = new THR.Mesh(k.build(), toyMat); m.castShadow = true; m.receiveShadow = true; g.add(m);
+    const scrubT = tx('scrub', () => { const c = MASA.cv(256, 256), q = c.getContext('2d'); q.fillStyle = '#3aa862'; q.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 900; i++) { q.strokeStyle = Math.random() < 0.5 ? 'rgba(20,90,45,0.55)' : 'rgba(140,230,150,0.45)'; q.lineWidth = 1 + Math.random() * 1.5; const x = Math.random() * 256, y = Math.random() * 256, a = Math.random() * 6.28, l = 6 + Math.random() * 14; q.beginPath(); q.moveTo(x, y); q.quadraticCurveTo(x + Math.cos(a + 1) * l, y + Math.sin(a + 1) * l, x + Math.cos(a) * l, y + Math.sin(a) * l); q.stroke(); }
+      return c; }, [2, 1.4]);
+    const scrub = new THR.Mesh(new THR.BoxGeometry(3.8, 0.3, 2.6), new THR.MeshStandardMaterial({ map: scrubT, roughness: 0.95 })); scrub.position.y = 1.13; scrub.castShadow = true; scrub.receiveShadow = true; g.add(scrub);
+    g.position.set(T.toys.sunger.x, 0, T.toys.sunger.z); api.add(g); return g; })();
   const pea = (() => { const k = new Kit(); k.add(G.sphere(24, 16), (X, Y, Z) => new THR.Color(0x6cc04a).lerp(new THR.Color(0xa8e06a), Math.max(0, Y) * 0.6), [0, 0, 0], null, 0.75); k.add(G.sphere(10, 8), 0xffffff, [-0.25, 0.4, 0.42], null, [0.16, 0.1, 0.05]);
     const m = new THR.Mesh(k.build(), new THR.MeshStandardMaterial({ vertexColors: true, roughness: 0.22 })); m.castShadow = true; m.position.set(T.toys.bezelye.x, 0.75, T.toys.bezelye.z); api.add(m); return m; })();
   const gum = (() => { const k = new Kit(); k.add(G.sphere(24, 16), (X, Y, Z) => (Math.sin(X * 9) * Math.sin(Z * 9) > 0 ? new THR.Color(0xff6fa8) : new THR.Color(0xffffff)), [0, 0, 0], null, 0.62);
@@ -880,7 +928,7 @@ MASA.kur = function (L, api) {
     onSponge = onS;
     if (onS && bounceT > 0.95) { bounceT = 0; sfx('bounce', { vol: 0.7, pitch: 1.12 }); }
     bounceT += dt;
-    const bk = bounceT < 0.95 ? bounceT / 0.95 : 1, hop = bk < 1 ? Math.sin(bk * Math.PI) * 2.2 : 0;
+    const bk = bounceT < 0.95 ? bounceT / 0.95 : 1, hop = bk < 1 ? Math.sin(bk * Math.PI) * 1.7 : 0;
     const squash = bk < 0.15 ? 1 - Math.sin(bk / 0.15 * Math.PI) * 0.35 : bk < 1 ? 1 + Math.sin((bk - 0.15) / 0.85 * Math.PI * 3) * 0.06 * (1 - bk) : 1;
     sponge.scale.set(1 + (1 - squash) * 0.3, squash, 1 + (1 - squash) * 0.3);
     if (H && H.root && hop > 0 && onS) H.root.position.y += hop + 1.0 * squash;
