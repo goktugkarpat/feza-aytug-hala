@@ -267,7 +267,7 @@ const HALA = (() => {
   // ── Saç: kabuk (topuza doğru taranmış) + dalgalı tutamlar + topuz + kıvrık tutamlar ──
   const dirOf = (th, ph) => v3(Math.sin(th) * Math.cos(ph), Math.sin(ph), Math.cos(th) * Math.cos(ph));
   const thOf = d => Math.atan2(d.x, d.z), phOf = d => Math.asin(clamp(d.y, -1, 1));
-  const HL_A = [0, 0.4, 0.8, 1.25, 1.5, 1.75, 2.1, 2.6, Math.PI], HL_P = [0.53, 0.5, 0.42, 0.3, 0.24, 0.06, -0.36, -0.56, -0.62];
+  const HL_A = [0, 0.4, 0.8, 1.2, 1.4, 1.6, 1.8, 2.1, 2.6, Math.PI], HL_P = [0.53, 0.5, 0.38, 0.17, 0.04, 0.2, 0.14, -0.34, -0.56, -0.62];
   function hairline(th) {
     const a = Math.abs(th);
     for (let i = 1; i < HL_A.length; i++) if (a <= HL_A[i]) { const t = sstep(0, 1, (a - HL_A[i - 1]) / (HL_A[i] - HL_A[i - 1])); return lerp(HL_P[i - 1], HL_P[i], t); }
@@ -383,8 +383,6 @@ const HALA = (() => {
     parts.push(waveLock(0.1, 0.51, 0.044, 0.02, 0.1, 2.2, 0.12, 0.85));
     // şakaklarda yüzü çerçeveleyen kıvrık tutamlar
     for (const s of [-1, 1]) {
-      const p0 = surfAt(dirOf(s * 1.3, 0.22), 0.008, v3()), p1 = surfAt(dirOf(s * 1.4, -0.36), 0.045, v3());
-      parts.push(curlLock(p0, p1, dirOf(s * 1.4, -0.05), 0.012, 2.5, 0.0085, 0.2));
       const n0 = surfAt(dirOf(s * 2.55, -0.5), 0.012, v3()), n1 = n0.clone().add(v3(s * 0.01, -0.09, -0.02));
       parts.push(curlLock(n0, n1, dirOf(s * 2.55, -0.6), 0.009, 1.8, 0.0055, 0));
     }
@@ -448,7 +446,7 @@ const HALA = (() => {
   const SKIN = 0xf1c6aa, COAT = 0xe8473d, COAT_DK = 0xb83129, NAVY = 0x1f2747, TILE = 0.09;
   // ceket gövdesi: y → [rx, rz] (Catmull-Rom), üstte omuz kare, önde hafif göğüs
   const TK = [[0.785, 0.226, 0.166], [0.86, 0.232, 0.168], [0.95, 0.218, 0.161], [1.05, 0.192, 0.145], [1.15, 0.196, 0.147], [1.25, 0.205, 0.153],
-    [1.33, 0.212, 0.15], [1.4, 0.214, 0.137], [1.455, 0.172, 0.108], [1.5, 0.094, 0.079], [1.535, 0.068, 0.062]];
+    [1.33, 0.208, 0.15], [1.4, 0.204, 0.137], [1.455, 0.165, 0.108], [1.5, 0.094, 0.079], [1.535, 0.068, 0.062]];
   function tprof(y) {
     const n = TK.length; let i = 0;
     if (y <= TK[0][0]) return [TK[0][1], TK[0][2]];
@@ -460,10 +458,10 @@ const HALA = (() => {
   }
   function torsoPt(th, y, o, out = 0) {
     const [rx, rz0] = tprof(y), s = Math.sin(th), c = Math.cos(th);
-    const n = 2 + 0.9 * bump(y, 1.3, 1.39, 1.43, 1.47);                       // omuzda daha köşeli kesit
-    const ex = 2 / n, rz = rz0 * (c < 0 ? 0.92 : 1);
+    const n = 2 + 0.45 * bump(y, 1.3, 1.39, 1.43, 1.47);                       // omuzda daha köşeli kesit
+    const ex = 2 / n, rz = rz0 * (c < 0 ? 0.92 + 0.1 * bump(y, 0.78, 0.86, 0.94, 1.04) : 1);
     let x = rx * Math.sign(s) * Math.pow(Math.abs(s), ex), z = rz * Math.sign(c) * Math.pow(Math.abs(c), ex);
-    const bust = 0.016 * Math.exp(-sq((Math.abs(th) - 0.48) / 0.33) - sq((y - 1.27) / 0.07));   // yumuşak göğüs
+    const bust = 0.022 * Math.exp(-sq((Math.abs(th) - 0.48) / 0.33) - sq((y - 1.27) / 0.07));   // yumuşak göğüs
     const k = 1 + (bust + out) / Math.max(0.05, Math.hypot(x, z));
     return o.set(x * k, y, z * k + 0.004);
   }
@@ -476,7 +474,7 @@ const HALA = (() => {
     for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * TAU * 0.17 / TILE, P.getY(i) / TILE);
     return g;
   }
-  const ARM_SLEEVE = [[0, 1.5], [0.034, 1.495], [0.064, 1.475], [0.08, 1.44], [0.084, 1.4], [0.081, 1.33], [0.076, 1.24], [0.071, 1.17], [0.069, 1.12],
+  const ARM_SLEEVE = [[0, 1.49], [0.034, 1.485], [0.062, 1.465], [0.076, 1.43], [0.08, 1.39], [0.079, 1.33], [0.076, 1.24], [0.071, 1.17], [0.069, 1.12],
     [0.067, 1.06], [0.064, 0.99], [0.061, 0.94], [0.058, 0.925], [0, 0.92]];
   const CUFF = [[0.046, 0.866], [0.054, 0.864], [0.06, 0.872], [0.061, 0.885], [0.061, 0.917], [0.059, 0.93], [0.054, 0.934]];
   const LEG_P = [[0, 0.055], [0.034, 0.058], [0.041, 0.08], [0.04, 0.12], [0.047, 0.18], [0.06, 0.27], [0.067, 0.34], [0.065, 0.4], [0.059, 0.47],
@@ -814,7 +812,7 @@ const HALA = (() => {
   const NCH = CHN.length;
   const K = o => { const a = new Float32Array(NCH).fill(NaN); for (const k in o) a[C[k]] = o[k]; return a; };
   const BASE = new Float32Array(NCH);
-  Object.entries({ kRX: 0.04, aLX: 0.04, aLZ: 0.11, fL: -0.22, aRX: 0.04, aRZ: -0.11, fR: -0.22, wLZ: -0.05, wRZ: 0.05,
+  Object.entries({ kRX: 0.04, aLX: -0.04, aLY: 0.12, aLZ: 0.13, fL: -0.42, fLZ: -0.12, aRX: -0.04, aRY: -0.12, aRZ: -0.13, fR: -0.42, fRZ: 0.12, wLZ: -0.12, wRZ: 0.12, wLX: -0.1, wRX: -0.1,
     tLZ: 0.02, tRZ: -0.02 }).forEach(([k, v]) => { BASE[C[k]] = v; });
   function mixK(P, Kf, w, legW) {   // NaN = o kanala dokunma
     const lw = legW === undefined ? w : legW;
@@ -958,7 +956,7 @@ const HALA = (() => {
           vec2 cell = fract(uv) - 0.5; float h = smoothstep(0.04, -0.02, hs(cell * vec2(1.0, -1.0) * 1.4));
           float fuzz = 0.5 + 0.5 * sin(vP.y * 40.0 + uT * 3.0) * sin(atan(vP.x, vP.z) * 30.0);
           vec3 col = mix(vec3(1.0, 0.42, 0.38), vec3(1.0, 0.75, 0.85), rim);
-          float a = (0.1 + 0.75 * rim + 0.22 * h * (0.4 + 0.6 * rim) + 0.05 * fuzz) * uA;
+          float a = (0.025 + 0.7 * rim + 0.16 * h * (0.25 + 0.75 * rim) + 0.03 * fuzz * rim) * uA;
           gl_FragColor = vec4(col * a * 1.6, 1.0);
         }`,
     });
@@ -1178,8 +1176,8 @@ const HALA = (() => {
       case 'clap': {
         const w = bump(u, 0, 0.15, 0.82, 1), c = Math.sin(a.t * 17);
         Q.set(P);
-        mixK(Q, K({ aLX: -1.05, aLY: -0.5, aLZ: 0.05, fL: -0.85, fLZ: -0.25, aRX: -1.05, aRY: 0.5, aRZ: -0.05, fR: -0.85, fRZ: 0.25, wLZ: 0.0, wRZ: 0.0, kRX: -0.06 }), 1);
-        Q[C.aLY] += 0.2 * c; Q[C.aRY] -= 0.2 * c; Q[C.bY] += 0.012 * Math.abs(c);
+        mixK(Q, K({ aLX: -1.0, aLY: -0.26, aLZ: 0.05, fL: -0.75, fLZ: -0.2, aRX: -1.0, aRY: 0.26, aRZ: -0.05, fR: -0.75, fRZ: 0.2, wLZ: 0.0, wRZ: 0.0, wLX: -0.2, wRX: -0.2, kRX: -0.06 }), 1);
+        const op = 0.5 + 0.5 * c; Q[C.aLY] += 0.2 * op; Q[C.aRY] -= 0.2 * op; Q[C.bY] += 0.012 * (1 - op);
         for (let i = 0; i < NCH; i++) P[i] += (Q[i] - P[i]) * w;
         face.happy = w; face.grin = w; face.browR = 0.7 * w; face.blush = 0.8 * w;
         break;
@@ -1232,6 +1230,17 @@ const HALA = (() => {
       }
     }
   }
+
+  // Feza'nın kolları (FEZA modelinin genel kemikleri: H.bones.armL/R, foreL/R; Feza'nın kendi pozundan SONRA, aynı karede)
+  function fezaArms(H, w, aX, aY, aZ, fX, fZ) {
+    const B = H && H.bones; if (!B || !B.armL || !B.armR || w <= 0.001) return;
+    B.armL.rotation.x = lerp(B.armL.rotation.x, aX, w); B.armL.rotation.y = lerp(B.armL.rotation.y, -aY, w); B.armL.rotation.z = lerp(B.armL.rotation.z, aZ, w);
+    B.armR.rotation.x = lerp(B.armR.rotation.x, aX, w); B.armR.rotation.y = lerp(B.armR.rotation.y, aY, w); B.armR.rotation.z = lerp(B.armR.rotation.z, -aZ, w);
+    if (B.foreL) { B.foreL.rotation.x = lerp(B.foreL.rotation.x, fX, w); B.foreL.rotation.z = lerp(B.foreL.rotation.z, -fZ, w); }
+    if (B.foreR) { B.foreR.rotation.x = lerp(B.foreR.rotation.x, fX, w); B.foreR.rotation.z = lerp(B.foreR.rotation.z, fZ, w); }
+  }
+  const fezaHug = (H, w) => fezaArms(H, w, -1.75, 0.55, 0.2, -0.5, 0.9);
+  const fezaUp = (H, w) => fezaArms(H, w, -2.7, 0, 0.35, -0.25, 0);
 
   // ── Yapay zekâ ──
   const VAR = {
@@ -1415,16 +1424,20 @@ const HALA = (() => {
       }
       case 'hug': {
         // 0: koş, 1: sarıl, 2: bırak
-        const s = S.x < P.pos.x ? -1 : 1, hx = P.pos.x + s * 0.24, hz = P.pos.z - 0.36;
+        // Feza'nın yanına (kameradan ikisi de görünsün) diz çöker, Feza ona döner ve kollarını boynuna dolar
+        if (a.s === undefined) a.s = S.x < P.pos.x ? -1 : 1;
+        const hx = P.pos.x + a.s * 0.44, hz = P.pos.z - 0.06;
         if (a.ph === 0) {
           const d = moveTo(A, hx, hz, 7.5, dt, 0.05);
-          if (d > 0.6) a.look = false; else faceTo(P.pos.x, P.pos.z, dt, 14);
-          if (d < 0.12 || a.phT > 2.4) { if (d > 1.5) { S.x = hx; S.z = hz; } S.x = hx; S.z = hz; next(); A.shield(2.3); A.sfx('heart', { vol: 0.6 }); a.healed = 0; }
+          if (d > 0.6) a.look = false; else { a.look = true; faceTo(P.pos.x, P.pos.z, dt, 14); }
+          if (d < 0.12 || a.phT > 2.4) { if (d > 1.2) poof(A, hx, hz); S.x = hx; S.z = hz; next(); A.shield(2.3); A.sfx('heart', { vol: 0.6 }); a.healed = 0; a.ax = P.pos.x; a.az = P.pos.z; }
         } else if (a.ph === 1) {
           S.vel = 0; S.x = damp(S.x, hx, 10, dt); S.z = damp(S.z, hz, 10, dt); faceTo(P.pos.x, P.pos.z, dt, 14);
-          if (a.healed < 3 && a.phT > 0.35 + a.healed * 0.45) { a.healed++; A.heal(0.14, a.healed < 3); A.burst('hearts', P.pos.x, 1.5, P.pos.z, { count: 7 }); if (a.healed === 1) A.sfx('heart', { vol: 0.5, pitch: 1.2 }); }
-          if (a.phT > 1.8 || Math.hypot(P.pos.x - S.fx, P.pos.z - S.fz) > 1.5) next();
-        } else if (a.phT > 0.45) { S.cd.hug = 22; endAct(); }
+          const still = Math.hypot(P.pos.x - a.ax, P.pos.z - a.az) < 0.25;
+          if (still) { P.face = dampAngle(P.face, Math.atan2(S.x - P.pos.x, S.z - P.pos.z), 10, dt); fezaHug(ctx.H, sstep(0.1, 0.45, a.phT)); }
+          if (a.healed < 3 && a.phT > 0.35 + a.healed * 0.45) { a.healed++; A.heal(0.14, a.healed < 3); A.burst('hearts', (P.pos.x + S.x) / 2, 1.5, P.pos.z, { count: 7 }); if (a.healed === 1) A.sfx('heart', { vol: 0.5, pitch: 1.2 }); }
+          if (a.phT > 1.9 || !still && Math.hypot(P.pos.x - a.ax, P.pos.z - a.az) > 0.9) next();
+        } else { if (a.phT < 0.3) fezaHug(ctx.H, 1 - a.phT / 0.3); if (a.phT > 0.45) { S.cd.hug = 22; endAct(); } }
         break;
       }
       case 'lift': {
@@ -1498,7 +1511,17 @@ const HALA = (() => {
           else if (a.ph === 4 && a.phT > 0.35) endAct();
         }
         // buluşma noktası: ikisinin arasında, el yüksekliğinde (Feza'nın kolu da oraya uzanır)
-        if (a.ph >= 1) { a.meet = a.meet || v3(); a.meet.set((P.pos.x + S.x) / 2, 0.86 + S.y * 0.97, (P.pos.z + S.z) / 2 + 0.06); }
+        if (a.ph >= 1) {
+          a.meet = a.meet || v3(); a.meet.set((P.pos.x + S.x) / 2, 0.8 + S.y * 0.97, (P.pos.z + S.z) / 2 + 0.06);
+          const B = ctx.H && ctx.H.bones, fa = B && (a.s > 0 ? B.armL : B.armR), fo = B && (a.s > 0 ? B.foreL : B.foreR), fr = B && (a.s > 0 ? B.armR : B.armL);
+          const w = a.ph >= 4 ? 1 - sstep(0, 0.3, a.phT) : 1;
+          if (fa && fo) {
+            ctx.H.root.position.y = P.pos.y; ctx.H.root.updateMatrixWorld(true);
+            const o = [0, 0, 0]; aimArm(fa, a.meet, 1, o);
+            fa.rotation.set(lerp(fa.rotation.x, o[0], w), fa.rotation.y * (1 - w), lerp(fa.rotation.z, o[1], w)); fo.rotation.x *= 1 - 0.85 * w; fo.rotation.z *= 1 - w;
+            if (a.ph === 2 && fr) { const up = Math.sin(clamp(a.phT / a.air, 0, 1) * Math.PI); fr.rotation.x = lerp(fr.rotation.x, -2.7, up); fr.rotation.z = lerp(fr.rotation.z, (a.s > 0 ? -1 : 1) * 0.35, up); }
+          }
+        }
         break;
       }
       case 'boost': {
@@ -1516,7 +1539,7 @@ const HALA = (() => {
         } else if (a.ph === 2) {
           const u = clamp(a.phT / a.dur, 0, 1), tx = a.x ?? a.fx0, tz = a.z ?? a.fz0;
           P.pos.x = lerp(a.fx0, tx, easeIO(u)); P.pos.z = lerp(a.fz0, tz, easeIO(u)); P.pos.y = a.h * 4 * u * (1 - u);
-          if (ctx.H) { ctx.H.root.position.copy(P.pos); }
+          if (ctx.H) { ctx.H.root.position.copy(P.pos); fezaUp(ctx.H, Math.sin(u * Math.PI) * 0.8 + 0.2); }
           if (Math.hypot(tx - a.fx0, tz - a.fz0) > 0.5) P.face = Math.atan2(tx - a.fx0, tz - a.fz0);
           faceTo(P.pos.x, P.pos.z, dt, 8);
           if (u >= 1) {
