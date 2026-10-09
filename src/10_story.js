@@ -1155,18 +1155,18 @@ const STORY = (() => {
   function ending(o) {
     const g = G_(); if (!g || !g.P) { line('son', 'Pasta hazır! İyi ki varsın Feza!'); return true; }
     if (CINE.on) return true;
-    endingRan = true; CH.noWeapon = false; hideWeapon();
+    endingRan = true; CH.noWeapon = false; hideWeapon(); STORY.endingDone = false;
     overlay(true, { skip: true });
     runCine('ending', endingBeats()).then(() => { endingCleanup(); STORY.endingDone = true; });
     return true;
   }
 
   // ───────────────────────── 07_game kancaları ─────────────────────────
-  const seen = { zone: {}, area: {}, firstHub: true };
+  const seen = { zone: {}, area: {}, introAt: -1e9 };
   let pendingPasta = false, pastaShown = false;
   // Yeni oyun başlarken (07 newGame) — masa yüklendi; giriş sinematiği UI'da çoktan oynadı. Dönen: anlatım süresi (s).
   function intro(o) {
-    seen.zone = {}; seen.area = {}; seen.firstHub = false; pendingPasta = false; pastaShown = false; STORY.endingDone = false;
+    seen.zone = { masa: true }; seen.area = {}; seen.introAt = performance.now(); pendingPasta = false; pastaShown = false; STORY.endingDone = false;
     const a = line('masa_ilk', 'Burası benim mutfak masam. Pastamız da burada bekliyor!', 3);
     const b = line('masa_ilk2', null, 2);
     return Math.max(a, b);
@@ -1176,10 +1176,13 @@ const STORY = (() => {
     restoreXray();   // başlıktan (Devam Et / harita) oyuna geçiş
     const id = o && o.id; if (!id) return;
     if (id === 'masa') {
-      if (seen.firstHub) return;   // ilk geliş: intro() anlatır
-      if (!pastaShown && malzemeCount() >= 3) { pastaShown = true; return pastaScene(); }
-      if (seen.zone.masa) line(pick(['masa_donus1', 'masa_donus2', 'masa_donus3']), 'Masaya döndük!', 2);
-      seen.zone.masa = true;
+      // yeni oyunda 07 önce zone() sonra intro() çağırır: bir an bekle, intro geldiyse masa_ilk zaten anlatılıyor
+      later(0.15, () => {
+        if (performance.now() - seen.introAt < 1500) return;
+        if (!pastaShown && malzemeCount() >= 3) { pastaShown = true; pastaScene(); return; }
+        if (seen.zone.masa) line(pick(['masa_donus1', 'masa_donus2', 'masa_donus3']), 'Masaya döndük!', 2);
+        seen.zone.masa = true;
+      });
       return;
     }
     if (!seen.zone[id]) { seen.zone[id] = 1; line('oda_' + id, null, 3); line('gorev_' + id, null, 2); }
