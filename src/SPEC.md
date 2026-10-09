@@ -129,6 +129,19 @@ Bölüm içine de istasyon konabilir (yerlesim'de `L.stations`). `CAKE.build(api
 katmanı, #ui içinde; bitince silinir), t, score, from: 'hub'|'zone', data }`. `MINIGAME.start(id, {from, onEnd})`, `.finish()`, `.list()`, `.active`,
 `.current`. GAME.update her kare `MINIGAME.update(dt)`; holdsWorld iken dünya durur. Sonuç `GAME.miniResult` ile kayda girer. Yer tutucu: `sekerYakala`.
 
+### Oyun hissi, yıldız şeker, yetenek kademeleri (HIS, src/08j_his.js · yetenekler src/08_skills.js · sesler src/02l_his.js)
+07_game her vuruşta `emit('hit', {e, amount, kind, crit, x, y, z, boss, elite, kill})` yayar (tek, yeniden kullanılan nesne; saklama) ve
+`GAME.hitStop(s)` (≤0,12 s kısa duraklama) açar. HIS `GAME.update`'i sarar (her kare tick): zil sesi seri boyunca yükselir, huysuz yay gibi
+esner + zıplar, konfeti, hafif sarsıntı, kombo sayacı (yalnız Feza'nın vuruşları: sword/cream/spin/meteor/magic…), ara sıra Hala övgüsü
+(`his_kombo_*`, `his_nese_*`, en az 22 s arayla). Yerdeki şekerler (GAME.coins) 0,6 s sonra 9 m'den Feza'ya uçar; HUD sayacına uçan şekerler.
+Yıldız şeker: `P.yetenek = {kademe:{id:1..3}, yildiz}` (kayda girer). `HIS.addStarCandy(n)` (mini oyun yıldızları, seviye +1, boss +2, elit %50 +1),
+`HIS.openUpgrades()` (büyük panel; HUD'daki mor yıldız düğmesi), `SKILLS.tier(id)`, `SKILLS.upgradeCost(t)` (3 / 6). Savaşçı yetenekleri ev
+temalı: `krema` Krema Fışkırtma (3/5/7 krema topu), `kasik` Kaşık Kasırgası (3/5/7 kaşık, daha geniş/uzun), `seker` Şeker Yağmuru (8/11/14
+şeker); def'te `svg` (resimli simge, 09_ui düğmeye koyar), `line`, `tierLine`. Büyücü/şövalye yeteneklerinde kademe bekleme süresini kısaltır.
+HUD ekleri (önek `his-`): Feza portresinin altında konuşurken ağzı oynayan Aytuğ Hala yüzü + yıldız düğmesi, şeker sayacının altında 4 malzeme
+yuvası (un, yumurta, çilek, krema; `P.malzemeler`), sağda kombo sayacı, yetenek düğmelerinin altında kademe yıldızları, yeni yetenek kartı,
+ekran konfeti yağmuru. Olaylar: `starCandy {count, add}`, `skillTier {id, tier}`.
+
 ### QA
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
 cheerAll(), hurt(n), down(), info() }`. Python: `scratchpad/qa/hala_qa.py` (sınıf `Hala`, kullanım dosyanın başında), duman testi `hala_smoke.py`.
