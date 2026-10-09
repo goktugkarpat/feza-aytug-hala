@@ -1094,6 +1094,7 @@ const ODAB = (() => {
         rides++;
         const e = pts[pts.length - 1];
         O.burst('confetti', e.x, 1, e.z, {}); O.sfx('cheer', { vol: 0.6 });
+        if (Math.random() < 0.6) setTimeout(() => O.sfx('bilboBark', { vol: 0.6 }), 350);
         O.coins(e.x, e.z, rides === 1 ? 10 : rides < 4 ? 3 : 1, 1);
         if (rides === 1) O.say('odb_kaydirak_ok', { once: true, gap: 0 }); else if (rides === 3) O.say('odb_kaydirak_tekrar', { once: true, gap: 3 });
       } });

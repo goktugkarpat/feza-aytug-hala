@@ -738,7 +738,7 @@
         st.finT += dt;
         if ((st.fwT -= dt) <= 0 && st.finT < 90) {
           st.fwT = 0.45 + Math.random() * 0.5;
-          const a = Math.random() * TAU, d = Math.random() * A.r * 0.8, x = A.x + Math.sin(a) * d, z = A.z + Math.cos(a) * d - 3, y = 6 + Math.random() * 3;
+          const fx0 = P ? P.pos.x : A.x, fz0 = P ? P.pos.z : A.z, x = fx0 + (Math.random() - 0.5) * 12, z = fz0 - 1 - Math.random() * 7, y = 3.6 + Math.random() * 2.2;
           firework(api, x, y, z, CANDY[(Math.random() * CANDY.length) | 0]);
         }
       }
@@ -753,6 +753,7 @@
   // şeker ışığı havai fişeği: parlak top yükselir, yıldız + konfeti saçar, renkli ışık parlar
   const FW = [];
   function firework(api, x, y, z, col) {
+    for (let i = FW.length - 1; i >= 0; i--) if (FW[i].api !== api) FW.splice(i, 1);   // (önceki bölüm kurulumundan kalanlar)
     let m = FW.find(f => !f.on && f.api === api);
     if (!m) {
       const k = new Kit(); k.add(G.sphere(8, 6), C(0xffffff, 2.5), [0, 0, 0], null, [0.18, 0.18, 0.18]);
