@@ -78,6 +78,12 @@ const BOSSDAV = (() => {
         const o = add(geo('box', () => new THREE.BoxGeometry(1, 1, 1)), m, [0, 0.03, 0.5], [1, 0.05, 1]); o.castShadow = false; o.receiveShadow = true;
         break;
       }
+      case 'gol': {   // eriyen dondurmanın nane yeşili birikintisi (yere serili, parlak)
+        const o = add(geo('disc', () => new THREE.CylinderGeometry(1, 1, 0.04, 32)), mat('gol', { color: '#9ef0cc', roughness: 0.1, transparent: true, opacity: 0.75, emissive: '#5ccfa0', emissiveIntensity: 0.12, depthWrite: false }), [0, 0.03, 0], 1);
+        o.castShadow = false; o.receiveShadow = true;
+        for (let i = 0; i < 4; i++) { const a = i * 1.7; const d = add(geo('disc'), mat('gol'), [Math.sin(a) * 0.95, 0.031, Math.cos(a) * 0.95], [0.32, 1, 0.26]); d.castShadow = false; }
+        break;
+      }
       case 'un': {   // malzeme: un çuvalı
         const m = mat('un', { color: '#f6efe2', roughness: 0.8 });
         add(sph, m, [0, 0.45, 0], [0.42, 0.5, 0.34]); add(geo('cyl', () => new THREE.CylinderGeometry(1, 1, 1, 16)), m, [0, 0.98, 0], [0.16, 0.18, 0.13]);
@@ -113,13 +119,13 @@ const BOSSDAV = (() => {
   // Isınma: her eşya bir kez yerin altında görünür çizilir (malzeme gölgelendiricisi ilk saldırıda takılmadan derlenmiş olur)
   const WARM = [];
   function warmProps() {
-    for (const k of ['mercimek', 'nohut', 'cilek', 'kartopu', 'krema', 'top', 'buhar', 'toz', 'dalga', 'buz', 'un', 'yumurta', 'cilekOdul', 'kremaKase']) {
+    for (const k of ['mercimek', 'nohut', 'cilek', 'kartopu', 'krema', 'top', 'buhar', 'toz', 'dalga', 'buz', 'un', 'yumurta', 'cilekOdul', 'kremaKase', 'gol']) {
       const o = getProp(k); o.position.set(0, -60, 0); o.frustumCulled = false; o.traverse(c => { c.frustumCulled = false; }); WARM.push(o);
     }
   }
 
   // ════════ Etkin hamle nesneleri (BOSSDAV.update yürütür) ════════
-  const W = { drops: [], rollers: [], sweeps: [], clouds: [], strips: [], fests: [], boss: null };
+  const W = { drops: [], rollers: [], sweeps: [], clouds: [], strips: [], fests: [], boss: null, gol: null };
   function tele(x, z, r, dur, col) { const h = A.fx('telegraph', x, z, r, dur, col); if (h) (W.marks || (W.marks = [])).push(h); return h; }
   function teleLine(x0, z0, x1, z1, w, dur, col) { const h = A.telegraphLine(x0, z0, x1, z1, w, dur, col); if (h) (W.marks || (W.marks = [])).push(h); return h; }
   // Bir şey yukarıdan / bossun elinden yere iner: önce renkli daire (≥ 1 s), sonra iner, değdiyse az hasar.
@@ -232,6 +238,7 @@ const BOSSDAV = (() => {
     for (const c of W.clouds) putProp(c.prop);
     for (const s of W.strips) putProp(s.prop);
     W.drops.length = W.rollers.length = W.sweeps.length = W.clouds.length = W.strips.length = 0;
+    if (W.gol) { putProp(W.gol); W.gol = null; }
     if (W.marks) { for (const h of W.marks) A.remove(h); W.marks.length = 0; }
     if (A && A.P) A.P.slowT = 0;
   }
@@ -594,6 +601,7 @@ const BOSSDAV = (() => {
         fillTeam();
         if (b.did === 0) { b.did = 1; S.tiredT = 0; S.sayT = 0; A.ftext(b.x, b.height + 0.6, b.z, 'Neredeyse!', 'word'); A.burst('sparkle', b.x, b.height, b.z, { color: '#ffe27a', count: 30 }); }
         if ((S.sayT -= dt) <= 0) { S.sayT = 9; say('pasta_takim', 3); }
+        if ((S.tkT = (S.tkT || 0) - dt) <= 0) { S.tkT = 3.5; const P = A.P; A.ftext(P.pos.x, 2.4, P.pos.z, 'Takım Hamlesi!', 'word'); A.burst('hearts', P.pos.x, 1.6, P.pos.z, { count: 5 }); }
         if ((S.glowT = (S.glowT || 0) - dt) <= 0) { S.glowT = 0.5; A.burst('sparkle', b.x + rnd(-1, 1), b.height * rnd(0.4, 1), b.z + rnd(-1, 1), { color: '#ffd6f0', count: 4 }); }
         void t;
       },
@@ -682,6 +690,11 @@ const BOSSDAV = (() => {
     if (!A) return;
     if (WARM.length && ++warmN > 3) { for (const o of WARM) { o.traverse(c => { c.frustumCulled = true; }); putProp(o); } WARM.length = 0; }
     stepDrops(dt); stepRollers(dt); stepSweeps(dt); stepClouds(dt); stepStrips(dt); stepFests(dt);
+    const b = W.boss, melt = b && !b.dead && b.type === 'dondurmaKrali' ? (+b.st.melt || 0) : 0;   // eriyen kralın altında birikinti
+    if (melt > 0.02) {
+      if (!W.gol) W.gol = getProp('gol');
+      W.gol.position.set(b.x, 0, b.z); const k = b.r * (0.9 + 0.7 * melt); W.gol.scale.set(k, 1, k * 0.92);
+    } else if (W.gol) { putProp(W.gol); W.gol = null; }
     if (W.marks && W.marks.length > 40) W.marks.splice(0, W.marks.length - 40);
   }
 
