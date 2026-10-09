@@ -138,14 +138,11 @@
       if (rm.kind === 'boss') return;
       const ar = areaOf(i);
       if (ar <= 0) {
-        O.ring(api, rm, 7, 1.6, (x, z, south) => (south ? creamSwirl(B, x, z, 0.7, rnd) : rnd() < 0.5 ? cupcake(B, api, x, z, 1.1 + rnd() * 0.3, rnd) : creamSwirl(B, x, z, 1.3, rnd)));
-        O.ring(api, rm, 6, 1.0, (x, z, south) => (south ? sprinkleDrop(B, x, z, rnd) : macaron(B, x, z, 1, rnd)), { off: 0.5, gap: 0.6 });
+        O.ring(api, rm, 5, 1.6, (x, z, south) => (south ? creamSwirl(B, x, z, 0.7, rnd) : rnd() < 0.5 ? cupcake(B, api, x, z, 1.1 + rnd() * 0.3, rnd) : creamSwirl(B, x, z, 1.3, rnd)));
       } else if (ar === 1) {
-        O.ring(api, rm, 6, 2.2, (x, z, south) => (south ? candyFlowerPatch(B, x, z, 0.7, rnd) : strawberryTree(B, api, x, z, 1 + rnd() * 0.25, rnd)));
-        O.ring(api, rm, 7, 1.0, (x, z, south) => candyFlowerPatch(B, x, z, south ? 0.6 : 1, rnd), { off: 0.5, gap: 0.5 });
+        O.ring(api, rm, 4, 2.2, (x, z, south) => (south ? candyFlowerPatch(B, x, z, 0.7, rnd) : strawberryTree(B, api, x, z, 1 + rnd() * 0.25, rnd)));
       } else {
-        O.ring(api, rm, 6, 2.0, (x, z, south) => (south ? rockCandy(B, x, z, 0.55, rnd) : rnd() < 0.6 ? candyMountain(B, x, z, 1 + rnd() * 0.3, rnd) : rockCandy(B, x, z, 1.2, rnd)));
-        O.ring(api, rm, 6, 1.0, (x, z, south) => rockCandy(B, x, z, south ? 0.45 : 0.8, rnd), { off: 0.5, gap: 0.5 });
+        O.ring(api, rm, 4, 2.0, (x, z, south) => (south ? rockCandy(B, x, z, 0.55, rnd) : rnd() < 0.6 ? candyMountain(B, x, z, 1 + rnd() * 0.3, rnd) : rockCandy(B, x, z, 1.2, rnd)));
       }
       api.glow(rm.x, rm.z, rm.r * 0.95, ar === 1 ? 0xffd8e4 : ar === 2 ? 0xffe8c8 : 0xffe4f0, 0.12);
     });
@@ -155,7 +152,7 @@
     D.houses.forEach(h => avoid.push({ x: h.x, z: h.z, r: 3.4 }));
     if (D.fall) avoid.push({ x: D.fall.x, z: D.fall.z, r: 4.5 });
     if (L.crystalSpot) avoid.push({ x: L.crystalSpot.x, z: L.crystalSpot.z, r: 4 });
-    for (const c of O.edgeSpots(L, api, { avoid, space: 2.8 })) {
+    for (const c of O.edgeSpots(L, api, { avoid, space: 3.2 })) {
       const ar = areaOf(c.room), rmk = L.rooms[c.room];
       if (rmk && rmk.kind === 'boss') continue;
       const low = c.side === 'south', mid = c.side === 'side', bx = c.x - c.nx * 0.3, bz = c.z - c.nz * 0.3;
@@ -163,7 +160,7 @@
       else if (ar === 1) { if (low) candyFlowerPatch(B, c.x, c.z, 0.55, rnd); else if (mid) (rnd() < 0.5 ? meringue(B, c.x, c.z, 0.8, rnd) : candyFlowerPatch(B, c.x, c.z, 0.85, rnd)); else (rnd() < 0.6 ? strawberryTree(B, api, bx, bz, 0.72, rnd) : meringue(B, c.x, c.z, 1.1, rnd)); }
       else { if (low) gumdrops(B, c.x, c.z, 0.7, rnd); else if (mid) rockCandy(B, c.x, c.z, 0.6, rnd); else (rnd() < 0.5 ? candyMountain(B, bx, bz, 0.62, rnd) : rockCandy(B, c.x, c.z, 0.95, rnd)); }
     }
-    for (const f of O.floorSpots(L, api, 80, { avoid })) floorCandy(B, f.x, f.z, areaOf(f.room), rnd);
+    for (const f of O.floorSpots(L, api, 55, { avoid })) floorCandy(B, f.x, f.z, areaOf(f.room), rnd);
     // geçitler: şeker kamışı kemerleri + kurabiye köprü
     (L.areas || []).forEach((a, k) => { if (k && a.gate) candyArch(B, api, L, k); });
     // ── Krema Nehri: bisküvi sal ──
@@ -201,37 +198,37 @@
   const stripes = (cx, cz, a, b, k = 2, f = 5) => (x, y, z) => (Math.sin(Math.atan2(x - cx, z - cz) * k + y * f) > 0 ? a : b);
   function creamSwirl(B, x, z, s, rnd) {
     const c = C(PASTEL[(rnd() * PASTEL.length) | 0]);
-    for (let i = 0; i < 4; i++) B.add('cream', G.torus(TAU, 0.42, 22), c, [x, (0.3 + i * 0.42) * s, z], [PI / 2, 0, i * 0.7], [(1.1 - i * 0.24) * s, (1.1 - i * 0.24) * s, (1.0 - i * 0.2) * s]);
+    for (let i = 0; i < 4; i++) B.add('cream', G.torus(TAU, 0.42, 16), c, [x, (0.3 + i * 0.42) * s, z], [PI / 2, 0, i * 0.7], [(1.1 - i * 0.24) * s, (1.1 - i * 0.24) * s, (1.0 - i * 0.2) * s]);
     B.add('cream', G.cone(16), c, [x, 1.95 * s, z], null, [0.32 * s, 0.6 * s, 0.32 * s]);
-    if (rnd() < 0.6) B.add('candy', G.sphere(14, 10), C(0xe8203a), [x, 2.35 * s, z], null, [0.25 * s, 0.25 * s, 0.25 * s]);
-    for (let i = 0; i < 6; i++) B.add('glow', G.capsule(1, 4), C(CANDY[i % CANDY.length], 1.2), [x + Math.sin(i * 2.3) * 0.7 * s, (0.9 + (i % 3) * 0.4) * s, z + Math.cos(i * 2.3) * 0.7 * s], [i, 0, i * 0.7], [0.04, 0.08, 0.04]);
+    if (rnd() < 0.6) B.add('candy', G.sphere(11, 8), C(0xe8203a), [x, 2.35 * s, z], null, [0.25 * s, 0.25 * s, 0.25 * s]);
+    for (let i = 0; i < 6; i++) B.add('glow', G.cyl(1, 1, 5), C(CANDY[i % CANDY.length], 1.2), [x + Math.sin(i * 2.3) * 0.7 * s, (0.9 + (i % 3) * 0.4) * s, z + Math.cos(i * 2.3) * 0.7 * s], [i, 0, i * 0.7], [0.04, 0.24, 0.04]);
   }
   function cupcake(B, api, x, z, s, rnd) {
     const wr = C(PASTEL[(rnd() * PASTEL.length) | 0]), fr = C(CANDY[(rnd() * CANDY.length) | 0]).lerp(C(0xffffff), 0.45);
-    B.add('gloss', G.cyl(1.15, 0.85, 20), (xx, yy, zz) => (Math.sin(Math.atan2(xx - x, zz - z) * 10) > 0 ? wr : C(0xffffff).lerp(wr, 0.6)), [x, 0.75 * s, z], null, [1.3 * s, 1.5 * s, 1.3 * s]);
-    for (let i = 0; i < 3; i++) B.add('cream', G.sphere(20, 14), fr, [x, (1.7 + i * 0.55) * s, z], null, [(1.45 - i * 0.38) * s, 0.6 * s, (1.45 - i * 0.38) * s]);
-    B.add('candy', G.sphere(14, 10), C(0xe8203a), [x, 3.2 * s, z], null, [0.32 * s, 0.32 * s, 0.32 * s]);
-    for (let i = 0; i < 10; i++) { const a = i * 2.4, r = (0.5 + (i % 3) * 0.3) * s; B.add('glow', G.capsule(1, 4), C(CANDY[i % CANDY.length], 1.15), [x + Math.sin(a) * r, (2.05 + (i % 4) * 0.25) * s, z + Math.cos(a) * r], [i, 0, i * 0.6], [0.05, 0.1, 0.05]); }
+    B.add('gloss', G.cyl(1.15, 0.85, 16), (xx, yy, zz) => (Math.sin(Math.atan2(xx - x, zz - z) * 10) > 0 ? wr : C(0xffffff).lerp(wr, 0.6)), [x, 0.75 * s, z], null, [1.3 * s, 1.5 * s, 1.3 * s]);
+    for (let i = 0; i < 3; i++) B.add('cream', G.sphere(14, 10), fr, [x, (1.7 + i * 0.55) * s, z], null, [(1.45 - i * 0.38) * s, 0.6 * s, (1.45 - i * 0.38) * s]);
+    B.add('candy', G.sphere(11, 8), C(0xe8203a), [x, 3.2 * s, z], null, [0.32 * s, 0.32 * s, 0.32 * s]);
+    for (let i = 0; i < 10; i++) { const a = i * 2.4, r = (0.5 + (i % 3) * 0.3) * s; B.add('glow', G.cyl(1, 1, 5), C(CANDY[i % CANDY.length], 1.15), [x + Math.sin(a) * r, (2.05 + (i % 4) * 0.25) * s, z + Math.cos(a) * r], [i, 0, i * 0.6], [0.05, 0.3, 0.05]); }
   }
   function macaron(B, x, z, s, rnd) {
     const c = C(PASTEL[(rnd() * PASTEL.length) | 0]).lerp(C(CANDY[(rnd() * CANDY.length) | 0]), 0.35);
-    B.add('gloss', G.sphere(20, 12), c, [x, 0.35 * s, z], null, [0.8 * s, 0.3 * s, 0.8 * s]);
-    B.add('cream', G.cyl(1, 1, 20), C(0xfffaf0), [x, 0.66 * s, z], null, [0.72 * s, 0.16 * s, 0.72 * s]);
-    B.add('gloss', G.sphere(20, 12), c, [x, 0.95 * s, z], null, [0.8 * s, 0.3 * s, 0.8 * s]);
+    B.add('gloss', G.sphere(14, 10), c, [x, 0.35 * s, z], null, [0.8 * s, 0.3 * s, 0.8 * s]);
+    B.add('cream', G.cyl(1, 1, 16), C(0xfffaf0), [x, 0.66 * s, z], null, [0.72 * s, 0.16 * s, 0.72 * s]);
+    B.add('gloss', G.sphere(14, 10), c, [x, 0.95 * s, z], null, [0.8 * s, 0.3 * s, 0.8 * s]);
   }
   function sprinkleDrop(B, x, z, rnd) {
-    B.add('cream', G.sphere(16, 10), C(0xfff2f6), [x, 0.12, z], null, [0.9, 0.3, 0.9]);
-    for (let i = 0; i < 8; i++) B.add('glow', G.capsule(1, 4), C(CANDY[i % CANDY.length], 1.2), [x + Math.sin(i * 2.4) * 0.55, 0.32, z + Math.cos(i * 2.4) * 0.55], [PI / 2, i, 0], [0.04, 0.09, 0.04]);
+    B.add('cream', G.sphere(12, 8), C(0xfff2f6), [x, 0.12, z], null, [0.9, 0.3, 0.9]);
+    for (let i = 0; i < 8; i++) B.add('glow', G.cyl(1, 1, 5), C(CANDY[i % CANDY.length], 1.2), [x + Math.sin(i * 2.4) * 0.55, 0.32, z + Math.cos(i * 2.4) * 0.55], [PI / 2, i, 0], [0.04, 0.27, 0.04]);
   }
   function strawberryTree(B, api, x, z, s, rnd) {
     // gövde: yeşil-krem çizgili şeker sapı; taç: yumuşak yaprak bulutları; sarkan dev çilekler
     B.add('candy', G.cyl(0.7, 1, 14), stripes(x, z, C(0x6fc85a), C(0xe8ffd8), 1, 3), [x, 2.0 * s, z], null, [0.38 * s, 4.0 * s, 0.38 * s]);
     const leaf = [0x5cc85a, 0x7ad86a, 0x4ab84e];
-    for (let i = 0; i < 6; i++) { const a = i * TAU / 6 + 0.3, r = 1.5 * s; B.add('cream', G.sphere(16, 12), C(leaf[i % 3]), [x + Math.sin(a) * r, 4.4 * s + (i % 2) * 0.4 * s, z + Math.cos(a) * r], null, [1.3 * s, 0.9 * s, 1.3 * s]); }
-    B.add('cream', G.sphere(18, 12), C(0x6ad05e), [x, 5.0 * s, z], null, [1.7 * s, 1.1 * s, 1.7 * s]);
+    for (let i = 0; i < 6; i++) { const a = i * TAU / 6 + 0.3, r = 1.5 * s; B.add('cream', G.sphere(12, 9), C(leaf[i % 3]), [x + Math.sin(a) * r, 4.4 * s + (i % 2) * 0.4 * s, z + Math.cos(a) * r], null, [1.3 * s, 0.9 * s, 1.3 * s]); }
+    B.add('cream', G.sphere(14, 10), C(0x6ad05e), [x, 5.0 * s, z], null, [1.7 * s, 1.1 * s, 1.7 * s]);
     for (let i = 0; i < 5; i++) {
       const a = i * TAU / 5 + 0.6, r = 1.6 * s, bx = x + Math.sin(a) * r, bz = z + Math.cos(a) * r, by = 3.5 * s - (i % 2) * 0.3 * s;
-      B.add('candy', G.sphere(14, 12), C(0xff3b5c), [bx, by, bz], null, [0.42 * s, 0.5 * s, 0.42 * s]);
+      B.add('candy', G.sphere(12, 8), C(0xff3b5c), [bx, by, bz], null, [0.42 * s, 0.5 * s, 0.42 * s]);
       B.add('candy', G.cone(12), C(0xff3b5c), [bx, by - 0.38 * s, bz], [PI, 0, 0], [0.36 * s, 0.4 * s, 0.36 * s]);
       for (let k = 0; k < 4; k++) B.add('glow', G.sphere(5, 4), C(0xfff2a0, 1.2), [bx + Math.sin(k * 1.6 + a) * 0.4 * s, by - 0.1 * s - (k % 2) * 0.2 * s, bz + Math.cos(k * 1.6 + a) * 0.4 * s], null, [0.04, 0.06, 0.04]);
       B.add('gloss', G.cone(5), C(0x48b04a), [bx, by + 0.48 * s, bz], null, [0.25 * s, 0.2 * s, 0.25 * s]);
@@ -240,9 +237,9 @@
   }
   function candyFlower(B, x, z, s, c) {
     B.add('gloss', G.cyl(1, 1, 6), C(0x5cc85a), [x, 0.55 * s, z], null, [0.06 * s, 1.1 * s, 0.06 * s]);
-    for (let i = 0; i < 6; i++) { const a = i * TAU / 6; B.add('candy', G.sphere(10, 8), C(c), [x + Math.sin(a) * 0.26 * s, 1.15 * s, z + Math.cos(a) * 0.26 * s * 0.5 + 0.05], null, [0.2 * s, 0.2 * s, 0.12 * s]); }
-    B.add('glow', G.sphere(10, 8), C(0xffe45a, 1.4), [x, 1.15 * s, z + 0.1 * s], null, [0.13 * s, 0.13 * s, 0.1 * s]);
-    B.add('gloss', G.sphere(8, 6), C(0x7ad86a), [x + 0.15 * s, 0.4 * s, z], [0, 0, 0.8], [0.22 * s, 0.08 * s, 0.12 * s]);
+    for (let i = 0; i < 6; i++) { const a = i * TAU / 6; B.add('candy', G.sphere(8, 6), C(c), [x + Math.sin(a) * 0.26 * s, 1.15 * s, z + Math.cos(a) * 0.26 * s * 0.5 + 0.05], null, [0.2 * s, 0.2 * s, 0.12 * s]); }
+    B.add('glow', G.sphere(8, 6), C(0xffe45a, 1.4), [x, 1.15 * s, z + 0.1 * s], null, [0.13 * s, 0.13 * s, 0.1 * s]);
+    B.add('gloss', G.sphere(7, 5), C(0x7ad86a), [x + 0.15 * s, 0.4 * s, z], [0, 0, 0.8], [0.22 * s, 0.08 * s, 0.12 * s]);
   }
   function candyFlowerPatch(B, x, z, s, rnd) {
     for (let i = 0; i < 4; i++) candyFlower(B, x + (rnd() - 0.5) * 1.6 * s, z + (rnd() - 0.5) * 1.6 * s, s * (0.8 + rnd() * 0.5), CANDY[(rnd() * CANDY.length) | 0]);
@@ -251,22 +248,22 @@
     for (let i = 0; i < 2; i++) {
       const xx = x + (i ? 0.7 * s : 0), zz = z + (i ? 0.3 * s : 0), k = i ? 0.65 : 1, c = [0xff8ab8, 0xffc04a, 0x8ad0ff][(rnd() * 3) | 0];
       B.add('cream', G.cyl(0.8, 1, 12), C(0xfffaf2), [xx, 0.45 * s * k, zz], null, [0.22 * s * k, 0.9 * s * k, 0.22 * s * k]);
-      B.add('candy', G.sphere(16, 10), C(c), [xx, 0.95 * s * k, zz], null, [0.62 * s * k, 0.38 * s * k, 0.62 * s * k]);
+      B.add('candy', G.sphere(12, 8), C(c), [xx, 0.95 * s * k, zz], null, [0.62 * s * k, 0.38 * s * k, 0.62 * s * k]);
       for (let j = 0; j < 5; j++) { const a = j * TAU / 5 + 0.3; B.add('cream', G.sphere(6, 4), C(0xffffff), [xx + Math.sin(a) * 0.38 * s * k, (1.08 - 0.02) * s * k, zz + Math.cos(a) * 0.38 * s * k], null, [0.09 * s, 0.05 * s, 0.09 * s]); }
     }
   }
   function gumdrops(B, x, z, s, rnd) {
-    for (let i = 0; i < 3; i++) { const c = CANDY[(rnd() * CANDY.length) | 0]; B.add('jelly', G.sphere(12, 8, 0), C(c), [x + (i - 1) * 0.55 * s, 0.05, z + (rnd() - 0.5) * 0.5 * s], null, [0.36 * s, 0.5 * s, 0.36 * s]); }
+    for (let i = 0; i < 3; i++) { const c = CANDY[(rnd() * CANDY.length) | 0]; B.add('jelly', G.sphere(10, 7), C(c), [x + (i - 1) * 0.55 * s, 0.05, z + (rnd() - 0.5) * 0.5 * s], null, [0.36 * s, 0.5 * s, 0.36 * s]); }
   }
   function floorCandy(B, x, z, ar, rnd) {
     const k = rnd();
-    if (k < 0.45) { for (let i = 0; i < 5; i++) B.add('glow', G.capsule(1, 4), C(CANDY[(rnd() * CANDY.length) | 0], 1.1), [x + (rnd() - 0.5) * 0.9, 0.05, z + (rnd() - 0.5) * 0.9], [PI / 2, rnd() * PI, 0], [0.035, 0.08, 0.035]); }
+    if (k < 0.45) { for (let i = 0; i < 5; i++) B.add('glow', G.cyl(1, 1, 5), C(CANDY[(rnd() * CANDY.length) | 0], 1.1), [x + (rnd() - 0.5) * 0.9, 0.05, z + (rnd() - 0.5) * 0.9], [PI / 2, rnd() * PI, 0], [0.035, 0.24, 0.035]); }
     else if (k < 0.75) {   // sarılı şeker
       const c = C(CANDY[(rnd() * CANDY.length) | 0]), yaw = rnd() * PI;
-      B.add('candy', G.sphere(10, 8), c, [x, 0.13, z], [0, yaw, 0], [0.22, 0.14, 0.14]);
+      B.add('candy', G.sphere(8, 6), c, [x, 0.13, z], [0, yaw, 0], [0.22, 0.14, 0.14]);
       for (const sd of [-1, 1]) B.add('candy', G.cone(6), c, [x + Math.cos(yaw) * sd * 0.27, 0.13, z - Math.sin(yaw) * sd * 0.27], [0, yaw, sd * PI / 2], [0.1, 0.14, 0.1]);
     } else if (ar === 1) { candyFlower(B, x, z, 0.45, CANDY[(rnd() * CANDY.length) | 0]); }
-    else { B.add('jelly', G.sphere(10, 8), C(CANDY[(rnd() * CANDY.length) | 0]), [x, 0.05, z], null, [0.2, 0.26, 0.2]); }
+    else { B.add('jelly', G.sphere(8, 6), C(CANDY[(rnd() * CANDY.length) | 0]), [x, 0.05, z], null, [0.2, 0.26, 0.2]); }
   }
   function rockCandy(B, x, z, s, rnd) {
     const n = 3 + ((rnd() * 3) | 0);
@@ -274,16 +271,16 @@
       const c = CANDY[(rnd() * CANDY.length) | 0], a = rnd() * TAU, d = rnd() * 0.8 * s, h = (1.2 + rnd() * 1.6) * s;
       B.add('jelly', G.octa(), C(c), [x + Math.sin(a) * d, h * 0.45, z + Math.cos(a) * d], [rnd() * 0.5 - 0.25, rnd() * PI, rnd() * 0.5 - 0.25], [0.5 * s, h * 0.5, 0.5 * s]);
     }
-    B.add('glow', G.sphere(8, 6), C(0xffffff, 1.5), [x, 1.0 * s, z + 0.3 * s], null, [0.06, 0.06, 0.06]);
+    B.add('glow', G.sphere(7, 5), C(0xffffff, 1.5), [x, 1.0 * s, z + 0.3 * s], null, [0.06, 0.06, 0.06]);
   }
   // Şeker dağı: kat kat renkli şeker tepesi + karlı krema zirve
   function candyMountain(B, x, z, s, rnd) {
     const cols = [0xff9ac8, 0xffd27a, 0x9ae0ff, 0xc8a8ff];
     for (let i = 0; i < 4; i++) B.add('candy', G.cyl(0.78, 1, 18), C(cols[(i + ((rnd() * 4) | 0)) % 4]), [x, (0.55 + i * 1.05) * s, z], [0, i * 0.4, 0], [(2.4 - i * 0.5) * s, 1.1 * s, (2.4 - i * 0.5) * s]);
-    B.add('cream', G.sphere(16, 12), C(0xfffaf4), [x, 4.6 * s, z], null, [0.95 * s, 0.6 * s, 0.95 * s]);
-    for (let i = 0; i < 7; i++) { const a = i * TAU / 7; B.add('cream', G.sphere(8, 6), C(0xfffaf4), [x + Math.sin(a) * 0.9 * s, 4.25 * s, z + Math.cos(a) * 0.9 * s], null, [0.25 * s, 0.45 * s, 0.25 * s]); }
-    B.add('candy', G.sphere(12, 10), C(0xe8203a), [x, 5.15 * s, z], null, [0.3 * s, 0.3 * s, 0.3 * s]);
-    for (let i = 0; i < 12; i++) B.add('glow', G.capsule(1, 4), C(CANDY[i % CANDY.length], 1.15), [x + Math.sin(i * 2.4) * (1.2 + (i % 3) * 0.4) * s, (0.8 + (i % 4) * 0.9) * s, z + Math.cos(i * 2.4) * (1.2 + (i % 3) * 0.4) * s], [i, 0, i * 0.6], [0.06, 0.12, 0.06]);
+    B.add('cream', G.sphere(12, 9), C(0xfffaf4), [x, 4.6 * s, z], null, [0.95 * s, 0.6 * s, 0.95 * s]);
+    for (let i = 0; i < 7; i++) { const a = i * TAU / 7; B.add('cream', G.sphere(7, 5), C(0xfffaf4), [x + Math.sin(a) * 0.9 * s, 4.25 * s, z + Math.cos(a) * 0.9 * s], null, [0.25 * s, 0.45 * s, 0.25 * s]); }
+    B.add('candy', G.sphere(10, 7), C(0xe8203a), [x, 5.15 * s, z], null, [0.3 * s, 0.3 * s, 0.3 * s]);
+    for (let i = 0; i < 12; i++) B.add('glow', G.cyl(1, 1, 5), C(CANDY[i % CANDY.length], 1.15), [x + Math.sin(i * 2.4) * (1.2 + (i % 3) * 0.4) * s, (0.8 + (i % 4) * 0.9) * s, z + Math.cos(i * 2.4) * (1.2 + (i % 3) * 0.4) * s], [i, 0, i * 0.6], [0.06, 0.36, 0.06]);
   }
   // Şeker kamışı kemeri + kurabiye köprü (alan geçidi)
   function candyArch(B, api, L, k) {
@@ -293,23 +290,23 @@
     for (const sd of [-1, 1]) {
       const x = cx + px * half * sd, z = cz + pz * half * sd;
       B.add('candy', G.cyl(1, 1, 16), stripes(x, z, red, wh, 2, 6), [x, 2.1, z], null, [0.28, 4.2, 0.28]);
-      B.add('candy', G.sphere(14, 10), C(CANDY[k % CANDY.length]), [x, 4.35, z], null, [0.45, 0.45, 0.45]);
-      B.add('cream', G.torus(TAU, 0.4, 20), C(0xfff2f6), [x, 0.2, z], [PI / 2, 0, 0], [0.5, 0.5, 0.5]);
+      B.add('candy', G.sphere(11, 8), C(CANDY[k % CANDY.length]), [x, 4.35, z], null, [0.45, 0.45, 0.45]);
+      B.add('cream', G.torus(TAU, 0.4, 16), C(0xfff2f6), [x, 0.2, z], [PI / 2, 0, 0], [0.5, 0.5, 0.5]);
     }
     const N = 16;
     for (let i = 0; i <= N; i++) {
       const u = i / N, a = PI * u, x = cx + px * Math.cos(a) * half, z = cz + pz * Math.cos(a) * half, y = 4.3 + Math.sin(a) * 1.4;
-      B.add('candy', G.sphere(10, 8), C(CANDY[i % CANDY.length]), [x, y, z], null, [0.34, 0.3, 0.34]);
+      B.add('candy', G.sphere(8, 6), C(CANDY[i % CANDY.length]), [x, y, z], null, [0.34, 0.3, 0.34]);
     }
     // kalp lolipop
     const hy = 6.3;
-    for (const sd of [-1, 1]) B.add('candy', G.sphere(14, 10), C(0xff5f9e), [cx + px * 0.28 * sd, hy + 0.12, cz + pz * 0.28 * sd], null, [0.42, 0.42, 0.25]);
+    for (const sd of [-1, 1]) B.add('candy', G.sphere(11, 8), C(0xff5f9e), [cx + px * 0.28 * sd, hy + 0.12, cz + pz * 0.28 * sd], null, [0.42, 0.42, 0.25]);
     B.add('candy', G.cone(14), C(0xff5f9e), [cx, hy - 0.3, cz], [PI, 0, 0], [0.55, 0.62, 0.3]);
-    B.add('glow', G.sphere(8, 6), C(0xffffff, 1.6), [cx + px * 0.2, hy + 0.3, cz + pz * 0.2], null, [0.09, 0.09, 0.09]);
+    B.add('glow', G.sphere(7, 5), C(0xffffff, 1.6), [cx + px * 0.2, hy + 0.3, cz + pz * 0.2], null, [0.09, 0.09, 0.09]);
     // kurabiye köprü (koridorun ortasına yassı dev kurabiye) + kenarda krema
     const yaw = Math.atan2(px, pz);
-    B.add('gloss', G.cyl(1, 1, 36), C(0xe0a35a), [cx, 0.05, cz], [0, yaw, 0], [Math.min(half, 2.8), 0.1, 2.4]);
-    for (let i = 0; i < 12; i++) { const a = i * 2.4, r = 0.4 + (i % 4) * 0.5; B.add('gloss', G.sphere(8, 6), C(0x5a3020), [cx + Math.sin(a) * r, 0.12, cz + Math.cos(a) * r], null, [0.18, 0.08, 0.18]); }
+    B.add('gloss', G.cyl(1, 1, 18), C(0xe0a35a), [cx, 0.05, cz], [0, yaw, 0], [Math.min(half, 2.8), 0.1, 2.4]);
+    for (let i = 0; i < 12; i++) { const a = i * 2.4, r = 0.4 + (i % 4) * 0.5; B.add('gloss', G.sphere(7, 5), C(0x5a3020), [cx + Math.sin(a) * r, 0.12, cz + Math.cos(a) * r], null, [0.18, 0.08, 0.18]); }
     api.light(cx, 3.5, cz, 0xffd0e4, 2.2, 7, 0.08);
     api.glow(cx, cz, half + 1, 0xffd8ea, 0.16);
   }
@@ -321,7 +318,7 @@
     for (const sd of [-1, 1]) {
       const x = S.e.x + S.px * 1.1 * sd + S.dx * 0.6, z = S.e.z + S.pz * 1.1 * sd + S.dz * 0.6;
       B.add('candy', G.cyl(1, 1, 12), stripes(x, z, C(0xff5f9e), C(0xffffff), 2, 6), [x, 0.6, z], null, [0.12, 1.2, 0.12]);
-      B.add('glow', G.sphere(10, 8), C(0xffd0e8, 1.8), [x, 1.3, z], null, [0.16, 0.16, 0.16]);
+      B.add('glow', G.sphere(8, 6), C(0xffd0e8, 1.8), [x, 1.3, z], null, [0.16, 0.16, 0.16]);
     }
     // gölün kendi kreması (zemin sıvısını güçlendirir): yumuşak, parlak, hafif dalgalı
     const pg = new THREE.CircleGeometry(1, 48); pg.rotateX(-PI / 2);
@@ -330,17 +327,17 @@
     pool.scale.set(S.rx + 1.4, 1, S.ry + 1.4); pool.renderOrder = 1; api.add(pool);
     // ortadaki ada: altın şeker
     const ix = S.cx, iz = S.cz;
-    B.add('cream', G.sphere(16, 10), C(0xfff6fa), [ix, 0.05, iz], null, [Math.min(1.3, S.rx * 0.3), 0.4, Math.min(1.0, S.ry * 0.4)]);
+    B.add('cream', G.sphere(12, 8), C(0xfff6fa), [ix, 0.05, iz], null, [Math.min(1.3, S.rx * 0.3), 0.4, Math.min(1.0, S.ry * 0.4)]);
     const k = new Kit();   // sal: kare bisküvi + delikler + minik lolipop bayrak
     k.add(G.rbox(2), C(0xe6ad62), [0, 0.12, 0], null, [1.6, 0.22, 1.25]);
     for (let a = 0; a < 3; a++) for (let b = 0; b < 2; b++) k.add(G.sphere(6, 4), C(0xb07838), [-0.5 + a * 0.5, 0.235, -0.3 + b * 0.6], null, [0.06, 0.02, 0.06]);
     k.add(G.cyl(1, 1, 6), C(0xffffff), [0.6, 0.75, -0.45], null, [0.03, 1.1, 0.03]);
-    k.add(G.cyl(1, 1, 20), (x, y, z) => (Math.sin(Math.atan2(y - 1.3, x - 0.6) + Math.hypot(x - 0.6, y - 1.3) * 18) > 0 ? C(0xff5f9e) : C(0xfff2a0)), [0.6, 1.3, -0.45], [PI / 2, 0, 0], [0.26, 0.06, 0.26]);
+    k.add(G.cyl(1, 1, 16), (x, y, z) => (Math.sin(Math.atan2(y - 1.3, x - 0.6) + Math.hypot(x - 0.6, y - 1.3) * 18) > 0 ? C(0xff5f9e) : C(0xfff2a0)), [0.6, 1.3, -0.45], [PI / 2, 0, 0], [0.26, 0.06, 0.26]);
     const boat = O.solo(k, 'gloss', api);
     const home = { x: S.e.x + S.dx * 0.9, z: S.e.z + S.dz * 0.9 };
     boat.position.set(home.x, 0, home.z); boat.rotation.y = yaw;
     api.glow(S.dock.x, S.dock.z, 1.6, 0xffd0e4, 0.25);
-    const ring = new Kit(); ring.add(G.torus(TAU, 0.12, 32), C(0xffd24a, 1.6), [0, 0.06, 0], [PI / 2, 0, 0], [0.9, 0.9, 0.9]);
+    const ring = new Kit(); ring.add(G.torus(TAU, 0.12, 16), C(0xffd24a, 1.6), [0, 0.06, 0], [PI / 2, 0, 0], [0.9, 0.9, 0.9]);
     const rmk = O.solo(ring, 'glow', api); rmk.position.set(S.dock.x, 0, S.dock.z);
     // yol: iskele → giriş → halka → giriş → iskele
     const entry = { x: S.e.x + S.dx * 1.2, y: 0, z: S.e.z + S.dz * 1.2 };
@@ -391,10 +388,10 @@
       B.add('candy', G.cyl(1, 1, 10), stripes(p.x, p.z, C(0xffffff), C(0xffd0e4), 1, 4), [p.x, 1.1, p.z], null, [0.07, 2.2, 0.07]);
       B.add('cream', G.torus(TAU, 0.35, 16), C(0x7ad86a), [p.x, 1.2, p.z], [0, 0.4, 0], [0.18, 0.18, 0.18]);
       const k = new Kit();
-      k.add(G.sphere(40, 28), (x, y, z) => (Math.sin(Math.atan2(y, x) * 2 + Math.hypot(x, y) * 14) > 0 ? C(c) : C(0xffffff)), [0, 0, 0], null, [0.62, 0.62, 0.16]);
-      k.add(G.torus(TAU, 0.08, 28), C(c), [0, 0, 0], null, [0.63, 0.63, 0.9]);
+      k.add(G.sphere(28, 18), (x, y, z) => (Math.sin(Math.atan2(y, x) * 2 + Math.hypot(x, y) * 14) > 0 ? C(c) : C(0xffffff)), [0, 0, 0], null, [0.62, 0.62, 0.16]);
+      k.add(G.torus(TAU, 0.08, 16), C(c), [0, 0, 0], null, [0.63, 0.63, 0.9]);
       const pop = O.solo(k, 'candy', api); pop.position.set(p.x, 2.65, p.z);
-      const h = new Kit(); h.add(G.sphere(16, 12), C(c, 0.8), [0, 0, 0], null, [1, 1, 1]);
+      const h = new Kit(); h.add(G.sphere(12, 9), C(c, 0.8), [0, 0, 0], null, [1, 1, 1]);
       const halo = new THREE.Mesh(h.build(), O.mat('halo')); halo.position.copy(pop.position); halo.scale.setScalar(0.01); halo.renderOrder = 3; api.add(halo);
       const li = api.light(p.x, 2.8, p.z, c, 0, 6, 0.08) - 1, L0 = LT[li];
       p.state = { on: false, t: 0 };
@@ -428,33 +425,33 @@
     k.add(G.rbox(3), dough, [0, 1.4, 0], null, [3.2, 2.8, 3.0]);
     for (const sd of [-1, 1]) {
       k.add(G.rbox(2), choc, [sd * 0.95, 3.45, 0], [0, 0, -sd * 0.72], [2.25, 0.32, 3.4]);
-      for (let i = 0; i < 7; i++) k.add(G.sphere(8, 6), icing, [sd * 1.75, 2.62 - (i % 2) * 0.12, -1.5 + i * 0.5], null, [0.2, 0.28, 0.2]);
+      for (let i = 0; i < 7; i++) k.add(G.sphere(7, 5), icing, [sd * 1.75, 2.62 - (i % 2) * 0.12, -1.5 + i * 0.5], null, [0.2, 0.28, 0.2]);
     }
-    for (let i = 0; i < 6; i++) k.add(G.sphere(10, 8), C(CANDY[i % CANDY.length]), [0, 4.3, -1.25 + i * 0.5], null, [0.22, 0.22, 0.22]);
+    for (let i = 0; i < 6; i++) k.add(G.sphere(8, 6), C(CANDY[i % CANDY.length]), [0, 4.3, -1.25 + i * 0.5], null, [0.22, 0.22, 0.22]);
     k.add(G.rbox(2), C(0xffffff), [0, 2.82, 1.52], null, [3.25, 0.12, 0.12]);
     for (const sd of [-1, 1]) {   // pencereler (sıcak ışık)
       k.add(G.rbox(2), C(0xffd88a, 1.8), [sd * 1.0, 1.75, 1.51], null, [0.62, 0.62, 0.06]);
       k.add(G.box(), icing, [sd * 1.0, 1.75, 1.55], null, [0.7, 0.08, 0.04]); k.add(G.box(), icing, [sd * 1.0, 1.75, 1.55], null, [0.08, 0.7, 0.04]);
     }
     k.add(G.cyl(1, 1, 12), C(0xff7aa8), [1.0, 4.0, -0.6], null, [0.28, 1.2, 0.28]);
-    for (let i = 0; i < 3; i++) k.add(G.sphere(10, 8), C(0xffd0e4), [1.0 + i * 0.25, 4.85 + i * 0.4, -0.6], null, [0.35 + i * 0.1, 0.3 + i * 0.08, 0.35 + i * 0.1]);
+    for (let i = 0; i < 3; i++) k.add(G.sphere(8, 6), C(0xffd0e4), [1.0 + i * 0.25, 4.85 + i * 0.4, -0.6], null, [0.35 + i * 0.1, 0.3 + i * 0.08, 0.35 + i * 0.1]);
     const house = O.solo(k, 'gloss', api); house.position.set(h.x, 0, h.z); house.rotation.y = h.yaw;
     api.light(h.x + Math.sin(h.yaw) * 2.2, 1.8, h.z + Math.cos(h.yaw) * 2.2, 0xffd08a, 1.8, 5.5, 0.12);
     // kapı (çikolata tablet): menteşeden açılır
     const dk = new Kit();
     dk.add(G.rbox(2), choc, [0.45, 0.75, 0], null, [0.9, 1.5, 0.12]);
     for (let a = 0; a < 2; a++) for (let b = 0; b < 3; b++) dk.add(G.rbox(2), C(0x7e4a2c), [0.24 + a * 0.42, 0.3 + b * 0.45, 0.07], null, [0.34, 0.36, 0.05]);
-    dk.add(G.sphere(8, 6), C(0xffd24a), [0.78, 0.75, 0.12], null, [0.07, 0.07, 0.07]);
+    dk.add(G.sphere(7, 5), C(0xffd24a), [0.78, 0.75, 0.12], null, [0.07, 0.07, 0.07]);
     const door = O.solo(dk, 'gloss', api);
     const hinge = new THREE.Group(); hinge.position.set(h.x + Math.sin(h.yaw) * 1.53 + Math.cos(h.yaw) * -0.45, 0, h.z + Math.cos(h.yaw) * 1.53 - Math.sin(h.yaw) * -0.45); hinge.rotation.y = h.yaw;
     api.add(hinge); hinge.add(door); door.position.set(0, 0, 0);
     // yaylı sürpriz: yay + gülen şekerleme topu
     const jk = new Kit();
     for (let i = 0; i < 6; i++) jk.add(G.torus(TAU, 0.12, 16), C(0xc0c8d8), [0, 0.1 + i * 0.13, 0], [PI / 2, 0, 0], [0.22, 0.22, 0.22]);
-    jk.add(G.sphere(18, 14), C(CANDY[idx % CANDY.length]), [0, 1.05, 0], null, [0.42, 0.42, 0.42]);
-    for (const sd of [-1, 1]) jk.add(G.sphere(8, 6), C(0x2a2030), [sd * 0.14, 1.12, 0.37], null, [0.06, 0.08, 0.04]);
+    jk.add(G.sphere(14, 10), C(CANDY[idx % CANDY.length]), [0, 1.05, 0], null, [0.42, 0.42, 0.42]);
+    for (const sd of [-1, 1]) jk.add(G.sphere(7, 5), C(0x2a2030), [sd * 0.14, 1.12, 0.37], null, [0.06, 0.08, 0.04]);
     jk.add(G.torus(PI, 0.25, 12), C(0x2a2030), [0, 0.98, 0.38], [0, 0, PI], [0.12, 0.12, 0.12]);
-    for (const sd of [-1, 1]) jk.add(G.sphere(8, 6), C(0xff8aa8), [sd * 0.26, 1.0, 0.33], null, [0.08, 0.05, 0.03]);
+    for (const sd of [-1, 1]) jk.add(G.sphere(7, 5), C(0xff8aa8), [sd * 0.26, 1.0, 0.33], null, [0.08, 0.05, 0.03]);
     const jack = O.solo(jk, 'candy', api); jack.visible = false;
     const st = { open: 0, t: 0, used: false, jt: -1 };
     const dx = h.door.x, dz = h.door.z;
@@ -485,7 +482,7 @@
       const c = CANDY[(i * 3 + 1) % CANDY.length], h = 1.5 + (i % 3) * 0.35;
       B.add('candy', G.cyl(1, 1, 16), stripes(p.x, p.z, C(c), C(0xffffff), 2, 5), [p.x, h / 2, p.z], null, [0.26, h, 0.26]);
       B.add('cream', G.cyl(1, 1.15, 16), C(0xfff6f0), [p.x, 0.1, p.z], null, [0.5, 0.2, 0.5]);
-      B.add('cream', G.sphere(10, 8), C(0xfff6f0), [p.x + 0.12, h - 0.05, p.z + 0.1], null, [0.12, 0.2, 0.12]);
+      B.add('cream', G.sphere(8, 6), C(0xfff6f0), [p.x + 0.12, h - 0.05, p.z + 0.1], null, [0.12, 0.2, 0.12]);
       B.add('matte', G.cyl(1, 1, 6), C(0x3a2a20), [p.x, h + 0.08, p.z], null, [0.025, 0.16, 0.025]);
       const fl = new THREE.Mesh(flame, O.mat('glow')); fl.position.set(p.x, h + 0.16, p.z); fl.scale.setScalar(0.01); api.add(fl);
       const li = api.light(p.x, h + 0.6, p.z, 0xffc070, 0, 6, 0.25) - 1, L0 = LT[li];
@@ -513,17 +510,17 @@
   function flameGeo() {
     if (FLAME) return FLAME;
     const k = new Kit();
-    k.add(G.sphere(12, 10), C(0xffb040, 2.6), [0, 0.12, 0], null, [0.12, 0.16, 0.12]);
+    k.add(G.sphere(10, 7), C(0xffb040, 2.6), [0, 0.12, 0], null, [0.12, 0.16, 0.12]);
     k.add(G.cone(12), C(0xffd070, 2.8), [0, 0.32, 0], null, [0.1, 0.3, 0.1]);
-    k.add(G.sphere(8, 6), C(0xfff6d0, 3.4), [0, 0.12, 0], null, [0.06, 0.09, 0.06]);
+    k.add(G.sphere(7, 5), C(0xfff6d0, 3.4), [0, 0.12, 0], null, [0.06, 0.09, 0.06]);
     FLAME = k.build(); FLAME.userData.keep = true; return FLAME;
   }
   // ── Pamuk şeker bulutu zıplatıcı ──
   function cloudPad(api, p) {
     const k = new Kit(), c = C(p.col);
-    k.add(G.sphere(20, 14), c, [0, 0.2, 0], null, [0.85, 0.5, 0.85]);
-    for (let i = 0; i < 7; i++) { const a = i * TAU / 7; k.add(G.sphere(14, 10), C(p.col).lerp(C(0xffffff), (i % 2) * 0.3), [Math.sin(a) * 0.62, 0.25 + (i % 2) * 0.12, Math.cos(a) * 0.62], null, [0.42, 0.36, 0.42]); }
-    k.add(G.sphere(14, 10), C(0xffffff).lerp(c, 0.4), [0, 0.55, 0], null, [0.5, 0.32, 0.5]);
+    k.add(G.sphere(14, 10), c, [0, 0.2, 0], null, [0.85, 0.5, 0.85]);
+    for (let i = 0; i < 7; i++) { const a = i * TAU / 7; k.add(G.sphere(11, 8), C(p.col).lerp(C(0xffffff), (i % 2) * 0.3), [Math.sin(a) * 0.62, 0.25 + (i % 2) * 0.12, Math.cos(a) * 0.62], null, [0.42, 0.36, 0.42]); }
+    k.add(G.sphere(11, 8), C(0xffffff).lerp(c, 0.4), [0, 0.55, 0], null, [0.5, 0.32, 0.5]);
     const m = O.solo(k, 'cream', api); m.position.set(p.x, 0, p.z);
     api.light(p.x, 1.4, p.z, p.col, 1.2, 4, 0); api.glow(p.x, p.z, p.r * 1.8, p.col, 0.22);
     const pad = { x: p.x, z: p.z, r: p.r * 0.95, col: '#' + C(p.col).getHexString(), h: 2.8, dur: 0.85, hit: 0, w: 0, wv: 0 };
@@ -545,7 +542,7 @@
       const x = rm.x + (i - 1) * rm.r * 0.9 + (rnd() - 0.5) * 2, z = rm.z - rm.r - 3 - rnd() * 4, y = 5.5 + rnd() * 2;
       if (api.isFloor(x, z + 3)) continue;
       const c = [0xffc4dc, 0xc8ecff, 0xe2d2ff][i % 3];
-      for (let j = 0; j < 6; j++) k.add(G.sphere(14, 10), C(c).lerp(C(0xffffff), (j % 2) * 0.35), [x + (j - 2.5) * 0.7, y + Math.sin(j * 1.7) * 0.3, z + Math.cos(j * 2.1) * 0.4], null, [0.9 + (j % 3) * 0.25, 0.7, 0.8]);
+      for (let j = 0; j < 6; j++) k.add(G.sphere(11, 8), C(c).lerp(C(0xffffff), (j % 2) * 0.35), [x + (j - 2.5) * 0.7, y + Math.sin(j * 1.7) * 0.3, z + Math.cos(j * 2.1) * 0.4], null, [0.9 + (j % 3) * 0.25, 0.7, 0.8]);
     }
     if (!k.parts.length) return;
     const m = O.solo(k, 'cream', api); m.castShadow = false;
@@ -558,7 +555,7 @@
     // yamaç: kat kat çikolatalı kek
     for (let i = 0; i < 3; i++) B.add('gloss', G.rbox(3), C(i % 2 ? 0x7a4426 : 0x5e321c), [x + dx * 1.0, 0.9 + i * 1.7, z + dz * 1.0], [0, yaw, 0], [6.4 - i * 0.6, 1.75, 3.4]);
     for (let i = 0; i < 3; i++) B.add('cream', G.rbox(2), C(0xfff4f8), [x + dx * 1.0, 1.75 + i * 1.7, z + dz * 1.0], [0, yaw, 0], [6.5 - i * 0.6, 0.16, 3.5]);
-    for (let i = 0; i < 9; i++) B.add('candy', G.sphere(12, 10), C(0xe8203a), [x + dx * 1.2 + Math.cos(yaw) * (i - 4) * 0.65, Hh + 0.25, z + dz * 1.2 - Math.sin(yaw) * (i - 4) * 0.65], null, [0.28, 0.28, 0.28]);
+    for (let i = 0; i < 9; i++) B.add('candy', G.sphere(10, 7), C(0xe8203a), [x + dx * 1.2 + Math.cos(yaw) * (i - 4) * 0.65, Hh + 0.25, z + dz * 1.2 - Math.sin(yaw) * (i - 4) * 0.65], null, [0.28, 0.28, 0.28]);
     // akan çikolata perdesi
     if (!FALL_MAT) {
       FALL_MAT = new THREE.MeshStandardMaterial({ color: 0x6a3418, roughness: 0.15, metalness: 0.05, side: THREE.DoubleSide });
@@ -574,7 +571,7 @@
     // havuz
     const pg = new THREE.CircleGeometry(1, 40); pg.rotateX(-PI / 2);
     const pool = new THREE.Mesh(pg, poolMat(0x6a3418, 0xa8683a, true)); pool.position.set(x - dx * 2.2, 0.03, z - dz * 2.2); pool.scale.set(2.6, 1, 2.0); pool.rotation.y = yaw; api.add(pool);
-    for (let i = 0; i < 10; i++) { const a = i * TAU / 10; B.add('cream', G.sphere(10, 8), C(0xfff4f8), [pool.position.x + Math.sin(a) * 2.6, 0.1, pool.position.z + Math.cos(a) * 2.0], null, [0.42, 0.22, 0.42]); }
+    for (let i = 0; i < 10; i++) { const a = i * TAU / 10; B.add('cream', G.sphere(8, 6), C(0xfff4f8), [pool.position.x + Math.sin(a) * 2.6, 0.1, pool.position.z + Math.cos(a) * 2.0], null, [0.42, 0.22, 0.42]); }
     api.light(x - dx * 2.5, 2.5, z - dz * 2.5, 0xffd0a0, 2.0, 7, 0.05);
     let t = 0;
     api.anim(dt => { t += dt; if (Math.random() < dt * 6) O.burst('cream', pool.position.x + (Math.random() - 0.5) * 1.6, 0.2, pool.position.z + (Math.random() - 0.5) * 0.6, { count: 2, color: '#7a4426' }); });
@@ -608,7 +605,7 @@
     for (let i = 0; i < n; i++) {
       const a = i / n * TAU, x = A.x + Math.sin(a) * (A.r + 0.9), z = A.z + Math.cos(a) * (A.r + 0.9);
       if (api.isFloor(x, z) && api.linkDist(x, z) < 3) continue;
-      B.add('cream', G.sphere(14, 10), C(i % 2 ? 0xfff6fa : 0xffd0e0), [x, 0.3, z], null, [0.8, 0.5, 0.8]);
+      B.add('cream', G.sphere(11, 8), C(i % 2 ? 0xfff6fa : 0xffd0e0), [x, 0.3, z], null, [0.8, 0.5, 0.8]);
       if (i % 2 === 0) strawberryBig(B, x, 0.85, z, 0.42);
     }
     // aşama süsleri: çevrede dev mumlar (kuzey yarı), aralarında bayraklı süs ipleri (2. aşama), mum alevleri (3. aşama)
@@ -619,7 +616,7 @@
       if (api.isFloor(x, z)) continue;
       const c = CANDY[i % CANDY.length];
       B.add('candy', G.cyl(1, 1, 18), stripes(x, z, C(c), C(0xffffff), 2, 3), [x, h / 2, z], null, [0.42, h, 0.42]);
-      B.add('cream', G.sphere(10, 8), C(0xfff6f0), [x + 0.2, h - 0.1, z + 0.15], null, [0.18, 0.32, 0.18]);
+      B.add('cream', G.sphere(8, 6), C(0xfff6f0), [x + 0.2, h - 0.1, z + 0.15], null, [0.18, 0.32, 0.18]);
       B.add('matte', G.cyl(1, 1, 6), C(0x3a2a20), [x, h + 0.1, z], null, [0.035, 0.22, 0.035]);
       candlesA.push({ x, z, h, c });
     }
@@ -636,7 +633,7 @@
     const fl = flameGeo(), flames = candlesA.map(c => { const m = new THREE.Mesh(fl, O.mat('glow')); m.position.set(c.x, c.h + 0.2, c.z); m.scale.setScalar(0.01); api.add(m); m.userData.li = api.light(c.x, c.h + 0.8, c.z, 0xffc070, 0, 9, 0.2) - 1; return m; });
     // arenanın üstünde süzülen ışık balonları (2. aşamada belirir)
     const orbs = new Kit();
-    for (let i = 0; i < 10; i++) { const a = i / 10 * TAU, x = A.x + Math.sin(a) * (A.r * 0.7), z = A.z + Math.cos(a) * (A.r * 0.7) - 2; orbs.add(G.sphere(12, 10), C(CANDY[i % CANDY.length], 1.6), [x - A.x, 6.5 + (i % 3) * 0.6, z - A.z], null, [0.28, 0.28, 0.28]); }
+    for (let i = 0; i < 10; i++) { const a = i / 10 * TAU, x = A.x + Math.sin(a) * (A.r * 0.7), z = A.z + Math.cos(a) * (A.r * 0.7) - 2; orbs.add(G.sphere(10, 7), C(CANDY[i % CANDY.length], 1.6), [x - A.x, 6.5 + (i % 3) * 0.6, z - A.z], null, [0.28, 0.28, 0.28]); }
     const orbMesh = O.solo(orbs, 'glow', api); orbMesh.position.set(A.x, 0, A.z); orbMesh.visible = false;
     const lights2 = [0, 1, 2].map(i => api.light(A.x + Math.sin(i * 2.1) * A.r * 0.6, 5, A.z + Math.cos(i * 2.1) * A.r * 0.6 - 1, [0xff9ac8, 0xffe08a, 0x9ae8ff][i], 0, 12, 0.05) - 1);
     // kutlama
@@ -680,7 +677,7 @@
     api.glow(A.x, A.z, A.r + 1, 0xffd8e8, 0.2);
   }
   function strawberryBig(B, x, y, z, s) {
-    B.add('candy', G.sphere(16, 12), C(0xff3b5c), [x, y, z], [PI, 0, 0], [s * 0.85, s, s * 0.85]);
+    B.add('candy', G.sphere(12, 9), C(0xff3b5c), [x, y, z], [PI, 0, 0], [s * 0.85, s, s * 0.85]);
     B.add('candy', G.cone(14), C(0xff3b5c), [x, y - s * 0.6, z], [PI, 0, 0], [s * 0.7, s * 0.8, s * 0.7]);
     for (let k = 0; k < 5; k++) { const a = k * TAU / 5; B.add('gloss', G.cone(5), C(0x48b04a), [x + Math.sin(a) * s * 0.35, y + s * 0.8, z + Math.cos(a) * s * 0.35], [Math.cos(a) * 1.2, 0, -Math.sin(a) * 1.2], [s * 0.18, s * 0.5, s * 0.08]); }
   }
@@ -689,7 +686,7 @@
   function firework(api, x, y, z, col) {
     let m = FW.find(f => !f.on && f.api === api);
     if (!m) {
-      const k = new Kit(); k.add(G.sphere(10, 8), C(0xffffff, 2.5), [0, 0, 0], null, [0.18, 0.18, 0.18]);
+      const k = new Kit(); k.add(G.sphere(8, 6), C(0xffffff, 2.5), [0, 0, 0], null, [0.18, 0.18, 0.18]);
       const mesh = O.solo(k, 'glow', api); mesh.castShadow = false;
       m = { mesh, on: false, api }; FW.push(m);
       api.anim(dt => {

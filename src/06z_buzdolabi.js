@@ -32,7 +32,7 @@ const ODAB = (() => {
     }
     return (M[k] = kp(m));
   }
-  const OPAQUE = { cream: 1, candy: 1, gloss: 1, matte: 1, snow: 1, gold: 1 };
+  const OPAQUE = { cream: 1, candy: 1, gloss: 1, matte: 1, snow: 1, gold: 1 }, CAST = { cream: 1, gloss: 1, snow: 1 };
   const C = (hex, k = 1) => (k === 1 ? new THREE.Color(hex) : new THREE.Color(hex).multiplyScalar(k));
 
   // ── Birleştirilmiş çizim: malzeme + 24 m'lik parça başına tek mesh (Kit: renkli ilkel parçalar) ──
@@ -46,7 +46,7 @@ const ODAB = (() => {
         for (const key in kits) {
           const k = kits[key]; if (!k.parts.length) continue;
           const mk = key.split('|')[0], mesh = new THREE.Mesh(k.build(), mat(mk));
-          mesh.castShadow = !!OPAQUE[mk]; mesh.receiveShadow = mk !== 'glow' && mk !== 'halo';
+          mesh.castShadow = !!CAST[mk]; mesh.receiveShadow = mk !== 'glow' && mk !== 'halo';
           if (mk === 'glass' || mk === 'halo') mesh.renderOrder = 2;
           mesh.name = 'odab-' + mk; api.add(mesh);
         }
@@ -98,15 +98,15 @@ const ODAB = (() => {
   function goldCandy() {
     if (!goldGeo) {
       const k = new Kit(), g = C(0xffc93a), g2 = C(0xffe58a);
-      k.add(G.sphere(18, 14), g, [0, 0, 0], null, [0.3, 0.24, 0.24]);
+      k.add(G.sphere(14, 10), g, [0, 0, 0], null, [0.3, 0.24, 0.24]);
       for (const sd of [-1, 1]) {
         k.add(G.cone(10), g2, [sd * 0.38, 0, 0], [0, 0, sd * PI / 2], [0.17, 0.22, 0.17]);
-        k.add(G.sphere(8, 6), g2, [sd * 0.5, 0, 0], null, [0.05, 0.16, 0.16]);
+        k.add(G.sphere(7, 5), g2, [sd * 0.5, 0, 0], null, [0.05, 0.16, 0.16]);
       }
       for (let i = 0; i < 3; i++) k.add(G.torus(TAU, 0.18, 14), C(0xfff2c0), [(-1 + i) * 0.12, 0, 0], [0, PI / 2, 0], [0.235, 0.235, 0.235]);
       goldGeo = k.build(); goldGeo.userData.keep = true;
       const h = new Kit();
-      h.add(G.sphere(12, 8), C(0xffd66a, 0.55), [0, 0, 0], null, [0.62, 0.62, 0.62]);
+      h.add(G.sphere(10, 7), C(0xffd66a, 0.55), [0, 0, 0], null, [0.62, 0.62, 0.62]);
       haloGeo = h.build(); haloGeo.userData.keep = true;
     }
     const g = new THREE.Group();
@@ -578,14 +578,11 @@ const ODAB = (() => {
       const ar = areaOf(i), boss = rm.kind === 'boss';
       if (boss) return;
       if (ar <= 0) {
-        O.ring(api, rm, 6, 1.9, (x, z, south) => (south ? yogurt(B, x, z, 0.55 + rnd() * 0.2, rnd) : milkBottle(B, x, z, 1 + rnd() * 0.25, rnd)));
-        O.ring(api, rm, 5, 1.3, (x, z, south) => yogurt(B, x, z, south ? 0.45 : 0.85 + rnd() * 0.3, rnd), { off: 0.5, gap: 0.6 });
+        O.ring(api, rm, 4, 1.9, (x, z, south) => (south ? yogurt(B, x, z, 0.55 + rnd() * 0.2, rnd) : milkBottle(B, x, z, 1 + rnd() * 0.25, rnd)));
       } else if (ar === 1) {
-        O.ring(api, rm, 6, 2.0, (x, z, south) => (south ? jelloMold(B, x, z, 0.5, rnd) : (rnd() < 0.5 ? fruitBowl(B, x, z, 1, rnd) : jelloMold(B, x, z, 1 + rnd() * 0.3, rnd))));
-        O.ring(api, rm, 5, 1.2, (x, z, south) => berry(B, x, z, south ? 0.6 : 1, rnd), { off: 0.5, gap: 0.5 });
+        O.ring(api, rm, 4, 2.0, (x, z, south) => (south ? jelloMold(B, x, z, 0.5, rnd) : (rnd() < 0.5 ? fruitBowl(B, x, z, 1, rnd) : jelloMold(B, x, z, 1 + rnd() * 0.3, rnd))));
       } else {
-        O.ring(api, rm, 6, 2.0, (x, z, south) => (south ? iceBlock(B, x, z, 0.6, rnd) : peasBag(B, x, z, 1 + rnd() * 0.2, rnd)));
-        O.ring(api, rm, 5, 1.3, (x, z, south) => iceBlock(B, x, z, south ? 0.45 : 0.9, rnd), { off: 0.5, gap: 0.5 });
+        O.ring(api, rm, 4, 2.0, (x, z, south) => (south ? iceBlock(B, x, z, 0.6, rnd) : peasBag(B, x, z, 1 + rnd() * 0.2, rnd)));
         icicles(B, api, rm);
       }
       api.glow(rm.x, rm.z, rm.r * 0.95, ar === 1 ? 0xffe2ee : 0xe4f6ff, 0.1);
@@ -595,7 +592,7 @@ const ODAB = (() => {
     if (L.exit) avoid.push({ x: L.exit.x, z: L.exit.z, r: 5 });
     if (D.ball) avoid.push({ x: D.ball.ix, z: D.ball.iz, r: 3.2 });
     if (D.slide) avoid.push({ x: D.slide.tx, z: D.slide.tz, r: 3 });
-    for (const c of O.edgeSpots(L, api, { avoid, space: 2.9 })) {
+    for (const c of O.edgeSpots(L, api, { avoid, space: 3.3 })) {
       const ar = areaOf(c.room), rmk = L.rooms[c.room];
       if (rmk && rmk.kind === 'boss') continue;
       const low = c.side === 'south', mid = c.side === 'side';
@@ -604,7 +601,7 @@ const ODAB = (() => {
       else { if (low) iceBlock(B, c.x, c.z, 0.35, rnd); else if (mid) (rnd() < 0.5 ? iceBlock(B, c.x, c.z, 0.6, rnd) : snowMound(B, c.x, c.z, 0.8, rnd)); else (rnd() < 0.5 ? peasBag(B, c.x - c.nx * 0.3, c.z - c.nz * 0.3, 0.75, rnd) : iceBlock(B, c.x, c.z, 0.9, rnd)); }
     }
     // zemine serpiştirilmiş kırağı kristalleri ve minik buz parçaları
-    for (const f of O.floorSpots(L, api, 70, { avoid })) frost(B, f.x, f.z, rnd);
+    for (const f of O.floorSpots(L, api, 50, { avoid })) frost(B, f.x, f.z, rnd);
     // ── Geçitler: buz kemerleri ──
     (L.areas || []).forEach((a, k) => { if (k && a.gate) iceArch(B, api, L, k); });
     // ── Buz pistleri ──
@@ -647,31 +644,31 @@ const ODAB = (() => {
   // Süt şişesi sütunu: cam gövde + içinde süt + kapak + inek benekli etiket
   function milkBottle(B, x, z, s, rnd) {
     const Hh = 5.2 * s, r = 1.25 * s, cap = C(CORE.milkCap[(rnd() * 4) | 0]);
-    B.add('cream', G.cyl(1, 1, 24), C(0xfdfdf8), [x, Hh * 0.36, z], null, [r * 0.9, Hh * 0.72, r * 0.9]);   // süt
-    B.add('glass', G.cyl(1, 1, 28), C(0xeef8ff), [x, Hh * 0.4, z], null, [r, Hh * 0.8, r]);
+    B.add('cream', G.cyl(1, 1, 18), C(0xfdfdf8), [x, Hh * 0.36, z], null, [r * 0.9, Hh * 0.72, r * 0.9]);   // süt
+    B.add('glass', G.cyl(1, 1, 18), C(0xeef8ff), [x, Hh * 0.4, z], null, [r, Hh * 0.8, r]);
     B.add('glass', G.sphere(24, 14), C(0xeef8ff), [x, Hh * 0.8, z], null, [r, r * 0.55, r]);
-    B.add('glass', G.cyl(1, 1, 20), C(0xeef8ff), [x, Hh * 0.92, z], null, [r * 0.42, Hh * 0.18, r * 0.42]);
-    B.add('candy', G.cyl(1, 1, 22), cap, [x, Hh * 1.02, z], null, [r * 0.5, Hh * 0.05, r * 0.5]);
-    B.add('candy', G.torus(TAU, 0.3, 22), cap, [x, Hh * 0.995, z], [PI / 2, 0, 0], [r * 0.48, r * 0.48, r * 0.48]);
-    B.add('gloss', G.cyl(1, 1, 28, true), C(0xffffff), [x, Hh * 0.38, z], null, [r * 1.02, Hh * 0.22, r * 1.02]);
+    B.add('glass', G.cyl(1, 1, 16), C(0xeef8ff), [x, Hh * 0.92, z], null, [r * 0.42, Hh * 0.18, r * 0.42]);
+    B.add('candy', G.cyl(1, 1, 16), cap, [x, Hh * 1.02, z], null, [r * 0.5, Hh * 0.05, r * 0.5]);
+    B.add('candy', G.torus(TAU, 0.3, 16), cap, [x, Hh * 0.995, z], [PI / 2, 0, 0], [r * 0.48, r * 0.48, r * 0.48]);
+    B.add('gloss', G.cyl(1, 1, 18, true), C(0xffffff), [x, Hh * 0.38, z], null, [r * 1.02, Hh * 0.22, r * 1.02]);
     for (let k = 0; k < 5; k++) {   // inek benekleri
       const a = k * 1.3 + rnd(), yy = Hh * (0.31 + (k % 3) * 0.05);
-      B.add('gloss', G.sphere(10, 8), C(0x2a2a30), [x + Math.sin(a) * r * 1.03, yy, z + Math.cos(a) * r * 1.03], [0, a, 0], [0.22 * s, 0.16 * s, 0.05 * s]);
+      B.add('gloss', G.sphere(8, 6), C(0x2a2a30), [x + Math.sin(a) * r * 1.03, yy, z + Math.cos(a) * r * 1.03], [0, a, 0], [0.22 * s, 0.16 * s, 0.05 * s]);
     }
-    B.add('gloss', G.sphere(12, 8), C(0xff9ab4), [x + Math.sin(0.3) * r * 1.03, Hh * 0.43, z + Math.cos(0.3) * r * 1.03], [0, 0.3, 0], [0.3 * s, 0.22 * s, 0.06 * s]);   // pembe kalp
+    B.add('gloss', G.sphere(10, 7), C(0xff9ab4), [x + Math.sin(0.3) * r * 1.03, Hh * 0.43, z + Math.cos(0.3) * r * 1.03], [0, 0.3, 0], [0.3 * s, 0.22 * s, 0.06 * s]);   // pembe kalp
   }
   // Yoğurt kabı: kesik koni + renkli bant + folyo kapak (bir köşesi kalkık) + üstünde çilek
   function yogurt(B, x, z, s, rnd) {
     const col = C(CORE.yog[(rnd() * CORE.yog.length) | 0]), h = 1.8 * s, r = 1.15 * s;
-    B.add('gloss', G.cyl(1, 0.8, 26), C(0xfffaf2), [x, h / 2, z], null, [r, h, r]);
-    B.add('gloss', G.cyl(1, 0.92, 26, true), col, [x, h * 0.55, z], null, [r * 0.98, h * 0.5, r * 0.98]);
-    B.add('gloss', G.torus(TAU, 0.08, 26), C(0xfffaf2), [x, h, z], [PI / 2, 0, 0], [r * 1.02, r * 1.02, r * 1.02]);
-    B.add('gold', G.cyl(1, 1, 26), C(0xe8eef6), [x, h + 0.03, z], [0.08, 0, 0.06], [r * 1.0, 0.04, r * 1.0]);
+    B.add('gloss', G.cyl(1, 0.8, 18), C(0xfffaf2), [x, h / 2, z], null, [r, h, r]);
+    B.add('gloss', G.cyl(1, 0.92, 18, true), col, [x, h * 0.55, z], null, [r * 0.98, h * 0.5, r * 0.98]);
+    B.add('gloss', G.torus(TAU, 0.08, 16), C(0xfffaf2), [x, h, z], [PI / 2, 0, 0], [r * 1.02, r * 1.02, r * 1.02]);
+    B.add('gold', G.cyl(1, 1, 18), C(0xe8eef6), [x, h + 0.03, z], [0.08, 0, 0.06], [r * 1.0, 0.04, r * 1.0]);
     B.add('gold', G.box(), C(0xdfe8f2), [x + r * 0.7, h + 0.25, z + r * 0.45], [0.2, 0.6, -0.9], [0.5 * s, 0.03, 0.4 * s]);
     if (rnd() < 0.6) strawberry(B, x - r * 0.2, h + 0.3 * s, z, 0.42 * s, rnd);
   }
   function strawberry(B, x, y, z, s, rnd) {
-    B.add('candy', G.sphere(16, 12), C(0xff3b5c), [x, y, z], [PI, 0, 0], [s * 0.85, s, s * 0.85]);
+    B.add('candy', G.sphere(12, 9), C(0xff3b5c), [x, y, z], [PI, 0, 0], [s * 0.85, s, s * 0.85]);
     B.add('candy', G.cone(14), C(0xff3b5c), [x, y - s * 0.6, z], [PI, 0, 0], [s * 0.7, s * 0.8, s * 0.7]);
     for (let k = 0; k < 5; k++) { const a = k * TAU / 5; B.add('gloss', G.cone(5), C(0x48b04a), [x + Math.sin(a) * s * 0.35, y + s * 0.8, z + Math.cos(a) * s * 0.35], [Math.cos(a) * 1.2, 0, -Math.sin(a) * 1.2], [s * 0.18, s * 0.5, s * 0.08]); }
     for (let k = 0; k < 7; k++) { const a = k * 2.4, yy = y - s * 0.1 - (k % 3) * s * 0.22; B.add('glow', G.sphere(5, 4), C(0xfff2a0, 1.1), [x + Math.sin(a) * s * 0.82, yy, z + Math.cos(a) * s * 0.82], null, [s * 0.05, s * 0.07, s * 0.05]); }
@@ -679,28 +676,28 @@ const ODAB = (() => {
   // Jöle kalıbı: katmanlı, yarı saydam kubbe + krema tepesi + kiraz
   function jelloMold(B, x, z, s, rnd) {
     const c1 = CORE.jelly[(rnd() * CORE.jelly.length) | 0], c2 = CORE.jelly[(rnd() * CORE.jelly.length) | 0];
-    B.add('jelly', G.cyl(0.78, 1, 28), C(c1), [x, 0.75 * s, z], null, [1.9 * s, 1.5 * s, 1.9 * s]);
-    B.add('jelly', G.cyl(0.6, 0.78, 28), C(c2), [x, 1.95 * s, z], null, [1.9 * s, 0.9 * s, 1.9 * s]);
-    for (let k = 0; k < 10; k++) { const a = k * TAU / 10; B.add('jelly', G.sphere(10, 8), C(c1), [x + Math.sin(a) * 1.62 * s, 1.0 * s, z + Math.cos(a) * 1.62 * s], null, [0.32 * s, 0.75 * s, 0.32 * s]); }
-    B.add('cream', G.sphere(16, 12), C(0xfffaf4), [x, 2.5 * s, z], null, [0.8 * s, 0.45 * s, 0.8 * s]);
+    B.add('jelly', G.cyl(0.78, 1, 18), C(c1), [x, 0.75 * s, z], null, [1.9 * s, 1.5 * s, 1.9 * s]);
+    B.add('jelly', G.cyl(0.6, 0.78, 18), C(c2), [x, 1.95 * s, z], null, [1.9 * s, 0.9 * s, 1.9 * s]);
+    for (let k = 0; k < 10; k++) { const a = k * TAU / 10; B.add('jelly', G.sphere(8, 6), C(c1), [x + Math.sin(a) * 1.62 * s, 1.0 * s, z + Math.cos(a) * 1.62 * s], null, [0.32 * s, 0.75 * s, 0.32 * s]); }
+    B.add('cream', G.sphere(12, 9), C(0xfffaf4), [x, 2.5 * s, z], null, [0.8 * s, 0.45 * s, 0.8 * s]);
     B.add('cream', G.cone(16), C(0xfffaf4), [x, 2.95 * s, z], null, [0.45 * s, 0.6 * s, 0.45 * s]);
-    B.add('candy', G.sphere(14, 10), C(0xe8203a), [x, 3.35 * s, z], null, [0.28 * s, 0.28 * s, 0.28 * s]);
+    B.add('candy', G.sphere(11, 8), C(0xe8203a), [x, 3.35 * s, z], null, [0.28 * s, 0.28 * s, 0.28 * s]);
     B.add('gloss', G.cyl(1, 1, 5), C(0x5a8a3a), [x + 0.1 * s, 3.65 * s, z], [0, 0, 0.4], [0.03 * s, 0.4 * s, 0.03 * s]);
   }
   // Meyve kâsesi: cam kâse + portakal dilimi, üzüm, çilek, kivi
   function fruitBowl(B, x, z, s, rnd) {
-    B.add('glass', G.sphere(28, 16), C(0xeaf6ff), [x, 1.0 * s, z], null, [2.1 * s, 1.2 * s, 2.1 * s]);
-    B.add('glass', G.cyl(0.6, 1, 20), C(0xeaf6ff), [x, 0.1 * s, z], null, [1.0 * s, 0.2 * s, 1.0 * s]);
+    B.add('glass', G.sphere(18, 12), C(0xeaf6ff), [x, 1.0 * s, z], null, [2.1 * s, 1.2 * s, 2.1 * s]);
+    B.add('glass', G.cyl(0.6, 1, 16), C(0xeaf6ff), [x, 0.1 * s, z], null, [1.0 * s, 0.2 * s, 1.0 * s]);
     for (let k = 0; k < 9; k++) {
       const a = k * 2.3 + rnd(), d = (k % 3) * 0.55 * s, xx = x + Math.sin(a) * d, zz = z + Math.cos(a) * d, yy = (1.55 + (k % 2) * 0.35) * s;
       const t = k % 4;
-      if (t === 0) { B.add('candy', G.sphere(16, 12), C(0xff9a2a), [xx, yy, zz], null, [0.6 * s, 0.6 * s, 0.6 * s]); }
-      else if (t === 1) { for (let g = 0; g < 6; g++) B.add('candy', G.sphere(10, 8), C(g % 2 ? 0x8a4ad0 : 0xa060e0), [xx + (g % 3 - 1) * 0.22 * s, yy + 0.2 * s - Math.floor(g / 3) * 0.25 * s, zz], null, [0.2 * s, 0.2 * s, 0.2 * s]); }
+      if (t === 0) { B.add('candy', G.sphere(12, 9), C(0xff9a2a), [xx, yy, zz], null, [0.6 * s, 0.6 * s, 0.6 * s]); }
+      else if (t === 1) { for (let g = 0; g < 6; g++) B.add('candy', G.sphere(8, 6), C(g % 2 ? 0x8a4ad0 : 0xa060e0), [xx + (g % 3 - 1) * 0.22 * s, yy + 0.2 * s - Math.floor(g / 3) * 0.25 * s, zz], null, [0.2 * s, 0.2 * s, 0.2 * s]); }
       else if (t === 2) strawberry(B, xx, yy, zz, 0.42 * s, rnd);
       else { B.add('candy', G.cyl(1, 1, 18), C(0x9ad84a), [xx, yy, zz], [0.5, 0, 0.3], [0.5 * s, 0.14 * s, 0.5 * s]); B.add('glow', G.cyl(1, 1, 12), C(0xf4ffd0, 0.9), [xx, yy + 0.08 * s, zz + 0.04], [0.5, 0, 0.3], [0.2 * s, 0.02, 0.2 * s]); }
     }
   }
-  function berry(B, x, z, s, rnd) { if (rnd() < 0.5) strawberry(B, x, 0.6 * s, z, 0.7 * s, rnd); else { B.add('candy', G.sphere(14, 10), C(0x4a5ad8), [x, 0.45 * s, z], null, [0.5 * s, 0.45 * s, 0.5 * s]); B.add('candy', G.sphere(12, 8), C(0x5a6ae8), [x + 0.6 * s, 0.38 * s, z + 0.2], null, [0.4 * s, 0.38 * s, 0.4 * s]); } }
+  function berry(B, x, z, s, rnd) { if (rnd() < 0.5) strawberry(B, x, 0.6 * s, z, 0.7 * s, rnd); else { B.add('candy', G.sphere(11, 8), C(0x4a5ad8), [x, 0.45 * s, z], null, [0.5 * s, 0.45 * s, 0.5 * s]); B.add('candy', G.sphere(10, 7), C(0x5a6ae8), [x + 0.6 * s, 0.38 * s, z + 0.2], null, [0.4 * s, 0.38 * s, 0.4 * s]); } }
   // Buz küpü yığını
   function iceBlock(B, x, z, s, rnd) {
     for (let k = 0; k < 3; k++) {
@@ -708,19 +705,19 @@ const ODAB = (() => {
       if (k && rnd() < 0.35) break;
       B.add('ice', G.rbox(2), C(k % 2 ? 0xd8f0ff : 0xc4e6ff), [x + ox, yy, z + (rnd() - 0.5) * 0.4], [rnd() * 0.3, rnd() * PI, rnd() * 0.2], [1.3 * s, 1.1 * s, 1.3 * s]);
     }
-    B.add('glow', G.sphere(8, 6), C(0xdff6ff, 1.4), [x + 0.3 * s, 1.0 * s, z + 0.5 * s], null, [0.06, 0.06, 0.06]);
+    B.add('glow', G.sphere(7, 5), C(0xdff6ff, 1.4), [x + 0.3 * s, 1.0 * s, z + 0.5 * s], null, [0.06, 0.06, 0.06]);
   }
   // Dondurulmuş bezelye torbası (sevimli yüzlü değil; parlak paket)
   function peasBag(B, x, z, s, rnd) {
     const c = rnd() < 0.5 ? 0x6ac06a : 0x6aa8e8;
     B.add('gloss', G.rbox(3), C(c), [x, 1.5 * s, z], [0, rnd() * 0.6 - 0.3, 0.08], [2.4 * s, 3.0 * s, 0.9 * s]);
     B.add('gloss', G.rbox(2), C(0xffffff), [x, 2.9 * s, z], [0, 0, 0.08], [2.2 * s, 0.35 * s, 0.85 * s]);
-    for (let k = 0; k < 5; k++) B.add('candy', G.sphere(10, 8), C(0x8ad86a), [x - 0.6 * s + k * 0.3 * s, 1.4 * s + (k % 2) * 0.25 * s, z + 0.48 * s], null, [0.18 * s, 0.18 * s, 0.1 * s]);
-    B.add('snow', G.sphere(12, 8), C(0xf4fbff), [x, 3.15 * s, z], null, [1.1 * s, 0.25 * s, 0.5 * s]);
+    for (let k = 0; k < 5; k++) B.add('candy', G.sphere(8, 6), C(0x8ad86a), [x - 0.6 * s + k * 0.3 * s, 1.4 * s + (k % 2) * 0.25 * s, z + 0.48 * s], null, [0.18 * s, 0.18 * s, 0.1 * s]);
+    B.add('snow', G.sphere(10, 7), C(0xf4fbff), [x, 3.15 * s, z], null, [1.1 * s, 0.25 * s, 0.5 * s]);
   }
   function snowMound(B, x, z, s, rnd) {
-    B.add('snow', G.sphere(14, 10), C(0xffffff), [x, 0.05, z], null, [1.2 * s, 0.6 * s, 1.0 * s]);
-    B.add('snow', G.sphere(12, 8), C(0xf0f8ff), [x + 0.6 * s, 0.05, z + 0.3 * s], null, [0.7 * s, 0.4 * s, 0.7 * s]);
+    B.add('snow', G.sphere(11, 8), C(0xffffff), [x, 0.05, z], null, [1.2 * s, 0.6 * s, 1.0 * s]);
+    B.add('snow', G.sphere(10, 7), C(0xf0f8ff), [x + 0.6 * s, 0.05, z + 0.3 * s], null, [0.7 * s, 0.4 * s, 0.7 * s]);
     B.add('glow', G.sphere(6, 4), C(0xdff6ff, 1.6), [x - 0.2, 0.55 * s, z + 0.4], null, [0.05, 0.05, 0.05]);
   }
   function frost(B, x, z, rnd) {
@@ -731,8 +728,8 @@ const ODAB = (() => {
     } else if (k < 0.8) {   // minik buz parçaları
       for (let i = 0; i < 3; i++) B.add('ice', G.octa(), C(0xcfeaff), [x + (rnd() - 0.5) * 0.5, 0.08, z + (rnd() - 0.5) * 0.5], [rnd(), rnd() * PI, rnd()], [0.12, 0.16, 0.12]);
     } else {   // donmuş bezelye / yaban mersini
-      for (let i = 0; i < 3; i++) B.add('candy', G.sphere(10, 8), C(i % 2 ? 0x8ad86a : 0x5a6ad8), [x + (rnd() - 0.5) * 0.6, 0.13, z + (rnd() - 0.5) * 0.6], null, [0.13, 0.13, 0.13]);
-      B.add('snow', G.sphere(8, 6), C(0xffffff), [x, 0.02, z], null, [0.4, 0.06, 0.4]);
+      for (let i = 0; i < 3; i++) B.add('candy', G.sphere(8, 6), C(i % 2 ? 0x8ad86a : 0x5a6ad8), [x + (rnd() - 0.5) * 0.6, 0.13, z + (rnd() - 0.5) * 0.6], null, [0.13, 0.13, 0.13]);
+      B.add('snow', G.sphere(7, 5), C(0xffffff), [x, 0.02, z], null, [0.4, 0.06, 0.4]);
     }
   }
   // Kuzeydeki rafın kenarından sarkan, parlayan buz sarkıtları (zararsız; yürünür alanın üstünde değil)
@@ -742,11 +739,11 @@ const ODAB = (() => {
     // buzlu raf duvarı: karla kaplı alçak duvar, ön kenarından parlayan sarkıtlar
     B.add('ice', G.rbox(2), C(0xcfeaff), [rm.x, 2.3, z - 0.3], null, [w, 4.6, 1.4]);
     B.add('snow', G.rbox(2), C(0xf6fcff), [rm.x, 4.75, z], null, [w + 0.4, 0.5, 2.0]);
-    for (let k = 0; k < Math.round(w * 1.2); k++) B.add('snow', G.sphere(10, 8), C(0xffffff), [rm.x - w / 2 + k * 0.85, 4.95, z + 0.9 - (k % 2) * 0.3], null, [0.5, 0.3, 0.5]);
+    for (let k = 0; k < Math.round(w * 1.2); k++) B.add('snow', G.sphere(8, 6), C(0xffffff), [rm.x - w / 2 + k * 0.85, 4.95, z + 0.9 - (k % 2) * 0.3], null, [0.5, 0.3, 0.5]);
     for (let k = 0; k < n; k++) {
       const x = rm.x - w / 2 + 0.4 + k * ((w - 0.8) / (n - 1)), l = 0.8 + ((k * 7) % 5) * 0.28, top = 4.55;
       B.add('ice', G.cone(10), C(0xd4f0ff), [x, top - l / 2, z + 0.75], [PI, 0, 0], [0.2 + (k % 3) * 0.05, l, 0.2]);
-      B.add('glow', G.sphere(8, 6), C(0xbfeaff, 2.2), [x, top - l + 0.06, z + 0.75], null, [0.06, 0.09, 0.06]);
+      B.add('glow', G.sphere(7, 5), C(0xbfeaff, 2.2), [x, top - l + 0.06, z + 0.75], null, [0.06, 0.09, 0.06]);
     }
     api.light(rm.x, 3.6, z + 1.6, 0xbfe6ff, 2.4, 8, 0.05);
   }
@@ -758,20 +755,20 @@ const ODAB = (() => {
     for (const sd of [-1, 1]) {
       const x = cx + px * half * sd, z = cz + pz * half * sd;
       for (let i = 0; i < 4; i++) B.add('ice', G.rbox(2), C(i % 2 ? 0xd2eeff : 0xbfe4ff), [x, 0.5 + i * 0.95, z], [0, yaw + i * 0.3, 0], [0.95, 0.9, 0.95]);
-      B.add('snow', G.sphere(12, 8), C(0xffffff), [x, 4.0, z], null, [0.7, 0.32, 0.7]);
-      B.add('glow', G.sphere(10, 8), C(0xbfeaff, 2), [x, 4.35, z], null, [0.16, 0.16, 0.16]);
+      B.add('snow', G.sphere(10, 7), C(0xffffff), [x, 4.0, z], null, [0.7, 0.32, 0.7]);
+      B.add('glow', G.sphere(8, 6), C(0xbfeaff, 2), [x, 4.35, z], null, [0.16, 0.16, 0.16]);
     }
     // yay
     const N = 14;
     for (let i = 0; i <= N; i++) {
       const u = i / N, a = PI * u, x = cx + px * Math.cos(a) * half, z = cz + pz * Math.cos(a) * half, y = 4.0 + Math.sin(a) * 1.3;
-      B.add('ice', G.sphere(10, 8), C(0xd8f2ff), [x, y, z], null, [0.42, 0.42, 0.42]);
-      if (i % 2 === 0) B.add('snow', G.sphere(8, 6), C(0xffffff), [x, y + 0.32, z], null, [0.3, 0.14, 0.3]);
+      B.add('ice', G.sphere(8, 6), C(0xd8f2ff), [x, y, z], null, [0.42, 0.42, 0.42]);
+      if (i % 2 === 0) B.add('snow', G.sphere(7, 5), C(0xffffff), [x, y + 0.32, z], null, [0.3, 0.14, 0.3]);
     }
     // kar tanesi amblemi
     const ex = cx, ez = cz, ey = 5.45;
     for (let i = 0; i < 6; i++) { const a = i * PI / 3; B.add('glow', G.box(), C(0xdff6ff, 1.8), [ex + px * Math.cos(a) * 0.35, ey + Math.sin(a) * 0.35, ez + pz * Math.cos(a) * 0.35], [0, yaw, a], [0.7, 0.09, 0.09]); }
-    B.add('glow', G.sphere(10, 8), C(0xffffff, 2.2), [ex, ey, ez], null, [0.16, 0.16, 0.16]);
+    B.add('glow', G.sphere(8, 6), C(0xffffff, 2.2), [ex, ey, ez], null, [0.16, 0.16, 0.16]);
     api.light(cx, 3.2, cz, 0xcfeeff, 2.2, 7, 0);
     api.glow(cx, cz, half + 1, 0xd8f2ff, 0.16);
   }
@@ -811,9 +808,9 @@ const ODAB = (() => {
       const a = k * PI / 2 + 0.4, x = e.x + Math.sin(a) * (e.rx + 2.6), z = e.z + Math.cos(a) * (e.rz + 2.6);
       if (api.isFloor(x, z) || z > e.z + e.rz * 0.5) continue;
       // kar küresi (cam küre içinde minik kar taneleri ve yıldız)
-      B.add('cream', G.cyl(1, 1.1, 24), C(0xff8fb0), [x, 0.35, z], null, [1.0, 0.7, 1.0]);
-      B.add('glass', G.sphere(24, 16), C(0xeaf8ff), [x, 1.6, z], null, [1.0, 1.0, 1.0]);
-      B.add('snow', G.sphere(16, 10), C(0xffffff), [x, 0.9, z], null, [0.85, 0.3, 0.85]);
+      B.add('cream', G.cyl(1, 1.1, 18), C(0xff8fb0), [x, 0.35, z], null, [1.0, 0.7, 1.0]);
+      B.add('glass', G.sphere(16, 12), C(0xeaf8ff), [x, 1.6, z], null, [1.0, 1.0, 1.0]);
+      B.add('snow', G.sphere(12, 8), C(0xffffff), [x, 0.9, z], null, [0.85, 0.3, 0.85]);
       B.add('glow', G.octa(), C(0xffe080, 2.2), [x, 1.6, z], [0, rnd(), 0.3], [0.28, 0.28, 0.12]);
       for (let i = 0; i < 6; i++) B.add('glow', G.sphere(6, 4), C(0xffffff, 1.6), [x + Math.sin(i * 1.7) * 0.5, 1.3 + (i % 3) * 0.3, z + Math.cos(i * 1.7) * 0.5], null, [0.05, 0.05, 0.05]);
       api.light(x, 1.8, z, 0xffe6a8, 1.6, 5, 0.1);
@@ -825,19 +822,19 @@ const ODAB = (() => {
     for (let i = 0; i < n; i++) {
       const a = i / n * TAU, x = e.x + Math.sin(a) * (e.rx + 3.4), z = e.z + Math.cos(a) * (e.rz + 3.4), south = z > e.z + e.rz * 0.4;
       if (api.isFloor(x, z) || api.linkDist(x, z) < 3) continue;
-      if (south) { B.add('snow', G.sphere(14, 10), C(0xffffff), [x, 0.2, z], null, [1.2, 0.5, 1.2]); B.add('glow', G.sphere(8, 6), C(i % 2 ? 0xffc0d8 : 0xbfe6ff, 1.8), [x, 0.6, z], null, [0.14, 0.14, 0.14]); continue; }
+      if (south) { B.add('snow', G.sphere(11, 8), C(0xffffff), [x, 0.2, z], null, [1.2, 0.5, 1.2]); B.add('glow', G.sphere(7, 5), C(i % 2 ? 0xffc0d8 : 0xbfe6ff, 1.8), [x, 0.6, z], null, [0.14, 0.14, 0.14]); continue; }
       cone(B, x, z, 1.25 + (i % 3) * 0.15, i);
     }
     // kuzeyde dev dondurma kupası
     const tx = e.x, tz = e.z - e.rz - 5.5;
     if (!api.isFloor(tx, tz + 2)) {
-      B.add('glass', G.cyl(1, 0.35, 28), C(0xeaf8ff), [tx, 3.0, tz], null, [3.6, 2.6, 3.6]);
+      B.add('glass', G.cyl(1, 0.35, 18), C(0xeaf8ff), [tx, 3.0, tz], null, [3.6, 2.6, 3.6]);
       B.add('glass', G.cyl(0.3, 0.3, 16), C(0xeaf8ff), [tx, 0.9, tz], null, [0.6, 1.8, 0.6]);
-      B.add('glass', G.cyl(1, 1, 24), C(0xeaf8ff), [tx, 0.1, tz], null, [2.2, 0.2, 2.2]);
+      B.add('glass', G.cyl(1, 1, 18), C(0xeaf8ff), [tx, 0.1, tz], null, [2.2, 0.2, 2.2]);
       const sc = [0xffb8cc, 0xfff2d0, 0xbff0d0, 0xc8a07a];
-      for (let i = 0; i < 4; i++) { const a = i * TAU / 4 + 0.3; B.add('cream', G.sphere(20, 14), C(sc[i]), [tx + Math.sin(a) * 1.4, 4.6, tz + Math.cos(a) * 1.4], null, [1.6, 1.4, 1.6]); }
-      B.add('cream', G.sphere(20, 14), C(0xffe6ee), [tx, 5.9, tz], null, [1.5, 1.2, 1.5]);
-      B.add('candy', G.sphere(16, 12), C(0xe8203a), [tx, 7.2, tz], null, [0.5, 0.5, 0.5]);
+      for (let i = 0; i < 4; i++) { const a = i * TAU / 4 + 0.3; B.add('cream', G.sphere(14, 10), C(sc[i]), [tx + Math.sin(a) * 1.4, 4.6, tz + Math.cos(a) * 1.4], null, [1.6, 1.4, 1.6]); }
+      B.add('cream', G.sphere(14, 10), C(0xffe6ee), [tx, 5.9, tz], null, [1.5, 1.2, 1.5]);
+      B.add('candy', G.sphere(12, 9), C(0xe8203a), [tx, 7.2, tz], null, [0.5, 0.5, 0.5]);
       for (let i = 0; i < 5; i++) B.add('gold', G.cone(6), C(0xffd24a), [tx + Math.sin(i * TAU / 5) * 0.9, 7.0, tz + Math.cos(i * TAU / 5) * 0.9], null, [0.22, 0.6, 0.22]);
       B.add('candy', G.cyl(1, 1, 8), C(0xf4c27a), [tx + 1.2, 6.6, tz + 0.3], [0, 0, -0.5], [0.15, 2.2, 0.15]);
       api.light(tx, 5, tz + 3, 0xffe2c0, 3, 10, 0);
@@ -854,9 +851,9 @@ const ODAB = (() => {
     B.add('candy', G.cone(18), C(0xe0a050), [x, 1.4 * s, z], [PI, 0, 0], [0.75 * s, 2.8 * s, 0.75 * s]);
     for (let k = 0; k < 4; k++) B.add('gloss', G.torus(TAU, 0.06, 18), C(0xc88a3a), [x, (0.9 + k * 0.6) * s, z], [PI / 2, 0, 0], [(0.2 + k * 0.15) * s, (0.2 + k * 0.15) * s, (0.2 + k * 0.15) * s]);
     const sc = [0xffb8cc, 0xfff2d0, 0xbff0d0, 0xc8a07a, 0xd8c0ff][i % 5];
-    B.add('cream', G.sphere(18, 12), C(sc), [x, 3.05 * s, z], null, [0.95 * s, 0.85 * s, 0.95 * s]);
-    for (let k = 0; k < 8; k++) { const a = k * TAU / 8; B.add('cream', G.sphere(8, 6), C(sc), [x + Math.sin(a) * 0.8 * s, 2.7 * s, z + Math.cos(a) * 0.8 * s], null, [0.3 * s, 0.25 * s, 0.3 * s]); }
-    for (let k = 0; k < 6; k++) B.add('glow', G.capsule(1, 4), C([0xff6fa0, 0x6fc8ff, 0xffe06a][k % 3], 1.3), [x + Math.sin(k * 1.9) * 0.6 * s, 3.4 * s + (k % 2) * 0.2, z + Math.cos(k * 1.9) * 0.6 * s], [k, 0, k * 0.7], [0.04, 0.08, 0.04]);
+    B.add('cream', G.sphere(14, 10), C(sc), [x, 3.05 * s, z], null, [0.95 * s, 0.85 * s, 0.95 * s]);
+    for (let k = 0; k < 8; k++) { const a = k * TAU / 8; B.add('cream', G.sphere(7, 5), C(sc), [x + Math.sin(a) * 0.8 * s, 2.7 * s, z + Math.cos(a) * 0.8 * s], null, [0.3 * s, 0.25 * s, 0.3 * s]); }
+    for (let k = 0; k < 6; k++) B.add('glow', G.cyl(1, 1, 5), C([0xff6fa0, 0x6fc8ff, 0xffe06a][k % 3], 1.3), [x + Math.sin(k * 1.9) * 0.6 * s, 3.4 * s + (k % 2) * 0.2, z + Math.cos(k * 1.9) * 0.6 * s], [k, 0, k * 0.7], [0.04, 0.24, 0.04]);
   }
   // Buzdolabı lambası
   function fridgeLamp(B, api, rm) {
@@ -871,14 +868,14 @@ const ODAB = (() => {
   // Zıplatan jöle tepeciği (tek hareketli mesh: sıkışır, sallanır)
   function jellyPad(api, p) {
     const k = new Kit(), c = C(p.col), c2 = C(p.col).lerp(C(0xffffff), 0.35);
-    k.add(G.sphere(28, 16), c, [0, 0, 0], null, [1, 0.62, 1]);
-    k.add(G.sphere(20, 12), c2, [0, 0.42, 0], null, [0.62, 0.3, 0.62]);
-    for (let i = 0; i < 6; i++) { const a = i * TAU / 6; k.add(G.sphere(10, 8), C(0xffffff).lerp(c, 0.4), [Math.sin(a) * 0.45, 0.2, Math.cos(a) * 0.45], null, [0.12, 0.12, 0.12]); }
+    k.add(G.sphere(18, 12), c, [0, 0, 0], null, [1, 0.62, 1]);
+    k.add(G.sphere(14, 10), c2, [0, 0.42, 0], null, [0.62, 0.3, 0.62]);
+    for (let i = 0; i < 6; i++) { const a = i * TAU / 6; k.add(G.sphere(8, 6), C(0xffffff).lerp(c, 0.4), [Math.sin(a) * 0.45, 0.2, Math.cos(a) * 0.45], null, [0.12, 0.12, 0.12]); }
     const m = O.solo(k, 'jelly', api); m.position.set(p.x, 0, p.z); m.scale.setScalar(p.r * 1.05);
     const top = new Kit();
-    top.add(G.sphere(14, 10), C(0xfffaf4), [0, 0.7, 0], null, [0.32, 0.18, 0.32]);
+    top.add(G.sphere(11, 8), C(0xfffaf4), [0, 0.7, 0], null, [0.32, 0.18, 0.32]);
     top.add(G.cone(12), C(0xfffaf4), [0, 0.86, 0], null, [0.18, 0.22, 0.18]);
-    top.add(G.sphere(12, 8), C(0xe8203a), [0, 1.0, 0], null, [0.11, 0.11, 0.11]);
+    top.add(G.sphere(10, 7), C(0xe8203a), [0, 1.0, 0], null, [0.11, 0.11, 0.11]);
     const t = O.solo(top, 'cream', api); t.position.copy(m.position); t.scale.copy(m.scale);
     api.light(p.x, 1.4, p.z, p.col, 1.3, 4, 0);
     api.glow(p.x, p.z, p.r * 1.8, p.col, 0.22);
@@ -895,12 +892,12 @@ const ODAB = (() => {
   function slide(B, api, R, S) {
     const tx = S.tx, tz = S.tz, top = S.H0;
     // kule
-    B.add('candy', G.cyl(0.75, 1, 24), C(0xe0a050), [tx, top / 2, tz], null, [1.5, top, 1.5]);
-    for (let k = 0; k < 5; k++) B.add('gloss', G.torus(TAU, 0.05, 24), C(0xc88a3a), [tx, 0.5 + k * 0.7, tz], [PI / 2, 0, 0], [1.42 - k * 0.07, 1.42 - k * 0.07, 1.42 - k * 0.07]);
+    B.add('candy', G.cyl(0.75, 1, 18), C(0xe0a050), [tx, top / 2, tz], null, [1.5, top, 1.5]);
+    for (let k = 0; k < 5; k++) B.add('gloss', G.torus(TAU, 0.05, 16), C(0xc88a3a), [tx, 0.5 + k * 0.7, tz], [PI / 2, 0, 0], [1.42 - k * 0.07, 1.42 - k * 0.07, 1.42 - k * 0.07]);
     const sc = [0xffb8cc, 0xbff0d0, 0xfff2d0];
-    for (let i = 0; i < 3; i++) B.add('cream', G.sphere(20, 14), C(sc[i]), [tx, top + 0.5 + i * 1.05, tz], null, [1.45 - i * 0.18, 1.0, 1.45 - i * 0.18]);
-    B.add('candy', G.sphere(16, 12), C(0xe8203a), [tx, top + 3.3, tz], null, [0.42, 0.42, 0.42]);
-    for (let i = 0; i < 10; i++) B.add('glow', G.capsule(1, 4), C([0xff6fa0, 0x6fc8ff, 0xffe06a, 0x9cff8a][i % 4], 1.3), [tx + Math.sin(i * 2.1) * 1.2, top + 0.7 + (i % 3) * 0.8, tz + Math.cos(i * 2.1) * 1.2], [i, 0, i * 0.7], [0.05, 0.1, 0.05]);
+    for (let i = 0; i < 3; i++) B.add('cream', G.sphere(14, 10), C(sc[i]), [tx, top + 0.5 + i * 1.05, tz], null, [1.45 - i * 0.18, 1.0, 1.45 - i * 0.18]);
+    B.add('candy', G.sphere(12, 9), C(0xe8203a), [tx, top + 3.3, tz], null, [0.42, 0.42, 0.42]);
+    for (let i = 0; i < 10; i++) B.add('glow', G.cyl(1, 1, 5), C([0xff6fa0, 0x6fc8ff, 0xffe06a, 0x9cff8a][i % 4], 1.3), [tx + Math.sin(i * 2.1) * 1.2, top + 0.7 + (i % 3) * 0.8, tz + Math.cos(i * 2.1) * 1.2], [i, 0, i * 0.7], [0.05, 0.3, 0.05]);
     // merdiven: kuleden başlangıç halkasına şeker çubukları
     const sx = S.sx, sz = S.sz;
     for (const sd of [-1, 1]) {
@@ -933,12 +930,12 @@ const ODAB = (() => {
     for (let i = 0; i < N; i += 1) {
       const p = pts[i], a = pts[Math.max(0, i - 1)], b = pts[Math.min(N - 1, i + 1)];
       let tx2 = b.x - a.x, tz2 = b.z - a.z; const tl = hyp(tx2, tz2) || 1; tx2 /= tl; tz2 /= tl;
-      for (const sd of [-1, 1]) B.add('cream', G.sphere(8, 6), C(0xfffaf4), [p.x - tz2 * 0.56 * sd, p.y + 0.86, p.z + tx2 * 0.56 * sd], null, [0.13, 0.13, 0.13]);
+      for (const sd of [-1, 1]) B.add('cream', G.sphere(7, 5), C(0xfffaf4), [p.x - tz2 * 0.56 * sd, p.y + 0.86, p.z + tx2 * 0.56 * sd], null, [0.13, 0.13, 0.13]);
       if (i % 4 === 2 && p.y > 0.8) B.seg('candy', [p.x, 0, p.z], [p.x, p.y, p.z], 0.13, C(0xe7b062), 0.13, 8);
     }
     // başlangıç halkası
     const ring = new Kit();
-    ring.add(G.torus(TAU, 0.12, 32), C(0xffd24a, 1.6), [0, 0.06, 0], [PI / 2, 0, 0], [1, 1, 1]);
+    ring.add(G.torus(TAU, 0.12, 16), C(0xffd24a, 1.6), [0, 0.06, 0], [PI / 2, 0, 0], [1, 1, 1]);
     const rm = O.solo(ring, 'glow', api); rm.position.set(sx, 0, sz);
     api.glow(sx, sz, 1.6, 0xffe08a, 0.3);
     api.light(sx, 1.5, sz, 0xffd88a, 1.5, 4.5, 0);
@@ -961,8 +958,8 @@ const ODAB = (() => {
   // Kar topu: dokununca buz duvarına yuvarlanır, duvar kırılır, içinden hazine
   function snowball(B, api, R, S) {
     const k = new Kit();
-    k.add(G.sphere(28, 20), C(0xffffff), [0, 0, 0], null, [1, 1, 1]);
-    for (let i = 0; i < 14; i++) { const a = i * 2.4, b = i * 1.1; k.add(G.sphere(8, 6), C(0xeaf6ff), [Math.sin(a) * Math.cos(b) * 0.9, Math.sin(b) * 0.9, Math.cos(a) * Math.cos(b) * 0.9], null, [0.28, 0.2, 0.28]); }
+    k.add(G.sphere(18, 12), C(0xffffff), [0, 0, 0], null, [1, 1, 1]);
+    for (let i = 0; i < 14; i++) { const a = i * 2.4, b = i * 1.1; k.add(G.sphere(7, 5), C(0xeaf6ff), [Math.sin(a) * Math.cos(b) * 0.9, Math.sin(b) * 0.9, Math.cos(a) * Math.cos(b) * 0.9], null, [0.28, 0.2, 0.28]); }
     const ball = O.solo(k, 'snow', api); const rad = 0.95; ball.position.set(S.x, rad, S.z); ball.scale.setScalar(rad);
     // buz duvarı / iglo: buz bloklarından kubbe, içinde parlayan hazine
     const ig = new Kit(), ix = S.ix, iz = S.iz;
@@ -970,10 +967,10 @@ const ODAB = (() => {
       const n = 9 - ring * 2, rr = 1.9 - ring * 0.55, y = 0.5 + ring * 0.85;
       for (let i = 0; i < n; i++) { const a = i / n * TAU + ring * 0.3; ig.add(G.rbox(2), C(ring % 2 ? 0xc8eaff : 0xdaf2ff), [Math.sin(a) * rr, y, Math.cos(a) * rr], [0, a, 0], [0.95, 0.85, 0.7]); }
     }
-    ig.add(G.sphere(14, 10), C(0xe4f6ff), [0, 2.75, 0], null, [0.6, 0.45, 0.6]);
+    ig.add(G.sphere(11, 8), C(0xe4f6ff), [0, 2.75, 0], null, [0.6, 0.45, 0.6]);
     const igloo = O.solo(ig, 'ice', api); igloo.position.set(ix, 0, iz);
     const inner = new Kit();
-    inner.add(G.sphere(14, 10), C(0xffd36a, 2.2), [0, 0.8, 0], null, [0.55, 0.45, 0.55]);
+    inner.add(G.sphere(11, 8), C(0xffd36a, 2.2), [0, 0.8, 0], null, [0.55, 0.45, 0.55]);
     const glowIn = O.solo(inner, 'glow', api); glowIn.position.set(ix, 0, iz);
     const chest = O.goldCandy(); chest.position.set(ix, 1.0, iz); api.add(chest);
     api.light(ix, 1.4, iz, 0xffd88a, 2.2, 5, 0.1);
@@ -1014,12 +1011,12 @@ const ODAB = (() => {
   // Tokanın gizli yeri: parlayan küçük kar tümseği; Feza (ya da Bilbo) yaklaşınca Bilbo kazar, toka zıplar
   function tokaMound(api, R, K) {
     const k = new Kit();
-    k.add(G.sphere(20, 12), C(0xffffff), [0, 0, 0], null, [1.0, 0.45, 1.0]);
-    k.add(G.sphere(12, 8), C(0xeaf6ff), [0.4, 0.15, 0.2], null, [0.45, 0.25, 0.45]);
+    k.add(G.sphere(14, 10), C(0xffffff), [0, 0, 0], null, [1.0, 0.45, 1.0]);
+    k.add(G.sphere(10, 7), C(0xeaf6ff), [0.4, 0.15, 0.2], null, [0.45, 0.25, 0.45]);
     const mound = O.solo(k, 'snow', api); mound.position.set(K.x, 0, K.z);
     const tk = new Kit();   // pembe mandal toka
     tk.add(G.torus(PI * 1.1, 0.28, 18), C(0xff6fa8), [0, 0, 0], [0, 0, 0], [0.32, 0.32, 0.32]);
-    for (let i = 0; i < 3; i++) tk.add(G.sphere(10, 8), C([0xffd24a, 0xffffff, 0x8fd8ff][i]), [-0.18 + i * 0.18, 0.3, 0.06], null, [0.07, 0.07, 0.07]);
+    for (let i = 0; i < 3; i++) tk.add(G.sphere(8, 6), C([0xffd24a, 0xffffff, 0x8fd8ff][i]), [-0.18 + i * 0.18, 0.3, 0.06], null, [0.07, 0.07, 0.07]);
     const toka = O.solo(tk, 'candy', api); toka.position.set(K.x + 0.15, 0.35, K.z + 0.1); toka.rotation.set(0.6, 0.4, 0.3);
     api.light(K.x, 0.8, K.z, 0xffb8d8, 1.2, 3.5, 0.2);
     let tw = 0;
@@ -1042,7 +1039,7 @@ const ODAB = (() => {
 
   BOLUM.define('buzdolabi', {
     ad: 'Buzdolabı',
-    taban: 'moon',   // ay temasının yumuşak kar dokusu + kenardaki kar tepecikleri (koyu "uzay" zemini kur()'da kapatılır)
+    taban: 'moon',   // yumuşak kar dokusu + kenarda buz kayalıkları ("buzul"); ayın koyu uzay zemini kur()'da kapatılır
     size: 90, side: 2,
     areas: [{ id: 'a1', ad: 'Raf Buzulları', rooms: 2 }, { id: 'a2', ad: 'Jöle Tepeleri', rooms: 2 }, { id: 'a3', ad: 'Dondurucu Kapısı', rooms: 2 }],
     muzik: 'magara',
