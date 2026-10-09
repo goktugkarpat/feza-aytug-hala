@@ -21,10 +21,11 @@ Object.assign(AUD.LINES, {
   oda_bilbo_ipucu: 'Bilbo yarışmak istiyor! Patili halkaya gel!',
   oda_bilbo_yaris: 'Hadi Bilbo, koş koş! Toz yumaklarını topla!',
   oda_bilbo_bitti: 'Ne hızlıydınız! Bilbo çok mutlu oldu.',
+  oda_bilbo_hepsi: 'Hepsini topladınız! Bilbo kuyruğunu sallıyor!',
   oda_gozluk_ipucu: 'Bilbo bir şey kokluyor. Yanına gidelim mi?',
   oda_gozluk: 'Benim gözlüğüm! Bilbo buldu, aferin Bilbo!',
   oda_yaprak: 'Bak, çiçeklerden pembe yapraklar uçuyor!',
-  oda_arena_gir: 'Halının ortasına geldik. Şşş, biri uyuyor sanki.',
+  oda_arena_gir: 'Halının ortasına geldik. Sessiz olalım, biri uyuyor sanki.',
   // Mutfak · Tezgâh Tepeleri
   mut_tezgah_gir: 'Mutfak tezgâhı! Ekmek kırıntıları kaya gibi kocaman!',
   mut_sunger_ipucu: 'Bulaşık süngerine zıpla Feza, trambolin gibi!',

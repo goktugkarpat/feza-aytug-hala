@@ -436,11 +436,18 @@ const MUTFAK = (() => {
     if (ke) K.lost(api, T, { zone: 'mutfak', id: 'anahtar', x: ke.x, z: ke.z, mound: moundGeo(), item: keyGeo(), itemScale: 0.8, ipucu: 'mut_anahtar_ipucu', bulundu: 'mut_anahtar', dirt: 'smoke' });
     for (const ri of a3.rooms) { const rr = L.rooms[ri]; api.light(rr.x, 3, rr.z, 0xffd9a0, 2, 10); }
   }
+  const whiskGeo = () => C('mkWhisk', () => {   // dik duran dev çırpma teli (sapı aşağıda)
+    const k = new Kit(), m = 0xdfe6ee;
+    k.add(G.cyl(1, 1, 16), 0xe8504d, [0, 1.2, 0], null, [0.32, 2.4, 0.32]); k.add(G.sphere(12, 8), 0xe8504d, [0, 0.05, 0], null, [0.36, 0.12, 0.36]);
+    for (let i = 0; i < 6; i++) k.add(G.torus(Math.PI, 0.05, 20), m, [0, 2.4, 0], [0, i * Math.PI / 6, 0], [0.75, 2.6, 0.75]);
+    return k.build();
+  });
   const moundGeo = () => C('mkMound', () => { const k = new Kit(), h = G.hemi(16); k.add(h, 0xfbf6ea, [0, 0, 0], null, [1.4, 0.7, 1.2]); for (let j = 0; j < 4; j++) k.add(h, 0xf4ecdc, [Math.cos(j * 1.6) * 1.1, 0, Math.sin(j * 1.6) * 0.9], null, [0.6, 0.35, 0.55]); return k.build(); });
 
   // Arena · Ocak üstü (sönük, güvenli)
   function ocak(L, api, T, ar, q, rnd) {
     const rm = L.rooms[ar.rooms[0]];
+    K.gatePosts(L, ar.gate, 5.5, (x, z, yaw) => api.put(whiskGeo(), x, 0, z, 1, 1, 1, null, yaw));   // arena girişinde iki dev çırpma teli
     // ortada (yürünür) sönük ocak halkaları: düz, alçak
     for (const r of [3.2, 5.6]) api.put(G.torus(TAU, 0.05, 48), rm.x, 0.12, rm.z, r, r, 6, 0x6a6e78, 0, Math.PI / 2);
     api.put(G.cyl(1, 1, 32), rm.x, 0.11, rm.z, 1.5, 0.02, 1.5, 0x9a7a4a);

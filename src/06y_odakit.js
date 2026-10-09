@@ -535,7 +535,21 @@ const ODAKIT = (() => {
     let k = 0;
     for (const ri of ids) { const r0 = L.rooms[ri]; for (let i = 0; i < perRoom; i++) { const a = rnd() * TAU, d = Math.sqrt(rnd()) * r0.r * 1.05, x = r0.x + Math.sin(a) * d, z = r0.z + Math.cos(a) * d; if (isF(L, x, z) && floorDist(L, x + 0.6, z, 1) === 0) cb(x, z, k++); } }
   }
-  const K_ = { tex, carpetColor, fill, outRect, scatter, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
+  // geçidin iki yanına dikili dev süs (koridorun dışında; kameranın önündeyse konmaz). put(x, z, yaw, s)
+  function gatePosts(L, g, h, put) {
+    if (!g) return;
+    const [dx, dz] = gateDir(L, g), nx = -dz, nz = dx;
+    for (const sd of [-1, 1]) {
+      for (let off = 2.2; off < 6; off += 0.4) {
+        const x = g.x + nx * off * sd, z = g.z + nz * off * sd;
+        if (floorDist(L, x, z, 1.5) < 1.1) continue;
+        const fN = floorNorth(L, x, z, 8), maxH = fN < 99 ? 0.25 + fN * 0.3 : 99;
+        if (maxH >= h) put(x, z, Math.atan2(nx * sd, nz * sd), 1);
+        break;
+      }
+    }
+  }
+  const K_ = { tex, carpetColor, fill, outRect, scatter, gatePosts, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
     say, sfx, burst, ring, sugar, playing, heroY, sticker, toys, hash, sm, keepG, GEOC, last: null };
   return K_;
 })();

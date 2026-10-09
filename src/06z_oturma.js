@@ -84,6 +84,13 @@ const OTURMA = (() => {
     k.add(G.sphere(10, 8), 0xffffff, [-0.35, 1.55, 0.45], null, [0.18, 0.1, 0.1]);
     return k.build();
   });
+  const tasselGeo = () => C('otTassel', () => {   // dev püskül: düğüm topu + sarkan iplikler
+    const k = new Kit();
+    k.add(G.sphere(16, 12), 0xd9d2c4, [0, 3.9, 0], null, [0.55, 0.5, 0.55]); k.add(G.cyl(1, 1, 16), 0x8d9db0, [0, 3.45, 0], null, [0.5, 0.3, 0.5]);
+    for (let i = 0; i < 14; i++) { const a = i * TAU / 14, r = 0.32 + (i % 2) * 0.12; k.add(G.cyl(0.8, 1, 5), i % 3 ? 0xeee8dc : 0xc3cbd3, [Math.sin(a) * r, 1.65, Math.cos(a) * r], [Math.cos(a) * 0.08, 0, -Math.sin(a) * 0.08], [0.11, 3.3, 0.11]); }
+    k.add(G.cyl(1, 1, 12), 0x6a5a4a, [0, 4.5, 0], null, [0.06, 0.7, 0.06]);
+    return k.build();
+  });
   const pencilGeo = () => C('otPencil', () => {
     const k = new Kit(), c6 = G.cyl(1, 1, 6), cone = G.cone(12);
     k.add(c6, 0xf4c430, [0, 0, 0], [0, 0, Math.PI / 2], [0.32, 5, 0.32]);
@@ -267,6 +274,8 @@ const OTURMA = (() => {
       for (let k = 0; k < 3; k++) { [x, z] = at(0.8, -0.65 + k * 0.42); api.box(x, 0.44, z, 1.3 - k * 0.25, 0.02, 0.14, 0x6a5548, yaw); }   // başlık çizgileri
     };
     if (a2) bridge(a2.gate, 0); if (a3) bridge(a3.gate, 2);
+    // arena girişinde iki dev halı püskülü
+    if (ar) K.gatePosts(L, ar.gate, 4.6, (x, z, yaw) => api.put(tasselGeo(), x, 0, z, 1, 1, 1, null, yaw));
     // ── Alan 2 · Kitaplık Dağı ──
     const occR = (x, z) => rugs.some(q => inRect(q, x, z)), occ2 = (x, z) => occR(x, z) || (sofa && inRect(sofa, x, z));
     if (a2) kitaplik(L, api, T, mainOf(L, a2), rnd, occ2);
@@ -562,11 +571,11 @@ const OTURMA = (() => {
       const m = new THREE.Mesh(dustGeo(), K.vmat(0.95)); m.position.set(q.x, 0, q.z); m.scale.setScalar(0.7); m.visible = false; m.castShadow = true; api.add(m);
       balls.push({ m, x: q.x, z: q.z, on: false });
     }
-    let race = 0;
+    let race = 0, got = 0, goldGiven = false;
     T.add({ x: pp.x, z: pp.z, r: 1.6, hint: { y: 1.8 }, line: 'oda_bilbo_ipucu', near: 9, cd: 5, repeat: true,
       can: () => race <= 0,
       use: () => {
-        race = 14; balls.forEach(b => { b.on = true; b.m.visible = true; b.m.scale.setScalar(0.01); });
+        race = 14; got = 0; balls.forEach(b => { b.on = true; b.m.visible = true; b.m.scale.setScalar(0.01); });
         K.say('oda_bilbo_yaris'); K.sfx('bilboBark', {}); K.burst('star', pp.x, 1, pp.z); K.sticker('oturma_bilbo');
         if (typeof GAME.bilboRide === 'function') { try { GAME.bilboRide({ dur: 14, x: pp.x, z: pp.z }); } catch (e) { /* yer tutucu koşu */ } }
         T.boost(1.75, 14, () => { race = 0; balls.forEach(b => { b.on = false; b.m.visible = false; }); K.say('oda_bilbo_bitti', 1); });
@@ -578,7 +587,11 @@ const OTURMA = (() => {
         for (const b of balls) {
           if (!b.on) continue;
           const s = Math.min(0.75, b.m.scale.x + dt * 2); b.m.scale.setScalar(s); b.m.position.y = Math.abs(Math.sin(t * 5 + b.x)) * 0.3; b.m.rotation.y += dt * 2;
-          if (Math.hypot(hx - b.x, hz - b.z) < 1.5) { b.on = false; b.m.visible = false; K.burst('smoke', b.x, 0.6, b.z); K.sfx('pop', { x: b.x, z: b.z, pitch: 1.2 }); K.sugar(hx, hz, 4, 3); }
+          if (Math.hypot(hx - b.x, hz - b.z) < 1.5) {
+            b.on = false; b.m.visible = false; K.burst('smoke', b.x, 0.6, b.z); K.sfx('pop', { x: b.x, z: b.z, pitch: 1 + got * 0.08 }); K.sugar(hx, hz, 4, 3); got++;
+            if (got === balls.length) { K.burst('confetti', hx, 2, hz); K.burst('star', hx, 2.5, hz); K.sfx('cheer', { x: hx, z: hz }); K.say('oda_bilbo_hepsi');
+              if (!goldGiven) { goldGiven = true; try { GAME.addGoldSugar(1); } catch (e) { /* */ } } }
+          }
         }
       } });
     // Aytuğ Hala'nın gözlüğü: Bilbo'nun kokladığı toz tepeciği; yaklaşınca kazılır
