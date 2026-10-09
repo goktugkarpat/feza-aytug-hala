@@ -859,13 +859,15 @@ const HALA = (() => {
     tuck: K({ aLX: -2.1, aLY: -0.3, aLZ: 0.42, fL: -2.15, fLZ: -0.2, wLX: 0.2, kRZ: 0.16, kRY: 0.12 }),
     clasp: K({ aLX: -0.38, aLY: -0.45, aLZ: 0.06, fL: -1.0, fLZ: -0.55, aRX: -0.38, aRY: 0.45, aRZ: -0.06, fR: -1.0, fRZ: 0.55, wLX: 0.1, wRX: 0.1, kRZ: 0.1 }),
     wave: K({ aRX: -2.5, aRZ: -0.55, fR: -0.55, wRX: -0.1, kRZ: -0.08 }),
+    pet: K({ bY: -0.13, bRX: 0.2, pRX: 0.1, cRX: 0.32, kRX: 0.2, tLX: -0.65, sL: 0.95, ftL: -0.3, tRX: -0.15, sR: 0.55, ftR: -0.2, tLZ: 0.08, tRZ: -0.08,
+      aLX: 0.15, aLZ: 0.35, fL: -1.6, fLZ: 0.2 }),
   };
 
   // ── Model örneği ──
   const S = {
     root: null, mesh: null, B: null, x: 0, z: 0, y: 0, face: 0, ctx: null, L: null, t: 0, vel: 0, vx: 0, vz: 0,
     act: null, side: 1, stuck: 0, lastD: 0, fx: 0, fz: 0, fvx: 0, fvz: 0, still: 0, prevTele: false,
-    cd: { throw: 3, hug: 0, shield: 0, praise: 8, clap: 4, point: 20, ready: 0, love: 60, pasta: 12 },
+    cd: { throw: 3, hug: 0, shield: 0, praise: 8, clap: 4, point: 20, ready: 0, love: 60, pasta: 12, pet: 20 },
     hugW: 0, pointQ: null, lastKey: {}, chargeWasFull: false, teamHop: 0, look: null,
   };
   const api = { charge: 0 };
@@ -1240,6 +1242,12 @@ const HALA = (() => {
         face.grin = 1; face.happy = a.ph === 2 ? 0.7 : 0; face.browR = 0.8;
         break;
       }
+      case 'pet': {
+        const w = a.ph === 1 ? bump(a.phT / 2.4, 0, 0.15, 0.85, 1) : 0;
+        if (w > 0) { mixK(P, POSE.pet, w); if (a.head) { AIM.R.target = a.head; AIM.R[2] = w; } }
+        face.happy = 0.8 * w; face.grin = 0.6 + 0.4 * w; face.blush = w;
+        break;
+      }
       case 'dance': {
         const w = bump(u, 0, 0.08, 0.92, 1), bt = a.t * 5.2, s1 = Math.sin(bt), s2 = Math.sin(bt * 2);
         Q.set(P);
@@ -1348,6 +1356,11 @@ const HALA = (() => {
     if (ctx.state === 'play') api.charge = Math.min(1, api.charge + dt * TEAM_FILL);
     if (api.charge >= 1 && !S.chargeWasFull) { S.chargeWasFull = true; if (S.cd.ready <= 0 && ctx.state === 'play') { S.cd.ready = 60; S.timers.push([1.2, () => sayVar2('hala_takim_hazir', 1)]); } }
     if (api.charge < 1) S.chargeWasFull = false;
+    if (!S.hooked && typeof GAME !== 'undefined' && GAME && GAME.on) {   // oyun olaylarına sevinç
+      S.hooked = true;
+      GAME.on('levelup', () => { if (!S.act && S.ctx && !S.ctx.P.dead) startAct('cheer', { dur: 1.5 }); });
+      GAME.on('lostItem', () => { if (!S.act || S.act.k === 'clap' || S.act.k === 'point') { startAct('cheer', { dur: 2 }); if (S.ctx) S.ctx.api.burst('hearts', S.x, 2.1, S.z, { count: 10 }); } });
+    }
     for (let i = S.timers.length - 1; i >= 0; i--) { const tm = S.timers[i]; tm[0] -= dt; if (tm[0] <= 0) { S.timers.splice(i, 1); try { tm[1](); } catch (e) { /* yut */ } } }
     // bakış: Feza'ya ve oyuncuya (kameraya) sırayla; Feza koşarken/savaşta hep Feza'ya
     S.lookT = (S.lookT || 0) - dt;
@@ -1418,6 +1431,9 @@ const HALA = (() => {
       if (tgt && Math.hypot(tgt.x - P.pos.x, tgt.z - P.pos.z) > 3) { S.still = 0; S.cd.point = 35; startPoint(tgt.x, tgt.z, Math.random() < 0.4 ? 'hala_burada' : null); return; }
       S.still = 0; S.cd.point = 20;
     }
+    // Feza dinlenirken ara sıra Bilbo'yu sev
+    const Bi = ctx.Bilbo && ctx.Bilbo.root;
+    if (!fight && S.still > 5 && S.cd.pet <= 0 && Bi && Math.hypot(Bi.position.x - S.x, Bi.position.z - S.z) < 3.5) { S.cd.pet = 40 + Math.random() * 30; startAct('pet', { look: false }); return; }
     // ara sıra sevgi sözü (sakin anlarda, çok seyrek)
     if (!fight && S.cd.love <= 0 && fmoved > 0.01) { S.cd.love = 150 + Math.random() * 120; if (Math.random() < 0.5) say('hala_yaninda', 1); }
   }
@@ -1602,6 +1618,25 @@ const HALA = (() => {
             if (a.onLand) { try { a.onLand(); } catch (e) { /* yut */ } }
           }
         } else if (a.phT > 0.8) endAct();
+        break;
+      }
+      case 'pet': {
+        // Bilbo'nun başını okşa
+        const Bi = ctx.Bilbo && ctx.Bilbo.root; if (!Bi) { endAct(); break; }
+        const bp = Bi.position, f = Bi.rotation.y, hx = bp.x + Math.sin(f) * 0.42, hz = bp.z + Math.cos(f) * 0.42;
+        if (a.ph === 0) {
+          const sx = Math.cos(f), sz = -Math.sin(f), sd = (S.x - hx) * sx + (S.z - hz) * sz >= 0 ? 1 : -1;   // başın yanında dur (sırtının üstünde değil)
+          const tx = hx + sx * sd * 0.58 + Math.sin(f) * 0.12, tz = hz + sz * sd * 0.58 + Math.cos(f) * 0.12;
+          const d = moveTo(A, tx, tz, 3.4, dt, 0.08);
+          if (d < 0.15) { next(); A.burst('hearts', hx, 0.9, hz, { count: 5 }); }
+          else if (a.phT > 3 || Math.hypot(bp.x - S.x, bp.z - S.z) > 5) endAct();
+        } else {
+          S.vel = 0; faceTo(hx, hz, dt, 10);
+          a.head = a.head || v3(); a.head.set(hx, 0.74 + 0.035 * Math.max(0, Math.sin(a.phT * 9)), hz);
+          if (Math.floor(a.phT * 9 / Math.PI) !== Math.floor((a.phT - dt) * 9 / Math.PI) && Math.floor(a.phT * 9 / Math.PI) % 2 === 0) A.burst('sparkle', hx, 0.75, hz, { color: '#ffd6e2', count: 3 });
+          if (a.phT > 2.4) endAct();
+        }
+        if (Math.hypot(S.fvx, S.fvz) > 0.5 || (ctx.enemies || []).some(e => e && !e.dead && e.aggro)) endAct();   // Feza yürüdü / huysuz geldi
         break;
       }
       case 'dance': {
