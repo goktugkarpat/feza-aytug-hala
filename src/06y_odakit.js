@@ -76,29 +76,33 @@ const ODAKIT = (() => {
       for (let i = 0; i < 3; i++) out[i] = (c[i] * (1 - mix) + c2[i] * mix) * sh * fuzz;
     });
   }
-  // Krem granit tezgâh (benekli), 6 m
+  // Tezgâh: sıcak meşe kasap tahtası (enine şeritler, uç birleşimleri), 6 m
   function counter() {
+    const tones = [[0xc8, 0x8e, 0x58], [0xb9, 0x80, 0x4c], [0xd2, 0x9a, 0x62], [0xbf, 0x86, 0x50], [0xcc, 0x94, 0x5c]];
     return makeTex('counter', 1024, (u, v, out) => {
-      const h1 = hash(Math.floor(u * 700), Math.floor(v * 700)), h2 = hash(Math.floor(u * 180), Math.floor(v * 180), 3);
-      const cloud = 0.5 + 0.25 * Math.sin(u * TAU * 3 + Math.sin(v * TAU * 2) * 1.5) * Math.sin(v * TAU * 4 + Math.sin(u * TAU * 3));
-      let r = 0xf3, g = 0xea, b = 0xdc, k = 0.94 + cloud * 0.08;
-      if (h1 > 0.985) { r = 0x8a; g = 0x76; b = 0x66; } else if (h1 > 0.965) { r = 0xd4; g = 0xb4; b = 0x92; } else if (h2 > 0.992) { r = 0xa8; g = 0x96; b = 0x88; }
-      out[0] = r * k; out[1] = g * k; out[2] = b * k;
+      const sw = 12, st = Math.floor(v * sw), fv = v * sw - st, seg = Math.floor(u * 3 + K2(st) * 3), id = hash(st, seg, 9), c = tones[Math.floor(id * 5)];
+      const gp = fv * 7 + Math.sin(u * TAU * 3 + id * 30) * 0.7 + Math.sin(u * TAU * 11 + id * 9) * 0.15;
+      let s = 0.92 + 0.1 * Math.sin(gp * 2.6) * Math.sin(gp * 0.6 + id * 5) + 0.03 * hash(Math.floor(u * 1024), Math.floor(v * 256));
+      if (fv < 0.035 || fv > 0.965) s *= 0.78;
+      const fu = u * 3 + K2(st) * 3 - seg; if (fu < 0.006 || fu > 0.994) s *= 0.72;
+      out[0] = c[0] * s; out[1] = c[1] * s; out[2] = c[2] * s;
     });
   }
+  const K2 = i => hash(i, 77, 3);
   // Fırçalanmış çelik (lavabo kenarı), 4 m
   function steel() {
     return makeTex('steel', 512, (u, v, out) => {
       const s = 0.86 + 0.08 * hash(Math.floor(u * 512), Math.floor(v * 8)) + 0.05 * Math.sin(v * TAU * 40 + hash(Math.floor(v * 64), 1) * 6);
-      out[0] = 0xd6 * s; out[1] = 0xdc * s; out[2] = 0xe2 * s;
+      out[0] = 0xb4 * s; out[1] = 0xbc * s; out[2] = 0xc6 * s;
     });
   }
   // Açık renk dolap rafı (beyaz-krem melamin + ince ahşap damar), 6 m
-  function shelf() {
+  function shelf() {   // dolap rafı: krem beyazı melamin, ince damar, 2 m'de bir birleşim
     return makeTex('shelf', 512, (u, v, out) => {
-      const gp = v * 40 + Math.sin(u * TAU * 2 + v * 6) * 1.2;
-      const s = 0.95 + 0.05 * Math.sin(gp * 2.3) * Math.sin(gp * 0.4) + 0.02 * hash(Math.floor(u * 512), Math.floor(v * 512));
-      out[0] = 0xf4 * s; out[1] = 0xe6 * s; out[2] = 0xcf * s;
+      const gp = u * 140 + Math.sin(v * TAU * 3) * 2 + Math.sin(v * TAU * 11) * 0.4;
+      let s = 0.97 + 0.025 * Math.sin(gp) * Math.sin(gp * 0.13 + 2) + 0.015 * hash(Math.floor(u * 512), Math.floor(v * 512));
+      const fv = (v * 3) % 1; if (fv < 0.012 || fv > 0.988) s *= 0.8;
+      out[0] = 0xf4 * s; out[1] = 0xea * s; out[2] = 0xda * s;
     });
   }
   // Ocak üstü: koyu antrasit emaye, ince parıltı, 6 m
@@ -108,7 +112,18 @@ const ODAKIT = (() => {
       out[0] = 0x58 * s; out[1] = 0x5c * s; out[2] = 0x66 * s;
     });
   }
-  const TEX_BY = { parquet, carpet, counter, steel, shelf, stove };
+  // Kesme tahtası: sıcak kayın, enine şeritler + bıçak çizikleri, 6 m
+  function board() {
+    return makeTex('board', 512, (u, v, out) => {
+      const strip = Math.floor(u * 10), id = hash(strip, 5), gp = u * 10 * 9 + Math.sin(v * TAU * 2 + id * 20) * 1.4;
+      let s = 0.9 + id * 0.16 + 0.06 * Math.sin(gp * 2.2) * Math.sin(gp * 0.5 + id * 7);
+      const fu = u * 10 - strip; if (fu < 0.03 || fu > 0.97) s *= 0.8;
+      const cut = Math.abs(Math.sin((u * 3 + v * 7) * TAU * 3 + id)) > 0.997 || Math.abs(Math.sin((u * 5 - v * 4) * TAU * 2)) > 0.998;
+      if (cut) s *= 0.86;
+      out[0] = 0xf0 * s; out[1] = 0xd2 * s; out[2] = 0x9a * s;
+    });
+  }
+  const TEX_BY = { parquet, carpet, counter, steel, shelf, stove, board };
   const tex = n => TEX_BY[n]();
 
   // ── Zemin: 3 doku (yerleşim dokusunun R/B kanalı karışımı), G = yürünür alan, A = loşluk ──
@@ -394,7 +409,99 @@ const ODAKIT = (() => {
     return T;
   }
 
-  const K_ = { tex, carpetColor, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
+  // Kayıp eşya (Aytuğ Hala'nın): tümsek + parıltı; yaklaşınca Bilbo kazar (GAME.bilboDig varsa o da çağrılır), eşya fırlar ve döner
+  // o = { zone, id, x, z, mound: geo, item: geo, itemScale, ipucu, bulundu, color }
+  function lost(api, T, o) {
+    const g = G_(), done = () => !!(g && g.P && g.P.kayipEsyalar && g.P.kayipEsyalar[o.zone]);
+    if (done()) return null;
+    const grp = new THREE.Group(); grp.position.set(o.x, 0, o.z); api.add(grp);
+    const md = new THREE.Mesh(o.mound, vmat(0.95)); md.castShadow = true; md.receiveShadow = true; grp.add(md);
+    const it = new THREE.Mesh(o.item, vmat(0.3)); it.visible = false; it.scale.setScalar(o.itemScale || 1); it.castShadow = true; grp.add(it);
+    const sy = md.scale.y; let dig = -1;
+    return T.add({ x: o.x, z: o.z, r: 2.2, hint: { y: 2.1 }, line: o.ipucu, near: 8, once: true, can: () => !done(),
+      use: () => { dig = 0; sfx('dig', { x: o.x, z: o.z }); const gg = G_(); if (gg && typeof gg.bilboDig === 'function') { try { gg.bilboDig(o.x, o.z, o.id); } catch (e) { /* */ } } },
+      tick: (dt, t) => {
+        if (dig < 0) { if (Math.random() < dt * 1.5) burst('sparkle', o.x, 0.8, o.z); return; }
+        if (dig > 3) return;
+        dig += dt;
+        if (dig < 1.3) { if (Math.random() < dt * 10) burst(o.dirt || 'dirt', o.x + (Math.random() - 0.5), 0.3, o.z + (Math.random() - 0.5)); md.scale.y = sy * (1 - dig / 1.3) + 0.03; }
+        else {
+          if (!it.visible) { it.visible = true; sfx('unlock', { x: o.x, z: o.z }); burst('confetti', o.x, 1.5, o.z); ring(o.x, o.z, 3, '#ffe28a');
+            const gg = G_(); try { if (gg) gg.foundLostItem(o.id, o.zone); } catch (e) { /* */ } say(o.bulundu); }
+          const u = Math.min(1, (dig - 1.3) / 1.2); it.position.y = 0.4 + Math.sin(u * Math.PI * 0.5) * 2.2; it.rotation.y += dt * 4;
+        }
+      } });
+  }
+  // Gizli hazine: yürünür kenarın dışında yarı gömülü dev nesne; yaklaşınca zıplar, döner, şeker saçar
+  function treasure(api, T, x, z, geo, o = {}) {
+    const m = mesh(api, geo, x, o.y ?? 0.15, z, o.rough ?? 0.4);
+    m.scale.setScalar(o.sc || 1); m.rotation.set(o.tilt ?? 0.35, Math.random() * TAU, 0.2);
+    let pop = -1; const y0 = m.position.y;
+    return T.add({ x, z, r: o.r || 2.4, hint: { y: o.hintY || 1.9 }, line: o.line || null, near: 6, once: true,
+      use: () => { pop = 0; sfx('chest', { x, z }); burst('confetti', x, 1.2, z); ring(x, z, 2.5, '#ffd36a');
+        const g = G_(); if (g && g.P) sugar(g.P.pos.x, g.P.pos.z, o.gold || 10, o.n || 6); if (o.say) say(o.say); if (o.gs && g && g.addGoldSugar) { g.addGoldSugar(1); burst('star', x, 2, z); }
+        if (o.sticker) sticker(o.sticker); if (o.onUse) o.onUse(); },
+      tick: dt => { if (pop < 0 || pop > 1.2) return; pop += dt; const u = Math.min(1, pop / 1.2); m.position.y = y0 + Math.sin(u * Math.PI) * 2.2; m.rotation.y += dt * 9; m.rotation.x = (o.tilt ?? 0.35) * (1 - u); } });
+  }
+  // Odanın yürünür kenarının hemen dışındaki noktalar (koridor ağızlarından uzak)
+  function rimSpots(L, rm, off = 1.0, n = 24) {
+    const out = [];
+    for (let k = 0; k < n; k++) {
+      const a = k * TAU / n; let last = null;
+      for (let d = rm.r * 0.4; d < rm.r + 6; d += 0.25) { const x = rm.x + Math.sin(a) * d, z = rm.z + Math.cos(a) * d; if (!isF(L, x, z)) { last = { x: x + Math.sin(a) * off, z: z + Math.cos(a) * off, a, ex: x, ez: z, inX: x - Math.sin(a) * 1.2, inZ: z - Math.cos(a) * 1.2 }; break; } }
+      if (last && L.links.every(l => !l.curve || l.curve.every(p => Math.hypot(p[0] - last.x, p[1] - last.z) > 3.2))) out.push(last);
+    }
+    return out;
+  }
+  // geçitteki koridor yönü (birim vektör)
+  function gateDir(L, g) {
+    let best = null, bd = 1e9, bi = 0;
+    for (const l of L.links) if (l.main && l.curve) l.curve.forEach((p, i) => { const d = Math.hypot(p[0] - g.x, p[1] - g.z); if (d < bd) { bd = d; best = l; bi = i; } });
+    if (!best) return [0, -1];
+    const c = best.curve, a = c[Math.max(0, bi - 4)], b = c[Math.min(c.length - 1, bi + 4)], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    return [(b[0] - a[0]) / l, (b[1] - a[1]) / l];
+  }
+  const bbox = (L, ids, m) => { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const i of ids) { const r = L.rooms[i]; x0 = Math.min(x0, r.x - r.r - m); x1 = Math.max(x1, r.x + r.r + m); z0 = Math.min(z0, r.z - r.r - m); z1 = Math.max(z1, r.z + r.r + m); } return { x0, x1, z0, z1 }; };
+  // alan tabanlı nazik huysuz yerleşimi: grup başına en çok `cap`, türler alanın listesinden
+  function gentle(L, perArea, cap = 3) {
+    const A = L.areas || [], areaOf = {}, packs = {}, keep = [];
+    A.forEach((a, k) => a.rooms.forEach(ri => { areaOf[ri] = k; }));
+    for (const sp of L.spawns) {
+      const n = packs[sp.pack] = (packs[sp.pack] || 0) + 1;
+      if (n > cap) continue;
+      const ar = areaOf[sp.room] ?? 0, list = perArea[Math.min(perArea.length - 1, ar)];
+      sp.type = list[(n - 1 + ar) % list.length]; delete sp.variant;
+      keep.push(sp);
+    }
+    L.spawns.length = 0; L.spawns.push(...keep);
+  }
+  // fazladan sandık: her alanın ilk odasında, yolun kenarında
+  function extraChests(L, api) {
+    for (const a of (L.areas || []).slice(0, 3)) {
+      const rm = L.rooms[a.rooms[0]];
+      for (let t = 0; t < 30; t++) {
+        const ang = api.rnd() * TAU, d = rm.r * (0.45 + api.rnd() * 0.25), x = rm.x + Math.sin(ang) * d, z = rm.z + Math.cos(ang) * d;
+        if (!api.circleFree(x, z, 1.6) || L.chests.some(c => Math.hypot(c.x - x, c.z - z) < 6) || L.spawns.some(s => Math.hypot(s.x - x, s.z - z) < 2.5) || Math.hypot(x - L.start.x, z - L.start.z) < 4) continue;
+        if (L.checkpoints.some(c => Math.hypot(c.x - x, c.z - z) < 4)) continue;
+        L.chests.push({ x, z, big: false }); break;
+      }
+    }
+  }
+
+  // Yürünür alanın dışını dev nesnelerle doldur: oda kutusu içinde ızgara (adım step), zemine uzaklık [d0, d1] arası noktalar.
+  // cb(x, z, maxH (kamera önündeyse alçak), fd (zemine uzaklık), k) → nesne koyar
+  function fill(L, rnd, ids, cb, o = {}) {
+    const q = bbox(L, ids, o.margin ?? 8), step = o.step ?? 2.4, d0 = o.d0 ?? 1.5, d1 = o.d1 ?? 7, skip = o.skip;
+    let k = 0;
+    for (let z = q.z0; z < q.z1; z += step) for (let x = q.x0; x < q.x1; x += step) {
+      const px = x + (rnd() - 0.5) * step * 0.6, pz = z + (rnd() - 0.5) * step * 0.6;
+      if (isF(L, px, pz) || (skip && skip(px, pz))) continue;
+      const fd = floorDist(L, px, pz, d1 + 0.5); if (fd < d0 || fd > d1) continue;
+      const fN = floorNorth(L, px, pz, 8), maxH = fN < 99 ? 0.25 + fN * 0.3 : 12;
+      cb(px, pz, maxH, fd, k++);
+    }
+  }
+  const K_ = { tex, carpetColor, fill, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
     say, sfx, burst, ring, sugar, playing, heroY, sticker, toys, hash, sm, keepG, GEOC, last: null };
   return K_;
 })();

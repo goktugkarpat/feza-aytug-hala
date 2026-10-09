@@ -61,6 +61,29 @@ const OTURMA = (() => {
     }
     return k.build();
   });
+  const CRAY = [0xe8504d, 0x4f8fdc, 0x5ac85a, 0xf2c14a, 0xb07ad0, 0xf48fb1];
+  const crayonGeo = i => C('otCrayon' + (i % 6), () => {   // mum boya: gövde, kâğıt kılıf, sivri uç
+    const k = new Kit(), c = CRAY[i % 6];
+    k.add(G.cyl(1, 1, 12), c, [0, 0, 0], [0, 0, Math.PI / 2], [0.26, 3, 0.26]);
+    k.add(G.cyl(1, 1, 12), 0xfff6e0, [0.2, 0, 0], [0, 0, Math.PI / 2], [0.27, 1.8, 0.27]);
+    for (const x of [-0.6, 1.0]) k.add(G.cyl(1, 1, 12), new THREE.Color(c).multiplyScalar(0.7), [x, 0, 0], [0, 0, Math.PI / 2], [0.275, 0.08, 0.275]);
+    k.add(G.cone(12), c, [-1.75, 0, 0], [0, 0, Math.PI / 2], [0.26, 0.5, 0.26]);
+    return k.build();
+  });
+  const blockGeo = i => C('otBlock' + (i % 4), () => {   // ahşap oyuncak küp, renkli yüzler
+    const k = new Kit(), b = G.rbox(2), cols = [[0xe8504d, 0x4f8fdc], [0x5ac85a, 0xf2c14a], [0xb07ad0, 0x4f8fdc], [0xf48fb1, 0x5ac85a]][i % 4];
+    k.add(b, 0xe8c48e, [0, 0.5, 0], null, [1, 1, 1]);
+    k.add(G.box(), cols[0], [0, 0.5, 0.505], null, [0.66, 0.66, 0.01]); k.add(G.box(), cols[1], [0.505, 0.5, 0], null, [0.01, 0.66, 0.66]);
+    k.add(G.box(), cols[1], [-0.505, 0.5, 0], null, [0.01, 0.66, 0.66]); k.add(G.box(), cols[0], [0, 1.005, 0], null, [0.66, 0.01, 0.66]);
+    k.add(G.box(), 0xffffff, [0, 0.62, 0.512], null, [0.12, 0.34, 0.01]); k.add(G.box(), 0xffffff, [0, 0.42, 0.512], null, [0.3, 0.1, 0.01]);   // harf gibi
+    return k.build();
+  });
+  const ballGeo = i => C('otBall' + (i % 3), () => {   // çizgili lastik top
+    const k = new Kit(), [a, b] = [[0xe8504d, 0xfff4e0], [0x4f8fdc, 0xf2c14a], [0x5ac85a, 0xffffff]][i % 3];
+    k.add(G.sphere(24, 16), (x, y, z) => new THREE.Color(Math.sin(Math.atan2(z, x) * 3) > 0 ? a : b), [0, 1, 0], null, [1, 1, 1]);
+    k.add(G.sphere(10, 8), 0xffffff, [-0.35, 1.55, 0.45], null, [0.18, 0.1, 0.1]);
+    return k.build();
+  });
   const pencilGeo = () => C('otPencil', () => {
     const k = new Kit(), c6 = G.cyl(1, 1, 6), cone = G.cone(12);
     k.add(c6, 0xf4c430, [0, 0, 0], [0, 0, Math.PI / 2], [0.32, 5, 0.32]);
@@ -177,7 +200,7 @@ const OTURMA = (() => {
     const rug1 = a1 ? bbox(L, mainOf(L, a1), 6.5) : null, rugA = ar ? bbox(L, ar.rooms, 5) : null;
     const sofa = a3 ? bbox(L, a3.rooms, 3.5) : null;
     const shadeAt = (x, z) => { if (!sofa) return 0; const d = Math.min(x - sofa.x0, sofa.x1 - x, z - sofa.z0, sofa.z1 - z); return Math.max(0, Math.min(1, d / 3)); };
-    K.floor(L, api, { mats: [{ tex: 'parquet', size: 13.4, rough: 0.42 }], region: (x, z) => [0, 0, shadeAt(x, z)], out: [0.56, 0.55, 0.6], shade: 0.5 });
+    K.floor(L, api, { mats: [{ tex: 'parquet', size: 13.4, rough: 0.42 }], region: (x, z) => [0, 0, shadeAt(x, z)], out: [0.46, 0.45, 0.5], shade: 0.5 });
     // halılar (kalın: 12 cm), saçaklar, lifler
     const rugs = [rug1, rugA].filter(Boolean);
     for (const q of rugs) {
@@ -237,9 +260,10 @@ const OTURMA = (() => {
     };
     if (a2) bridge(a2.gate, 0); if (a3) bridge(a3.gate, 2);
     // ── Alan 2 · Kitaplık Dağı ──
-    if (a2) kitaplik(L, api, T, mainOf(L, a2), rnd);
+    const occR = (x, z) => rugs.some(q => inRect(q, x, z)), occ2 = (x, z) => occR(x, z) || (sofa && inRect(sofa, x, z));
+    if (a2) kitaplik(L, api, T, mainOf(L, a2), rnd, occ2);
     // ── Alan 3 · Koltuk Altı ──
-    if (a3) koltuk(L, api, T, a3, sofa, rnd);
+    if (a3) koltuk(L, api, T, a3, sofa, rnd, occR);
     // her alanın girişinde Aytuğ Hala'nın kısa sözü (ilk yaklaşmada)
     [[a1, 'oda_hali_gir'], [a2, 'oda_kitap_gir'], [a3, 'oda_koltuk_gir'], [ar, 'oda_arena_gir']].forEach(([a, line], k) => {
       if (!a || !k) return; const rm = R(a.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r * 0.8, hint: false, line, prio: 1, use() {} });
@@ -251,7 +275,7 @@ const OTURMA = (() => {
     OT.saidTr = 0;
   }
 
-  function kitaplik(L, api, T, rooms, rnd) {
+  function kitaplik(L, api, T, rooms, rnd, occ) {
     if (!rooms.length) return;
     const north = rooms.slice().sort((p, q) => L.rooms[p].z - L.rooms[q].z)[0], rm = L.rooms[north];
     // TV ünitesi: alçak siyah dolap (bölmelerinde kitaplar, video kasetleri), üstünde dev TV
@@ -307,22 +331,21 @@ const OTURMA = (() => {
           }
         } });
     }
-    // dolabın çevresi ve odalar boyunca: kitap yığınları, kaset kuleleri (yürünür alanın dışında; güneyde alçak)
-    for (const ri of rooms) {
-      const r0 = L.rooms[ri];
-      for (let k = 0; k < 14; k++) {
-        const a = k * TAU / 14 + rnd() * 0.2, d = r0.r + 2.2 + rnd() * 3.5, x = r0.x + Math.sin(a) * d, z = r0.z + Math.cos(a) * d;
-        if (K.floorDist(L, x, z, 2.5) < 2.2 || (p && Math.abs(x - p.x) < W / 2 + 1 && Math.abs(z - p.z) < D / 2 + 1)) continue;
-        const fN = K.floorNorth(L, x, z, 8), maxH = fN < 99 ? 0.25 + fN * 0.3 : 9;
-        if (k % 3 === 0 && maxH > 2) {   // kaset kulesi
-          const n = Math.min(Math.floor(maxH / 0.3), 5 + Math.floor(rnd() * 6)), y0 = rnd() * TAU;
-          for (let s = 0; s < n; s++) api.put(vhsGeo(s + k), x, 0.15 + s * 0.3, z, 2.2, 0.3, 1.2, null, y0 + (rnd() - 0.5) * 0.25);
-        } else {   // yatık kitap yığını
-          const n = Math.max(1, Math.min(Math.floor(maxH / 0.45), 2 + Math.floor(rnd() * 4))); let y = 0;
-          for (let s = 0; s < n; s++) { const th = 0.35 + rnd() * 0.25, h = 3.2 - s * 0.25 + rnd() * 0.4; api.put(bookGeo(Math.floor(rnd() * 8)), x + (rnd() - 0.5) * 0.3, y + th / 2, z, th, h, 2.3 - s * 0.1, null, rnd() * TAU, 0, Math.PI / 2); y += th; }
-        }
+    // dolabın çevresi ve odalar boyunca: kitap yığınları, kaset kuleleri, boya kalemleri, oyuncak küpler, toplar (güneyde alçak)
+    K.fill(L, rnd, L.areas[1].rooms, (x, z, maxH, fd, k) => {
+      if (p && Math.abs(x - p.x) < W / 2 + 1.2 && Math.abs(z - p.z) < D / 2 + 1.2) return;
+      const kind = k % 5;
+      if (kind === 0 && maxH > 2.4) {   // kaset kulesi
+        const n = Math.min(Math.floor(maxH / 0.3), 5 + Math.floor(rnd() * 7)), y0 = rnd() * TAU;
+        for (let s = 0; s < n; s++) api.put(vhsGeo(s + k), x, 0.15 + s * 0.3, z, 2.2, 0.3, 1.2, null, y0 + (rnd() - 0.5) * 0.25);
+      } else if (kind === 2 && maxH > 2) api.put(blockGeo(k), x, 0, z, 1.6, 1.6, 1.6, null, rnd() * TAU);
+      else if (kind === 3 && maxH > 2.2) api.put(ballGeo(k), x, 0, z, 1.1, 1.1, 1.1, null, rnd() * TAU);
+      else if (kind === 4 || maxH < 0.8) { for (let c = 0; c < 2; c++) api.put(crayonGeo(k + c), x + c * 0.5, 0.26, z + c * 0.3, 1, 1, 1, null, rnd() * TAU); }
+      else {   // yatık kitap yığını
+        const n = Math.max(1, Math.min(Math.floor(maxH / 0.45), 2 + Math.floor(rnd() * 4))); let y = 0;
+        for (let s = 0; s < n; s++) { const th = 0.35 + rnd() * 0.25, h = 3.2 - s * 0.25 + rnd() * 0.4; api.put(bookGeo(Math.floor(rnd() * 8)), x + (rnd() - 0.5) * 0.3, y + th / 2, z, th, h, 2.3 - s * 0.1, null, rnd() * TAU, 0, Math.PI / 2); y += th; }
       }
-    }
+    }, { skip: occ, step: 2.6 });
     // domino kitaplar: odanın kenarında dizili dik kitaplar; dokununca sırayla devrilir, sonuncusu şeker kavanozunu devirir
     const dr = L.rooms[rooms[rooms.length - 1]], spots = rimSpots(L, dr, 1.1).filter(s => s.z < dr.z + dr.r * 0.3);
     const s0 = spots.sort((p1, p2) => p1.z - p2.z)[0];
@@ -437,7 +460,7 @@ const OTURMA = (() => {
     return { mesh: m, on(v) { isOn = v; if (!v) off(); else { t = 0; draw(); } }, tick(dt) { if (!isOn) return; t += dt; acc += dt; if (acc > 1 / 15) { acc = 0; draw(); } } };
   }
 
-  function koltuk(L, api, T, a3, sofa, rnd) {
+  function koltuk(L, api, T, a3, sofa, rnd, occ) {
     const rooms = mainOf(L, a3), all = a3.rooms;
     // koltuk ayakları (dev, koyu ceviz; köşelerde, yürünür alanın dışında) ve kuzeyde koltuğun eteği
     const corners = [[sofa.x0 + 1.5, sofa.z0 + 1.5], [sofa.x1 - 1.5, sofa.z0 + 1.5]];
@@ -467,14 +490,7 @@ const OTURMA = (() => {
       (x, z, y) => api.put(dustGeo(), x, 0.05, z, 1.4, 1.4, 1.4, null, y),
       (x, z, y) => api.put(dustGeo(), x, 0.05, z, 1.1, 1.1, 1.1, null, y),
     ];
-    for (const ri of all) {
-      const r0 = L.rooms[ri];
-      for (let k = 0; k < 12; k++) {
-        const a = k * TAU / 12 + rnd() * 0.3, d = r0.r + 1.6 + rnd() * 3, x = r0.x + Math.sin(a) * d, z = r0.z + Math.cos(a) * d;
-        if (K.floorDist(L, x, z, 2) < 1.5 || K.floorNorth(L, x, z, 4) < 2.6) continue;
-        lost[k % lost.length](x, z, rnd() * TAU);
-      }
-    }
+    K.fill(L, rnd, all, (x, z, maxH, fd, k) => { if (maxH > 0.9 || k % 6 === 3) lost[k % lost.length](x, z, rnd() * TAU); else api.put(crayonGeo(k), x, 0.26, z, 1, 1, 1, null, rnd() * TAU); }, { skip: occ, step: 2.5, margin: 6 });
     // vazo (koltuğun yanında) + uçuşan yapraklar
     const vr = L.rooms[rooms[0]], vp = K.northOf(L, vr.x + vr.r * 0.4, vr.z - vr.r - 2.4, 2, 2, 0.5, 10);
     if (vp) {
