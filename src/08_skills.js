@@ -16,14 +16,22 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
   // Four-second volley: a little over two sword hits on a lone target, or three distinct stars through a crowd.
   const STAR_K = 0.7, STAR_ADD = 3, STAR_FAN = 0.22, STAR_GAP = 0.3, STAR_FWD = 0.55, STAR_Y = 0.95;
   const SPIN_T = 2.2, SPIN_R = 2.6, SPIN_TICK = 0.22;
-  const MET_N = 8, MET_SPAN = 1.8, MET_R = 2.2, MET_FALL0 = 0.2, MET_LAND = 0.6;
+  const MET_N = 8, MET_MAX = 14, MET_SPAN = 1.8, MET_R = 2.2, MET_FALL0 = 0.2, MET_LAND = 0.6;
   // Meteors enter from the upper left of the SCREEN: start = landing spot shifted left/up in camera space, then pulled
   // toward the camera along its ray (gains height without leaving the view – the top-down camera sees little sky).
   const MET_SIDE = 5.2, MET_UP = 1.6, MET_PULL = 0.3;
   const RAINBOW = ['#ff5d73', '#ff9a3c', '#ffd23f', '#72e06a', '#4fc3ff', '#8f7bff', '#ff7ad9', '#ffb35c'];
-  const WIND_COLS = ['#ffffff', '#bff4ff', '#7ee0ff'], LEAF_COLS = ['#7ed957', '#a6e35a', '#5cc24a', '#ffd23f', '#ff9ec7'];
+  const WIND_COLS = ['#ffffff', '#fff1d6', '#ffd9ec'], LEAF_COLS = ['#ff7ab8', '#ffd23f', '#7fd8ff', '#9ff58a', '#c79bff'];   // Dev Ev: kasırgada şeker serpintisi
 
   const S = { ready: false, warm: false, t: 0, P: null, H: null, castLeft: 0, root: null };
+  // ── Dev Ev: yetenek kademeleri (1..3, yıldız şekerle; 08j_his paneli). P.yetenek.kademe[id] ──
+  function tier(id) {
+    const g = gm(), k = g && g.P && g.P.yetenek && g.P.yetenek.kademe;
+    const t = k ? k[id] | 0 : 1;
+    return t < 1 ? 1 : t > 3 ? 3 : t;
+  }
+  const upgradeCost = t => (t <= 1 ? 3 : 6);
+  const CREAM_COLS = ['#fff4e2', '#ffbcd8', '#ffe9a8', '#c4f0de', '#ffd0e6'];
   const uT = { value: 0 };                        // shared time uniform of this file's shaders
   const V1 = new THREE.Vector3(), V2 = new THREE.Vector3();
 
@@ -178,12 +186,37 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     return g;
   }
 
+  // Krema topu: beze/krema sıkma biçimi (yuvarlak taban, 6 oluklu sarmal, kıvrık sivri tepe). Tepe geriye bakar (uçarken kuyruk gibi).
+  function creamGeo() {
+    const g = new THREE.SphereGeometry(1, 36, 24), p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i), h = (y + 1) / 2, th = Math.atan2(z, x);
+      const prof = h < 0.3 ? Math.sqrt(Math.max(0, 1 - Math.pow((0.3 - h) / 0.3, 2))) * 0.15 + 0.85 * Math.sin(h / 0.3 * Math.PI / 2) : Math.pow(1 - (h - 0.3) / 0.7, 1.15);
+      const ridge = 1 + 0.13 * Math.sin(th * 6 + h * 11) * Math.min(1, h * 3), tw = h * h * 0.35;
+      const r = Math.max(0, prof) * ridge, rx = Math.cos(th) * r, rz = Math.sin(th) * r;
+      p.setXYZ(i, rx + Math.sin(h * 5) * tw * 0.4, h * 1.7, rz);
+    }
+    g.computeVertexNormals();
+    g.translate(0, -0.55, 0);   // dik duran krema (tepesinde kiraz), ortası y=0
+    g.userData.keep = true;
+    return g;
+  }
+  function candyStripes() {
+    const c = document.createElement('canvas'); c.width = 128; c.height = 64;
+    const x = c.getContext('2d'); x.fillStyle = '#000'; x.fillRect(0, 0, 128, 64);
+    x.strokeStyle = '#fff'; x.lineWidth = 9;
+    for (let i = -4; i < 12; i++) { x.beginPath(); x.moveTo(i * 16, 0); x.lineTo(i * 16 + 40, 64); x.stroke(); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.userData = { keep: true };
+    return t;
+  }
+  const CREAM = { geo: null, pool: [] };
+
   // ── Lazy setup: meshes and pools (first cast / first update) ──
   const CIRC = [], METS = [];
   const GARDEN = { grp: null, petals: null, stars: [], flowers: [], mats: [] };
   const HYBRID = { guard: null, blades: [], seal: null, cross: null, mats: [], t: 0, tick: 0, n: 0, dmg: 0, sealT: 0, sealTick: 0, sealN: 0, sealDmg: 0, x: 0, z: 0, shield: null };
   const SPIN = { t: 0, dur: SPIN_T, tick: 0, n: 0, emitT: 0, ang: 0, grp: null, inner: null, outer: null, floor: null };
-  const MET = { cx: 0, cz: 0, fx: 0, fz: 0, aimed: [], spots: [], first: true };   // fx, fz: where Feza cast it
+  const MET = { cx: 0, cz: 0, fx: 0, fz: 0, aimed: [], spots: [], first: true, n: MET_N, r: MET_R, mult: 2 };   // fx, fz: where Feza cast it
   let starMat = null;
 
   function ensure() {
@@ -212,23 +245,62 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
 
     // kasırga: two counter-twisted wind funnels + ground swirl
     const sg = SPIN.grp = new THREE.Group(); sg.visible = false; root.add(sg);
-    const wm = (tw, spd) => { const m = fxMat(SH.wind, { uCol: { value: new THREE.Color('#8fe6ff') }, uA: { value: 0 }, uSpd: { value: spd }, uTw: { value: tw } }); m.vertexShader = VS_WIND; return m; };
+    const wm = (tw, spd) => { const m = fxMat(SH.wind, { uCol: { value: new THREE.Color('#ffe2bf') }, uA: { value: 0 }, uSpd: { value: spd }, uTw: { value: tw } }); m.vertexShader = VS_WIND; return m; };
     SPIN.inner = mk(GEO.windIn, wm(0.9, 2.6)); SPIN.inner.visible = true;
     SPIN.outer = mk(GEO.windOut, wm(-0.7, 2.0)); SPIN.outer.visible = true;
-    SPIN.floor = mk(GEO.plane, fxMat(SH.swirl, { uCol: { value: new THREE.Color('#7ee0ff') }, uA: { value: 0 }, uSpd: { value: 1.3 } }), 0.04, 2);
+    SPIN.floor = mk(GEO.plane, fxMat(SH.swirl, { uCol: { value: new THREE.Color('#ffc98a') }, uA: { value: 0 }, uSpd: { value: 1.3 } }), 0.04, 2);
     SPIN.floor.visible = true; SPIN.floor.scale.setScalar(SPIN_R + 0.1);
     sg.add(SPIN.inner, SPIN.outer, SPIN.floor);
 
-    // meteor: puffy glowing star + rainbow comet tail + twinkle glow
-    for (let i = 0; i < MET_N; i++) {
+    // Kaşık Kasırgası: Feza'nın çevresinde dönen tahta kaşıklar (kademe ile 3 / 5 / 7)
+    SPIN.spoons = [];
+    const wood = new THREE.MeshStandardMaterial({ color: '#d9a05e', roughness: 0.55, metalness: 0 }), woodD = new THREE.MeshStandardMaterial({ color: '#b97a3c', roughness: 0.5 });
+    const hGeo = new THREE.CylinderGeometry(0.055, 0.075, 1.0, 10).translate(0, 0.5, 0), bGeo = new THREE.SphereGeometry(0.22, 16, 10);
+    bGeo.scale(1, 1.35, 0.42); hGeo.userData.keep = bGeo.userData.keep = true;
+    const knob = new THREE.SphereGeometry(0.075, 10, 8); knob.userData.keep = true;
+    for (let i = 0; i < 7; i++) {
+      const sp = new THREE.Group(), h = new THREE.Mesh(hGeo, wood), b = new THREE.Mesh(bGeo, woodD), k = new THREE.Mesh(knob, wood);
+      b.position.y = 1.22; k.position.y = 0; sp.add(h, b, k); sp.visible = false; sp.rotation.order = 'YXZ';
+      sg.add(sp); SPIN.spoons.push(sp);
+    }
+    // Krema Fışkırtma: krema topları (beze biçimli, sarmal tepeli), havuzda 12 tane
+    CREAM.geo = creamGeo();
+    const cherryGeo = new THREE.SphereGeometry(0.2, 16, 12), sprGeo = new THREE.CapsuleGeometry(0.035, 0.13, 3, 6);
+    cherryGeo.userData.keep = sprGeo.userData.keep = true;
+    const cherryMat = new THREE.MeshStandardMaterial({ color: '#e8233f', roughness: 0.18, emissive: '#7a0010', emissiveIntensity: 0.25 });
+    const sprMats = ['#ff5fa8', '#4fc3ff', '#ffd23f', '#72e06a', '#a47bff'].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.4 }));
+    for (let i = 0; i < 12; i++) {
+      const m = new THREE.MeshStandardMaterial({ color: CREAM_COLS[i % CREAM_COLS.length], roughness: 0.42, metalness: 0 });
+      const mesh = new THREE.Group(), body = new THREE.Mesh(CREAM.geo, m), ch = new THREE.Mesh(cherryGeo, cherryMat);
+      ch.position.set(0.04, 1.18, 0); mesh.add(body, ch);
+      for (let k = 0; k < 6; k++) {   // renkli şeker serpintisi
+        const s = new THREE.Mesh(sprGeo, sprMats[(i + k) % 5]), an = k * 1.05 + i, hh = 0.05 + (k % 3) * 0.28;
+        const rr = 0.92 * (hh < 0.2 ? 1 : 1 - (hh - 0.2) * 0.75);
+        s.position.set(Math.cos(an) * rr, hh - 0.1, Math.sin(an) * rr); s.rotation.set(an, k, 1.2); mesh.add(s);
+      }
+      mesh.traverse(o => { o.frustumCulled = false; });
+      const it = { mesh, free: true };
+      mesh.userData.dispose = () => { it.free = true; };
+      CREAM.pool.push(it);
+    }
+    // Şeker Yağmuru: ambalajlı, çizgili parlak şekerler + gökkuşağı kuyruk + parıltı
+    const stripes = candyStripes();
+    const cGeo = new THREE.SphereGeometry(0.5, 24, 16), wGeo = new THREE.ConeGeometry(0.34, 0.42, 12, 1, true);
+    cGeo.userData.keep = wGeo.userData.keep = true;
+    for (let i = 0; i < MET_MAX; i++) {
       const col = new THREE.Color(RAINBOW[i % RAINBOW.length]);
-      const cm = rimify(new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.75, roughness: 0.3, metalness: 0.05 }), 0xffffff, 0.7, 2.4);
+      const cm = rimify(new THREE.MeshStandardMaterial({ color: col, emissive: '#ffffff', emissiveMap: stripes, emissiveIntensity: 0.55, roughness: 0.22, metalness: 0.05 }), 0xffffff, 0.7, 2.4);
+      const wm2 = new THREE.MeshStandardMaterial({ color: RAINBOW[(i + 3) % RAINBOW.length], roughness: 0.35, side: THREE.DoubleSide, emissive: RAINBOW[(i + 3) % RAINBOW.length], emissiveIntensity: 0.35 });
       const grp = new THREE.Group(); grp.visible = false;
-      const core = new THREE.Mesh(GEO.star, cm); core.scale.setScalar(0.62);
+      const core = new THREE.Group(); core.scale.setScalar(0.62);
+      const ball = new THREE.Mesh(cGeo, cm), w1 = new THREE.Mesh(wGeo, wm2), w2 = new THREE.Mesh(wGeo, wm2);
+      w1.rotation.z = Math.PI / 2; w1.position.x = 0.62; w2.rotation.z = -Math.PI / 2; w2.position.x = -0.62;
+      ball.frustumCulled = w1.frustumCulled = w2.frustumCulled = false;
+      core.add(ball, w1, w2);
       const tail = new THREE.Mesh(GEO.tail, fxMat(SH.tail, { uCol: { value: col.clone() }, uA: { value: 1 }, uHue: { value: i / 8 } }));
-      const glow = new THREE.Mesh(GEO.bill, fxMat(SH.halo2, { uCol: { value: col.clone() }, uA: { value: 0.5 } }));
-      glow.scale.setScalar(2.2); glow.renderOrder = 6; tail.renderOrder = 5;
-      core.frustumCulled = tail.frustumCulled = glow.frustumCulled = false;
+      const glow = new THREE.Mesh(GEO.bill, fxMat(SH.halo2, { uCol: { value: col.clone() }, uA: { value: 0.35 } }));
+      glow.scale.setScalar(2.0); glow.renderOrder = 6; tail.renderOrder = 5;
+      tail.frustumCulled = glow.frustumCulled = false;
       grp.add(tail, glow, core);
       root.add(grp);
       METS.push({ st: 0, t0: 0, grp, core, tail, glow, col: RAINBOW[i % RAINBOW.length], x: 0, z: 0, emitT: 0,
@@ -404,6 +476,47 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     return true;
   }
 
+  // ── Dev Ev 1. Krema Fışkırtma: önüne yelpaze gibi krema topları (kademe: 3 / 5 / 7 top, daha güçlü, 3. kademede huysuz şaşırır) ──
+  function castCream(c) {
+    const g = gm(); if (!g || !g.spawnProjectile) return false;
+    if (!S.ready) ensure();
+    castPose(c, 'krema', true);
+    const t = tier('krema'), n = [3, 5, 7][t - 1], mult = [1, 1.2, 1.45][t - 1];
+    const base = Math.atan2(c.aim.x, c.aim.z), dmg = Math.max(1, Math.round((STAR_K * sword() + STAR_ADD) * mult));
+    const targets = near(c.x, c.z, 10.8).filter(e => {
+      const dx = e.x - c.x, dz = e.z - c.z, d = Math.hypot(dx, dz);
+      return alive(e) && inSight(c.x, c.z, e) && (d < 0.1 || (dx * c.aim.x + dz * c.aim.z) / d > 0.72);
+    });
+    targets.sort((a, b) => a === c.target ? -1 : b === c.target ? 1 : dist2(c.x, c.z, a.x, a.z) - dist2(c.x, c.z, b.x, b.z));
+    const ax = c.aim.x, az = c.aim.z, rx = az, rz = -ax, fan = n > 3 ? 0.17 : 0.22;
+    for (let k = 0; k < n; k++) {
+      const i = k - (n - 1) / 2;
+      const x0 = c.x + ax * STAR_FWD + rx * i * 0.22, z0 = c.z + az * STAR_FWD + rz * i * 0.22;
+      const tg = Math.abs(i) <= 1 && targets.length ? targets[(i === 0 ? 0 : i < 0 ? 1 : 2) % targets.length] : null;
+      const a = tg ? Math.atan2(tg.x - x0, tg.z - z0) : base + i * fan, dx = Math.sin(a), dz = Math.cos(a);
+      const it = CREAM.pool.find(q => q.free);
+      let obj = null;
+      if (it) { it.free = false; obj = it.mesh; obj.scale.setScalar(0.34 + 0.04 * t); obj.rotation.set(0, a, 0); }
+      const sp = 13.5 + Math.abs(i) * 0.6;
+      g.spawnProjectile({ x: x0, y: 0.85, z: z0, vx: dx * sp, vz: dz * sp, r: 0.55, dmg, owner: 'feza', kind: 'cream', life: 0.85, pierce: t + 1, obj,
+        color: '#fff3e6', kb: 0.55, stun: t >= 3 ? 0.6 : 0, onHit: creamHit });
+      puff(x0, 0.85, z0, dx * 2.2, 0.6, dz * 2.2, 0.3, 0.2, 0.06, fpick(CREAM_COLS), '#ffffff', 3, 2, 2, 1, false);
+    }
+    for (let i = 0; i < 6; i++) {   // elden fışkıran krema damlaları
+      puff(c.x + ax * 0.5, 0.95, c.z + az * 0.5, ax * frand(2, 4) + frand(-0.8, 0.8), frand(0.8, 2.2), az * frand(2, 4) + frand(-0.8, 0.8),
+        frand(0.4, 0.6), frand(0.14, 0.22), 0.05, fpick(CREAM_COLS), '#ffffff', 3, 6, 1, 1, false);
+    }
+    circle(c.x, c.z, '#ffd0e4', 1.25, 0.45, 0, true);
+    sfx('splash', { x: c.x, z: c.z, pitch: 1.35, vol: 0.7 }); sfx('squish', { x: c.x, z: c.z, pitch: 1.2 });
+    word(c.x + ax, c.z + az, 'Fış!');
+    return true;
+  }
+  function creamHit(p) {
+    burst('cream', p.x, p.y, p.z, { count: 10 });
+    fxRing(p.x, p.z, { r0: 0.15, r1: 1.0, dur: 0.25, color: '#fff2e2', width: 0.18 });
+    sfx('splat', { x: p.x, z: p.z, vol: 0.55, pitch: frand(1.0, 1.3) });
+  }
+
   function starHit(p) {
     fxRing(p.x, p.z, { r0: 0.12, r1: 0.8, dur: 0.22, color: '#ffe285', width: 0.13 });
     burst('sparkle', p.x, p.y, p.z, { color: '#ffd23f', count: 4 });
@@ -413,27 +526,33 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
   function castSpin(c) {
     if (SPIN.t > 0.3) return false;
     castPose(c, 'kasirga', false);
-    SPIN.t = SPIN.dur = SPIN_T; SPIN.tick = 0.06; SPIN.n = 0; SPIN.ang = c.P.face || 0;
-    c.P.spin = SPIN_T;
+    const t = SPIN.tier = tier('kasik');   // Dev Ev: Kaşık Kasırgası kademesi (kaşık sayısı, yarıçap, süre, güç)
+    SPIN.r = [SPIN_R, 3.0, 3.4][t - 1]; SPIN.mult = [0.6, 0.72, 0.86][t - 1]; SPIN.nSp = [3, 5, 7][t - 1];
+    const dur = [SPIN_T, 2.7, 3.2][t - 1];
+    SPIN.floor.scale.setScalar(SPIN.r + 0.1);
+    for (let i = 0; i < SPIN.spoons.length; i++) SPIN.spoons[i].visible = i < SPIN.nSp;
+    SPIN.t = SPIN.dur = dur; SPIN.tick = 0.06; SPIN.n = 0; SPIN.ang = c.P.face || 0;
+    c.P.spin = dur;
     SPIN.grp.position.set(c.x, 0, c.z); SPIN.grp.visible = true;
-    circle(c.x, c.z, '#7ee0ff', 1.6, 0.6, 0, true);
+    circle(c.x, c.z, '#ffc98a', 1.6, 0.6, 0, true);
     fxRing(c.x, c.z, { r0: 0.5, r1: 3.2, dur: 0.4, color: '#bff4ff', width: 0.4 });
     burst('dust', c.x, 0.1, c.z, { count: 14 });
     sfx('spin', { x: c.x, z: c.z });
-    word(c.x, c.z, 'Vuuş!');
+    word(c.x, c.z, 'Fırr!');
     return true;
   }
   function spinHit(P) {
-    const x = P.pos.x, z = P.pos.z, list = near(x, z, SPIN_R);
+    const R = SPIN.r || SPIN_R, x = P.pos.x, z = P.pos.z, list = near(x, z, R);
     for (let i = 0; i < list.length; i++) {
       const e = list[i];
-      hurt(e, Math.max(1, Math.round(0.6 * sword())), { kb: 0.35, fromX: x, fromZ: z, kind: 'spin' });
-      burst('hit', e.x, eY(e), e.z, { color: '#bff4ff' });
+      hurt(e, Math.max(1, Math.round((SPIN.mult || 0.6) * sword())), { kb: 0.35, fromX: x, fromZ: z, kind: 'spin' });
+      burst('hit', e.x, eY(e), e.z, { color: '#ffd9a0' });
+      if (SPIN.n % 2 === 0) sfx('bonk', { x: e.x, z: e.z, vol: 0.35, pitch: frand(1.1, 1.5) });   // kaşık "tok!"
     }
-    smash(x, z, SPIN_R);
+    smash(x, z, R);
     SPIN.n++;
     if (fxOk('slash')) FX.slash(x, 0.75, z, SPIN.ang, 1, '#dff8ff', 2.0, 2.6);
-    if (SPIN.n % 3 === 0) fxRing(x, z, { r0: 1.2, r1: SPIN_R + 0.2, dur: 0.3, color: '#9fe9ff', width: 0.2 });
+    if (SPIN.n % 3 === 0) fxRing(x, z, { r0: 1.2, r1: R + 0.2, dur: 0.3, color: '#ffe2b0', width: 0.2 });
     if (SPIN.n % 3 === 1) sfx('whoosh', { vol: 0.5, pitch: 1 + (SPIN.n % 2) * 0.1, x, z });
   }
   function updateSpin(dt) {
@@ -450,6 +569,14 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     SPIN.inner.rotation.y += dt * 9; SPIN.outer.rotation.y += dt * 6; SPIN.floor.rotation.y += dt * 4;
     SPIN.inner.scale.setScalar(0.8 + 0.2 * a); SPIN.outer.scale.set(0.75 + 0.25 * a, 0.6 + 0.4 * a, 0.75 + 0.25 * a);
     SPIN.ang += dt * 16;
+    // dönen tahta kaşıklar: Feza'nın çevresinde, kasırganın kenarına doğru açılır, kendi çevrelerinde de döner
+    const nSp = SPIN.nSp || 3, rr = ((SPIN.r || SPIN_R) - 0.75) * (0.4 + 0.6 * a);
+    for (let i = 0; i < nSp; i++) {
+      const sp = SPIN.spoons[i], an = SPIN.ang * 0.55 + i * TAU / nSp;
+      sp.position.set(Math.sin(an) * rr * 0.45, 0.55 + 0.25 * Math.sin(SPIN.ang * 0.8 + i * 1.7), Math.cos(an) * rr * 0.45);
+      sp.rotation.set(1.3 + 0.15 * Math.sin(SPIN.ang * 0.7 + i), an, 0.5 * Math.sin(SPIN.ang + i));   // sap dışa, kepçe uçta (pervane gibi)
+      sp.scale.setScalar(Math.max(0.01, a) * rr * 0.5);
+    }
     SPIN.tick -= dt;
     if (SPIN.tick <= 0) { SPIN.tick += SPIN_TICK; spinHit(P); }
     SPIN.emitT -= dt;
@@ -487,11 +614,12 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     // (an empty cast toward a wall rains on the nearest floor he can see, like the garden and the seal)
     for (let i = 0; i < 12 && (!isFloor(cx, cz) || !inSight(c.x, c.z, { x: cx, z: cz })); i++) { cx = lerp(cx, c.x, 0.3); cz = lerp(cz, c.z, 0.3); }
     MET.cx = cx; MET.cz = cz; MET.fx = c.x; MET.fz = c.z; MET.aimed.length = 0; MET.spots.length = 0; MET.first = true;
+    { const t = tier('seker'); MET.n = [MET_N, 11, 14][t - 1]; MET.r = [MET_R, 2.5, 2.8][t - 1]; MET.mult = [2, 2.25, 2.6][t - 1]; }   // Dev Ev: Şeker Yağmuru kademesi
     let k = 0;
-    for (let i = 0; i < METS.length && k < MET_N; i++) {
+    for (let i = 0; i < METS.length && k < MET.n; i++) {
       const m = METS[i];
       if (m.st) continue;
-      m.st = 1; m.t0 = S.t + 0.1 + k / (MET_N - 1) * (MET_SPAN - MET_LAND) + frand(-0.03, 0.03);
+      m.st = 1; m.t0 = S.t + 0.1 + k / (MET.n - 1) * (MET_SPAN - MET_LAND) + frand(-0.03, 0.03);
       k++;
     }
     circle(c.x, c.z, '#ff9a3c', 1.6, 0.6, 0, true);
@@ -544,7 +672,7 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
       if (age < 0) continue;
       if (m.st === 1) {
         meteorSpot(m);
-        circle(m.x, m.z, m.col, MET_R * 0.82, MET_LAND + 0.03, 1, false);
+        circle(m.x, m.z, m.col, MET.r * 0.82, MET_LAND + 0.03, 1, false);
         m.st = 2;
       }
       if (m.st === 2 && age >= MET_FALL0) {
@@ -573,20 +701,21 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
   }
   function meteorBoom(m) {
     m.st = 0; m.grp.visible = false;
-    const x = m.x, z = m.z, list = near(x, z, MET_R);
+    const x = m.x, z = m.z, list = near(x, z, MET.r);
     // walls stop the blast, as for the frost flower and the seal (seen from the landing spot; a stone aimed at a huysuz by a
     // wall may land a hair inside the wall cell → from the visible centre instead)
     const fl = isFloor(x, z), sx = fl ? x : MET.cx, sz = fl ? z : MET.cz;
     for (let i = 0; i < list.length; i++) if (inSight(sx, sz, list[i]))
-      hurt(list[i], Math.max(1, Math.round(2 * sword())), { kb: 1.2, fromX: x, fromZ: z, kind: 'meteor' });
-    smash(x, z, MET_R);
-    fxRing(x, z, { r0: 0.4, r1: MET_R + 0.5, dur: 0.4, color: m.col, width: 0.5 });
+      hurt(list[i], Math.max(1, Math.round((MET.mult || 2) * sword())), { kb: 1.2, fromX: x, fromZ: z, kind: 'meteor' });
+    smash(x, z, MET.r);
+    fxRing(x, z, { r0: 0.4, r1: MET.r + 0.5, dur: 0.4, color: m.col, width: 0.5 });
     burst('hit', x, 0.6, z, { color: m.col, scale: 1.4 });
     burst('sparkle', x, 0.6, z, { color: m.col, count: 14 });
+    burst('confetti', x, 0.9, z, { count: 12 });
     lightFlash(x, z, m.col, 4, 0.28);
     shake(0.22);
     sfx('boom', { vol: 0.8, x, z, pitch: frand(0.9, 1.15) });
-    if (MET.first) { MET.first = false; word(x, z, 'Güm!'); }
+    if (MET.first) { MET.first = false; word(x, z, 'Şeker!'); }
   }
 
   // ── Büyücü: light arrows, a frost flower and a little garden of stars ──
@@ -837,10 +966,36 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
 
   const wrap = fn => function (ctx) { const c = prep(ctx); return c ? fn(c) : false; };
   // Cooldowns (parent: "skills could be used far too often, the game got easy"): were 1 / 7 / 16 s.
+  // Dev Ev: ev temalı üç yetenek (resimli büyük simgeler: svg). Her biri yıldız şekerle 3 kademe güçlenir (tier / upgradeCost).
+  const ICON = {
+    krema: `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="skKb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9fe2ff"/><stop offset="1" stop-color="#3b9be0"/></linearGradient></defs>
+      <path d="M8 80 L38 52 L52 66 L22 94Z" fill="url(#skKb)" stroke="#1f5f96" stroke-width="3.5" stroke-linejoin="round"/><path d="M14 82 L36 61" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+      <path d="M38 52 L46 46 L58 58 L52 66Z" fill="#d6dee8" stroke="#6b7a8c" stroke-width="3" stroke-linejoin="round"/>
+      <g stroke="#e3b98e" stroke-width="3" stroke-linejoin="round"><path d="M50 44 Q44 36 52 32 Q50 24 60 24 Q62 16 70 20 Q78 18 76 28 Q86 30 80 38 Q86 46 76 48 Q72 56 64 50 Q58 56 50 44Z" fill="#fffaf0"/>
+      <path d="M78 12 Q74 6 80 4 Q88 4 86 12 Q92 16 86 20 Q80 22 78 12Z" fill="#ffd3e6"/><path d="M88 34 Q86 28 92 28 Q98 30 95 36 Q92 40 88 34Z" fill="#fff3c9"/></g>
+      <path d="M58 32 Q64 28 70 32" stroke="#f0d2b0" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <g stroke-width="3.2" stroke-linecap="round"><path d="M60 38 l4 -2" stroke="#ff5fa8"/><path d="M68 42 l3 3" stroke="#4fc3ff"/><path d="M70 30 l4 1" stroke="#ffd23f"/><path d="M56 26 l1 -4" stroke="#72e06a"/></g>
+      <circle cx="66" cy="18" r="5" fill="#e8264a" stroke="#9e1430" stroke-width="2"/><path d="M66 13 Q68 6 74 6" stroke="#4a8a2a" stroke-width="2.5" fill="none"/></svg>`,
+    kasik: `<svg viewBox="0 0 100 100" aria-hidden="true">
+      <g fill="none" stroke-linecap="round"><path d="M18 64 Q14 40 36 28 Q60 16 80 34" stroke="#ffe2bf" stroke-width="7" opacity=".9"/><path d="M84 46 Q88 70 64 80 Q40 88 22 72" stroke="#ffc98a" stroke-width="6" opacity=".9"/>
+      <path d="M30 52 Q34 36 52 34 Q68 34 72 48" stroke="#fff" stroke-width="4" opacity=".8"/></g>
+      <g transform="rotate(-40 50 50)"><rect x="46" y="38" width="8" height="52" rx="4" fill="#d9a05e" stroke="#8a5a26" stroke-width="3"/><ellipse cx="50" cy="26" rx="14" ry="19" fill="#c98a48" stroke="#8a5a26" stroke-width="3.2"/><ellipse cx="46" cy="22" rx="5" ry="8" fill="#e8bd86" opacity=".9"/></g>
+      <g transform="rotate(60 50 50)"><rect x="47" y="44" width="6" height="40" rx="3" fill="#e2ad6c" stroke="#8a5a26" stroke-width="2.6"/><ellipse cx="50" cy="35" rx="10" ry="13" fill="#d39552" stroke="#8a5a26" stroke-width="2.8"/></g>
+      <g fill="#ff7ab8"><circle cx="20" cy="30" r="3.5"/><circle cx="82" cy="70" r="3.5" fill="#7fd8ff"/><circle cx="76" cy="18" r="3" fill="#ffd23f"/><circle cx="16" cy="78" r="3" fill="#9ff58a"/></g></svg>`,
+    seker: `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><radialGradient id="skCl" cx="45%" cy="35%" r="70%"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe8ff"/></radialGradient></defs>
+      <path d="M16 40 Q10 26 26 24 Q30 10 46 14 Q56 4 68 14 Q84 12 84 28 Q96 32 88 44 Z" fill="url(#skCl)" stroke="#9fb0e0" stroke-width="3.5" stroke-linejoin="round"/>
+      <circle cx="40" cy="30" r="2.6" fill="#5a4a7a"/><circle cx="58" cy="30" r="2.6" fill="#5a4a7a"/><path d="M44 35 Q49 40 54 35" stroke="#5a4a7a" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+      <g stroke-width="2.6" stroke-linejoin="round">
+      <g transform="translate(26 62) rotate(-25)"><path d="M-8 0 L-16 -6 L-16 6Z M8 0 L16 -6 L16 6Z" fill="#7fd8ff" stroke="#2f8fc7"/><circle r="8.5" fill="#ff5fa8" stroke="#b0256a"/><path d="M-5 -3 Q0 -7 5 -3" stroke="#fff" fill="none"/></g>
+      <g transform="translate(56 74) rotate(20)"><path d="M-8 0 L-16 -6 L-16 6Z M8 0 L16 -6 L16 6Z" fill="#ff9ec7" stroke="#c44a86"/><circle r="8.5" fill="#ffd23f" stroke="#b07a00"/><path d="M-5 -3 Q0 -7 5 -3" stroke="#fff" fill="none"/></g>
+      <g transform="translate(80 58) rotate(-10)"><path d="M-7 0 L-14 -5 L-14 5Z M7 0 L14 -5 L14 5Z" fill="#ffd23f" stroke="#b07a00"/><circle r="7.5" fill="#72e06a" stroke="#2f8a2a"/><path d="M-4 -3 Q0 -6 4 -3" stroke="#fff" fill="none"/></g>
+      <g transform="translate(40 90) rotate(8)"><path d="M-6 0 L-12 -5 L-12 5Z M6 0 L12 -5 L12 5Z" fill="#c79bff" stroke="#6a3ab8"/><circle r="6.5" fill="#4fc3ff" stroke="#1f6fa8"/></g></g>
+      <g stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".85"><path d="M30 48 l-3 6"/><path d="M62 52 l-3 7"/><path d="M78 44 l-2 5"/></g></svg>`,
+  };
   const list = [
-    { id: 'yildiz', ad: 'Yıldız Atışı', icon: '⭐', lvl: 1, cd: 4, color: '#ffd23f', line: 'yetenek_yildiz', cast: wrap(castStar) },
-    { id: 'kasirga', ad: 'Kasırga', icon: '🌪️', lvl: 3, cd: 15, color: '#7ee0ff', line: 'yetenek_kasirga', cast: wrap(castSpin) },
-    { id: 'meteor', ad: 'Meteor Yağmuru', icon: '☄️', lvl: 5, cd: 24, color: '#ff9a3c', line: 'yetenek_meteor', cast: wrap(castMeteor) },
+    { id: 'krema', ad: 'Krema Fışkırtma', icon: '🍦', svg: ICON.krema, lvl: 1, cd: 4, color: '#ffb3d1', line: 'yetenek_krema', tierLine: 'guclendi_krema', cast: wrap(castCream) },
+    { id: 'kasik', ad: 'Kaşık Kasırgası', icon: '🥄', svg: ICON.kasik, lvl: 3, cd: 15, color: '#ffc98a', line: 'yetenek_kasik', tierLine: 'guclendi_kasik', cast: wrap(castSpin) },
+    { id: 'seker', ad: 'Şeker Yağmuru', icon: '🍬', svg: ICON.seker, lvl: 5, cd: 24, color: '#b9a4ff', line: 'yetenek_seker', tierLine: 'guclendi_seker', cast: wrap(castMeteor) },
   ];
   const wizard = [
     { id: 'isikoklari', ad: 'Işık Okları', icon: '✨', lvl: 1, cd: 4, color: '#be8cff', line: 'buyu1', cast: wrap(castArrows) },
@@ -853,5 +1008,11 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     { id: 'gokkusagimuhru', ad: 'Gökkuşağı Mührü', icon: '🌈', lvl: 5, cd: 24, color: '#ffd378', line: 'hibrit3', cast: wrap(castSeal) },
   ];
   list.forClass = heroClass => heroClass === 'hybrid' ? hybrid : heroClass === 'wizard' ? wizard : list;
+  list.tier = tier; list.upgradeCost = upgradeCost; list.ICON = ICON;
+  // Büyücü / büyülü şövalye yetenekleri de yıldız şekerle güçlenir: her kademe bekleme süresini kısaltır (%15 / %30)
+  for (const d of wizard.concat(hybrid)) {
+    const base = d.cd;
+    Object.defineProperty(d, 'cd', { get: () => base * [1, 0.85, 0.7][tier(d.id) - 1], enumerable: true });
+  }
   return { SKILLS: list, SKILLS_update: update, SKILLS_clear: clear };
 })();
