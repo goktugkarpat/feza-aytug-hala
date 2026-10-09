@@ -891,6 +891,7 @@ const STORY = (() => {
   function dance(dur) {   // Hala + Feza + Bilbo sevinç dansı (oyun modelleri; Hala'nın kendi kancası varsa onu kullanır)
     const HL = H_(); if (HL && typeof HL.celebrate === 'function') { try { HL.celebrate('dans', dur); } catch (e) { /* ignore */ } }
     const g = G_(); if (g && g.emit) g.emit('storyDance', { dur });
+    if (g && g.storyCheer) { g.storyCheer(dur); for (let t = 1.4; t < dur; t += 1.5) later(t, () => g.storyCheer(0.1, true)); }
   }
 
   // ───────────────────────── Final ─────────────────────────
@@ -1129,7 +1130,7 @@ const STORY = (() => {
     const d = line('malzeme_' + id, (MALZEME[id] || id) + ' bulundu! Pastaya bir adım daha!', 4);
     const d2 = line(pick(['dans_1', 'dans_2', 'dans_3']), null, 3);
     if (P) {
-      spawnTrophy(id, P.pos.x, 1.3, P.pos.z + 0.5, { h: 1.0, hold: Math.max(2.8, d * 0.9), s: 1.2 });
+      spawnTrophy(id, P.pos.x + 0.3, 1.0, P.pos.z + 1.1, { h: 0.9, hold: Math.max(2.8, d * 0.9), s: 1.0 });
       moment(Math.max(4, d + 1.2));
       dance(Math.max(4, d + d2));
       for (let i = 0; i < 5; i++) later((300 + i * 600) / 1000, () => { burst('confetti', P.pos.x + (Math.random() - 0.5) * 3, 3, P.pos.z + (Math.random() - 0.5) * 3, { count: 18 }); burst('hearts', P.pos.x, 1.6, P.pos.z, { count: 5 }); });
@@ -1150,6 +1151,7 @@ const STORY = (() => {
       sfx('chest', { vol: 0.6 }); later((350) / 1000, () => sfx('bilboBark', { vol: 0.6 }));
     }
     const HL = H_(); if (HL && typeof HL.celebrate === 'function') { try { HL.celebrate('alkis', 2.5); } catch (e) { /* ignore */ } }
+    if (g && g.storyCheer) g.storyCheer(1.6, true);
     return d;
   }
   function locked(o) { return line('pasta_kilitli', 'Önce üç malzemeyi bulalım!', 2); }
