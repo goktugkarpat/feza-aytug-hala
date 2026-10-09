@@ -160,18 +160,19 @@ const ODAKIT = (() => {
       tLay: { value: lay }, tM0: { value: tex(mats[0].tex) }, tM1: { value: tex(mats[1].tex) }, tM2: { value: tex(mats[2].tex) },
       uLay: { value: new THREE.Vector4(pad, pad, 1 / W, 1 / H) }, uRep: { value: new THREE.Vector3(1 / mats[0].size, 1 / mats[1].size, 1 / mats[2].size) },
       uRgh: { value: new THREE.Vector3(mats[0].rough ?? 0.6, mats[1].rough ?? 0.6, mats[2].rough ?? 0.6) }, uOut: { value: new THREE.Vector4(oc[0], oc[1], oc[2], o.shade ?? 0.5) },
+      uShC: { value: new THREE.Vector3(...(o.shadeColor || [1 - (o.shade ?? 0.5), 1 - (o.shade ?? 0.5), 1 - (o.shade ?? 0.5)])) },
     };
     mat.userData.ok = U;
     mat.onBeforeCompile = sh => {
       Object.assign(sh.uniforms, U);
       sh.vertexShader = 'varying vec3 vOkW;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvOkW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-      sh.fragmentShader = 'varying vec3 vOkW; uniform sampler2D tLay, tM0, tM1, tM2; uniform vec4 uLay, uOut; uniform vec3 uRep, uRgh;\n' + sh.fragmentShader
+      sh.fragmentShader = 'varying vec3 vOkW; uniform sampler2D tLay, tM0, tM1, tM2; uniform vec4 uLay, uOut; uniform vec3 uRep, uRgh, uShC;\n' + sh.fragmentShader
         .replace('#include <map_fragment>', `vec4 okL = texture2D(tLay, (vOkW.xz + uLay.xy) * uLay.zw);
           vec3 okC = texture2D(tM0, vOkW.xz * uRep.x).rgb;
           okC = mix(okC, texture2D(tM1, vOkW.xz * uRep.y).rgb, okL.r);
           okC = mix(okC, texture2D(tM2, vOkW.xz * uRep.z).rgb, okL.b);
           okC *= mix(uOut.rgb, vec3(1.0), okL.g);
-          okC *= 1.0 - okL.a * uOut.a;
+          okC *= mix(vec3(1.0), uShC, okL.a);
           diffuseColor.rgb *= okC;`)
         .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = mix(mix(uRgh.x, uRgh.y, okL.r), uRgh.z, okL.b);');
     };

@@ -207,7 +207,7 @@ const OTURMA = (() => {
     const rug1 = a1 ? bbox(L, mainOf(L, a1), 6.5) : null, rugA = ar ? bbox(L, ar.rooms, 5) : null;
     const sofa = a3 ? bbox(L, a3.rooms, 3.5) : null;
     const shadeAt = (x, z) => { if (!sofa) return 0; const d = Math.min(x - sofa.x0, sofa.x1 - x, z - sofa.z0, sofa.z1 - z); return Math.max(0, Math.min(1, d / 3)); };
-    K.floor(L, api, { mats: [{ tex: 'parquet', size: 13.4, rough: 0.42 }], region: (x, z) => [0, 0, shadeAt(x, z)], out: [0.46, 0.45, 0.5], shade: 0.5 });
+    K.floor(L, api, { mats: [{ tex: 'parquet', size: 13.4, rough: 0.42 }], region: (x, z) => [0, 0, shadeAt(x, z)], out: [0.46, 0.45, 0.5], shadeColor: [0.52, 0.44, 0.38] });
     // halılar (kalın: 12 cm), saçaklar, lifler
     const rugs = [rug1, rugA].filter(Boolean);
     for (const q of rugs) {
