@@ -133,8 +133,10 @@ const HUB = (() => {
     toka: k => { k.add(G.capsule(3, 10), 0xff6fa8, [0, 0.5, 0], [0, 0, Math.PI / 2], [0.16, 0.36, 0.1]); for (let i = 0; i < 5; i++) { const a = i * TAU4 / 5; k.add(G.sphere(12, 8), 0xffffff, [Math.sin(a) * 0.3, 0.95 + Math.cos(a) * 0.3, 0.12], null, [0.2, 0.2, 0.08]); } k.add(G.sphere(12, 8), 0xffd23f, [0, 0.95, 0.18], null, [0.16, 0.16, 0.1]); },
   };
   function hashH(a, b) { const s = Math.sin(a * 91.7 + b * 47.3) * 43758.5453; return s - Math.floor(s); }
-  const imgKostum = id => thumb('k_' + (id || '_kendi'), () => kitObj(KOSTUM_MODEL[id || '_kendi'] || KOSTUM_MODEL._kendi));
-  const imgAks = id => thumb('a_' + (id || '_yok'), () => kitObj(AKS_MODEL[id || '_yok'] || AKS_MODEL._yok));
+  // Feza / Bilbo ajanı isterse gerçek modelle önizleme verir: FEZA.costumeModel(id) / BILBO.accessoryModel(id) → Object3D ya da {root, dispose}
+  const hook = (G2, fn, id) => { try { return typeof G2 !== 'undefined' && G2 && typeof G2[fn] === 'function' ? G2[fn](id) : null; } catch (e) { return null; } };
+  const imgKostum = id => thumb('k_' + (id || '_kendi'), () => (typeof FEZA !== 'undefined' && hook(FEZA, 'costumeModel', id)) || kitObj(KOSTUM_MODEL[id || '_kendi'] || KOSTUM_MODEL._kendi));
+  const imgAks = id => thumb('a_' + (id || '_yok'), () => (typeof BILBO !== 'undefined' && hook(BILBO, 'accessoryModel', id)) || kitObj(AKS_MODEL[id || '_yok'] || AKS_MODEL._yok));
   const imgKayip = id => thumb('ky_' + id, () => kitObj(KAYIP_MODEL[id] || KAYIP_MODEL.anahtar));
   function imgSus(id) {
     return thumb('s_' + id, () => {
@@ -468,23 +470,35 @@ const HUB = (() => {
       if (!ok) el('div', 'hb-lock', b, '🔒');
       b.addEventListener('pointerdown', e => { if (!ok) { shake(b); say('susle_kilit', 3); return; } startDrag(id, e, b, im, it.ikon); });
     }
-    // sürükle-bırak
+    // sürükle-bırak: süse dokun → yukarı sürükle (pastaya bırak) · yana kaydır → tepsi kayar · dokunup bırak → pastada güzel bir yere konur
     let drag = null;
     function startDrag(id, e, b, im, ikon) {
       e.preventDefault();
-      const gh = el('div', 'hb-ghost', ui); if (im) { const i2 = el('img', '', gh); i2.src = im; } else el('div', 'hb-emo', gh, ikon);
-      drag = { id, gh, b, x0: e.clientX, y0: e.clientY, moved: false, pid: e.pointerId };
+      drag = { id, b, im, ikon, gh: null, x0: e.clientX, y0: e.clientY, sl: tray.scrollLeft, moved: false, scroll: false, pid: e.pointerId };
       b.classList.add('hold'); sfx('click', { vol: 0.5 });
+    }
+    function lift() {   // gerçekten sürüklenmeye başladı: elde süs hayaleti
+      const d = drag; d.moved = true; d.b.classList.remove('hold');
+      d.gh = el('div', 'hb-ghost', ui); if (d.im) { const i2 = el('img', '', d.gh); i2.src = d.im; } else el('div', 'hb-emo', d.gh, d.ikon);
+    }
+    function moveGhost(x, y) { if (!drag || !drag.gh) return; drag.gh.style.left = (x - 60) + 'px'; drag.gh.style.top = (y - 130) + 'px'; drag.hit = D.pick(x, y - 70); D.preview(drag.id, drag.hit); drag.gh.style.opacity = drag.hit ? '0.2' : '1'; }
+    window.addEventListener('pointermove', onMove, true); window.addEventListener('pointerup', onUp, true); window.addEventListener('pointercancel', onUp, true);
+    function onMove(e) {
+      if (!drag || e.pointerId !== drag.pid) return;
+      const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+      if (!drag.moved && !drag.scroll) {
+        if (Math.hypot(dx, dy) < 12) return;
+        if (-dy > Math.abs(dx) * 0.6) lift(); else { drag.scroll = true; drag.b.classList.remove('hold'); }
+      }
+      if (drag.scroll) { tray.scrollLeft = drag.sl - dx; return; }
       moveGhost(e.clientX, e.clientY);
     }
-    function moveGhost(x, y) { if (!drag) return; drag.gh.style.left = (x - 60) + 'px'; drag.gh.style.top = (y - 130) + 'px'; drag.hit = D.pick(x, y - 70); D.preview(drag.id, drag.hit); drag.gh.style.opacity = drag.hit ? '0.2' : '1'; }
-    window.addEventListener('pointermove', onMove, true); window.addEventListener('pointerup', onUp, true); window.addEventListener('pointercancel', onUp, true);
-    function onMove(e) { if (!drag || e.pointerId !== drag.pid) return; if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 12) drag.moved = true; moveGhost(e.clientX, e.clientY); }
     function onUp(e) {
       if (!drag || e.pointerId !== drag.pid) return;
-      const d = drag; drag = null; d.gh.remove(); d.b.classList.remove('hold'); D.preview(null);
-      let at = d.moved ? d.hit : D.autoSpot();   // dokunup bırakınca: pastada boş güzel bir yer
-      if (!d.moved && !at) at = D.autoSpot();
+      const d = drag; drag = null; if (d.gh) d.gh.remove(); d.b.classList.remove('hold'); D.preview(null);
+      if (d.scroll) return;
+      if (e.type === 'pointercancel' && !d.moved) return;
+      const at = d.moved ? d.hit : D.autoSpot();   // dokunup bırakınca: pastada boş güzel bir yer
       if (!at) { sfx('whoosh', { vol: 0.4 }); return; }
       place(d.id, at, d.moved ? [e.clientX, e.clientY - 70] : D.screenOf(at));
     }
@@ -521,8 +535,12 @@ const HUB = (() => {
   // Süsleme sahnesi: ana renderer ile kendi sahnemizi çizer (dünya o sırada durur ve çizilmez)
   function decorScene(stage) {
     const g = Gm(), P = g.P, sc = new THREE.Scene();
-    const bgc = document.createElement('canvas'); bgc.width = 64; bgc.height = 256;
-    { const x = bgc.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 256); gr.addColorStop(0, '#ffe9d2'); gr.addColorStop(0.55, '#f6c9a4'); gr.addColorStop(1, '#c98f5c'); x.fillStyle = gr; x.fillRect(0, 0, 64, 256); }
+    const bgc = document.createElement('canvas'); bgc.width = 512; bgc.height = 512;
+    { const x = bgc.getContext('2d'), gr = x.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, '#fff1de'); gr.addColorStop(0.5, '#f8d2ae'); gr.addColorStop(1, '#d69a66'); x.fillStyle = gr; x.fillRect(0, 0, 512, 512);
+      // bulanık mutfak: pencere ışığı ve yumuşak ışık lekeleri (bokeh)
+      const w = x.createRadialGradient(130, 90, 10, 130, 90, 170); w.addColorStop(0, 'rgba(255,255,240,0.95)'); w.addColorStop(1, 'rgba(255,250,230,0)'); x.fillStyle = w; x.fillRect(0, 0, 512, 512);
+      const cols = ['255,214,170', '255,190,210', '200,235,220', '255,240,190'];
+      for (let i = 0; i < 26; i++) { const cx = Math.random() * 512, cy = Math.random() * 300, r = 14 + Math.random() * 38, q = x.createRadialGradient(cx, cy, 0, cx, cy, r); q.addColorStop(0, 'rgba(' + cols[i % 4] + ',0.55)'); q.addColorStop(0.7, 'rgba(' + cols[i % 4] + ',0.35)'); q.addColorStop(1, 'rgba(' + cols[i % 4] + ',0)'); x.fillStyle = q; x.beginPath(); x.arc(cx, cy, r, 0, 6.283); x.fill(); } }
     const bg = new THREE.CanvasTexture(bgc); bg.colorSpace = THREE.SRGBColorSpace; sc.background = bg;
     sc.add(new THREE.HemisphereLight(0xfff6ee, 0xa07a60, 1.7));
     const key = new THREE.DirectionalLight(0xfff0dc, 2.6); key.position.set(-4, 12, 10); key.castShadow = true;
@@ -542,7 +560,7 @@ const HUB = (() => {
     let ghost = null, ghostId = null, fresh = null;
     const itemMesh = (id, mat) => { const k = new Kit(), q = { berry: [], flame: [] }; CAKE.ITEMS[id].parts(k, q); for (const b of q.berry) k.add(CAKE._berryG(), 0xff3050, [b[0], b[1], b[2]], null, b[3] * 0.6); for (const f of q.flame) k.add(G.sphere(8, 6), 0xffcf5a, [f[0], f[1], f[2]], null, [0.07, 0.14, 0.07]); return new THREE.Mesh(k.build(), mat); };
     const sp = { p: new THREE.Vector3(), n: new THREE.Vector3() }, up = new THREE.Vector3(0, 1, 0);
-    const orient = (m, at) => { CAKE.surfPoint(model, at.a, at.h, sp); m.position.copy(sp.p); m.quaternion.setFromUnitVectors(up, sp.n).multiply(new THREE.Quaternion().setFromAxisAngle(up, at.a)); };
+    const orient = (m, at) => { CAKE.surfPoint(model, at.a, at.h, sp); m.position.copy(sp.p); m.quaternion.setFromUnitVectors(up, sp.n).multiply(new THREE.Quaternion().setFromAxisAngle(up, sp.n.y > 0.5 ? 0 : at.a)); };
     const cam = new THREE.PerspectiveCamera(34, 1, 0.5, 200), ray = new THREE.Raycaster(), v2 = new THREE.Vector2();
     let rot = 0.3, rotV = 0, t = 0, wig = 0, raf = 0, alive = true;
     // ekranın çerçeve arabelleğinde derinlik yok (oyun sahnesi kendi hedefine çizer): süsleme sahnesi derinlikli hedefe çizilip ekrana kopyalanır

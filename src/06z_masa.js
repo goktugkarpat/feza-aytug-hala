@@ -382,7 +382,7 @@ const CAKE = (() => {
       const it = ITEMS[d.id]; if (!it) continue;
       surfPoint(model, +d.a || 0, d.h == null ? 1 : +d.h, _sp);
       _q.setFromUnitVectors(_up, _sp.n);
-      const yaw = new THREE.Quaternion().setFromAxisAngle(_up, (+d.a || 0) + (d.r || 0));
+      const yaw = new THREE.Quaternion().setFromAxisAngle(_up, _sp.n.y > 0.5 ? (d.r || 0) : (+d.a || 0));   // üstte: öne (kameraya) bakar; yanda: dışa
       const q = _q.clone().multiply(yaw), s = d.s || 1;
       const qq = { berry: [], flame: [] };
       k.push([_sp.p.x, _sp.p.y, _sp.p.z], q, s); it.parts(k, qq); k.pop();
