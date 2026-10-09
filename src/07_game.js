@@ -6403,7 +6403,7 @@ const GAME = (() => {
   }
 
   // ── Game flow ──
-  function useTitleLevel() { return L && L._title && P.zone === 0 && L.theme !== 'bathroom'; }
+  function useTitleLevel() { return L && L._title && P.zone === 0 && L.theme !== 'bathroom' && !L._storyTitle; }   // (Dev Ev: STORY'nin başlık mutfağı oynanamaz → masa yeniden kurulur)
   function startHere(level) {   // turn the idle title level into the playable zone 0
     P.zone = 0; P.zoneLevel = cleanZoneLevel(level) || clamp(Math.floor(P.lvl), 1, 99);
     const st = L.start || { x: 0, z: 0 };
@@ -6605,6 +6605,7 @@ const GAME = (() => {
     GAME.time = gt;
     if (speaking()) talkAt = gt;
     runTimers();
+    if (GAME.state === 'end' && story('ownsWorld', dt)) return;   // Dev Ev: final sahnesi (STORY) dünyayı ve karakterleri oynatır
     if (typeof MINIGAME !== 'undefined' && MINIGAME && MINIGAME.active) {   // Dev Ev: mini oyun dünyayı durdurabilir
       try { MINIGAME.update(dt); } catch (err) { warnOnce('MINIGAME.update', err); }
       if (MINIGAME.active && MINIGAME.holdsWorld()) return;
@@ -6685,6 +6686,7 @@ const GAME = (() => {
   function titleUpdate(dt) {
     if (!inited) return;
     C.vel = 0; C.swing = null; C.hurtT = 0; C.cheerT = 0; C.idleT += dt;
+    if (story('titleTick', dt)) return;   // Dev Ev: başlık mutfağı ve giriş sinematiği karakterleri STORY oynatır
     if(L && L.readingSpot) {const r=L.readingSpot;P.pos.set(r.x,r.seatY-.40*baseScale,r.z);P.face=r.face||0;}
     else P.face = dampAngle(P.face, 0, 3, dt);
     if (L && L.npcObj && L.npcObj.model && L.npcObj.model.anim) { try { L.npcObj.model.anim(dt, owlTalking()); } catch (err) { warnOnce('owl.anim', err); } }
@@ -6938,6 +6940,9 @@ const GAME = (() => {
   const GAME = {
     revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API, recalcStats,
     rideBilbo, bilboSneeze,
+    revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API,
+    _victory: () => victory(),   // QA: final sahnesini doğrudan başlat
+    storyCheer(sec = 2, bark = true) { C.cheerT = Math.max(C.cheerT, sec); if (bark) bilboBark = 1.3; },   // Dev Ev: STORY kutlaması (Feza sevinir, Bilbo havlar)
     giveSticker, addGoldSugar, unlockCostume, setCostume, unlockBilboAccessory, setBilboAccessory, addCakeDecoration, cakeStage, dailySurprise,
     miniResult, unlockMinigame, startMinigame: (id, o) => (typeof MINIGAME !== 'undefined' && MINIGAME ? MINIGAME.start(id, o) : false),
     get teamCharge() { const v = typeof HALA !== 'undefined' && HALA ? HALA.charge : 0; return typeof v === 'number' ? v : 0; },
