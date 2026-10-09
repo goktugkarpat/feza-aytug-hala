@@ -371,6 +371,46 @@ const ODAB = (() => {
     }
     return out;
   }
+  // Yürünür alanın hemen kıyısındaki süs yerleri (ekranda görünür kalırlar). Her biri: {x, z, nx, nz (zemine doğru), d, side:
+  // 'south' (kamera tarafı: alçak olmalı) | 'north' | 'side', room (en yakın oda no)}
+  function edgeSpots(L, api, o = {}) {
+    const W = L.W, H = L.H, g = L.grid, fl = (i, j) => i >= 0 && j >= 0 && i < W && j < H && g[j * W + i] === 1;
+    const cand = [], dmin = o.dmin ?? 1.3, dmax = o.dmax ?? 2.7, avoid = o.avoid || [];
+    for (let j = 1; j < H - 1; j++) for (let i = 1; i < W - 1; i++) {
+      if (fl(i, j)) continue;
+      let best = 99, bx = 0, bz = 0;
+      for (let b = -3; b <= 3; b++) for (let a = -3; a <= 3; a++) if (fl(i + a, j + b)) { const d = hyp(a, b); if (d < best) { best = d; bx = a; bz = b; } }
+      if (best < dmin || best > dmax) continue;
+      const x = i + 0.5 + (api.rnd() - 0.5) * 0.6, z = j + 0.5 + (api.rnd() - 0.5) * 0.6;
+      if (avoid.some(q => hyp(q.x - x, q.z - z) < q.r)) continue;
+      cand.push({ x, z, nx: bx / best, nz: bz / best, d: best, k: api.rnd() });
+    }
+    cand.sort((a, b) => a.k - b.k);
+    const cs = o.space || 2.8, cell = new Map(), out = [], key = (x, z) => Math.floor(x / cs) + ',' + Math.floor(z / cs);
+    for (const c of cand) {
+      const ci = Math.floor(c.x / cs), cj = Math.floor(c.z / cs);
+      let ok = true;
+      for (let b = -1; b <= 1 && ok; b++) for (let a = -1; a <= 1 && ok; a++) { const q = cell.get((ci + a) + ',' + (cj + b)); if (q && q.some(p => hyp(p.x - c.x, p.z - c.z) < cs)) ok = false; }
+      if (!ok) continue;
+      const k = key(c.x, c.z); (cell.get(k) || cell.set(k, []).get(k)).push(c);
+      c.side = c.nz < -0.55 ? 'south' : c.nz > 0.45 ? 'north' : 'side';
+      let br = 0, bd = 1e9; L.rooms.forEach((rm, ri) => { const d = hyp(rm.x - c.x, rm.z - c.z) - (rm.r || 6); if (d < bd) { bd = d; br = ri; } });
+      c.room = br; out.push(c);
+    }
+    return out;
+  }
+  // Zemine serpiştirilmiş küçük süsler (katı değil; yoldan biraz uzak)
+  function floorSpots(L, api, n, o = {}) {
+    const out = [], avoid = o.avoid || [];
+    for (let t = 0; t < n * 8 && out.length < n; t++) {
+      const x = 1 + api.rnd() * (L.W - 2), z = 1 + api.rnd() * (L.H - 2);
+      if (!api.isFloor(x, z) || !api.circleFree(x, z, 0.5) || pathD(L, x, z) < (o.pmin ?? 1.6)) continue;
+      if (!clearOf(L, x, z, 0.8) || avoid.some(q => hyp(q.x - x, q.z - z) < q.r)) continue;
+      let br = 0, bd = 1e9; L.rooms.forEach((rm, ri) => { const d = hyp(rm.x - x, rm.z - z); if (d < bd) { bd = d; br = ri; } });
+      out.push({ x, z, room: br });
+    }
+    return out;
+  }
   // düşman gruplarını özel yerlerden uzaklaştır (nazik gruplar)
   function clearSpawns(L, api, spots) {
     for (const s of L.spawns || []) {
@@ -395,7 +435,7 @@ const ODAB = (() => {
     while (b < 7 && api.isFloor(x - px * b, z - pz * b)) b += 0.25;
     return { a, b };
   }
-  return { mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, clearSpawns, gateDir, corridorHalf, flakeTexture };
+  return { mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, clearSpawns, gateDir, corridorHalf, flakeTexture };
 })();
 
 /* ════════════════════════════ Buzdolabı ════════════════════════════ */
@@ -550,6 +590,21 @@ const ODAB = (() => {
       }
       api.glow(rm.x, rm.z, rm.r * 0.95, ar === 1 ? 0xffe2ee : 0xe4f6ff, 0.1);
     });
+    // ── Kıyı süsleri: yürünür alanın hemen kenarında (ekranda görünür), alana göre ──
+    const avoid = (D.taken || []).map(q => ({ x: q.x, z: q.z, r: q.r * 0.6 })).concat((L.areas || []).filter(a => a.gate).map(a => ({ x: a.gate.x, z: a.gate.z, r: 4.5 })));
+    if (L.exit) avoid.push({ x: L.exit.x, z: L.exit.z, r: 5 });
+    if (D.ball) avoid.push({ x: D.ball.ix, z: D.ball.iz, r: 3.2 });
+    if (D.slide) avoid.push({ x: D.slide.tx, z: D.slide.tz, r: 3 });
+    for (const c of O.edgeSpots(L, api, { avoid, space: 2.9 })) {
+      const ar = areaOf(c.room), rmk = L.rooms[c.room];
+      if (rmk && rmk.kind === 'boss') continue;
+      const low = c.side === 'south', mid = c.side === 'side';
+      if (ar <= 0) { if (low) (rnd() < 0.5 ? iceBlock(B, c.x, c.z, 0.35, rnd) : yogurt(B, c.x, c.z, 0.38, rnd)); else if (mid) yogurt(B, c.x, c.z, 0.55 + rnd() * 0.2, rnd); else (rnd() < 0.55 ? milkBottle(B, c.x - c.nx * 0.4, c.z - c.nz * 0.4, 0.7 + rnd() * 0.15, rnd) : yogurt(B, c.x, c.z, 0.75, rnd)); }
+      else if (ar === 1) { if (low) berry(B, c.x, c.z, 0.55, rnd); else if (mid) (rnd() < 0.5 ? jelloMold(B, c.x, c.z, 0.5, rnd) : berry(B, c.x, c.z, 0.8, rnd)); else (rnd() < 0.5 ? fruitBowl(B, c.x - c.nx * 0.3, c.z - c.nz * 0.3, 0.75, rnd) : jelloMold(B, c.x, c.z, 0.8, rnd)); }
+      else { if (low) iceBlock(B, c.x, c.z, 0.35, rnd); else if (mid) (rnd() < 0.5 ? iceBlock(B, c.x, c.z, 0.6, rnd) : snowMound(B, c.x, c.z, 0.8, rnd)); else (rnd() < 0.5 ? peasBag(B, c.x - c.nx * 0.3, c.z - c.nz * 0.3, 0.75, rnd) : iceBlock(B, c.x, c.z, 0.9, rnd)); }
+    }
+    // zemine serpiştirilmiş kırağı kristalleri ve minik buz parçaları
+    for (const f of O.floorSpots(L, api, 70, { avoid })) frost(B, f.x, f.z, rnd);
     // ── Geçitler: buz kemerleri ──
     (L.areas || []).forEach((a, k) => { if (k && a.gate) iceArch(B, api, L, k); });
     // ── Buz pistleri ──
@@ -662,6 +717,23 @@ const ODAB = (() => {
     B.add('gloss', G.rbox(2), C(0xffffff), [x, 2.9 * s, z], [0, 0, 0.08], [2.2 * s, 0.35 * s, 0.85 * s]);
     for (let k = 0; k < 5; k++) B.add('candy', G.sphere(10, 8), C(0x8ad86a), [x - 0.6 * s + k * 0.3 * s, 1.4 * s + (k % 2) * 0.25 * s, z + 0.48 * s], null, [0.18 * s, 0.18 * s, 0.1 * s]);
     B.add('snow', G.sphere(12, 8), C(0xf4fbff), [x, 3.15 * s, z], null, [1.1 * s, 0.25 * s, 0.5 * s]);
+  }
+  function snowMound(B, x, z, s, rnd) {
+    B.add('snow', G.sphere(14, 10), C(0xffffff), [x, 0.05, z], null, [1.2 * s, 0.6 * s, 1.0 * s]);
+    B.add('snow', G.sphere(12, 8), C(0xf0f8ff), [x + 0.6 * s, 0.05, z + 0.3 * s], null, [0.7 * s, 0.4 * s, 0.7 * s]);
+    B.add('glow', G.sphere(6, 4), C(0xdff6ff, 1.6), [x - 0.2, 0.55 * s, z + 0.4], null, [0.05, 0.05, 0.05]);
+  }
+  function frost(B, x, z, rnd) {
+    const k = rnd();
+    if (k < 0.45) {   // kar tanesi kristali (yere yatık, parlar)
+      const yaw = rnd() * PI;
+      for (let i = 0; i < 3; i++) B.add('glow', G.box(), C(0xe4f6ff, 1.25), [x, 0.03, z], [0, yaw + i * PI / 3, 0], [0.62, 0.015, 0.06]);
+    } else if (k < 0.8) {   // minik buz parçaları
+      for (let i = 0; i < 3; i++) B.add('ice', G.octa(), C(0xcfeaff), [x + (rnd() - 0.5) * 0.5, 0.08, z + (rnd() - 0.5) * 0.5], [rnd(), rnd() * PI, rnd()], [0.12, 0.16, 0.12]);
+    } else {   // donmuş bezelye / yaban mersini
+      for (let i = 0; i < 3; i++) B.add('candy', G.sphere(10, 8), C(i % 2 ? 0x8ad86a : 0x5a6ad8), [x + (rnd() - 0.5) * 0.6, 0.13, z + (rnd() - 0.5) * 0.6], null, [0.13, 0.13, 0.13]);
+      B.add('snow', G.sphere(8, 6), C(0xffffff), [x, 0.02, z], null, [0.4, 0.06, 0.4]);
+    }
   }
   // Kuzeydeki rafın kenarından sarkan, parlayan buz sarkıtları (zararsız; yürünür alanın üstünde değil)
   function icicles(B, api, rm) {

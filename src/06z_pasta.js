@@ -149,6 +149,21 @@
       }
       api.glow(rm.x, rm.z, rm.r * 0.95, ar === 1 ? 0xffd8e4 : ar === 2 ? 0xffe8c8 : 0xffe4f0, 0.12);
     });
+    // kıyı süsleri: yürünür alanın hemen kenarında, alana göre
+    const avoid = (D.taken || []).map(q => ({ x: q.x, z: q.z, r: q.r * 0.6 })).concat((L.areas || []).filter(a => a.gate).map(a => ({ x: a.gate.x, z: a.gate.z, r: 4.5 })));
+    if (D.raft) avoid.push({ x: D.raft.cx, z: D.raft.cz, r: Math.max(D.raft.rx, D.raft.ry) + 2.2 }, { x: D.raft.e.x, z: D.raft.e.z, r: 2.5 });
+    D.houses.forEach(h => avoid.push({ x: h.x, z: h.z, r: 3.4 }));
+    if (D.fall) avoid.push({ x: D.fall.x, z: D.fall.z, r: 4.5 });
+    if (L.crystalSpot) avoid.push({ x: L.crystalSpot.x, z: L.crystalSpot.z, r: 4 });
+    for (const c of O.edgeSpots(L, api, { avoid, space: 2.8 })) {
+      const ar = areaOf(c.room), rmk = L.rooms[c.room];
+      if (rmk && rmk.kind === 'boss') continue;
+      const low = c.side === 'south', mid = c.side === 'side', bx = c.x - c.nx * 0.3, bz = c.z - c.nz * 0.3;
+      if (ar <= 0) { if (low) (rnd() < 0.5 ? macaron(B, c.x, c.z, 0.6, rnd) : sprinkleDrop(B, c.x, c.z, rnd)); else if (mid) creamSwirl(B, c.x, c.z, 0.6, rnd); else (rnd() < 0.5 ? cupcake(B, api, bx, bz, 0.75, rnd) : creamSwirl(B, c.x, c.z, 0.95, rnd)); }
+      else if (ar === 1) { if (low) candyFlowerPatch(B, c.x, c.z, 0.55, rnd); else if (mid) (rnd() < 0.5 ? meringue(B, c.x, c.z, 0.8, rnd) : candyFlowerPatch(B, c.x, c.z, 0.85, rnd)); else (rnd() < 0.6 ? strawberryTree(B, api, bx, bz, 0.72, rnd) : meringue(B, c.x, c.z, 1.1, rnd)); }
+      else { if (low) gumdrops(B, c.x, c.z, 0.7, rnd); else if (mid) rockCandy(B, c.x, c.z, 0.6, rnd); else (rnd() < 0.5 ? candyMountain(B, bx, bz, 0.62, rnd) : rockCandy(B, c.x, c.z, 0.95, rnd)); }
+    }
+    for (const f of O.floorSpots(L, api, 80, { avoid })) floorCandy(B, f.x, f.z, areaOf(f.room), rnd);
     // geçitler: şeker kamışı kemerleri + kurabiye köprü
     (L.areas || []).forEach((a, k) => { if (k && a.gate) candyArch(B, api, L, k); });
     // ── Krema Nehri: bisküvi sal ──
@@ -231,6 +246,27 @@
   }
   function candyFlowerPatch(B, x, z, s, rnd) {
     for (let i = 0; i < 4; i++) candyFlower(B, x + (rnd() - 0.5) * 1.6 * s, z + (rnd() - 0.5) * 1.6 * s, s * (0.8 + rnd() * 0.5), CANDY[(rnd() * CANDY.length) | 0]);
+  }
+  function meringue(B, x, z, s, rnd) {   // beze mantarları: beyaz sap, pembe benekli şapka
+    for (let i = 0; i < 2; i++) {
+      const xx = x + (i ? 0.7 * s : 0), zz = z + (i ? 0.3 * s : 0), k = i ? 0.65 : 1, c = [0xff8ab8, 0xffc04a, 0x8ad0ff][(rnd() * 3) | 0];
+      B.add('cream', G.cyl(0.8, 1, 12), C(0xfffaf2), [xx, 0.45 * s * k, zz], null, [0.22 * s * k, 0.9 * s * k, 0.22 * s * k]);
+      B.add('candy', G.sphere(16, 10), C(c), [xx, 0.95 * s * k, zz], null, [0.62 * s * k, 0.38 * s * k, 0.62 * s * k]);
+      for (let j = 0; j < 5; j++) { const a = j * TAU / 5 + 0.3; B.add('cream', G.sphere(6, 4), C(0xffffff), [xx + Math.sin(a) * 0.38 * s * k, (1.08 - 0.02) * s * k, zz + Math.cos(a) * 0.38 * s * k], null, [0.09 * s, 0.05 * s, 0.09 * s]); }
+    }
+  }
+  function gumdrops(B, x, z, s, rnd) {
+    for (let i = 0; i < 3; i++) { const c = CANDY[(rnd() * CANDY.length) | 0]; B.add('jelly', G.sphere(12, 8, 0), C(c), [x + (i - 1) * 0.55 * s, 0.05, z + (rnd() - 0.5) * 0.5 * s], null, [0.36 * s, 0.5 * s, 0.36 * s]); }
+  }
+  function floorCandy(B, x, z, ar, rnd) {
+    const k = rnd();
+    if (k < 0.45) { for (let i = 0; i < 5; i++) B.add('glow', G.capsule(1, 4), C(CANDY[(rnd() * CANDY.length) | 0], 1.1), [x + (rnd() - 0.5) * 0.9, 0.05, z + (rnd() - 0.5) * 0.9], [PI / 2, rnd() * PI, 0], [0.035, 0.08, 0.035]); }
+    else if (k < 0.75) {   // sarılı şeker
+      const c = C(CANDY[(rnd() * CANDY.length) | 0]), yaw = rnd() * PI;
+      B.add('candy', G.sphere(10, 8), c, [x, 0.13, z], [0, yaw, 0], [0.22, 0.14, 0.14]);
+      for (const sd of [-1, 1]) B.add('candy', G.cone(6), c, [x + Math.cos(yaw) * sd * 0.27, 0.13, z - Math.sin(yaw) * sd * 0.27], [0, yaw, sd * PI / 2], [0.1, 0.14, 0.1]);
+    } else if (ar === 1) { candyFlower(B, x, z, 0.45, CANDY[(rnd() * CANDY.length) | 0]); }
+    else { B.add('jelly', G.sphere(10, 8), C(CANDY[(rnd() * CANDY.length) | 0]), [x, 0.05, z], null, [0.2, 0.26, 0.2]); }
   }
   function rockCandy(B, x, z, s, rnd) {
     const n = 3 + ((rnd() * 3) | 0);
@@ -355,7 +391,7 @@
       B.add('candy', G.cyl(1, 1, 10), stripes(p.x, p.z, C(0xffffff), C(0xffd0e4), 1, 4), [p.x, 1.1, p.z], null, [0.07, 2.2, 0.07]);
       B.add('cream', G.torus(TAU, 0.35, 16), C(0x7ad86a), [p.x, 1.2, p.z], [0, 0.4, 0], [0.18, 0.18, 0.18]);
       const k = new Kit();
-      k.add(G.cyl(1, 1, 28), (x, y, z) => (Math.sin(Math.atan2(y, x) + Math.hypot(x, y) * 9) > 0 ? C(c) : C(0xffffff)), [0, 0, 0], [PI / 2, 0, 0], [0.62, 0.16, 0.62]);
+      k.add(G.sphere(40, 28), (x, y, z) => (Math.sin(Math.atan2(y, x) * 2 + Math.hypot(x, y) * 14) > 0 ? C(c) : C(0xffffff)), [0, 0, 0], null, [0.62, 0.62, 0.16]);
       k.add(G.torus(TAU, 0.08, 28), C(c), [0, 0, 0], null, [0.63, 0.63, 0.9]);
       const pop = O.solo(k, 'candy', api); pop.position.set(p.x, 2.65, p.z);
       const h = new Kit(); h.add(G.sphere(16, 12), C(c, 0.8), [0, 0, 0], null, [1, 1, 1]);
