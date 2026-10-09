@@ -206,6 +206,13 @@ const OTURMA = (() => {
     for (const q of rugs) {
       K.slab(api, L, { x: (q.x0 + q.x1) / 2, z: (q.z0 + q.z1) / 2, w: q.x1 - q.x0, d: q.z1 - q.z0, h: 0.12, tex: 'carpet', size: 8, rough: 0.97 });
     }
+    // gizli hazinelerin yerleri önceden: liflerin arasında açıklık kalsın, görünsünler
+    const trPlan = [];
+    const pick = (rm, n) => { const sp = rimSpots(L, rm, 0.9).filter(q => K.floorNorth(L, q.x, q.z, 3) > 2 || q.z < rm.z); for (let i = 0; i < n && sp.length; i++) trPlan.push(sp.splice(Math.floor(rnd() * sp.length), 1)[0]); };
+    if (a1) mainOf(L, a1).forEach((ri, k) => pick(R(ri), k ? 2 : 1));
+    if (a2) pick(R(a2.rooms[a2.rooms.length - 1]), 1);
+    if (a3) pick(R(mainOf(L, a3)[0]), 1);
+    const nearTr = (x, z) => trPlan.some(q => Math.hypot(q.x - x, q.z - z) < 1.7);
     const items = [], fringe = [], PP = L.path || [];
     const pathD = (x, z) => { let d = 1e9; for (let i = 1; i < PP.length; i++) { const a = PP[i - 1], b = PP[i], dx = b.x - a.x, dz = b.z - a.z, l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / l2)); d = Math.min(d, Math.hypot(x - a.x - dx * t, z - a.z - dz * t)); } return d; };
     for (const q of rugs) {
@@ -216,7 +223,7 @@ const OTURMA = (() => {
           continue;
         }
         const fd = K.floorDist(L, px, pz, 8);
-        if (fd < 0.5 || fd > 8) continue;
+        if (fd < 0.5 || fd > 8 || nearTr(px, pz)) continue;
         let h = 0.45 + Math.min(1, fd / 2.5) * (0.6 + rnd() * 0.6);
         const fN = K.floorNorth(L, px, pz, 6); if (fN < 99) h = Math.min(h, 0.2 + fN * 0.24);
         items.push({ x: px, z: pz, h, s: 1.5 + rnd() * 0.5, c: K.carpetColor(px, pz).multiplyScalar(1.04), yaw: rnd() * TAU });
@@ -237,30 +244,27 @@ const OTURMA = (() => {
     // ── Alan 1 · Halı Ormanı: kayıp hazineler ──
     const kinds = ['dugmeK', 'para', 'dugmeM', 'lego', 'dugmeS', 'bilye', 'para', 'dugmeK'];
     let tk = 0, firstTr = true;
-    const treasure = (rm, n) => {
-      const spots = rimSpots(L, rm, 0.9).filter(s => K.floorNorth(L, s.x, s.z, 3) > 2 || s.z < rm.z);
-      for (let i = 0; i < n && spots.length; i++) {
-        const s = spots.splice(Math.floor(rnd() * spots.length), 1)[0], kind = kinds[tk++ % kinds.length], sc = kind === 'para' ? 1.0 : kind === 'bilye' ? 1.1 : 0.85;
-        const m = K.mesh(api, treasureGeo(kind), s.x, 0.15, s.z, kind === 'para' ? 0.3 : 0.4);
-        m.scale.setScalar(sc); m.rotation.set(0.35 + rnd() * 0.3, rnd() * TAU, 0.2);
-        let pop = -1;
-        T.add({ x: s.x, z: s.z, r: 2.4, hint: { y: 1.9 }, line: firstTr ? 'oda_hazine_ipucu' : null, near: 6, once: true,
-          use: () => { pop = 0; K.sfx('chest', { x: s.x, z: s.z }); K.burst('confetti', s.x, 1.2, s.z); K.ring(s.x, s.z, 2.5, '#ffd36a');
-            const P = GAME.P; K.sugar(P.pos.x, P.pos.z, 10, 6); if (!OT.saidTr) { OT.saidTr = 1; K.say(kind === 'para' ? 'oda_para_bul' : 'oda_hazine_bul'); } K.sticker('oturma_hazine'); },
-          tick: dt => { if (pop < 0 || pop > 1.2) return; pop += dt; const u = Math.min(1, pop / 1.2); m.position.y = 0.15 + Math.sin(u * Math.PI) * 2.2; m.rotation.y += dt * 9; m.rotation.x = 0.35 * (1 - u); } });
-        firstTr = false;
-      }
-    };
-    if (a1) mainOf(L, a1).forEach((ri, k) => treasure(R(ri), k ? 2 : 1));
-    if (a2) treasure(R(a2.rooms[a2.rooms.length - 1]), 1);
-    if (a3) treasure(R(mainOf(L, a3)[0]), 1);
+    trPlan.forEach((sp0, i) => {
+      const s = sp0, kind = kinds[tk++ % kinds.length], sc = kind === 'para' ? 1.25 : kind === 'bilye' ? 1.3 : 1.1;
+      K.treasure(api, T, s.x, s.z, treasureGeo(kind), { y: 0.2, sc, rough: kind === 'para' ? 0.3 : 0.4, line: firstTr ? 'oda_hazine_ipucu' : null, say: i ? null : kind === 'para' ? 'oda_para_bul' : 'oda_hazine_bul', sticker: 'oturma_hazine', gs: i === trPlan.length - 1 });
+      firstTr = false;
+    });
     // geçit köprüleri: kitap köprüsü (1→2), boyama kitabı (2→3)
-    const bridge = (g, ci) => {
+    const bridge = (g, ci) => {   // yere yatırılmış dev kitap: kapaklar, sayfa bloğu (kenarlarda sayfa çizgileri), sırt, kapakta güneş resmi
       if (!g) return;
-      const [dx, dz] = gateDir(L, g), yaw = Math.atan2(-dz, dx);
-      api.put(bookGeo(ci), g.x, 0.17, g.z, 0.34, 6.2, 4.8, null, yaw, 0, Math.PI / 2);
-      api.put(G.box(), g.x, 0.35, g.z, 3.2, 0.02, 2.2, 0xfff3d8, yaw);   // kapakta başlık etiketi
-      for (let i = 0; i < 4; i++) api.put(G.sphere(10, 6), [0xf6d04d, 0xf49ac0, 0x7fc8f0, 0x8fd18a][i], g.x + Math.cos(yaw) * (i - 1.5) * 1.2, 0.37, g.z - Math.sin(yaw) * (i - 1.5) * 1.2, 0.35, 0.03, 0.35);
+      const [dx, dz] = gateDir(L, g), yaw = Math.atan2(-dz, dx), [c, acc] = BOOKC[ci % 8], Lg = 6.4, Wd = 5.0;
+      const at = (u, v) => [g.x + Math.cos(yaw) * u + Math.sin(yaw) * v, g.z - Math.sin(yaw) * u + Math.cos(yaw) * v];   // u: koridor boyunca, v: enine
+      let [x, z] = at(0, 0);
+      api.box(x, 0.04, z, Lg, 0.08, Wd, c, yaw);                                        // alt kapak
+      [x, z] = at(0.1, -0.1); api.box(x, 0.2, z, Lg - 0.35, 0.26, Wd - 0.3, 0xfbf3e0, yaw);   // sayfalar
+      for (let k = 0; k < 5; k++) { [x, z] = at(0.1, -0.1); api.box(x, 0.09 + k * 0.05, z, Lg - 0.33, 0.012, Wd - 0.28, 0xe6dcc6, yaw); }
+      [x, z] = at(0, 0); api.box(x, 0.37, z, Lg, 0.08, Wd, c, yaw);                     // üst kapak
+      [x, z] = at(0, Wd / 2); api.put(G.cyl(1, 1, 16), x, 0.2, z, 0.22, Lg, 0.22, c, yaw, 0, Math.PI / 2);   // yuvarlak sırt
+      for (const u of [-Lg * 0.38, Lg * 0.38]) { [x, z] = at(u, Wd / 2 + 0.02); api.put(G.cyl(1, 1, 16), x, 0.2, z, 0.235, 0.18, 0.235, acc, yaw, 0, Math.PI / 2); }
+      [x, z] = at(0, -0.2); api.box(x, 0.42, z, Lg * 0.62, 0.02, Wd * 0.5, 0xfff3d8, yaw);   // kapak etiketi
+      [x, z] = at(-0.8, -0.2); api.ball(x, 0.44, z, 0.6, 0.04, 0.6, 0xf6c84a);           // güneş
+      for (let k = 0; k < 8; k++) { const a = k * TAU / 8; [x, z] = at(-0.8 + Math.cos(a) * 0.95, -0.2 + Math.sin(a) * 0.95); api.ball(x, 0.44, z, 0.16, 0.03, 0.16, 0xf6c84a); }
+      for (let k = 0; k < 3; k++) { [x, z] = at(0.8, -0.65 + k * 0.42); api.box(x, 0.44, z, 1.3 - k * 0.25, 0.02, 0.14, 0x6a5548, yaw); }   // başlık çizgileri
     };
     if (a2) bridge(a2.gate, 0); if (a3) bridge(a3.gate, 2);
     // ── Alan 2 · Kitaplık Dağı ──

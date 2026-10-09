@@ -347,7 +347,14 @@ const ODAKIT = (() => {
   }
   function hintMat() {
     if (MATC.hint) return MATC.hint;
-    const m = MATC.hint = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.2, emissive: 0xffb830, emissiveIntensity: 0.55 }); m.userData.keep = true; return m;
+    const m = MATC.hint = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0.2, emissive: 0xffb830, emissiveIntensity: 0.9 }); m.userData.keep = true; return m;
+  }
+  function haloMat() {   // ipucu yıldızının yumuşak ışıltısı
+    if (MATC.halo) return MATC.halo;
+    const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 2, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,236,160,0.9)'); gr.addColorStop(0.4, 'rgba(255,210,90,0.35)'); gr.addColorStop(1, 'rgba(255,200,80,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+    const t = new THREE.CanvasTexture(c);
+    const m = MATC.halo = new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }); m.userData.keep = true; return m;
   }
 
   // ── oyun tarafı yardımcıları ──
@@ -382,7 +389,8 @@ const ODAKIT = (() => {
       add(o) {
         const it = Object.assign({ r: 1.8, cd: 3, near: 7, used: 0, last: -99, inside: false }, o);
         if (o.hint !== false) {
-          const s = new THREE.Mesh(starG, starM); s.scale.setScalar(0.32); s.position.set(it.x, (o.hint && o.hint.y) || 2.2, it.z); s.name = 'odakit-ipucu';
+          const s = new THREE.Mesh(starG, starM); s.scale.setScalar(0.62); s.position.set(it.x, (o.hint && o.hint.y) || 2.2, it.z); s.name = 'odakit-ipucu';
+          const halo = new THREE.Sprite(haloMat()); halo.scale.setScalar(2.6); s.add(halo); halo.scale.multiplyScalar(1 / 0.62 * 0.62);
           api.add(s); it.star = s; it.starY = s.position.y;
         }
         list.push(it); return it;
