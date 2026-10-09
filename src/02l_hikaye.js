@@ -61,11 +61,11 @@ Object.assign(AUD.LINES, {
   pasta_acildi: 'Üç malzeme tamam! Pasta Krallığı açıldı, bak bak!',
   pasta_acildi2: 'Pembe kapıya gidelim. Son macera bizi bekliyor!',
   // ── Final ──
-  son_1: 'Bak bak, Koca Pasta gülümsüyor! Büyü çözülüyor!',
+  son_1: 'Koca Pasta neşelendi! Bak bak, büyü çözülüyor!',
   son_2: 'Şekerler geri dönüyor. Hepimiz yeniden büyüyoruz!',
   son_3: 'Mumları yaktım. İyi ki varsın Feza!',
   son_ufle: 'Hadi Feza, mumları üfle! Ekrana dokun!',
   son_4: 'Yaşasın! Bilbo kremayı yalıyor, bak bak!',
   son_5: 'Seni çok seviyorum Feza. Gel, sarılalım!',
-  son_6: 'Şeker Yağmuru başladı! Huysuzlarla yeniden oynayabiliriz.',
+  son_6: 'Hadi masaya dönelim. Yeni bir şeker oyunu başlıyor!',
 });
