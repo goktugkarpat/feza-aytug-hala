@@ -423,7 +423,7 @@ const STORY = (() => {
       else H.root.rotation.z = 0;
     }
     if (B) {
-      BST.speed = b.speed; BST.bark = b.bark; BST.sit = b.sit; BST.hop = b.hop;
+      BST.speed = b.speed; BST.bark = b.bark; BST.sit = b.sit; BST.hop = b.hop; BST.pounce = b.pounce || 0;
       B.root.position.set(ox + b.x, b.y, oz + b.z); B.root.rotation.y = b.face; B.root.scale.setScalar(CH.bBase * b.s);
       try { B.update(dt, BST); } catch (e) { /* ignore */ }
       const nk = CH.bones && CH.bones.neck, hd = CH.bones && CH.bones.head;
@@ -485,7 +485,7 @@ const STORY = (() => {
   function titlePose() {   // başlıktaki duruş
     const f = ACT.feza, b = ACT.bilbo, h = ACT.hala;
     Object.assign(f, { x: SPOT.feza[0], z: SPOT.feza[1], y: 0, face: -0.92, s: 1, move: 0, cheer: false, lean: 0 });
-    Object.assign(b, { x: SPOT.bilbo[0], z: SPOT.bilbo[1], y: 0, face: -Math.PI / 2 + 0.1, s: 1, speed: 0.12, bark: 0, nose: 1, sit: 0, hop: 0, lick: 0 });
+    Object.assign(b, { x: SPOT.bilbo[0], z: SPOT.bilbo[1], y: 0, face: -Math.PI / 2 + 0.1, s: 1, speed: 0.12, bark: 0, nose: 1, sit: 0, hop: 0, lick: 0, pounce: 0 });
     Object.assign(h, { x: SPOT.hala[0], z: SPOT.hala[1], y: 0, face: -0.12, s: 1, act: 'serp' });
   }
   // kenara yıkılmayan, yuvarlak un bulutları (hapşırık için)
@@ -711,10 +711,11 @@ const STORY = (() => {
       { min: 2.4, noSkip: true, enter() { const [bx, bz] = SPOT.bilbo; camTo(bx + 0.9, 1.3, bz + 2.7, bx - 0.3, 0.55, bz - 0.05, 2.4); },
         tick(u, dt, t) {
           const a1 = Math.exp(-Math.pow((t - 0.45) / 0.18, 2)), a2 = Math.exp(-Math.pow((t - 1.15) / 0.22, 2));
+          if (t - dt < 0.35 && t >= 0.35) sfx('pop', { vol: 0.35, pitch: 0.8 }); if (t - dt < 1.0 && t >= 1.0) sfx('pop', { vol: 0.45, pitch: 0.95 });
           b.nose = clamp(1 - a1 * 1.2 - a2 * 1.6, -0.6, 1);
           if (t > 1.55 && !sneezeDone) {
             sneezeDone = true; b.nose = -0.5; b.bark = 1.3;
-            sfx('bilboBark', { vol: 0.9, pitch: 1.25 }); sfx('whoosh', { vol: 0.9 }); sfx('fizz', { vol: 0.6 }); shake(0.35, 0.4);
+            sfx('bilboBark', { vol: 0.9, pitch: 1.25 }); sfx('whoosh', { vol: 0.9 }); sfx('fizz', { vol: 0.6 }); sfx('bonk', { vol: 0.5, pitch: 1.4 }); shake(0.35, 0.4);
             TS.puffs.peak = 0.92; later(2.2, () => { TS.puffs.peak = 0.6; });
             puff(TS.puffs, SPOT.bag[0] - 0.1, 0.62, SPOT.bag[1], 16, 2.6, 2.4);
             // kavanoz devrilir gibi: bütün şekerler havaya
@@ -723,18 +724,22 @@ const STORY = (() => {
             S.center.set(focus.x, 1.2, focus.z - 0.3); S.orbitR = 1.4; S.orbitH = 1.6; S.glow = 1;
             TS.K.lid.visible = false;
           }
-          if (t > 1.55) { b.nose = Math.max(-0.5, b.nose - dt); b.bark = Math.max(0, b.bark - dt); }
+          if (t > 1.55) {   // hapşırığın gücüyle Bilbo geri sıçrar (komik)
+            b.nose = Math.max(-0.5, b.nose - dt); b.bark = Math.max(0, b.bark - dt);
+            const k = (t - 1.55) / 0.5;
+            b.y = k < 1 ? Math.sin(k * Math.PI) * 0.28 : 0; b.x = SPOT.bilbo[0] + Math.min(1, k) * 0.35; b.pounce = k < 1 ? Math.sin(k * Math.PI) : 0;
+          }
         } },
       { key: 'intro_4', min: 3.6, enter() { camTo(0.9, 2.4, 4.6, 0.6, 1.4, -0.6, 1.6); h.act = 'saskin'; white(0.92, 0.25, [0.25, 0]); WH.v = 4; },
         tick(u, dt, t) {
           if (t > 0.35 && !this._cut) {   // un bulutunun içinde herkes bir araya gelir (sahne kesmesi)
             this._cut = true; setScale(1);
-            f.face = 0.4; f.move = 0; b.face = -0.5; b.nose = 0; h.face = 0.35; h.act = 'saskin';
+            f.face = 0.4; f.move = 0; b.face = -0.5; b.nose = 0; b.y = 0; b.pounce = 0; h.face = 0.35; h.act = 'saskin';
             camTo(0.75, 1.75, 3.6, 0.35, 1.25, 0.2, 2, true);
           }
           S.glow = 1;
         } },
-      { key: 'intro_5', min: 4.4, enter() { h.act = 'saskin'; f.cheer = false; this._t0 = 0; sfx('magic', { vol: 0.7 }); sfx('spin', { vol: 0.5 }); },
+      { key: 'intro_5', min: 4.4, enter() { h.act = 'saskin'; f.cheer = false; this._t0 = 0; sfx('star', { vol: 0.7 }); sfx('spin', { vol: 0.5 }); },
         tick(u, dt, t) {
           const s = 1 - 0.9 * ease(clamp((t - 0.3) / 3.2, 0, 1));
           setScale(s);
@@ -932,7 +937,7 @@ const STORY = (() => {
           camTo(0.5, 2.4, 6.2, 0, 1.3, 0, 1.5, true); camTo(0.3, 2.0, 5.0, 0, 1.2, 0, 1.2);
           burst('hearts', P.pos.x, 2, P.pos.z, { count: 16 });
         } },
-      { key: 'son_2', min: 4.2, enter() { gather(P.pos.x, P.pos.z); sfx('magic', { vol: 0.8 }); },
+      { key: 'son_2', min: 4.2, enter() { gather(P.pos.x, P.pos.z); sfx('star', { vol: 0.8 }); },
         tick(u, dt, t) { camTo(0.2, 1.7 + u, 4.4 - u, 0, 1.2, 0, 1.5); if (t > 3.2 && !this._w) { this._w = true; white(1, 0.5); } } },
       // mutfaktayız, minicikten normal boya
       { min: 3.4, noSkip: false, enter() {
