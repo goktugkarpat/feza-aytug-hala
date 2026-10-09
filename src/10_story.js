@@ -447,6 +447,17 @@ const STORY = (() => {
     }
   }
 
+  // sinematikte Feza'nın elinde kılıç/değnek olmasın (pasta yapıyoruz); sahne bitince oyunun donanımı geri gelir
+  function hideWeapon() {
+    const g = G_(), H = g && g.H; if (!H || !H.setEquip || CH.noWeapon) return;
+    const e = (g.P && g.P.equip) || {};
+    try { H.setEquip({ weapon: null, offhand: null, hat: e.hat || null, cape: e.cape || null }); CH.noWeapon = true; } catch (err) { /* ignore */ }
+  }
+  function restoreWeapon() {
+    const g = G_(), H = g && g.H; if (!H || !H.setEquip || !CH.noWeapon) return;
+    CH.noWeapon = false;
+    try { H.setEquip(g.P.equip); } catch (err) { /* ignore */ }
+  }
   // sahne bitince modelleri oyunun beklediği hale döndür (boy, eğim)
   function restoreChars() {
     const r = charRefs(); if (!r) return;
@@ -473,7 +484,7 @@ const STORY = (() => {
     sugarsHome(TS.sugar, SPOT.jar[0], SPOT.jar[1], SPOT.jar[2]);
     TS.puffs = makePuffs(K.g);
     TS.mug = makeMug(K.g);
-    L._storyTitle = true; L.storyOrigin = origin;
+    L._storyTitle = true; L.storyOrigin = origin; CH.noWeapon = false;
     // sıcak lamba ışığı ve pencereden serin dolgu (havuz ışıkları)
     if (api.light) {
       api.light(origin.x - 0.3, 2.9, origin.z - 0.9, 0xffd9a0, 4, 8);
@@ -542,6 +553,7 @@ const STORY = (() => {
   function titleTick(dt) {
     const g = G_(); if (!g || !TS.K || !g.L || !g.L._storyTitle) return false;
     TS.t += dt;
+    hideWeapon();
     // seviye çizimlerinin (kapılar, sandıklar, kenar bordürü) başlıkta görünmesin: yalnız mutfak seti
     if (!TS.hidden) { TS.hidden = true; const grp = TS.K.g.parent; if (grp) for (const c of grp.children) if (c !== TS.K.g && c.isMesh !== undefined && c.name !== 'hikayeMutfak') { if (c.userData.storyKeep) continue; c.visible = false; } }
     if (CINE.on && CINE.kind === 'intro') introTick(dt);
@@ -681,7 +693,7 @@ const STORY = (() => {
     else overlay(false);
     WH.a = WH.to = 0; WH.hold = 0; WH.then = null;
     restoreNear();
-    if (kind === 'intro') { titlePose(); TS.mug.g.visible = false; }   // başlık karesi yeni oyun yüklenene kadar normal boyda
+    if (kind === 'intro') { titlePose(); TS.mug.g.visible = false; }   // (yeni oyun resetPlayer ile donanımı kendisi giydirir)   // başlık karesi yeni oyun yüklenene kadar normal boyda
     restoreChars();
     if (res) res();
   }
@@ -1115,6 +1127,7 @@ const STORY = (() => {
     if (END.K) { disposeTree(END.K.g); END.K = null; END.sugar = null; END.puffs = null; }
     if (END.tmpSugar) { disposeTree(END.tmpSugar.im); END.tmpSugar = null; }
     if (END.cake) { disposeTree(END.cake); END.cake = null; }
+    restoreWeapon();
     if (END.post && typeof POST !== 'undefined') { POST.vignette = END.post.vig; END.post = null; }
     if (END.fog != null && scene.fog) { scene.fog.color.setHex(END.fog); END.fog = null; }
     ACT.worldMode = false;
@@ -1123,7 +1136,7 @@ const STORY = (() => {
   function ending(o) {
     const g = G_(); if (!g || !g.P) { line('son', 'Pasta hazır! İyi ki varsın Feza!'); return true; }
     if (CINE.on) return true;
-    endingRan = true;
+    endingRan = true; CH.noWeapon = false; hideWeapon();
     overlay(true, { skip: true });
     runCine('ending', endingBeats()).then(() => { endingCleanup(); STORY.endingDone = true; });
     return true;
