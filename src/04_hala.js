@@ -439,8 +439,8 @@ const HALA = (() => {
   // ── Gövde (bağlama pozu, metre; Hala +z'ye bakar, sol tarafı +x) ──
   // Kemikler: 0 kök, 1 kalça, 2 göğüs, 3 baş, 4 kolL, 5 önkolL, 6 elL, 7 kolR, 8 önkolR, 9 elR, 10 uylukL, 11 baldırL, 12 ayakL, 13 uylukR, 14 baldırR, 15 ayakR
   const BONES = [['root', -1, 0, 0, 0], ['hips', 0, 0, 0.98, 0], ['chest', 1, 0, 0.22, 0], ['head', 2, 0, 0.30, 0],
-    ['armL', 2, 0.205, 0.22, -0.01], ['foreL', 4, 0, -0.29, 0], ['handL', 5, 0, -0.25, 0],
-    ['armR', 2, -0.205, 0.22, -0.01], ['foreR', 7, 0, -0.29, 0], ['handR', 8, 0, -0.25, 0],
+    ['armL', 2, 0.193, 0.22, -0.01], ['foreL', 4, 0, -0.29, 0], ['handL', 5, 0, -0.25, 0],
+    ['armR', 2, -0.193, 0.22, -0.01], ['foreR', 7, 0, -0.29, 0], ['handR', 8, 0, -0.25, 0],
     ['thighL', 1, 0.095, -0.05, 0], ['shinL', 10, 0, -0.44, 0], ['footL', 11, 0, -0.41, 0],
     ['thighR', 1, -0.095, -0.05, 0], ['shinR', 13, 0, -0.44, 0], ['footR', 14, 0, -0.41, 0]];
   const SKIN = 0xf1c6aa, COAT = 0xe8473d, COAT_DK = 0xb83129, NAVY = 0x1f2747, TILE = 0.09;
@@ -474,12 +474,12 @@ const HALA = (() => {
     for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * TAU * 0.17 / TILE, P.getY(i) / TILE);
     return g;
   }
-  const ARM_SLEEVE = [[0, 1.49], [0.034, 1.485], [0.062, 1.465], [0.076, 1.43], [0.08, 1.39], [0.079, 1.33], [0.076, 1.24], [0.071, 1.17], [0.069, 1.12],
+  const ARM_SLEEVE = [[0, 1.475], [0.034, 1.47], [0.06, 1.452], [0.071, 1.42], [0.075, 1.38], [0.076, 1.33], [0.076, 1.24], [0.071, 1.17], [0.069, 1.12],
     [0.067, 1.06], [0.064, 0.99], [0.061, 0.94], [0.058, 0.925], [0, 0.92]];
   const CUFF = [[0.046, 0.866], [0.054, 0.864], [0.06, 0.872], [0.061, 0.885], [0.061, 0.917], [0.059, 0.93], [0.054, 0.934]];
   const LEG_P = [[0, 0.055], [0.034, 0.058], [0.041, 0.08], [0.04, 0.12], [0.047, 0.18], [0.06, 0.27], [0.067, 0.34], [0.065, 0.4], [0.059, 0.47],
     [0.062, 0.53], [0.076, 0.62], [0.089, 0.72], [0.099, 0.82], [0.104, 0.9], [0.094, 0.96], [0, 0.985]];
-  const PELVIS_P = [[0, 0.715], [0.11, 0.725], [0.16, 0.76], [0.18, 0.83], [0.185, 0.9], [0.175, 0.97], [0.15, 1.01], [0, 1.02]];
+  const PELVIS_P = [[0, 0.745], [0.07, 0.748], [0.135, 0.772], [0.175, 0.83], [0.185, 0.9], [0.175, 0.97], [0.15, 1.01], [0, 1.02]];
   const NECK_P = [[0, 1.41], [0.06, 1.415], [0.055, 1.47], [0.053, 1.53], [0.056, 1.58], [0, 1.6]];
   function heartShape(w) {
     const s = new THREE.Shape(), h = w * 0.9;
@@ -506,7 +506,7 @@ const HALA = (() => {
     for (const s of [1, -1]) skin.push({ geo: earGeo(s), bone: 3 });
     skin.push({ geo: lathe(NECK_P, 18, 0, 0.004, 1, 0.94), w: (x, y) => [2, 3, sstep(1.5, 1.56, y)] });
     for (const s of [1, -1]) {
-      const up = s > 0 ? 4 : 7, fo = up + 1, hd = up + 2, ax = 0.205 * s;
+      const up = s > 0 ? 4 : 7, fo = up + 1, hd = up + 2, ax = 0.193 * s;
       // el: yassı avuç (avuç içi gövdeye bakar), dört parmak, başparmak
       skin.push({ geo: kitGeo(k => {
         k.add(G.sphere(16), 0xffffff, [ax - 0.002 * s, 0.808, 0.004], [0, 0, 0.06 * s], [0.021, 0.05, 0.037]);
@@ -526,7 +526,7 @@ const HALA = (() => {
       return [1, 2, sstep(0.98, 1.17, y)];
     }, color: coatCol, flex: (x, y) => sstep(0.97, 0.8, y) });
     for (const s of [1, -1]) {
-      const up = s > 0 ? 4 : 7, fo = up + 1, ax = 0.205 * s;
+      const up = s > 0 ? 4 : 7, fo = up + 1, ax = 0.193 * s;
       coat.push({ geo: lathe(ARM_SLEEVE, 28, ax, -0.01, 1, 0.96, TILE), w: (x, y) => (y > 1.3 ? [2, up, sstep(1.47, 1.39, y)] : [up, fo, sstep(1.17, 1.09, y)]), color: coatCol });
       // manşet (ribana): koyu mercan, dikey çizgili
       coat.push({ geo: lathe(CUFF, 48, ax, -0.01, 1, 0.96, TILE), bone: fo,
@@ -1329,7 +1329,8 @@ const HALA = (() => {
     else if (ctx.title) {
       const f = { x: P.pos.x + 1.0, z: P.pos.z - 0.5 };
       if (Math.hypot(f.x - S.x, f.z - S.z) > 4) { S.x = f.x; S.z = f.z; }
-      const d = moveTo(A, f.x, f.z, 3, dt, 0.2); if (d < 0.3) faceTo(P.pos.x, P.pos.z, dt, 4);
+      const d = moveTo(A, f.x, f.z, 3, dt, 0.2);
+      if (d < 0.3) { faceTo(S.x - 0.6, S.z + 4, dt, 3); S.look = (S.t % 9) < 3 ? S.look : null; }   // başlıkta oyuncuya gülümser, ara sıra Feza'ya bakar
     } else {
       if (play && !P.dead) think(dt, ctx, fmoved);
       if (!S.act) {
