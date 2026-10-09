@@ -140,10 +140,10 @@ mavi-beyaz spor ayakkabı. (Eski "bulut/uçak baskılı tişört" metni geçersi
 | `gunluk` (= null) | Günlük Feza | çizgili tişört | — |
 | `pastaci` | Pastacı Feza | beyaz aşçı şapkası, pembe kenarlı önlük, cepte tahta kaşık | can +%12 |
 | `superkahraman` | Süper Kahraman Feza | kırmızı maske, sarı F rozeti, altın kemer, F'li kırmızı pelerin | hız +%10 |
-| `sovalye` | Şövalye Feza | oluklu karton zırh (bant, boyalı yıldız), karton omuzluk, sol kolda tencere kapağı kalkan | zırh +8 |
+| `sovalye` | Şövalye Feza | oluklu karton zırh (bant, boyalı yıldız), karton omuzluk ve püsküllü karton miğfer, sol kolda tencere kapağı kalkan | zırh +8 |
 | `kasif` | Kâşif Feza | kâşif şapkası (yeşil bant), dürbün, çapraz askılı deri çanta | vuruş +%7 |
 | `astronot` | Astronot Feza | cam baloncuk kask + yaka, ışıklı sırt çantası, göğüs paneli | hız +%5, zırh +4 |
-Başlıklı kostüm (pastacı, kâşif, astronot) takılı eşya şapkasını GİZLER; pelerinli/sırt çantalı kostüm (süper kahraman, astronot) eşya pelerinini
+Başlıklı kostüm (pastacı, şövalye, kâşif, astronot) takılı eşya şapkasını GİZLER; pelerinli/sırt çantalı kostüm (süper kahraman, astronot) eşya pelerinini
 gizler (eşyanın gücü sürer). Kayıttan yüklenince `applyLooks()` (07_game) kostümü ve Bilbo aksesuarını yeniden giydirir. Kostümün kilidi: `GAME.unlockCostume(id)`.
 **İfadeler**: `H.express('sevinc'|'saskin'|'kararli', saniye, sonraki?)`, `H.wink()` (sol göz). Feza kendisi de tepki verir: huysuz neşelenince
 ara sıra sevinç, boss gelince kararlılık, eşya/kayıp eşya/malzeme/altın şekerde şaşkınlık → sevinç, seviye atlayınca göz kırpma, boştayken ara sıra göz kırpma.

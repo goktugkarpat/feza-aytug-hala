@@ -2082,7 +2082,7 @@ const { FEZA, ITEMS } = (function () {
     gunluk: { ad: 'Günlük Feza', arti: 'Kendi çizgili tişörtü', bonus: {} },
     pastaci: { ad: 'Pastacı Feza', arti: 'Biraz daha fazla can', bonus: { hp: 0.12 }, hat: true },
     superkahraman: { ad: 'Süper Kahraman Feza', arti: 'Biraz daha hızlı', bonus: { speed: 0.1 }, cape: true },
-    sovalye: { ad: 'Şövalye Feza', arti: 'Biraz daha dayanıklı', bonus: { armor: 8 } },
+    sovalye: { ad: 'Şövalye Feza', arti: 'Biraz daha dayanıklı', bonus: { armor: 8 }, hat: true },
     kasif: { ad: 'Kâşif Feza', arti: 'Biraz daha güçlü vuruş', bonus: { dmg: 0.07 }, hat: true },
     astronot: { ad: 'Astronot Feza', arti: 'Hafif adımlar, biraz koruma', bonus: { speed: 0.05, armor: 4 }, hat: true, cape: true },
   };
@@ -2201,6 +2201,17 @@ const { FEZA, ITEMS } = (function () {
         k.add(G.cyl(1, 1, 12), 0x2b2b30, [0, 0.036, 0], 0, [0.012, 0.02, 0.012]);
       })), mat('kostLid', () => { const t = tex('metal'); return rimify(vcMat({ metalness: 0.9, roughness: 0.22, map: t ? t.map : null, envMapIntensity: 1.2 }), 0xffffff, 0.2); }));
       lid.position.set(0.075, -0.07, 0.015); lid.rotation.set(0, 0, -Math.PI / 2);
+      // karton miğfer: kubbe + bant + burun koruyucu + kırmızı kâğıt püskül
+      const helm = kitC('cardHelm', k => {
+        k.add(G.hemi(28), (x, y, z) => CB.clone().lerp(CD, 0.3 + 0.3 * Math.sin(Math.atan2(x, z) * 18)), [0, 0.07, 0], 0, [0.315, 0.3, 0.325]);
+        k.add(G.cyl(1, 1, 32, true), CD, [0, 0.085, 0], 0, [0.318, 0.06, 0.328]);
+        k.add(G.cyl(1, 1, 32, true), TAPE, [0, 0.24, 0], [0, 0, 0], [0.25, 0.025, 0.26]);
+        k.add(G.rbox(1), CD, [0, 0.03, 0.315], [-0.15, 0, 0], [0.035, 0.12, 0.018]);
+        for (let i = 0; i < 5; i++) k.add(G.cone(8), i & 1 ? 0xff5a4a : 0xe8323c, [(i - 2) * 0.03, 0.44 + 0.03 * (2 - Math.abs(i - 2)), -0.04 - Math.abs(i - 2) * 0.012], [-0.5, 0, (i - 2) * 0.3], [0.04, 0.2, 0.02]);
+      });
+      out.hat = new THREE.Mesh(helm, mat('kostHelm', () => rimify(vcMat({ roughness: 0.92, side: THREE.DoubleSide }), 0xffe6c0, 0.12)));
+      out.hat.position.set(0, 0.0, -0.005);
+      out.hatIn = [[0, 0.02, 0], [0.305, 0.3, 0.315], 0.06, 0.07];
     } else if (id === 'kasif') {
       const KH = ink(0xe0c993), KD = ink(0xc8ad72), GR = ink(0x4f7a3a), BR = ink(0x7a4a26);
       const hatG = kitC('pith', k => {
@@ -2756,11 +2767,18 @@ const { FEZA, ITEMS } = (function () {
             if (p.hat && p.hatIn) p.hat.fzHatIn = { h: new THREE.Object3D(), c: p.hatIn[0], r: p.hatIn[1], y0: p.hatIn[2], fade: p.hatIn[3] };
             const all = [...meshes]; if (p.hat) all.push(p.hat); if (capeObj) all.push(capeObj);
             for (const o of all) o.traverse(q => { if (q.isMesh) { q.frustumCulled = false; if (!q.renderOrder || q.renderOrder < HERO_ORDER) q.renderOrder = HERO_ORDER; q.castShadow = !q.userData.noShadow; q.receiveShadow = false; } });
+            // duvar arkasında da görünsün (x-ray ikizleri)
+            for (const m of meshes) xrayTwin(m.geometry, xrayBase(), m);
+            if (p.hat && !p.hat.material.transparent) xrayTwin(p.hat.geometry, xrayBase(), p.hat);
+            if (capeObj) addXrayItem(capeObj, 'kost:cape:' + p.cape);
+            for (const o of all) setTwins(o, false);
             c = KOST.cache[id] = { meshes, hat: p.hat, cape: capeObj };
           }
           for (const m of c.meshes) { B[m.userData.bone].add(m); KOST.list.push(m); }
           if (c.hat) { kHat.add(c.hat); KOST.hatE = { obj: c.hat }; }
           if (c.cape) { kCape.add(c.cape); KOST.capeU = c.cape.fzCapeU; }
+          for (const m of c.meshes) setTwins(m, S.xray);
+          if (c.hat) setTwins(c.hat, S.xray); if (c.cape) setTwins(c.cape, S.xray);
         }
         kostVis();
         hatUniforms(hairHat());
