@@ -29,6 +29,7 @@ const STORY = (() => {
     if (text) toast(text);
     return 0;
   }
+  function speaking() { const A = A_(); return !!(A && A.speaking && A.speaking()); }
   function lineLen(key) { const A = A_(); return A && A.estimate ? A.estimate(key) || 0 : 0; }
   function sfx(name, o) { const A = A_(); if (A && A.sfx) { try { A.sfx(name, o || {}); } catch (e) { /* ignore */ } } }
   function burst(kind, x, y, z, o) { if (typeof FX !== 'undefined' && FX.burst) { try { FX.burst(kind, x, y, z, o || {}); } catch (e) { /* ignore */ } } }
@@ -1202,7 +1203,9 @@ const STORY = (() => {
       });
       return;
     }
-    if (!seen.zone[id]) { seen.zone[id] = 1; line('oda_' + id, null, 3); line('gorev_' + id, null, 2); }
+    // bölümün kendi giriş cümlesi varsa (BOLUM.define line) onu yinelemeyelim; görev cümlesi her girişte
+    const Z = typeof ZONES !== 'undefined' && o && Number.isInteger(o.index) ? ZONES[o.index] : null, own = !!(Z && Z.line);
+    if (!seen.zone[id]) { seen.zone[id] = 1; if (!own) line('oda_' + id, null, 3); line('gorev_' + id, null, 2); }
     else line('gorev_' + id, null, 2);
   }
   function pastaScene() {   // Pasta Krallığı açıldı: masadaki pembe kapıya kamera gider, kıvılcımlar
@@ -1224,9 +1227,9 @@ const STORY = (() => {
     if (!zid || zid === 'masa') return;
     const k = zid + ':' + a.index; if (seen.area[k]) return; seen.area[k] = 1;
     if (a.index === 0 && !seen.zone['_a' + zid]) { seen.zone['_a' + zid] = 1; }   // ilk alan: oda girişi zaten konuştu; yine de kısa söyle
+    // bölüm ajanı kendi alan cümlesini söylüyorsa (aynı anda) bizimki düşer: öncelik 0 = konuşma varken söylenmez
     const key = 'alan_' + zid + '_' + (a.index + 1);
-    if (hasLine(key)) line(key, null, 2);
-    else line(a.index & 1 ? 'alan_genel2' : 'alan_genel1', null, 1);
+    later(0.3, () => { if (speaking()) return; if (hasLine(key)) line(key, null, 0); else line(a.index & 1 ? 'alan_genel2' : 'alan_genel1', null, 0); });
   }
   function ingredient(id) {
     const g = G_(), P = g && g.P;
@@ -1245,7 +1248,8 @@ const STORY = (() => {
   function lostItem(o) {
     const id = o && o.id, g = G_();
     const key = 'kayip_' + id;
-    const d = hasLine(key) ? line(key, null, 3) : line(pick(['kayip_genel1', 'kayip_genel2']), 'Bilbo ' + ((KAYIP[id] || 'kayıp eşyayı').toLocaleLowerCase('tr')) + ' buldu!', 3);
+    // oda ajanı kendi "buldum" cümlesini söylediyse yinelemeyelim (konuşma sürerken bizimki düşer)
+    const d = speaking() ? 0 : hasLine(key) ? line(key, null, 3) : line(pick(['kayip_genel1', 'kayip_genel2']), 'Bilbo ' + ((KAYIP[id] || 'kayıp eşyayı').toLocaleLowerCase('tr')) + ' buldu!', 3);
     const B = g && g.Bilbo;
     const x = B ? B.root.position.x : g && g.P.pos.x, z = B ? B.root.position.z : g && g.P.pos.z;
     if (x != null) {
