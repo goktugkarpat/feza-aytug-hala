@@ -448,7 +448,7 @@ const HUB = (() => {
   // ── Pasta süsleme ──
   function openPasta() {
     const g = Gm(), stage = g && g.cakeStage ? g.cakeStage() : 0;
-    if (!stage) { say('masa_pasta_bos', 3); return; }
+    if (!stage) { say(said.p0 ? 'masa_pasta_bos' : 'masa_pasta0', 3); said.p0 = 1; if (CAKE.poke) CAKE.poke(); sfx('bonk', { vol: 0.6 }); return; }
     const r = rootEl(); r.innerHTML = ''; r.classList.remove('hb-out'); r.classList.add('hb-on', 'hb-deco-on');
     const ui = el('div', 'hb-deco', r);
     const done = el('button', 'hb-done', ui, '<span>✓</span>');

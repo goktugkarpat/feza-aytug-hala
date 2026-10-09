@@ -435,7 +435,8 @@ const CAKE = (() => {
   // süs: pos = { a: açı (rad), h: 0..1 }; GAME.addCakeDecoration kayda yazdıktan sonra çağırır → dünyadaki pastayı yenile
   function decorate(itemId, pos = {}) { if (S.world) S.world.setDecos(decosNow()); }
   function refresh() { if (S.world) S.world.setDecos(decosNow()); }
-  return { build, setStage, decorate, refresh, makeModel, surfPoint, surfParam, setDecos, ITEMS, ORDER, unlocked, SIDE, DIM, Y0, _berryG: berryG, _mats: mats,
+  function poke() { S.pop = 0.9; }   // dokununca pasta (ya da boş tabak) jöle gibi sallanır
+  return { build, setStage, decorate, refresh, poke, makeModel, surfPoint, surfParam, setDecos, ITEMS, ORDER, unlocked, SIDE, DIM, Y0, _berryG: berryG, _mats: mats,
     get stage() { return S.stage; }, get spot() { return S.spot; }, _S: S };
 })();
 
