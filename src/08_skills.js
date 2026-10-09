@@ -998,5 +998,10 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
   ];
   list.forClass = heroClass => heroClass === 'hybrid' ? hybrid : heroClass === 'wizard' ? wizard : list;
   list.tier = tier; list.upgradeCost = upgradeCost; list.ICON = ICON;
+  // Büyücü / büyülü şövalye yetenekleri de yıldız şekerle güçlenir: her kademe bekleme süresini kısaltır (%15 / %30)
+  for (const d of wizard.concat(hybrid)) {
+    const base = d.cd;
+    Object.defineProperty(d, 'cd', { get: () => base * [1, 0.85, 0.7][tier(d.id) - 1], enumerable: true });
+  }
   return { SKILLS: list, SKILLS_update: update, SKILLS_clear: clear };
 })();

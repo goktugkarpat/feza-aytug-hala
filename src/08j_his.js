@@ -276,11 +276,18 @@ const HIS = (() => {
     for (let i = SQ.length - 1; i >= 0; i--) {
       const q = SQ[i], e = q.e, m = e.m, r = m && m.root && m.root.scale;
       if (!r) { SQ.splice(i, 1); continue; }
-      if (Math.abs(r.x - q.lx) > 1e-4 || Math.abs(r.y - q.ly) > 1e-4) { SQ.splice(i, 1); continue; }   // başkası yönetiyor: bırak
+      if (Math.abs(r.x - q.lx) > 1e-4 || Math.abs(r.y - q.ly) > 1e-4) {   // başkası yönetiyor: bırak
+        if (q.py !== undefined && Math.abs(m.root.position.y - q.py) < 1e-5) m.root.position.y -= q.off;
+        SQ.splice(i, 1); continue;
+      }
       q.t += dt;
-      if (q.t > 0.55 || e.dead) { r.set(q.bx, q.by, q.bz); SQ.splice(i, 1); continue; }
+      // küçük "boing" zıplaması: 07_game konumu her kare yeniden yazıyorsa ondan, yazmıyorsa kendi önceki ofsetimizden hesaplanır
+      const pos = m.root.position, base = q.py !== undefined && Math.abs(pos.y - q.py) < 1e-5 ? pos.y - q.off : pos.y;
+      if (q.t > 0.55 || e.dead) { r.set(q.bx, q.by, q.bz); pos.y = base; SQ.splice(i, 1); continue; }
       const w = Math.exp(-7 * q.t) * Math.cos(q.t * 30), sy = 1 - q.a * w, sx = 1 + q.a * 0.6 * w;
       r.set(q.bx * sx, q.by * sy, q.bz * sx);
+      q.off = e.boss ? 0 : q.t < 0.32 ? Math.sin(q.t / 0.32 * Math.PI) * q.a * 1.3 : 0;
+      pos.y = base + q.off; q.py = pos.y;
       q.lx = r.x; q.ly = r.y;
     }
   }
@@ -340,8 +347,8 @@ const HIS = (() => {
   // ── Neşelenme ──
   function onHappy(e) {
     const y = 1.2;
-    burst('hearts', e.x, y + 0.4, e.z, { count: e.boss ? 40 : e.elite ? 22 : 12 });
-    burst('confetti', e.x, y + 0.8, e.z, { count: e.boss ? 60 : e.elite ? 34 : 18 });
+    burst('hearts', e.x, y + 0.4, e.z, { count: e.boss ? 30 : e.elite ? 14 : 6 });
+    burst('confetti', e.x, y + 0.8, e.z, { count: e.boss ? 60 : e.elite ? 30 : 14 });
     sfx('heart', { vol: 0.5, x: e.x, z: e.z });
     if (e.boss) { setTimeout(() => addStarCandy(2), 1800); return; }
     if (e.elite && Math.random() < 0.5) setTimeout(() => addStarCandy(1), 700);
