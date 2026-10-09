@@ -539,16 +539,16 @@
     const gb = '#c8803e', gbL = '#e6a463', ic = '#ffffff';
     r.bone('body', 'root', [0, 0, 0]); r.bone('legL', 'body', [0.17, 0.35, 0]); r.bone('legR', 'body', [-0.17, 0.35, 0]);
     r.bone('armL', 'body', [0.3, 0.8, 0]); r.bone('armR', 'body', [-0.3, 0.8, 0]); r.bone('hat', 'body', [0, 1.25, 0]);
-    r.on('body').fx(0, 0.25, 1).uv(2, 2);
+    r.on('body').fx(0, 0.25);
     r.add(G.sphere(24, 16), vgrad(0.3, 1.0, [[0, mixc(gb, '#8a5020', 0.3)], [1, gbL]]), [0, 0.68, 0], null, [0.3, 0.36, 0.17]);
     r.add(G.sphere(28, 18), vgrad(0.8, 1.3, [[0, gb], [1, gbL]]), [0, 1.05, 0], null, [0.3, 0.29, 0.18]);
-    r.uv(null).fx(0, 0.6);
+    r.fx(0, 0.6);
     for (let i = 0; i < 3; i++) r.add(G.sphere(12, 8), ['#ff4f6e', '#5fd3ff', '#7ce07a'][i], [0, 0.82 - i * 0.14, 0.16], null, [0.05, 0.05, 0.03]);
-    r.add(G.torus(PI, 0.25, 16), ic, [0, 0.5, 0.15], [0, 0, PI], [0.22, 0.08, 0.05]);
+    for (const sd of [-1, 1]) r.add(G.torus(PI, 0.3, 12), ic, [sd * 0.13, 1.17, 0.13], [0.4, 0, 0], [0.05, 0.035, 0.03]);   // (yanaklarda krema kıvrımı)
     for (const sd of [1, -1]) {
-      r.on(sd > 0 ? 'legL' : 'legR').fx(0, 0.25, 1).add(G.capsule(1, 10), gb, [sd * 0.17, 0.22, 0], null, [0.11, 0.12, 0.1]);
+      r.on(sd > 0 ? 'legL' : 'legR').fx(0, 0.25).add(G.capsule(1, 10), gb, [sd * 0.17, 0.22, 0], null, [0.11, 0.12, 0.1]);
       r.fx(0, 0.6).add(G.torus(PI, 0.25, 12), ic, [sd * 0.17, 0.12, 0.08], [0, 0, PI], [0.09, 0.04, 0.04]);
-      r.on(sd > 0 ? 'armL' : 'armR').fx(0, 0.25, 1).add(G.capsule(1, 10), gb, [sd * 0.42, 0.72, 0], [0, 0, sd * 1.1], [0.09, 0.14, 0.08]);
+      r.on(sd > 0 ? 'armL' : 'armR').fx(0, 0.25).add(G.capsule(1, 10), gb, [sd * 0.42, 0.72, 0], [0, 0, sd * 1.1], [0.09, 0.14, 0.08]);
       r.fx(0, 0.6).add(G.torus(PI, 0.25, 12), ic, [sd * 0.5, 0.66, 0.06], [0, 0, sd * 1.1 + PI], [0.07, 0.04, 0.03]);
     }
     // şeker kamışı mızrak (sağ el)
@@ -562,7 +562,7 @@
     r.fx(0, 0);
     face(r, [0, 1.05, 0.0], 0.27, { bone: 'body', tilt: 0.1, ex: 0.1, ey: 0.03, er: 0.065, iris: '#3a2210', skin: gbL, browCol: '#ffffff', mouthY: -0.1, mouthW: 0.09, heartY: 0.9, mouthPivot: true });
     r.on('body').mark('muzzle', [0, 0.8, 0.3]);
-    return { height: 1.5, glowC: col('#ffd9a0'), tex: K.texOf('fabric'), mat: { rough: 0.7, rim: '#fff0d8', rimK: 0.25 } };
+    return { height: 1.5, glowC: col('#ffd9a0'), mat: { rough: 0.62, rim: '#fff0d8', rimK: 0.25 } };
   }
   function animKurabiye(m, dt, st, s) {
     const B = m.B;
