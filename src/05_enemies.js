@@ -6447,6 +6447,11 @@ const EMODEL = (function (G0) {
     }
   }
   function stats() { const out = {}; for (const k in DEFS) out[k] = DEFS[k].verts; return out; }
+  // Dev Ev: huysuz modelleri (src/05h_huysuzlar.js) aynı iskelet/yüz araçlarını kullanır. addType(id, kurucu(r, o), anim(m, dt, st, s), lod)
+  // tipi TYPES'a ekler; HUYSUZ kaydının model(o) kancası buildRaw(id, o) ile (HUYSUZ sarmalayıcısını atlayarak) kurar.
+  function addType(id, mk, an, lod, variants) { TYPES[id] = [mk, an]; if (lod) LOD[id] = lod; if (variants) VARIANTS[id] = variants; }
+  const KIT = { Rig, G, face, crown, lathe, onLathe, extrude, heartShape, heartGeo, vgrad, col, hdr, mixc, rich, qz, qy, qb, onEll, cone, softSpike,
+    hash3, fbm3, gx, seamNormals, creased, blush, eyeOpen, eyeClosed, smile, smirk, GOLD, DARK, sN: (n, m) => sN(n, m) };
 
-  return { build, owl, merchant, babyDragon, sancak, jellyCrown, havuc, serinTas, hole, crystal, warm, stats, TYPES: Object.keys(TYPES), VARIANTS, PROPS: Object.keys(PROPS) };
+  return { addType, buildRaw: build, KIT, build, owl, merchant, babyDragon, sancak, jellyCrown, havuc, serinTas, hole, crystal, warm, stats, TYPES: Object.keys(TYPES), VARIANTS, PROPS: Object.keys(PROPS) };
 })(G);

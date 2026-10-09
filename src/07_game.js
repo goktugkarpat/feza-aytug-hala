@@ -1708,7 +1708,7 @@ const GAME = (() => {
         if (e.trailT <= 0 && e.dist < 26) {
           e.trailT = 0.07;
           burst('dust', e.x - e.rdx * e.r, 0.04, e.z - e.rdz * e.r, { count: 2, color: '#c9a07a', dir: { x: -e.rdx, z: -e.rdz } });
-          if (Math.random() < 0.5) burst('embers', e.x, 0.3, e.z, { count: 2 });
+          if (Math.random() < 0.5 && isT(e.type, 'kaplumbaga')) burst('embers', e.x, 0.3, e.z, { count: 2 });   // (Dev Ev: yalnız lav kaplumbağası kıvılcım saçar)
         }
       }
       if (!e.rollHit && !P.dead && Math.hypot(P.pos.x - e.x, P.pos.z - e.z) < e.r + T.heroR + 0.15) {
@@ -1757,7 +1757,7 @@ const GAME = (() => {
       burst('dust', bx, 0.04, bz, { count: every < 0.1 ? 3 : 2, color: DUSTY[e.type] || '#ecdcb4', dir: { x: -fx0, z: -fz0 }, scale: e.elite ? 1.3 : 0.9 });
       return;
     }
-    burst('slime', bx, 0.03, bz, { color: CREAMY[e.type] || '#ffdf9e', dir: { x: fx0, z: fz0 }, scale: e.elite ? 1.4 : 1 });
+    burst('slime', bx, 0.03, bz, { color: CREAMY[e.type] || e.def.trailCol || '#ffdf9e', dir: { x: fx0, z: fz0 }, scale: e.elite ? 1.4 : 1 });
     if (Math.random() < (every < 0.1 ? 0.25 : 0.12)) burst(typeof e.def.trail === 'string' ? e.def.trail : 'milk', bx, 0.12, bz, { count: 3, scale: 0.5 });   // (EDEF trail: a creamy drip)
   }
   // ── Ekşi Yoğurt: from a couple of metres away it crouches (the wind-up; a circle shows where it will land), hops at Feza
@@ -1846,7 +1846,7 @@ const GAME = (() => {
     e.sparkT -= dt;
     if (e.sparkT > 0) return;
     e.sparkT = 0.03;
-    const m = muzzle(e), kind = (e.def.shot && e.def.shot.kind) || SHOT_KIND[e.type] || 'spore', col = SHOT_COL[kind] || '#fff';
+    const m = muzzle(e), kind = (e.def.shot && e.def.shot.kind) || SHOT_KIND[e.type] || 'spore', col = (e.def.shot && e.def.shot.col) || SHOT_COL[kind] || '#fff';
     const a = frand(0, TAU), r = 0.8 * (1 - k * 0.45);
     emitP(m.x + Math.sin(a) * r, m.y + frand(-0.35, 0.35), m.z + Math.cos(a) * r, -Math.sin(a) * r * 3, 0, -Math.cos(a) * r * 3, 0.26, 0.2, 0.06, col, '#ffffff', 2);
     emitP(m.x, m.y, m.z, 0, 0, 0, 0.07, 0.35 + k * 0.75, 0.3 + k * 0.7, col, '#ffffff', 0);   // growing orb at the mouth
@@ -1860,7 +1860,7 @@ const GAME = (() => {
     const fan = e.elite && isT(e.type, 'ateskusu') ? [-0.26, 0, 0.26] : [0];
     for (const da of fan) {
       spawnProjectile({ x: m.x, y: m.y, z: m.z, vx: Math.sin(a0 + da) * speed, vz: Math.cos(a0 + da) * speed, r: sh.r || 0.32, dmg: e.dmg, owner: 'enemy', kind,
-        life: (e.atkRange + 4) / speed, color: SHOT_COL[kind] });
+        life: (e.atkRange + 4) / speed, color: sh.col || SHOT_COL[kind] });   // (Dev Ev: EDEF shot.col = huysuzun kendi atış rengi)
     }
     if (kind === 'bubble') { sfx('bubble', { x: e.x, z: e.z, vol: 0.8 }); burst('sparkle', m.x, m.y, m.z, { color: '#d8f4ff', count: 5 }); }
     else if (kind === 'fizz') { sfx('fizz', { x: e.x, z: e.z, vol: 0.7, pitch: frand(1.0, 1.25) }); sfx('bubble', { x: e.x, z: e.z, vol: 0.45, pitch: 1.3 }); burst('fizz', m.x, m.y, m.z, { count: 6, scale: 0.7 }); }
