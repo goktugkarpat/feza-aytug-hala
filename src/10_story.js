@@ -75,8 +75,9 @@ const STORY = (() => {
   // ───────────────────────── Mutfak seti (normal boy) ─────────────────────────
   // Yerel koordinat: zemin y=0, +z kameraya doğru. Feza ≈ 1,45 m. Ada tezgâhı üstü y = 1,15.
   const ISLAND_Y = 1.15;
+  const HALA_STEP = 0.16;   // adanın arkasında Aytuğ Hala görünür olsun diye minik bir basamakta durur (ayakları görünmez)
   const SPOT = {
-    cake: [-0.55, ISLAND_Y, -0.85], jar: [0.38, ISLAND_Y, -0.72], hala: [-0.35, -1.92], bag: [-2.3, 0.3],
+    cake: [-0.55, ISLAND_Y, -0.85], jar: [0.38, ISLAND_Y, -0.72], hala: [-0.35, -1.8], bag: [-2.3, 0.3],
     bilbo: [-1.5, 0.39], feza: [3.3, -3.42], door: [3.4, -3.2],
     group: { feza: [0.42, 0.78], hala: [-0.5, 0.52], bilbo: [1.12, 0.92] },   // sinematikte bir araya geldikleri yer
   };
@@ -410,6 +411,7 @@ const STORY = (() => {
   const FST = { move: 0, attack: -1, swingDir: 1, cast: -1, spin: false, hurt: 0, dead: false, cheer: false, idleT: 0, sitRead: false, hybrid: false, magicAttack: false };
   const BST = { speed: 0.12, hop: 0, pounce: 0, bark: 0, sit: 0 };
   const CH = { fBase: 0, bBase: 0.78, hBase: 0, bones: null };
+  const HCX = { P: { pos: { x: 0, y: 0, z: 0 }, face: 0, dead: false, hp: 1, maxHp: 1 }, H: null, L: null, enemies: [], boss: null, Bilbo: null, state: 'title', dt: 0, t: 0, dead: false, title: true, api: null };
   const ACT = {   // sahnedeki hedef pozlar (sinematik bunları değiştirir)
     feza: { x: 0, z: 0, y: 0, face: 0, s: 1, move: 0, cheer: false, lean: 0 },
     bilbo: { x: 0, z: 0, y: 0, face: 0, s: 1, speed: 0.12, bark: 0, nose: 0, sit: 0, hop: 0, lick: 0 },
@@ -448,6 +450,21 @@ const STORY = (() => {
       const S = HL._S;
       if (typeof HL.pose === 'function') {
         try { HL.pose(dt, { x: ox + h.x, y: h.y, z: oz + h.z, face: h.face, scale: h.s, act: h.act, t: T }); } catch (e) { /* ignore */ }
+      } else if (S && S.root && typeof HL.dance === 'function' && typeof HL.update === 'function') {
+        // gerçek Aytuğ Hala modeli (04_hala.js): kendi canlı animasyonu (nefes, göz kırpma, dans/alkış) sürsün diye
+        // update'ini başlık kipinde, hedef noktada duracak şekilde sahte bir bağlamla çağır; sonra konumu/yönü/boyu sabitle
+        const tx = ox + h.x, tz = oz + h.z, g = G_();
+        S.x = tx; S.z = tz; S.face = h.face;
+        HCX.P.pos.x = tx - 1.0; HCX.P.pos.z = tz + 0.5; HCX.P.face = h.face;
+        HCX.L = g && g.L; HCX.Bilbo = g && g.Bilbo; HCX.api = g && g.halaApi; HCX.dt = dt; HCX.t = T;
+        if (h.act !== CH.hAct) {   // eylem değişti: dans / alkış başlat
+          CH.hAct = h.act;
+          try { if (h.act === 'dans') HL.dance(8); else if (h.act === 'alkis' || h.act === 'saskin' || h.act === 'mum') HL.cheer(h.act === 'alkis' ? 3 : 1.6); } catch (e) { /* ignore */ }
+        }
+        if (h.act === 'yuru') S.vel = 2.2;
+        try { HL.update(dt, HCX); } catch (e) { /* ignore */ }
+        S.x = tx; S.z = tz;
+        S.root.position.set(tx, h.y + (S.y || 0), tz); S.root.rotation.y = h.face; S.root.scale.setScalar(CH.hBase * h.s);
       } else if (S && S.root) {   // yer tutucu model: konum + basit kol hareketi
         S.x = ox + h.x; S.z = oz + h.z; S.face = h.face;
         let y = h.y;
@@ -516,7 +533,7 @@ const STORY = (() => {
     const f = ACT.feza, b = ACT.bilbo, h = ACT.hala;
     Object.assign(f, { x: SPOT.feza[0], z: SPOT.feza[1], y: 0, face: -0.92, s: 1, move: 0, cheer: false, lean: 0 });
     Object.assign(b, { x: SPOT.bilbo[0], z: SPOT.bilbo[1], y: 0, face: -Math.PI / 2 + 0.1, s: 1, speed: 0.12, bark: 0, nose: 1, sit: 0, hop: 0, lick: 0, pounce: 0 });
-    Object.assign(h, { x: SPOT.hala[0], z: SPOT.hala[1], y: 0, face: -0.12, s: 1, act: 'serp' });
+    Object.assign(h, { x: SPOT.hala[0], z: SPOT.hala[1], y: HALA_STEP, face: -0.12, s: 1, act: 'serp' });
   }
   // kenara yıkılmayan, yuvarlak un bulutları (hapşırık için)
   function makePuffs(parent) {
@@ -765,7 +782,7 @@ const STORY = (() => {
         tick(u, dt, t) {
           if (t > 0.35 && !this._cut) {   // un bulutunun içinde herkes bir araya gelir (sahne kesmesi)
             this._cut = true; setScale(1);
-            f.face = 0.4; f.move = 0; b.face = -0.5; b.nose = 0; b.y = 0; b.pounce = 0; h.face = 0.35; h.act = 'saskin';
+            f.face = 0.4; f.move = 0; b.face = -0.5; b.nose = 0; b.y = 0; b.pounce = 0; h.y = 0; h.face = 0.35; h.act = 'saskin';
             camTo(0.75, 1.75, 3.6, 0.35, 1.25, 0.2, 2, true);
           }
           S.glow = 1;
@@ -1017,7 +1034,7 @@ const STORY = (() => {
       { min: 3.4, noSkip: false, enter() {
           buildSet(); ACT.worldMode = false;
           if (END.tmpSugar) { END.tmpSugar.im.parent && END.tmpSugar.im.parent.remove(END.tmpSugar.im); disposeTree(END.tmpSugar.im); END.tmpSugar = null; }
-          f.face = 0.2; h.face = 0.3; b.face = -0.3; f.cheer = false; h.act = 'saskin'; b.nose = 0; b.lick = 0;
+          f.face = 0.2; h.face = 0.3; b.face = -0.3; f.cheer = false; h.act = 'saskin'; h.y = 0; b.y = 0; b.nose = 0; b.lick = 0;
           setScale(0.1); white(0, 0.8); sfx('levelup', { vol: 0.7 });
         },
         tick(u, dt, t) {
@@ -1030,7 +1047,7 @@ const STORY = (() => {
           setScale(1);
           white(0.8, 0.15, [0.1, 0]);
           // Hala adanın arkasında mumları yakar, Feza ve Bilbo önde
-          Object.assign(h, { x: 0.3, z: -1.85, face: -0.55, act: 'mum', s: 1 });
+          Object.assign(h, { x: 0.3, z: -1.75, y: HALA_STEP, face: -0.55, act: 'mum', s: 1 });
           Object.assign(f, { x: 0.45, z: -0.05, face: -2.3, s: 1, cheer: false });
           Object.assign(b, { x: 1.2, z: 0.35, face: -2.0, s: 1, nose: 0, sit: 1 });
           camTo(-1.55, 1.9, 2.3, -0.15, 1.35, -0.95, 2, true);
@@ -1062,9 +1079,9 @@ const STORY = (() => {
         },
         tick(u, dt, t) { b.bark = (t % 0.6) < 0.25 ? 0.35 : 0; const dl = END.K.dollop; if (dl) dl.scale.setScalar(Math.max(0.3, 1.5 - t * 0.3)); } },
       { key: 'son_5', min: 3.6, enter() {
-          Object.assign(h, { x: -0.8, z: 0.45, face: 1.45, act: 'saril' });
+          Object.assign(h, { x: -0.8, z: 0.45, y: 0, face: 1.45, act: 'saril' });
           Object.assign(f, { x: -0.25, z: 0.5, face: -1.45, cheer: false });
-          Object.assign(b, { x: 0.5, z: 0.8, face: -1.0, lick: 0, nose: 0, y: 0, sit: 1 });
+          Object.assign(b, { x: 0.95, z: 0.35, face: -1.2, lick: 0, nose: 0, y: 0, sit: 1 });
           if (END.K.dollop) END.K.dollop.visible = false;
           camTo(-0.45, 1.55, 3.0, -0.5, 1.0, 0.45, 2);
           burst('hearts', origin.x - 0.65, 1.6, origin.z + 0.3, { count: 14 });
@@ -1077,7 +1094,7 @@ const STORY = (() => {
           if (END.K.dollop) END.K.dollop.visible = false;
           setScale(1); CINE.near = 0.5; const bt = ov && ov.querySelector('.st-blow'); if (bt) bt.classList.add('st-hide'); CINE.wait = null;
           credits(0); h.act = 'dans'; f.cheer = true; b.bark = 0; b.sit = 0;
-          Object.assign(f, { x: -0.2, z: 0.6, face: 0.2 }); Object.assign(h, { x: -0.9, z: 0.5, face: 0.4 }); Object.assign(b, { x: 0.5, z: 0.75, face: -0.3, y: 0 });
+          Object.assign(f, { x: -0.2, z: 0.6, face: 0.2 }); Object.assign(h, { x: -0.9, z: 0.5, y: 0, face: 0.4 }); Object.assign(b, { x: 0.5, z: 0.75, face: -0.3, y: 0 });
           END.t = 0;
         },
         tick(u, dt, t) {
@@ -1129,7 +1146,7 @@ const STORY = (() => {
     if (ACT.worldMode) {   // Pasta Krallığı: oyundaki yerlerinde, sevinçle
       const P = g.P;
       ACT.feza.x = 0; ACT.feza.z = 0; ACT.feza.face = 0.0; ACT.feza.cheer = true; ACT.feza.s = 1;
-      ACT.hala.x = -1.3; ACT.hala.z = -0.6; ACT.hala.face = 0.5; ACT.hala.act = 'alkis'; ACT.hala.s = 1;
+      ACT.hala.x = -1.3; ACT.hala.z = -0.6; ACT.hala.y = 0; ACT.hala.face = 0.5; ACT.hala.act = 'alkis'; ACT.hala.s = 1; ACT.feza.y = 0;
       ACT.bilbo.x = 1.2; ACT.bilbo.z = -0.2; ACT.bilbo.face = -0.6; ACT.bilbo.s = 1; ACT.bilbo.nose = 0; ACT.bilbo.y = 0;
       origin = { x: P.pos.x, z: P.pos.z };
     }
