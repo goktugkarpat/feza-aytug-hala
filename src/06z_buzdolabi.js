@@ -162,6 +162,14 @@ const ODAB = (() => {
       if (!live()) { if (R.fly) stopFly(true); R.v[0] = R.v[1] = 0; return; }
       const P = GAME.P, H = GAME.H;
       R.cd = Math.max(0, R.cd - dt);
+      // toplanan şeyler (altın şeker…): yerdekiler yürüyerek, havadakiler zıplarken / kayarken
+      for (const q of R.picks) {
+        if (q.got) continue;
+        if (hyp(q.x - P.pos.x, q.z - P.pos.z) < (q.r || 1.1) && Math.abs((R.lift || 0) + 0.7 - q.y) < (q.dy || 1.4)) {
+          q.got = true; if (q.obj) q.obj.visible = false;
+          if (q.onGet) q.onGet(q);
+        }
+      }
       const f = R.fly;
       if (f && f.kind === 'arc') {
         f.t += dt; const u = Math.min(1, f.t / f.dur), x = lerp(f.x0, f.x1, u), z = lerp(f.z0, f.z1, u);
@@ -243,14 +251,6 @@ const ODAB = (() => {
         }
       } else { R.v[0] = damp(R.v[0], 0, 8, dt); R.v[1] = damp(R.v[1], 0, 8, dt); R.iceOn = false; }
       R.prev = [P.pos.x, P.pos.z];
-      // toplanan şeyler (altın şeker…): yerdekiler yürüyerek, havadakiler zıplarken
-      for (const q of R.picks) {
-        if (q.got) continue;
-        if (hyp(q.x - P.pos.x, q.z - P.pos.z) < (q.r || 1.1) && Math.abs((R.lift || 0) + 0.7 - q.y) < (q.dy || 1.4)) {
-          q.got = true; if (q.obj) q.obj.visible = false;
-          if (q.onGet) q.onGet(q);
-        }
-      }
       // yakınlık bölgeleri (ipucu cümleleri, istasyonlar)
       for (const zn of R.zones) {
         const inside = hyp(zn.x - P.pos.x, zn.z - P.pos.z) < zn.r;
@@ -455,23 +455,24 @@ const ODAB = (() => {
         for (const ang of [0, 0.5, -0.5, 0.9, -0.9]) {
           const dx = Math.sin(PI + ang), dz = Math.cos(PI + ang), e = O.edge(api, rm, dx, dz);
           if (e.d < 4) continue;
-          const sx = e.x - dx * 1.1, sz = e.z - dz * 1.1, Rr = 2.5, cx = sx - dx * Rr, cz = sz - dz * Rr;
+          // kuleden (kuzey) kameraya doğru dalgalı iniş: yüksek kısım arkada kalır, odayı kapatmaz
+          const sx = e.x - dx * 1.1, sz = e.z - dz * 1.1, fx = -dx, fz = -dz, px = -fz, pz = fx, H0 = 3.3, Ls = Math.min(8.5, e.d + 1.5);
           for (const dir of [1, -1]) {
-            const pts = [], H0 = 3.7, turns = 1.35 * PI;
-            let ok = true;
-            const a0 = Math.atan2(sx - cx, sz - cz);
-            const N = 30;
+            const pts = []; let ok = true; const N = 30;
             for (let i = 0; i <= N; i++) {
-              const u = i / N, a = a0 + dir * turns * u, x = cx + Math.sin(a) * Rr, z = cz + Math.cos(a) * Rr, y = 0.25 + (H0 - 0.25) * (1 - u) * (1 - u * 0.15);
+              const u = i / N, w = Math.sin(u * TAU * 0.9) * 1.3 * dir * Math.min(1, u * 4), x = sx + fx * Ls * u + px * w, z = sz + fz * Ls * u + pz * w;
+              const y = 0.22 + (H0 - 0.22) * Math.pow(1 - u, 1.35);
               pts.push({ x, y, z });
-              if (y < 2.2 && !(api.isFloor(x, z) && api.circleFree(x, z, 0.35))) ok = false;
+              if (!(api.isFloor(x, z) && api.circleFree(x, z, 0.35))) ok = false;
             }
             const la = pts[N], lb = pts[N - 1], tx = la.x - lb.x, tz = la.z - lb.z, tl = hyp(tx, tz) || 1;
-            for (let s = 1; s <= 4; s++) { const x = la.x + tx / tl * s * 0.6, z = la.z + tz / tl * s * 0.6; pts.push({ x, y: Math.max(0, 0.25 - s * 0.07), z }); if (!(api.isFloor(x, z) && api.circleFree(x, z, 0.45))) ok = false; }
-            if (!ok || !O.clearOf(L, cx, cz, Rr * 0.5)) continue;
-            if (taken.some(q => hyp(q.x - cx, q.z - cz) < q.r + Rr)) continue;
-            D.slide = { sx, sz, tx: e.x + dx * 1.3, tz: e.z + dz * 1.3, cx, cz, Rr, pts, H0, room: ri };
-            taken.push({ x: cx, z: cz, r: Rr + 1.2 }, { x: sx, z: sz, r: 1.6 });
+            for (let q = 1; q <= 3; q++) { const x = la.x + tx / tl * q * 0.6, z = la.z + tz / tl * q * 0.6; pts.push({ x, y: Math.max(0, 0.22 - q * 0.07), z }); if (!(api.isFloor(x, z) && api.circleFree(x, z, 0.45))) ok = false; }
+            const mx = sx + fx * Ls * 0.5, mz = sz + fz * Ls * 0.5;
+            if (!ok || !O.clearOf(L, mx, mz, 1.5) || !O.clearOf(L, sx, sz, 1.2)) continue;
+            if (taken.some(q => pts.some(p => hyp(q.x - p.x, q.z - p.z) < q.r))) continue;
+            D.slide = { sx, sz, tx: e.x + dx * 1.3, tz: e.z + dz * 1.3, pts, H0, room: ri };
+            for (let i = 0; i < pts.length; i += 5) taken.push({ x: pts[i].x, z: pts[i].z, r: 1.4 });
+            taken.push({ x: sx, z: sz, r: 1.6 });
             break;
           }
           if (D.slide) break;
@@ -536,7 +537,6 @@ const ODAB = (() => {
     L.rooms.forEach((rm, i) => {
       const ar = areaOf(i), boss = rm.kind === 'boss';
       if (boss) return;
-      shelf(B, api, rm, ar);
       if (ar <= 0) {
         O.ring(api, rm, 6, 1.9, (x, z, south) => (south ? yogurt(B, x, z, 0.55 + rnd() * 0.2, rnd) : milkBottle(B, x, z, 1 + rnd() * 0.25, rnd)));
         O.ring(api, rm, 5, 1.3, (x, z, south) => yogurt(B, x, z, south ? 0.45 : 0.85 + rnd() * 0.3, rnd), { off: 0.5, gap: 0.6 });
@@ -589,14 +589,6 @@ const ODAB = (() => {
   }
 
   // ═════ Modeller (Kit parçaları; hepsi birleştirilir) ═════
-  // Cam raf: odanın kuzeyinde, yukarıda yarı saydam raf + beyaz kenar (rafların arasında yürüyormuşuz gibi)
-  function shelf(B, api, rm, ar) {
-    const r = rm.r || 6, w = r * 2.6 + 6, z = rm.z - r - 5.2, y = 6.6;
-    if (api.isFloor(rm.x, z + 2.5)) return;
-    B.add('glass', G.box(), C(0xdff4ff), [rm.x, y, z], null, [w, 0.22, 7]);
-    B.add('gloss', G.rbox(2), C(0xffffff), [rm.x, y - 0.05, z + 3.55], null, [w + 0.2, 0.42, 0.32]);
-    B.add('glow', G.box(), C(0xbfe8ff, 1.6), [rm.x, y - 0.3, z + 3.6], null, [w * 0.92, 0.05, 0.05]);
-  }
   // Süt şişesi sütunu: cam gövde + içinde süt + kapak + inek benekli etiket
   function milkBottle(B, x, z, s, rnd) {
     const Hh = 5.2 * s, r = 1.25 * s, cap = C(CORE.milkCap[(rnd() * 4) | 0]);
@@ -673,17 +665,18 @@ const ODAB = (() => {
   }
   // Kuzeydeki rafın kenarından sarkan, parlayan buz sarkıtları (zararsız; yürünür alanın üstünde değil)
   function icicles(B, api, rm) {
-    const r = rm.r || 6, z = rm.z - r - 1.7, n = Math.round(r * 1.4);
-    if (api.isFloor(rm.x, z + 0.8)) return;
+    const r = rm.r || 6, z = rm.z - r - 2.6, n = Math.round(r * 1.2), w = r * 2.2;
+    for (let q = 0; q <= 8; q++) for (const dz of [-0.9, 0, 0.9]) if (api.isFloor(rm.x - w / 2 + q * w / 8, z + dz)) return;
+    // buzlu raf duvarı: karla kaplı alçak duvar, ön kenarından parlayan sarkıtlar
+    B.add('ice', G.rbox(2), C(0xcfeaff), [rm.x, 2.3, z - 0.3], null, [w, 4.6, 1.4]);
+    B.add('snow', G.rbox(2), C(0xf6fcff), [rm.x, 4.75, z], null, [w + 0.4, 0.5, 2.0]);
+    for (let k = 0; k < Math.round(w * 1.2); k++) B.add('snow', G.sphere(10, 8), C(0xffffff), [rm.x - w / 2 + k * 0.85, 4.95, z + 0.9 - (k % 2) * 0.3], null, [0.5, 0.3, 0.5]);
     for (let k = 0; k < n; k++) {
-      const x = rm.x - r * 1.1 + k * (r * 2.2 / (n - 1)), l = 1.0 + ((k * 7) % 5) * 0.32, top = 5.6;
-      if (api.isFloor(x, z)) continue;
-      B.add('ice', G.cone(10), C(0xd4f0ff), [x, top - l / 2, z], [PI, 0, 0], [0.22 + (k % 3) * 0.05, l, 0.22]);
-      B.add('glow', G.sphere(8, 6), C(0xbfeaff, 2.2), [x, top - l + 0.08, z], null, [0.07, 0.1, 0.07]);
+      const x = rm.x - w / 2 + 0.4 + k * ((w - 0.8) / (n - 1)), l = 0.8 + ((k * 7) % 5) * 0.28, top = 4.55;
+      B.add('ice', G.cone(10), C(0xd4f0ff), [x, top - l / 2, z + 0.75], [PI, 0, 0], [0.2 + (k % 3) * 0.05, l, 0.2]);
+      B.add('glow', G.sphere(8, 6), C(0xbfeaff, 2.2), [x, top - l + 0.06, z + 0.75], null, [0.06, 0.09, 0.06]);
     }
-    B.add('snow', G.rbox(2), C(0xf2faff), [rm.x, 5.75, z], null, [r * 2.4, 0.4, 0.9]);
-    B.add('glass', G.box(), C(0xdff4ff), [rm.x, 5.95, z - 3], null, [r * 2.6, 0.2, 6.2]);
-    api.light(rm.x, 4.2, z + 0.5, 0xbfe6ff, 2.6, 9, 0.05);
+    api.light(rm.x, 3.6, z + 1.6, 0xbfe6ff, 2.4, 8, 0.05);
   }
   // Buz kemeri (alan geçidi): buz küpü direkler + yay + parlayan kar tanesi
   function iceArch(B, api, L, k) {
@@ -733,12 +726,11 @@ const ODAB = (() => {
     const mesh = new THREE.Mesh(geo, m); mesh.position.set(e.x, 0.025, e.z); mesh.scale.set(e.rx, 1, e.rz); mesh.receiveShadow = true; mesh.renderOrder = 1; mesh.name = 'buz-pisti';
     api.add(mesh);
     api.glow(e.x, e.z, Math.max(e.rx, e.rz) * 1.05, 0xd6f0ff, 0.2);
-    // kenarda karlı yastık (yalnız yürünmez kısımlarda ve güneyde alçak)
-    const n = Math.round((e.rx + e.rz) * 2.2);
-    for (let i = 0; i < n; i++) {
-      const a = i / n * TAU, x = e.x + Math.sin(a) * (e.rx + 0.15), z = e.z + Math.cos(a) * (e.rz + 0.15);
-      api.ball(x, 0.06, z, 0.42, 0.14, 0.42, i % 2 ? 0xffffff : 0xe8f6ff, 'shiny');
-    }
+    // kenarda karlı, yumuşak halka
+    const tg = new THREE.TorusGeometry(1, 0.2 / Math.max(e.rx, e.rz), 8, 72); tg.rotateX(PI / 2);
+    const rim = new THREE.Mesh(tg, ODAB.mat('snow')); rim.position.set(e.x, 0.03, e.z); rim.scale.set(e.rx + 0.1, 1.1, e.rz + 0.1); rim.receiveShadow = true;
+    const cg = tg.attributes.position.count, cc = new Float32Array(cg * 3); for (let i = 0; i < cg * 3; i++) cc[i] = 1; tg.setAttribute('color', new THREE.BufferAttribute(cc, 3));
+    api.add(rim);
   }
   let ODAB_RINK_MAT = null;
   // pistin kenarında oyuncak penguen değil: sevimli kardan adam şişeleri yerine — buz pateni süsleri (patenli şeker çubukları)
@@ -846,11 +838,11 @@ const ODAB = (() => {
     for (let i = 1; i < 6; i++) { const u = i / 6, x = lerp(sx, sx + (tx - sx) * 0.25, u), z = lerp(sz, sz + (tz - sz) * 0.25, u); B.add('candy', G.cyl(1, 1, 8), C(0xffffff), [x, top * u, z], [0, Math.atan2(tx - sx, tz - sz), PI / 2], [0.06, 0.95, 0.06]); }
     // oluk: U kesitli şerit (iç yüzey), yol boyunca renk şeritleri
     const pts = S.pts, N = pts.length, M = 9, pos = [], col = [], nor = [], idx = [];
-    const stripe = [C(0xffb8cc), C(0xfff6e4), C(0xbff0d0), C(0xfff6e4)];
+    const stripe = [C(0xff7fa8), C(0xfff2dc), C(0x7fdcb0), C(0xfff2dc), C(0xffd25a), C(0xfff2dc)];
     for (let i = 0; i < N; i++) {
       const a = pts[Math.max(0, i - 1)], b = pts[Math.min(N - 1, i + 1)], p = pts[i];
       let tx2 = b.x - a.x, tz2 = b.z - a.z; const tl = hyp(tx2, tz2) || 1; tx2 /= tl; tz2 /= tl;
-      const sxn = -tz2, szn = tx2, cc = stripe[Math.floor(i / 2) % 4];
+      const sxn = -tz2, szn = tx2, cc = stripe[Math.floor(i / 2) % 6];
       for (let j = 0; j < M; j++) {
         const th = -PI * 0.62 + (j / (M - 1)) * PI * 1.24, rr = 0.62;
         const ox = Math.sin(th) * rr, oy = -Math.cos(th) * rr;
@@ -983,9 +975,9 @@ const ODAB = (() => {
     areas: [{ id: 'a1', ad: 'Raf Buzulları', rooms: 2 }, { id: 'a2', ad: 'Jöle Tepeleri', rooms: 2 }, { id: 'a3', ad: 'Dondurucu Kapısı', rooms: 2 }],
     muzik: 'magara',
     malzeme: 'cilek', kayipEsya: 'toka',
-    isik: { fog: [0xd4ecfa, 34, 86], hemiSky: 0xf0faff, hemiGround: 0x8ab0cc, hemi: 0.95, sunColor: 0xfff4e6, sun: 1.9, sunOffset: [-12, 26, 14],
-      env: [0xd6efff, 0xfff0e8, 0x7a9cbc, 0.95], bloom: 0.55, exposure: 1.02, fezaLight: 0, sat: 1.06, vig: 0.2, moss: [0xc7e4f4, 0], rim: [0xf0faff, 0.22] },
-    zemin: { tA: 0xf4fbff, tB: 0xe6f4fd, tC: 0xffffff, out: 0xbfe0f4, outAmt: 0.55, macro: 0xf8fdff },
+    isik: { fog: [0xc6e3f6, 36, 92], hemiSky: 0xf0faff, hemiGround: 0x8ab0cc, hemi: 0.95, sunColor: 0xfff4e6, sun: 1.9, sunOffset: [-12, 26, 14],
+      env: [0xd6efff, 0xfff0e8, 0x7a9cbc, 0.95], bloom: 0.42, exposure: 0.96, fezaLight: 0, sat: 1.06, vig: 0.2, moss: [0xc7e4f4, 0], rim: [0xf0faff, 0.22] },
+    zemin: { tA: 0xeaf5fc, tB: 0xdcedf9, tC: 0xf6fbff, out: 0x9cc8e6, outAmt: 0.7, macro: 0xf2f9ff },
     minimap: { zemin: '#cfe8f7' },
     harita: { ad: 'Buzdolabı', detay: 'Buz pisti, jöle tepeleri, dondurma kaydırağı', renk: '#9fd6ef', x: 78, y: 34, simge: '🧊' },
     yerlesim, kur,
