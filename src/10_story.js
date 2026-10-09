@@ -429,6 +429,18 @@ const STORY = (() => {
     }
   }
 
+  // sahne bitince modelleri oyunun beklediği hale döndür (boy, eğim)
+  function restoreChars() {
+    const r = charRefs(); if (!r) return;
+    const { H, B, HL } = r;
+    if (H) { H.root.scale.setScalar(CH.fBase || 1); H.root.rotation.z = 0; }
+    if (B) { B.root.scale.setScalar(CH.bBase); }
+    if (HL) {
+      if (typeof HL.pose === 'function') { try { HL.pose(0, { x: HL._S ? HL._S.x : 0, y: 0, z: HL._S ? HL._S.z : 0, face: 0, scale: 1, act: 'bitti', t: 0 }); } catch (e) { /* ignore */ } }
+      const S = HL._S; if (S && S.root) { S.root.scale.setScalar(CH.hBase || 0.88); S.root.rotation.z = 0; if (S.arm) S.arm.rotation.x = 0; }
+    }
+  }
+
   // ───────────────────────── Başlık sahnesi ─────────────────────────
   const TS = { K: null, sugar: null, L: null, t: 0, puffs: null, mug: null, cineOn: false };
   function buildTitle(L, api) {
@@ -602,7 +614,7 @@ const STORY = (() => {
     if (!CINE.on || CINE.wait === 'blow') return;
     const b = CINE.beats[CINE.i];
     if (b && b.noSkip) return;
-    if (CINE.bt < 0.5) return;   // çok hızlı art arda dokunuşlar tek sayılır
+    if (CINE.bt < 1.0) return;   // çok hızlı art arda dokunuşlar tek sayılır (her cümle en az 1 s duyulur)
     const A = A_(); if (A && A.stopVoice) A.stopVoice();
     CINE.bt = CINE.dur;
   }
@@ -647,6 +659,8 @@ const STORY = (() => {
     else overlay(false);
     WH.a = WH.to = 0; WH.hold = 0; WH.then = null;
     restoreNear();
+    if (kind === 'intro') { titlePose(); TS.mug.g.visible = false; }   // başlık karesi yeni oyun yüklenene kadar normal boyda
+    restoreChars();
     if (res) res();
   }
 
@@ -930,14 +944,14 @@ const STORY = (() => {
           if (CINE.wait === 'blow' && END.blowT > 14) blowNow();   // dokunmazsa kendiliğinden üfler
         } },
       { key: 'son_4', min: 3.6, enter() {
-          const dl = END.K.dollop; if (dl) { dl.visible = true; dl.position.set(0.5, 0, 0.45); }
-          camTo(0.75, 1.45, 3.3, 0.6, 0.55, 0.35, 2);
+          const dl = END.K.dollop; if (dl) { dl.visible = true; dl.position.set(0.52, 0, 0.5); dl.scale.setScalar(1.5); burst('sparkle', origin.x + 0.52, 0.3, origin.z + 0.5, { count: 8 }); }
+          camTo(0.1, 1.2, 2.9, 0.75, 0.35, 0.45, 2);
           Object.assign(b, { x: 1.28, z: 0.5, face: -Math.PI / 2, sit: 0, nose: 1, lick: 1, y: 0 });
           Object.assign(f, { x: -0.55, z: 0.1, face: 0.9 });
           f.cheer = true; h.act = 'alkis';
           burst('confetti', origin.x - 0.3, 2.4, origin.z - 0.4, { count: 30 }); sfx('cheer', { vol: 0.6 });
         },
-        tick(u, dt, t) { b.bark = (t % 0.6) < 0.25 ? 0.35 : 0; const dl = END.K.dollop; if (dl) dl.scale.setScalar(Math.max(0.2, 1 - t * 0.2)); } },
+        tick(u, dt, t) { b.bark = (t % 0.6) < 0.25 ? 0.35 : 0; const dl = END.K.dollop; if (dl) dl.scale.setScalar(Math.max(0.3, 1.5 - t * 0.3)); } },
       { key: 'son_5', min: 3.6, enter() {
           Object.assign(h, { x: -0.8, z: 0.45, face: 1.45, act: 'saril' });
           Object.assign(f, { x: -0.25, z: 0.5, face: -1.45, cheer: false });
@@ -947,6 +961,11 @@ const STORY = (() => {
           burst('hearts', origin.x - 0.65, 1.6, origin.z + 0.3, { count: 14 });
         } },
       { min: 10, final: true, enter() {   // jenerik
+          if (!built) { buildSet(); ACT.worldMode = false; white(0, 0.8); }   // "Geç" ile doğrudan buraya gelindiyse
+          if (END.tmpSugar) { disposeTree(END.tmpSugar.im); END.tmpSugar = null; }
+          for (const c of END.K.candles) { c.on = false; c.f.visible = false; }
+          if (END.K.dollop) END.K.dollop.visible = false;
+          setScale(1); CINE.near = 0.5; const bt = ov && ov.querySelector('.st-blow'); if (bt) bt.classList.add('st-hide'); CINE.wait = null;
           credits(0); h.act = 'dans'; f.cheer = true; b.bark = 0; b.sit = 0;
           Object.assign(f, { x: -0.2, z: 0.6, face: 0.2 }); Object.assign(h, { x: -0.9, z: 0.5, face: 0.4 }); Object.assign(b, { x: 0.5, z: 0.75, face: -0.3, y: 0 });
           END.t = 0;
