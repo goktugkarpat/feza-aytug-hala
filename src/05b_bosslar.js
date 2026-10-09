@@ -18,6 +18,21 @@
   }
   const { G, PI, col, hdr, mixc, vgrad, qz, qy, lathe, onLathe, face, heartGeo, star5Geo, strawberry, gloss, profR, act, bump, bph, bpt, hurtSide, preAggro, GOLD } = K;
   const _c = new THREE.Color();
+  // Uykulu göz kapakları: her gözün üstünde gövde renginde yarım küre kapak + ince kirpik çizgisi, ikisi bir 'lids' kemiğinde
+  // (kemik iki gözün merkez çizgisinde; anim rotation.x ile kapar: 0 = gözün yarısı, + = kapanır, − = açılır).
+  function lids(r, bone, c, R, tilt, ex, ey, er, lidCol, lashCol) {
+    const inset = er * 0.3, eu = new THREE.Euler(-tilt, 0, 0), p0 = onSphere(ex, ey, R, inset)[0];
+    const ec = new THREE.Vector3(0, p0[1], p0[2]).applyEuler(eu).add(new THREE.Vector3(...c));
+    r.bone('lids', bone, [0, ec.y, ec.z]);
+    r.on('lids').push(c, [-tilt, 0, 0]);
+    for (const sd of [-1, 1]) {
+      const [p, q] = onSphere(sd * ex, ey, R, inset); r.push(p, q);
+      r.fx(0, 0.6).add(G.hemi(24), lidCol, [0, 0, 0], null, [er * 1.16, er * 1.26, er * 0.78]);
+      r.fx(0, 0.3).add(G.torus(PI, 0.09, 18), lashCol, [0, 0, 0], [PI / 2, 0, 0], [er * 1.13, er * 0.76, er * 0.9]);
+      r.pop();
+    }
+    r.pop().fx(0, 0);
+  }
   const wobK = (s, dt, base) => { s.wobA = damp(s.wobA ?? base, base, 3, dt); return s.wobA; };
 
   // ════════════════ 1. Uykucu Süpürge ════════════════
@@ -102,17 +117,18 @@
     // yüz: gövdenin önünde (uykulu gözler: anim s.eyeK ile yarı kapalı)
     face(r, [0, 1.18, 0.05], 1.22, { bone: 'body', tilt: 0.18, ex: 0.4, ey: 0.16, er: 0.25, iris: '#33407e', skin: mixc(SUP.body, SUP.bodyL, 0.2), browCol: '#2c3366',
       browY: 1.5, mouthY: -0.3, mouthW: 0.3, heartY: 0.85, heartX: 1.05, heartS: 0.28, mouthPivot: true, blushCol: '#ff8fbf' });
+    lids(r, 'body', [0, 1.18, 0.05], 1.22, 0.18, 0.4, 0.16, 0.25, mixc(SUP.body, SUP.bodyD, 0.25), '#2c3366');
     return { height: 2.8, glowC: col('#b7c7ff'), dieHop: 0.12, mat: { rough: 0.35, rim: '#e4ebff', rimK: 0.28, rimP: 2.4 }, portrait: { cx: 0.3, cy: 1.5, cz: 0.3, rad: 1.6, dy: 0.4 } };
   }
   function animSupurge(m, dt, st, s) {
     const B = m.B, ph = bph(st), t = bpt(st), pre = preAggro(s, st, ph, dt);
     const br = Math.sin(s.t * 1.6 + s.ph);
     let sy = 1 + 0.025 * br, sxz = 1 - 0.012 * br, y = 0, rx = 0.02 * br, rz = 0, ry = 0, hY = 0, hX = 0, wX = 0, nX = 0, capR = 0, tipR = 0, cab = 0, cabY = 0, roll = 0;
-    s.eyeK = 0.55 + 0.05 * Math.sin(s.t * 0.7);   // hep uykulu
+    let lidA = 0.45 + 0.08 * Math.sin(s.t * 0.7);   // hep uykulu: kapaklar gözün yarısından aşağıda
     // yürürken tekerler döner, gövde hafif sallanır
     s.roll = (s.roll || 0) + dt * s.mv * 4; roll = s.roll;
     rz += Math.sin(s.t * 6) * 0.02 * s.mv; y += Math.abs(Math.sin(s.t * 6)) * 0.03 * s.mv;
-    const yawn = (k) => { s.mouthO = Math.max(s.mouthO, k); s.eyeK = Math.min(s.eyeK, 1 - 0.85 * k); sy *= 1 + 0.08 * k; rx -= 0.15 * k; capR -= 0.2 * k; };
+    const yawn = (k) => { s.mouthO = Math.max(s.mouthO, k); lidA += 1.0 * k; sy *= 1 + 0.08 * k; rx -= 0.15 * k; capR -= 0.2 * k; };
     switch (ph) {
       case 'roar': {   // giriş: kocaman esneme, gerinme, şapka zıplar
         const k = bump(t, 0.9);
@@ -121,32 +137,32 @@
       }
       case 'suck': {   // vakum: hortum öne döner, başlık Feza'ya bakar, gövde titrer, gözler açık "vıııın!"
         const T0 = 1.3 / 4.8, aim = smooth01(t / 0.2) * (1 - smooth01((t - 0.9) / 0.1)), on = t > T0 && t < 0.9 ? 1 : 0;
-        hY = -0.62 * aim; wX = -0.35 * aim; nX = 0.25 * aim; s.eyeK = lerp(s.eyeK, 1.1, aim); s.browY = 0.03 * aim; s.mouthO = 0.6 * aim;
+        hY = -0.62 * aim; wX = -0.35 * aim; nX = 0.25 * aim; s.eyeK = lerp(s.eyeK, 1.1, aim); lidA = lerp(lidA, -0.7, aim); s.browY = 0.03 * aim; s.mouthO = 0.6 * aim;
         rx = -0.08 * aim; sxz *= 1 + 0.02 * Math.sin(s.t * 50) * on; sy *= 1 + 0.02 * Math.cos(s.t * 47) * on; rz += Math.sin(s.t * 40) * 0.015 * on;
         capR += Math.sin(s.t * 30) * 0.12 * on; tipR += Math.sin(s.t * 25) * 0.4 * on;
         break;
       }
       case 'blow': {   // üfleme: geri yaslanır, yanaklar şişer, başlık havaya kalkar, "puf!"
         const k = smooth01(t / 0.12) * (1 - smooth01((t - 0.55) / 0.2)), puff = bump(t - 0.1, 0.4);
-        sxz *= 1 + 0.08 * puff; sy *= 1 - 0.04 * puff; rx -= 0.18 * k; wX = -0.9 * k; nX = -0.5 * k; hY = -0.35 * k; s.mouthO = puff; s.eyeK = lerp(s.eyeK, 0.9, k);
+        sxz *= 1 + 0.08 * puff; sy *= 1 - 0.04 * puff; rx -= 0.18 * k; wX = -0.9 * k; nX = -0.5 * k; hY = -0.35 * k; s.mouthO = puff; lidA = lerp(lidA, -0.2, k);
         tipR += 0.5 * puff;
         break;
       }
       case 'cable': {   // kablo kırbacı: arkasını döner, kablo havalanır ve yere "şap!"
         const up = smooth01(t / 0.3) * (1 - smooth01((t - 0.36) / 0.08)), slap = bump(t - 0.36, 0.25);
         cab = 0.9 * up - 0.25 * slap; cabY = Math.sin(s.t * 14) * 0.4 * up; rx = 0.1 * up - 0.06 * slap; y += 0.15 * slap;
-        s.eyeK = lerp(s.eyeK, 1, up); s.mouthW = slap;
+        lidA = lerp(lidA, -0.5, up); s.mouthW = slap;
         break;
       }
       case 'nap': {   // horlama: öne eğilir, gözler kapalı, şapka gözüne düşer, gövde horlar gibi şişip iner
         const k = smooth01(s.pT / 0.5), sn = Math.sin(s.pT * 2.4);
-        s.eyeK = lerp(s.eyeK, 0.03, k); rx += 0.12 * k; sy *= 1 + 0.05 * sn * k; sxz *= 1 - 0.02 * sn * k; capR += 0.35 * k; tipR += 0.2 * k + 0.08 * sn;
+        lidA = lerp(lidA, 1.2, k); s.eyeK = lerp(1, 0.35, k); rx += 0.12 * k; sy *= 1 + 0.05 * sn * k; sxz *= 1 - 0.02 * sn * k; capR += 0.35 * k; tipR += 0.2 * k + 0.08 * sn;
         hY += 0.15 * k; wX += 0.1 * k; nX -= 0.1 * k; s.mouthO = Math.max(0, sn) * 0.5 * k; y -= 0.05 * k;
         break;
       }
       case 'summon': {   // toz tavşanlarını çağırır: kalkar-iner, şapka sallanır
         const b = Math.abs(Math.sin(t * PI * 3)), k = smooth01(t / 0.15) * (1 - smooth01((t - 0.85) / 0.15));
-        y += b * 0.25 * k; capR += Math.sin(t * PI * 6) * 0.2 * k; s.eyeK = lerp(s.eyeK, 1, k); s.mouthW = k; wX = -0.5 * k;
+        y += b * 0.25 * k; capR += Math.sin(t * PI * 6) * 0.2 * k; lidA = lerp(lidA, -0.4, k); s.mouthW = k; wX = -0.5 * k;
         break;
       }
       case 'dying': {   // neşelendi: uyandı! gözler kocaman, hortumla el sallar
@@ -157,10 +173,11 @@
     // boşta: arada bir esneme
     const ya = act(s, 'yaT', dt, 5, 9, 1.8, ph === 'idle' && !(st.move > 0.05));
     if (ya >= 0) yawn(bump(ya, 1));
-    if (pre > 0.01) { s.eyeK = lerp(s.eyeK, 0.15, pre); rx += 0.08 * pre; capR += 0.25 * pre; sy *= 1 + 0.03 * Math.sin(s.t * 2.2) * pre; }
-    if (st.hurt > 0 && ph !== 'dying') { const h = st.hurt * st.hurt, sd = hurtSide(s, st); capR -= 0.3 * h; tipR += sd * 0.5 * h; s.eyeK = Math.max(s.eyeK, 1 + 0.3 * h); s.mouthO = Math.max(s.mouthO, h); }
+    if (pre > 0.01) { lidA = lerp(lidA, 1.2, pre); s.eyeK = lerp(s.eyeK, 0.35, pre); rx += 0.08 * pre; capR += 0.25 * pre; sy *= 1 + 0.03 * Math.sin(s.t * 2.2) * pre; }
+    if (st.hurt > 0 && ph !== 'dying') { const h = st.hurt * st.hurt, sd = hurtSide(s, st); capR -= 0.3 * h; tipR += sd * 0.5 * h; s.eyeK = Math.max(s.eyeK, 1 + 0.3 * h); lidA -= 0.9 * h; s.mouthO = Math.max(s.mouthO, h); }
     B.body.position.y += y; B.body.scale.set(sxz, sy, sxz); B.body.rotation.set(rx, ry, rz);
     B.wheelL.rotation.x = roll; B.wheelR.rotation.x = roll;
+    B.lids.rotation.x = clamp(lidA, -0.8, 1.25); if (ph === 'dying') B.lids.scale.setScalar(0.0001);
     B.hose.rotation.set(hX + Math.sin(s.t * 1.3 + s.ph) * 0.04, hY + Math.sin(s.t * 0.9) * 0.05, 0);
     B.wand.rotation.set(wX, 0, 0); B.nozzle.rotation.set(nX, 0, 0);
     B.cap.rotation.set(capR + 0.04 * Math.sin(s.t * 1.6), 0, 0.05 * Math.sin(s.t * 1.1 + s.ph));
@@ -193,8 +210,7 @@
       r.add(G.sphere(12, 8), '#fff6f0', [Math.sin(a) * rr, y, Math.cos(a) * rr], qz(Math.sin(a), 0, Math.cos(a)), [0.11, 0.11, 0.025]);
     }
     // yansıma çizgileri (boyalı parıltı)
-    gloss(r, [-0.62, 1.25, 1.1], [-0.5, 0.1, 0.86], 0.07, 0.42, 1.25, 0);
-    gloss(r, [-0.85, 1.1, 0.95], [-0.67, 0.1, 0.74], 0.04, 0.28, 1.15, 0);
+    gloss(r, [-1.16, 1.25, 0.52], [-0.91, 0.05, 0.41], 0.06, 0.38, 1.15, 0);
     gloss(r, [0.95, 1.3, -0.85], [0.74, 0.1, -0.66], 0.06, 0.35, 1.1, 0);
     // minik ayaklar (yuvarlak siyah lastik)
     for (const sd of [1, -1]) r.on(sd > 0 ? 'footL' : 'footR').fx(0, 0.5).add(G.sphere(18, 12), TEN.handle, [sd * 0.55, 0.1, 0.12], null, [0.3, 0.14, 0.38]);

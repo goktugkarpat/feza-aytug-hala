@@ -93,8 +93,8 @@ const BOSSDAV = (() => {
         break;
       }
       case 'cilekOdul': {
-        add(strawGeo(), mat('cilek'), [0, 0.5, 0], 1.0, [Math.PI, 0, 0]);
-        for (let i = 0; i < 5; i++) { const a = i / 5 * TAU2; add(sph, mat('yaprak'), [Math.sin(a) * 0.2, 0.98, Math.cos(a) * 0.2], [0.1, 0.04, 0.24], [0.3, a, 0]); }
+        add(strawGeo(), mat('cilek'), [0, 0.4, 0], 0.7, [Math.PI, 0, 0]);
+        for (let i = 0; i < 5; i++) { const a = i / 5 * TAU2; add(sph, mat('yaprak'), [Math.sin(a) * 0.14, 0.72, Math.cos(a) * 0.14], [0.07, 0.03, 0.17], [0.3, a, 0]); }
         break;
       }
       default: add(sph, mat('x', { color: '#ffffff' }), null, 0.3);
@@ -591,7 +591,7 @@ const BOSSDAV = (() => {
       // Son an: pasta yoruldu, gülümsemeye hazır. Takım düğmesi dolu ve parlıyor; Feza + Aytuğ Hala el ele zıplayınca neşelenir.
       tired(b, S, dt) {
         const t = b.stT; S.tiredT += dt; b.st.slots = 4;
-        if (typeof HALA !== 'undefined' && HALA && typeof HALA.charge === 'number') HALA.charge = 1;
+        fillTeam();
         if (b.did === 0) { b.did = 1; S.tiredT = 0; S.sayT = 0; A.ftext(b.x, b.height + 0.6, b.z, 'Neredeyse!', 'word'); A.burst('sparkle', b.x, b.height, b.z, { color: '#ffe27a', count: 30 }); }
         if ((S.sayT -= dt) <= 0) { S.sayT = 9; say('pasta_takim', 3); }
         if ((S.glowT = (S.glowT || 0) - dt) <= 0) { S.glowT = 0.5; A.burst('sparkle', b.x + rnd(-1, 1), b.height * rnd(0.4, 1), b.z + rnd(-1, 1), { color: '#ffd6f0', count: 4 }); }
@@ -602,6 +602,11 @@ const BOSSDAV = (() => {
 
   const HINT = { suck: 'ipucu_vakum', blow: 'ipucu_toz', cable: 'ipucu_kablo', lid: 'ipucu_kapak', steam: 'ipucu_buhar', rain: 'ipucu_mercimek',
     snow: 'ipucu_kartopu', slide: 'ipucu_kaydirak', scoop: 'ipucu_top', squirt: 'ipucu_krema', strawrain: 'ipucu_cilek', jump: 'ipucu_zipla' };
+  // Takım düğmesini doldur (HALA.charge; Hala ajanı başka bir yol açtıysa onu da dener, hata oyunu durdurmaz)
+  function fillTeam() {
+    if (typeof HALA === 'undefined' || !HALA) return;
+    try { if (typeof HALA.setCharge === 'function') HALA.setCharge(1); else if (typeof HALA.charge === 'number') HALA.charge = 1; } catch (e) { /* salt okunur */ }
+  }
   const DEFS = { uykucuSupurge: SUP, dudukluTencere: TEN, dondurmaKrali: DON, kocaPasta: PAS };
   const types = () => Object.keys(DEFS);
 
@@ -681,7 +686,8 @@ const BOSSDAV = (() => {
   }
 
   function install(api) {
-    A = api;
+    A = api; const on0 = api.on;   // (getter'lı alanlar canlı kalsın diye kopyalanmaz)
+    A.on = (n, fn) => on0(n, o => { try { fn(o); } catch (e) { console.warn('[BOSSDAV] ' + n, e); } });
     try { warmProps(); } catch (e) { console.warn('[BOSSDAV] warm', e); }
     A.on('boss', o => { if (o && !o.on && DEFS[o.type]) { clearAll(); const b = W.boss; if (b && b.dv) { if (b.st) { b.st.lid = null; b.st.spin = 0; b.st.sleep = 0; } } } });
     A.on('zone', () => { clearAll(); for (const f of W.fests) if (f.ing) putProp(f.ing); W.fests.length = 0; W.boss = null; });

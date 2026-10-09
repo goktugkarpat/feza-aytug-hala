@@ -6715,7 +6715,8 @@ const GAME = (() => {
       BOSSDAV.install({ P, T, get gt() { return gt; }, get hard() { return hard; }, get L() { return L; }, enemies, bossRoom, inRoom, bossSpot, approachSpot,
         bossWalk, bossPhase, bossEnd, bossIdle, bossRoar, bossSummon, pickPhase, bossRing, hurtPlayer, moveXZ, circleFree, isFloor, los, burst, sfx, say,
         hasLine, ftext, shake, fx, remove, removeObj, muzzle, summonAdds, damage, emit, on, telegraphLine, laneLen, emitP, later, heal });
-      for (const id of BOSSDAV.types()) BOSS_AI[id] = BOSSDAV.step;
+      const dav = (b, dt, d, ux, uz) => { try { BOSSDAV.step(b, dt, d, ux, uz); } catch (err) { warnOnce('BOSSDAV.step', err); } };
+      for (const id of BOSSDAV.types()) BOSS_AI[id] = dav;
     } catch (err) { warnOnce('BOSSDAV', err); }
   }
 
