@@ -339,6 +339,7 @@ const BOSSDAV = (() => {
         if (t >= W0 && t < W1) {
           if (b.did === 1) { b.did = 2; A.sfx('whoosh', { x: b.x, z: b.z, pitch: 0.6, vol: 0.9 }); }
           const P = A.P, m = A.muzzle(b);
+          if ((S.vT = (S.vT || 0) - dt) <= 0) { S.vT = 0.55; A.sfx('whoosh', { x: b.x, z: b.z, pitch: rnd(0.55, 0.7), vol: 0.45 }); }   // vıııın (sürekli)
           // içe akan toz ve yıldız parçacıkları
           for (let k = 0; k < 2; k++) { const a = S.aim + rnd(-0.5, 0.5), r = rnd(3, 8); A.emitP(b.x + Math.sin(a) * r, rnd(0.2, 1.4), b.z + Math.cos(a) * r, -Math.sin(a) * r * 1.4, 0.3, -Math.cos(a) * r * 1.4, 0.65, 0.22, 0.05, '#e9f6ff', '#bfe0ff', 0, 0, 0); }
           const px = P.pos.x - b.x, pz = P.pos.z - b.z, pd = Math.hypot(px, pz) || 1;
@@ -677,10 +678,10 @@ const BOSSDAV = (() => {
     }
     const left = (b.hp - amount) / b.maxHp;
     for (let i = 0; i < 2; i++) {
-      if (S.stage === i + 1 && (!S.pending || S.pending === S.stage) && left <= STAGE_AT[i]) { S.pending = i + 2; return Math.max(0, b.hp - Math.round(b.maxHp * STAGE_AT[i])); }
+      if (S.stage === i + 1 && (!S.pending || S.pending === S.stage) && left <= STAGE_AT[i] + 1e-6) { S.pending = i + 2; return Math.max(0, b.hp - Math.round(b.maxHp * STAGE_AT[i])); }
     }
     if (S.pending && S.pending !== S.stage) return 0;
-    if (S.stage === 3 && left <= FINISH_AT) { S.tired = true; return Math.max(0, b.hp - Math.round(b.maxHp * FINISH_AT)); }
+    if (S.stage === 3 && left <= FINISH_AT + 1e-6) { S.tired = true; return Math.max(0, b.hp - Math.round(b.maxHp * FINISH_AT)); }
     void f0;
     return amount;
   }
