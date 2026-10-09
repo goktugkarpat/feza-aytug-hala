@@ -256,6 +256,24 @@ const STORY = (() => {
     KG.add(CYL(8), 0x333333, [IX, 4.0, IZ], null, [0.01, 1.0, 0.01]);
     KG.add(lathe('shade', [[0.05, 0.4], [0.08, 0.38], [0.32, 0.05], [0.34, 0], [0.33, 0.0], [0.07, 0.36]], 32), 0xffc845, [IX, 3.1, IZ]);
     const bulb = new THREE.Mesh(SPHL(), glowMat(0xfff0c0, 2.2)); bulb.scale.setScalar(0.08); bulb.position.set(IX, 3.12, IZ); g.add(bulb); own.push(bulb.material);
+    // pencereden süzülen güneş huzmeleri (yumuşak, toplamalı)
+    const shaftTex = canvasTex(64, 256, (x, w, h) => {
+      const gr = x.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,244,214,0.95)'); gr.addColorStop(0.6, 'rgba(255,236,200,0.35)'); gr.addColorStop(1, 'rgba(255,236,200,0)');
+      x.fillStyle = gr; x.fillRect(0, 0, w, h);
+      const sg = x.createLinearGradient(0, 0, w, 0); sg.addColorStop(0, 'rgba(0,0,0,1)'); sg.addColorStop(0.25, 'rgba(0,0,0,0)'); sg.addColorStop(0.75, 'rgba(0,0,0,0)'); sg.addColorStop(1, 'rgba(0,0,0,1)');
+      x.globalCompositeOperation = 'destination-out'; x.fillStyle = sg; x.fillRect(0, 0, w, h);
+    });
+    const shaftMat = new THREE.MeshBasicMaterial({ map: shaftTex, transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false });
+    own.push(shaftTex, shaftMat);
+    const shafts = [];
+    for (const [x, w, rot] of [[0.1, 0.9, 0.05], [0.95, 0.7, -0.04], [0.55, 1.2, 0.0]]) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, 3.2), shaftMat);
+      m.position.set(x, 2.65 - 1.25, -3.1 + 1.0); m.rotation.set(-0.62, rot, 0); m.renderOrder = 3; g.add(m); shafts.push(m);
+    }
+    // kavanozun üstünde sihirli parıltı
+    const glintMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.6, 1.2, 1.9), transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending });
+    own.push(glintMat);
+    const glint = new THREE.Mesh(SPHL(), glintMat); glint.position.set(SPOT.jar[0], SPOT.jar[1] + 0.16, SPOT.jar[2]); glint.scale.setScalar(0.16); g.add(glint);
     const mk = (kit, mat) => { const m = new THREE.Mesh(kit.build(), mat); m.castShadow = true; m.receiveShadow = true; g.add(m); return m; };
     mk(KM, matte); mk(KG, gloss); mk(KS, satin);
     // ── cam şeker kavanozu ──
@@ -293,13 +311,13 @@ const STORY = (() => {
         candles.push({ f, x, z, on: false, out: 0 });
       }
     }
-    g.traverse(m => { if (m.isMesh && m !== floor && m !== sky && m !== jar && m !== bulb) { m.castShadow = true; m.receiveShadow = true; } });
+    g.traverse(m => { if (m.isMesh && m !== floor && m !== sky && m !== jar && m !== bulb && m !== glint && shafts.indexOf(m) < 0) { m.castShadow = true; m.receiveShadow = true; } });
     let dollop = null;
     if (finished) {   // yere düşen krema (Bilbo yalar)
       dollop = new THREE.Mesh(lathe('dollop', [[0, 0], [0.09, 0], [0.1, 0.02], [0.07, 0.05], [0.075, 0.06], [0.04, 0.09], [0.02, 0.12], [0, 0.13]], 20), new THREE.MeshStandardMaterial({ color: 0xfff6fa, roughness: 0.35 }));
       own.push(dollop.material); dollop.castShadow = true; dollop.visible = false; g.add(dollop);
     }
-    return { g, own, jar, lid, cake, candles, dollop, cakeTop: cakeY + (finished ? 0.57 : 0.25) };
+    return { g, own, jar, lid, cake, candles, dollop, shafts, glint, cakeTop: cakeY + (finished ? 0.57 : 0.25) };
   }
 
   // ───────────────────────── Sihirli şekerler (tek çizim) ─────────────────────────
@@ -352,7 +370,7 @@ const STORY = (() => {
         const k = 1 - Math.exp(-3 * dt);
         P[o] += (tx - P[o]) * k; P[o + 1] += (ty - P[o + 1]) * k; P[o + 2] += (tz - P[o + 2]) * k;
       } else if (m === 4) {   // dağılma: yay çizerek hedefe, giderken küçülür
-        const u = clamp(S.t[i] / 1.6, 0, 1), e = u * u * (3 - 2 * u);
+        const u = clamp(S.t[i] / (S.flyT || 1.6), 0, 1), e = u * u * (3 - 2 * u);
         P[o] = V[o] + (D[o] - V[o]) * e; P[o + 2] = V[o + 2] + (D[o + 2] - V[o + 2]) * e;
         P[o + 1] = V[o + 1] + (D[o + 1] - V[o + 1]) * e + Math.sin(u * Math.PI) * 1.2;
         scale *= 1 - u * 0.7;
@@ -531,6 +549,10 @@ const STORY = (() => {
     poseChars(dt, TS.t);
     puffStep(TS.puffs, dt);
     sugarsStep(TS.sugar, dt, TS.t);
+    const K = TS.K, T = TS.t;
+    if (K.glint) { K.glint.visible = K.lid.visible; K.glint.material.opacity = 0.22 + 0.16 * Math.sin(T * 3.1); K.glint.scale.setScalar(0.15 + 0.03 * Math.sin(T * 2.3)); }
+    for (let i = 0; i < K.shafts.length; i++) K.shafts[i].material.opacity = 0.2 + 0.05 * Math.sin(T * 0.5 + i);
+    if (!CINE.on && (T % 1.7) < dt) burst('sparkle', origin.x + SPOT.jar[0], SPOT.jar[1] + 0.32, origin.z + SPOT.jar[2], { count: 3, color: pick(['#ff8fd8', '#7fe0ff', '#ffe36a', '#b9ff8a']) });
     // P konumu: ışıklar/gölge mutfak ortasını izler
     g.P.pos.set(origin.x + 0.4, 0, origin.z - 0.6);
     return true;
@@ -543,7 +565,7 @@ const STORY = (() => {
     f.x = SPOT.feza[0] - 0.12 * peek; f.lean = 0.06 * peek; f.face = -0.92 + 0.1 * Math.sin(T * 0.4);
     // Bilbo burnu un torbasında, kuyruk sallanır; ara ara un pofu
     b.nose = 0.8 + 0.2 * Math.sin(T * 1.7); b.speed = 0.12;
-    if ((T % 3.1) < dt) puff(TS.puffs, SPOT.bag[0] + 0.12, 0.7, SPOT.bag[1], 1, 0.3, 0.22);
+    if ((T % 2.3) < dt) burst('dust', origin.x + SPOT.bag[0] + 0.1, 0.72, origin.z + SPOT.bag[1], { count: 3 });   // ara ara un tozu
     // Hala şeker serper: kavanozdan birkaç şeker pastaya yağar
     h.act = 'serp'; h.face = -0.12 + 0.05 * Math.sin(T * 0.8);
     sprAt -= dt;
@@ -729,9 +751,16 @@ const STORY = (() => {
           for (let i = 0; i < S.n; i++) { const o = i * 3, d = D[i % D.length]; S.mode[i] = 4; S.t[i] = -(i % 30) * 0.03;
             S.v[o] = S.p[o]; S.v[o + 1] = S.p[o + 1]; S.v[o + 2] = S.p[o + 2];
             S.dest[o] = d[0] + (Math.random() - 0.5); S.dest[o + 1] = d[1] + Math.random() * 0.4; S.dest[o + 2] = d[2] + (Math.random() - 0.5); }
-          sfx('whoosh', { vol: 0.7 }); h.act = 'isaret';
+          S.flyT = 2.6; sfx('whoosh', { vol: 0.7 }); h.act = 'isaret';
         },
-        tick(u, dt, t) { lowCam(0.1, ease(clamp(t / 1.2, 0, 1))); f.face = 2.6; h.face = 2.8; b.face = 2.9; if (t > 2.5) { f.face = 0.3; h.face = 0.4; b.face = -0.3; } } },
+        tick(u, dt, t) {
+          // arkalarından, aşağıdan yukarı: minicik üçlü önde, şekerler devleşmiş mutfağa saçılıyor
+          const k = ease(clamp(t / 1.0, 0, 1));
+          camTo(focus.x + 0.12 - k * 0.04, 0.11 + k * 0.03, focus.z + 0.48 + k * 0.08, focus.x - 0.2, 0.2 + k * 0.5, focus.z - 2.4, 3);
+          f.face = Math.PI - 0.2; h.face = Math.PI + 0.1; b.face = Math.PI - 0.4;
+          if (t > 2.6) { f.face = 0.3; h.face = 0.4; b.face = -0.3; }
+          if ((t % 0.12) < dt) { const i = Math.floor(Math.random() * S.n), o = i * 3; if (S.mode[i] === 4) burst('sparkle', origin.x + S.p[o], S.p[o + 1], origin.z + S.p[o + 2], { count: 2 }); }
+        } },
       { key: 'intro_7', min: 4.2, enter() {
           const M = TS.mug; M.g.visible = true; M.t = 0; M.awake = 0; M.g.position.set(focus.x - 0.42, 0, focus.z + 0.08); M.g.rotation.y = 0.5;
           camTo(focus.x - 0.05, 0.13, focus.z + 0.55, focus.x - 0.25, 0.07, focus.z, 3);
