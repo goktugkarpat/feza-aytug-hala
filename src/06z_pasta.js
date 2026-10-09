@@ -730,7 +730,7 @@
     const orbMesh = O.solo(orbs, 'glow', api); orbMesh.position.set(A.x, 0, A.z); orbMesh.visible = false;
     const lights2 = [0, 1, 2].map(i => api.light(A.x + Math.sin(i * 2.1) * A.r * 0.6, 5, A.z + Math.cos(i * 2.1) * A.r * 0.6 - 1, [0xff9ac8, 0xffe08a, 0x9ae8ff][i], 0, 12, 0.05) - 1);
     // kutlama
-    const st = { phase: 1, t: 0, fin: false, finT: 0, fwT: 0, ph2: 0, ph3: 0 };
+    const st = { phase: 1, t: 0, fin: false, finT: 0, fwT: 0, ph2: 0, ph3: 0, wasDone: !!(typeof GAME !== 'undefined' && GAME.P && GAME.P.bossNese && GAME.P.bossNese.pasta) };
     R.zones.push({ x: A.x, z: A.z, r: A.r, enter: () => O.say('odp_arena', { gap: 3 }) });
     api.anim(dt => {
       st.t += dt;
@@ -738,8 +738,8 @@
       const inArena = b && hyp(b.x - A.x, b.z - A.z) < A.r + 6;
       let frac = 1;
       if (b && inArena && b.maxHp) frac = b.dead ? 0 : b.hp / b.maxHp;
-      const P = GAME.P;
-      if (P && P.bossNese && P.bossNese.pasta) frac = 0;
+      const P = GAME.P, nowDone = !st.wasDone && !!(P && P.bossNese && P.bossNese.pasta);
+      if (nowDone) frac = 0;
       const want = frac <= 0.34 ? 3 : frac <= 0.67 ? 2 : 1;
       if (want > st.phase) {
         st.phase = want;
@@ -757,7 +757,7 @@
         flames.forEach((m, i) => { const f = 1 + Math.sin(st.t * 15 + i) * 0.08; m.scale.set(1.5 * st.ph3 * f, 1.6 * st.ph3 * (1 + (f - 1) * 2), 1.5 * st.ph3 * f); const L0 = LT[m.userData.li]; if (L0) L0.int = 2.6 * st.ph3; });
       }
       // final: Koca Huysuz Pasta neşelendi → şeker ışığı havai fişekleri
-      if (frac <= 0 && !st.fin && (b ? b.dead : P.bossNese && P.bossNese.pasta)) { st.fin = true; st.finT = 0; setTimeout(() => O.say('odp_kutlama', { gap: 0 }), 4200); }
+      if (frac <= 0 && !st.fin && ((b && b.dead) || nowDone)) { st.fin = true; st.finT = 0; setTimeout(() => O.say('odp_kutlama', { gap: 0 }), 4200); }
       if (st.fin) {
         st.finT += dt;
         if ((st.fwT -= dt) <= 0 && st.finT < 90) {

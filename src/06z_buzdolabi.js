@@ -240,7 +240,7 @@ const ODAB = (() => {
           const ex = (R.v[0] - ux) * dt, ez = (R.v[1] - uz) * dt;
           if (Math.abs(ex) + Math.abs(ez) > 1e-4) {
             const bx = P.pos.x, bz = P.pos.z;
-            A().moveXZ(P.pos, ex, ez, 0.42);
+            const ha = A(); if (ha && ha.moveXZ) ha.moveXZ(P.pos, ex, ez, 0.42);
             const got = hyp(P.pos.x - bx, P.pos.z - bz), want = hyp(ex, ez);
             if (got < want * 0.5) { R.v[0] *= 0.3; R.v[1] *= 0.3; }
             if (H && H.root) { H.root.position.x = P.pos.x; H.root.position.z = P.pos.z; }
@@ -1200,7 +1200,7 @@ const ODAB = (() => {
       } });
     } });
   }
-  let ODAB_CHUTE_MAT = null;
+  let ODAB_CHUTE_MAT = null, ICE_PLAIN = null;
   // Kar topu: dokununca buz duvarına yuvarlanır, duvar kırılır, içinden hazine
   function snowball(B, api, R, S) {
     const k = new Kit();
@@ -1300,6 +1300,9 @@ const ODAB = (() => {
     yerlesim, kur,
     // çıkış kapısı (portal) buzlansın: taş kemer → yarı saydam buz blokları, üstünde kar, sarkıtlar
     kurSon(L, api) {
+      // kırılabilir sandık/fıçı/vazolar buzdolabında donmuş görünsün (buz kaplı)
+      if (!ICE_PLAIN) { ICE_PLAIN = rimify(new THREE.MeshStandardMaterial({ color: 0xd2ecff, roughness: 0.08, metalness: 0.05, transparent: true, opacity: 0.88, emissive: new THREE.Color(0x2a5a8a), emissiveIntensity: 0.25 }), 0xf0fcff, 0.9, 2.0); ICE_PLAIN.userData.keep = true; }
+      if (L.group) L.group.traverse(o => { if (o.isInstancedMesh && /^break-/.test(o.name || '')) { o.material = ICE_PLAIN; } });
       const po = L.portalObj; if (!po || !po.obj) return;
       const g = po.obj;
       const arch = g.children.find(o => o.isMesh && o.geometry && o.geometry.attributes.color && !o.material.isShaderMaterial && o.material.vertexColors);
