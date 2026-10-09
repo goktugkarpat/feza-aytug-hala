@@ -2511,7 +2511,7 @@ const { FEZA, ITEMS } = (function () {
         const L = (i, v, k = w) => { P[i] += (v - P[i]) * k; };
         L(C.bY, -0.355 + 0.012 * bob); L(C.bX, 0); L(C.bZ, 0); L(C.bRX, 0.2 + 0.03 * bob); L(C.bRZ, 0);
         L(C.hRX, 0); L(C.hRY, 0); L(C.hRZ, 0);
-        L(C.tLX, -0.8); L(C.tRX, -0.8); L(C.tLZ, 0.85); L(C.tRZ, -0.85); L(C.sL, 1.15 + 0.08 * bob); L(C.sR, 1.15 + 0.08 * bob);
+        L(C.tLX, -0.5); L(C.tRX, -0.5); L(C.tLZ, 1.05); L(C.tRZ, -1.05); L(C.sL, 1.0 + 0.08 * bob); L(C.sR, 1.0 + 0.08 * bob);
         L(C.aLX, -1.0, arms); L(C.aRX, -1.0, arms); L(C.aLZ, 0.22, arms); L(C.aRZ, -0.22, arms); L(C.aLY, 0, arms); L(C.aRY, 0, arms);
         L(C.fL, -0.5, arms); L(C.fR, -0.5, arms); L(C.kRX, -0.22 - 0.03 * bob); L(C.cRX, 0.05);
         face.happy = Math.max(face.happy, w * (0.5 + 0.5 * (bob > 0.3 ? 1 : 0))); face.grin = Math.max(face.grin, w); face.blush = Math.max(face.blush, 0.6 * w);
