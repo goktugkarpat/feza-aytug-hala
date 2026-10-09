@@ -152,6 +152,10 @@ const HIS = (() => {
     D.lvlN = D.lvl.querySelectorAll('.his-ln b, .his-ln i');
     D.card = el('div', 'his-card', hud, '<div class="his-rays"></div><div class="his-cico"></div><div class="his-cstars"></div>');
     D.cardIco = D.card.querySelector('.his-cico'); D.cardStars = D.card.querySelector('.his-cstars');
+    // Ekran konfeti yağmuru (seviye, boss neşelenince)
+    D.rain = el('div', 'his-rain', hud);
+    const RC = ['#ff5c9a', '#ffd23f', '#4fd0ff', '#78f060', '#b58cff', '#ff9a3c'];
+    for (let i = 0; i < 40; i++) { const p = el('i', i % 5 === 0 ? 'c' : '', D.rain); p.style.cssText = `left:${(i * 37 % 100) + Math.random() * 2}%;background:${RC[i % 6]};animation-delay:${(Math.random() * 0.8).toFixed(2)}s;--r:${(Math.random() * 720 - 360).toFixed(0)}deg;--x:${(Math.random() * 120 - 60).toFixed(0)}px;animation-duration:${(1.8 + Math.random() * 1.2).toFixed(2)}s`; }
     // Uçan şekerler (havuz)
     D.fly = []; const flyRoot = el('div', 'his-flyroot', hud);
     for (let i = 0; i < 16; i++) { const f = el('div', 'his-fly', flyRoot, ''); D.fly.push({ el: f, on: false, t: 0, dur: 0.6, x0: 0, y0: 0, x1: 0, y1: 0, kind: '', delay: 0 }); }
@@ -337,20 +341,21 @@ const HIS = (() => {
     nese: ['his_nese_1', 'his_nese_2', 'his_nese_3', 'his_nese_4', 'his_nese_5', 'his_nese_6'] };
   function praise(kind) {
     const G = g(); if (!G || G.boss && G.boss.aggro && !G.boss.dead) return false;
-    if (S.t - S.lastPraise < 18 || speaking()) return false;
+    if (S.t - S.lastPraise < 22 || speaking()) return false;
     const list = PRAISE[kind]; let k, n = 0;
     do { k = pick(list); } while (k === S.praiseKey && ++n < 6);
     if (say(k, 0)) { S.lastPraise = S.t; S.praiseKey = k; return true; }
     return false;
   }
 
+  function rain() { if (D.rain) { restart(D.rain, 'on'); clearTimeout(S.rainT); S.rainT = setTimeout(() => D.rain.classList.remove('on'), 3400); } }
   // ── Neşelenme ──
   function onHappy(e) {
     const y = 1.2;
     burst('hearts', e.x, y + 0.4, e.z, { count: e.boss ? 30 : e.elite ? 14 : 6 });
     burst('confetti', e.x, y + 0.8, e.z, { count: e.boss ? 60 : e.elite ? 30 : 14 });
     sfx('heart', { vol: 0.5, x: e.x, z: e.z });
-    if (e.boss) { setTimeout(() => addStarCandy(2), 1800); return; }
+    if (e.boss) { rain(); setTimeout(() => addStarCandy(2), 1800); return; }
     if (e.elite && Math.random() < 0.5) setTimeout(() => addStarCandy(1), 700);
     if (Math.random() < 0.18) praise('nese');
   }
@@ -382,8 +387,8 @@ const HIS = (() => {
     if (!S.lvlQ.length || !G || G.state !== 'play') return;
     const c = S.card = S.lvlQ.shift();
     if (c.kind === 'lvl') {
-      D.lvlN.forEach(n => { n.textContent = c.n; });
-      restart(D.lvl, 'on'); S.cardT = 2.1;
+      // (09_ui kendi "Seviye N!" yıldızını gösterir: burada yalnız ekran konfetisi + yıldız şeker; sonraki kart 2 s bekler)
+      S.cardT = 2.0; rain();
       if (G.P && G.P.pos) burst('confetti', G.P.pos.x, 2.2, G.P.pos.z, { count: 50 });
       sfx('cheer', { vol: 0.6 });
     } else {
