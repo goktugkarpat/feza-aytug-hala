@@ -3,7 +3,7 @@
    Biçim: src/SPEC.md › "Dev Ev API" › Bölüm kaydı. */
 BOLUM.define('pasta', {
   ad: 'Pasta Krallığı',
-  taban: 'bathroom',
+  taban: 'dairy',
   size: 96, side: 2,
   areas: BOLUM.UC_ALAN('Çilek Ormanı', 'Krema Nehri', 'Kurabiye Köprüleri'),   // 3 alt alan (her biri 2 oda) + boss arenası
   muzik: 'kale',
@@ -12,5 +12,5 @@ BOLUM.define('pasta', {
   zemin: { tA: 0xfff0f4, tB: 0xffe0ea, tC: 0xfff6e0, out: 0xd4849c, outAmt: 0.6, macro: 0xfff4f8 },
   minimap: { zemin: '#f6c8d8' },
   harita: { ad: 'Pasta Krallığı', detay: 'Krema nehirleri ve çilek ormanı', renk: '#f4a8c4', x: 76, y: 70, simge: '🎂' },
-  kur(L, api) { BOLUM.yerTutucu(L, api, { kutu: [0xfff0f4, 0xf6b8cc, 0xffe4b8, 0xe88aa8], kapi: 0xfff4f8, isik: 0xffe0ec }); },
+  kurX(L, api) { BOLUM.yerTutucu(L, api, { kutu: [0xfff0f4, 0xf6b8cc, 0xffe4b8, 0xe88aa8], kapi: 0xfff4f8, isik: 0xffe0ec }); },
 });
