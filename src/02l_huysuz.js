@@ -16,6 +16,16 @@ if (typeof AUD !== 'undefined' && AUD && AUD.LINES) Object.assign(AUD.LINES, {
   ilk_sekerleme: 'Şekerleme askerleri geliyor! Kâğıt şapkalarına bak, ne tatlılar!',
   ilk_cilekcik: 'Vay, minik çilekler! Top gibi yuvarlanıyorlar.',
   ilk_kremaTopu: 'Krema topları! Krema fışkırtıyorlar, yana kaç Feza!',
+  // 3. tur: yeni huysuzlar
+  ilk_kalemcik: 'Bak bak, boya kalemi! Yere çizgi çizerek koşuyor.',
+  ilk_yastikcik: 'Pofuduk yastıkçık! Neşelenince ikiye bölünür, dikkat et.',
+  ilk_minikYastik: 'Vay, iki minik yastık oldu! Onları da güldür.',
+  ilk_catalcik: 'Çatalcık geliyor! Üç minik ayağıyla tıpış tıpış koşuyor.',
+  ilk_cayBardagi: 'Bak, çay bardağı! Buhar halkası atıyor, yana kaç.',
+  ilk_penguenSise: 'Penguen şişe! Karnının üstünde kayarak geliyor.',
+  ilk_bezelyeler: 'Bak bak, bezelye takımı! Üçü birlikte yuvarlanıyor.',
+  ilk_kurabiyeAdam: 'Kurabiye adam kaçıp saklanıyor! Hadi onu yakala Feza!',
+  ilk_marshmallow: 'Marshmallow zıplıyor! Yere inince halkadan uzak dur.',
   // Nadir (gizli) huysuzlar
   ilk_gokkusagiCorap: 'Bak bak, gökkuşağı çorap! Çok nadir, hemen yakala!',
   ilk_altinKasik: 'Vay, altın kaşık! Yakalarsan altın şeker kazanırız!',
