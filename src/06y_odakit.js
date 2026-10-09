@@ -235,15 +235,36 @@ const ODAKIT = (() => {
   }
 
   // ── sallanan dev lifler (halı ormanı / un tozu otları): tek InstancedMesh ──
+  // ilmek (yarım halka yay): örgü halının ipliği. rx yarı genişlik, ry boy, tube kalınlık
+  function archGeo(rx, ry, tube, rings = 10, sides = 4) {
+    const pos = [], nor = [], uv = [], idx = [];
+    for (let i = 0; i <= rings; i++) {
+      const t = i / rings * Math.PI, cx = Math.cos(t) * rx, cy = Math.sin(t) * ry;
+      let tx = -Math.sin(t) * rx, ty = Math.cos(t) * ry; const tl = Math.hypot(tx, ty); tx /= tl; ty /= tl;
+      const nx = ty, ny = -tx;   // yayın dışa bakan normali (düzlem içinde)
+      for (let k = 0; k < sides; k++) {
+        const a = k / sides * TAU, ca = Math.cos(a), sa = Math.sin(a);
+        const ox = nx * ca, oy = ny * ca, oz = sa;
+        pos.push(cx + ox * tube, Math.max(0, cy + oy * tube), oz * tube); nor.push(ox, oy, oz); uv.push(k / sides, i / rings);
+      }
+    }
+    for (let i = 0; i < rings; i++) for (let k = 0; k < sides; k++) {
+      const a = i * sides + k, b = i * sides + (k + 1) % sides, c = a + sides, d = b + sides;
+      idx.push(a, c, b, b, c, d);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+    return g;
+  }
   function tuftGeo(kind) {
     const key = 'tuft-' + kind; if (GEOC[key]) return GEOC[key];
-    const k = new Kit(), cyl = G.cyl(0.62, 1, 6);
-    const n = 5;
-    for (let s = 0; s < n; s++) {
-      const a = s * TAU / n + 0.4 * Math.sin(s * 3.7), lean = 0.14 + 0.14 * ((s * 7) % 3) / 2, hh = 0.74 + 0.26 * ((s * 5) % 4) / 3;
-      const px = Math.sin(a) * 0.1, pz = Math.cos(a) * 0.1;
-      const col = (x, y) => { const t = Math.min(1, Math.max(0, y)); const v = 0.42 + 0.66 * t * t * (3 - 2 * t); return new THREE.Color(v, v, v); };
-      k.add(cyl, col, [px + Math.sin(a) * lean * 0.5 * hh, hh * 0.5, pz + Math.cos(a) * lean * 0.5 * hh], [Math.cos(a) * lean, 0, -Math.sin(a) * lean], [kind === 'loop' ? 0.08 : 0.105, hh, kind === 'loop' ? 0.08 : 0.105]);
+    const k = new Kit(), loop = kind === 'loop';
+    const col = (x, y) => { const t = Math.min(1, Math.max(0, y)); const v = 0.45 + 0.62 * t * t * (3 - 2 * t); return new THREE.Color(v, v, v); };
+    const arcs = loop ? [[0, 0, 0, 1]] : [[0, 0, 0, 1], [1.05, 0.06, 0.05, 0.86], [2.1, -0.05, 0.07, 0.93]];
+    for (const [yaw, ox, oz, hh] of arcs) {
+      const g = archGeo(0.26, hh, 0.085, loop ? 7 : 9, 4);
+      k.add(g, col, [ox, 0, oz], [0, yaw, 0]);
     }
     return (GEOC[key] = keepG(k.build()));
   }
@@ -338,6 +359,7 @@ const ODAKIT = (() => {
       ride(o) { if (ride) return false; ride = Object.assign({ s: 0, len: 0, segs: [] }, o); let L0 = 0; for (let i = 1; i < o.pts.length; i++) { const a = o.pts[i - 1], b = o.pts[i], l = Math.hypot(b[0] - a[0], b[1] - a[1]); ride.segs.push({ a, b, l, at: L0 }); L0 += l; } ride.len = L0; return true; },
       get riding() { return !!ride; },
     };
+    K_.last = T;   // (QA: son kurulan bölümün oyuncakları)
     api.anim((dt, hx, hz) => {
       t += dt;
       const g = G_(), P = g && g.P;
@@ -372,6 +394,7 @@ const ODAKIT = (() => {
     return T;
   }
 
-  return { tex, carpetColor, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
-    say, sfx, burst, ring, sugar, playing, heroY, sticker, toys, hash, sm, keepG, GEOC };
+  const K_ = { tex, carpetColor, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
+    say, sfx, burst, ring, sugar, playing, heroY, sticker, toys, hash, sm, keepG, GEOC, last: null };
+  return K_;
 })();

@@ -185,14 +185,14 @@ const OTURMA = (() => {
     }
     const items = [], fringe = [];
     for (const q of rugs) {
-      for (let z = q.z0 + 0.3; z < q.z1 - 0.2; z += 0.8) for (let x = q.x0 + 0.3; x < q.x1 - 0.2; x += 0.8) {
+      for (let z = q.z0 + 0.3; z < q.z1 - 0.2; z += 0.72) for (let x = q.x0 + 0.3; x < q.x1 - 0.2; x += 0.72) {
         const px = x + (rnd() - 0.5) * 0.5, pz = z + (rnd() - 0.5) * 0.5;
         if (K.isF(L, px, pz)) continue;
         const fd = K.floorDist(L, px, pz, 8);
         if (fd < 0.5 || fd > 8) continue;
-        let h = 0.5 + Math.min(1, fd / 2.5) * (0.85 + rnd() * 0.75);
+        let h = 0.45 + Math.min(1, fd / 2.5) * (0.6 + rnd() * 0.6);
         const fN = K.floorNorth(L, px, pz, 6); if (fN < 99) h = Math.min(h, 0.2 + fN * 0.24);
-        items.push({ x: px, z: pz, h, s: 1.9 + rnd() * 0.7, c: K.carpetColor(px, pz).multiplyScalar(1.04), yaw: rnd() * TAU });
+        items.push({ x: px, z: pz, h, s: 1.5 + rnd() * 0.5, c: K.carpetColor(px, pz).multiplyScalar(1.04), yaw: rnd() * TAU });
       }
       for (const zz of [q.z0, q.z1]) for (let x = q.x0 + 0.2; x < q.x1; x += 0.42) {   // saçaklar (kısa kenarlar: kuzey/güney)
         if (K.isF(L, x, zz)) continue;
@@ -231,9 +231,9 @@ const OTURMA = (() => {
     const bridge = (g, ci) => {
       if (!g) return;
       const [dx, dz] = gateDir(L, g), yaw = Math.atan2(-dz, dx);
-      api.put(bookGeo(ci), g.x, 0.13, g.z, 0.26, 6.2, 4.6, null, yaw, 0, Math.PI / 2);
-      api.put(G.box(), g.x, 0.27, g.z, 5.4, 0.02, 3.6, 0xfff6e6, yaw);   // kapak üstü açık renk desen
-      for (let i = 0; i < 4; i++) api.put(G.sphere(10, 6), [0xf6d04d, 0xf49ac0, 0x7fc8f0, 0x8fd18a][i], g.x + Math.cos(yaw) * (i - 1.5) * 1.2, 0.29, g.z - Math.sin(yaw) * (i - 1.5) * 1.2, 0.35, 0.03, 0.35);
+      api.put(bookGeo(ci), g.x, 0.17, g.z, 0.34, 6.2, 4.8, null, yaw, 0, Math.PI / 2);
+      api.put(G.box(), g.x, 0.35, g.z, 3.2, 0.02, 2.2, 0xfff3d8, yaw);   // kapakta başlık etiketi
+      for (let i = 0; i < 4; i++) api.put(G.sphere(10, 6), [0xf6d04d, 0xf49ac0, 0x7fc8f0, 0x8fd18a][i], g.x + Math.cos(yaw) * (i - 1.5) * 1.2, 0.37, g.z - Math.sin(yaw) * (i - 1.5) * 1.2, 0.35, 0.03, 0.35);
     };
     if (a2) bridge(a2.gate, 0); if (a3) bridge(a3.gate, 2);
     // ── Alan 2 · Kitaplık Dağı ──
@@ -284,7 +284,7 @@ const OTURMA = (() => {
       api.box(cx, sy, sz, sw + 0.4, sh + 0.4, 0.35, 0x111215);
       tv = tvScreen(api, cx, sy, sz + 0.18, sw, sh);
       // kumanda: dolabın önünde, odada; dev kırmızı tuşa basınca TV açılır
-      const q = K.inRoom(L, api, rm, Math.PI, 0.5, 1.6);
+      const q = K.inRoom(L, api, rm, Math.PI, 0.72, 1.6);
       api.put(remoteGeo(), q.x, 0, q.z, 1, 1, 1, null, 0.15);
       const pw = K.mesh(api, powerGeo(), q.x + Math.sin(0.15) * -0.95, 0.46, q.z - Math.cos(0.15) * 0.95, 0.35, false);
       api.solid(q.x, q.z + 0.8, 0.7); api.solid(q.x, q.z - 0.8, 0.7);
@@ -330,16 +330,16 @@ const OTURMA = (() => {
       const tx = Math.cos(s0.a), tz = -Math.sin(s0.a), yaw = Math.atan2(tx, tz);   // kenara teğet yön (devrilme yönü)
       const books = [];
       for (let i = 0; i < 7; i++) {
-        const bx = s0.x + tx * (i - 3) * 1.15, bz = s0.z + tz * (i - 3) * 1.15;
+        const bx = s0.x + tx * (i - 3) * 0.95, bz = s0.z + tz * (i - 3) * 0.95;
         if (K.isF(L, bx, bz)) continue;
         const g = new THREE.Group(); g.position.set(bx, 0, bz); g.rotation.order = 'YXZ'; g.rotation.set(0, yaw, 0);
-        const m = new THREE.Mesh(bookGeo(i + 3), K.vmat(0.5)); m.scale.set(0.5, 3.3, 2.6); m.rotation.y = Math.PI / 2; m.position.set(0, 1.65, -0.25); m.castShadow = true; m.receiveShadow = true;
+        const m = new THREE.Mesh(bookGeo(i + 3), K.vmat(0.5)); m.scale.set(0.42, 2.5, 1.9); m.rotation.y = Math.PI / 2; m.position.set(0, 1.25, -0.21); m.castShadow = true; m.receiveShadow = true;
         g.add(m); api.add(g); books.push({ g, a: 0, v: 0, go: -1 });
       }
       if (!books.length) return;
       const jar = new THREE.Group(); const last = books[books.length - 1];
       if (last) {
-        jar.position.set(last.g.position.x + tx * 2.2, 0, last.g.position.z + tz * 2.2);
+        jar.position.set(last.g.position.x + tx * 1.9, 0, last.g.position.z + tz * 1.9);
         const k = new Kit(); k.add(G.cyl(1, 1, 24), 0xdff3ff, [0, 1, 0], null, [0.85, 2, 0.85]); k.add(G.cyl(1, 1, 24), 0xf06a9a, [0, 2.1, 0], null, [0.9, 0.25, 0.9]);
         for (let i = 0; i < 9; i++) k.add(G.sphere(8, 6), [0xff6b9a, 0x6bc4ff, 0xffd34a, 0x7ee08a][i % 4], [Math.sin(i * 2.3) * 0.45, 0.4 + (i % 4) * 0.35, Math.cos(i * 2.3) * 0.45], null, 0.22);
         const jm = new THREE.Mesh(k.build(), K.vmat(0.25)); jm.castShadow = true; jar.add(jm); api.add(jar); api.dispose(jm.geometry);
@@ -354,7 +354,7 @@ const OTURMA = (() => {
           books.forEach((b, i) => {
             if (run < i * 0.28) return;
             if (b.go < 0) { b.go = 1; K.sfx('bonk', { x: b.g.position.x, z: b.g.position.z, pitch: 1 + i * 0.08, vol: 0.6 }); K.burst('dust', b.g.position.x, 0.3, b.g.position.z); }
-            const target = i === books.length - 1 ? Math.PI / 2 : 0.42;
+            const target = i === books.length - 1 ? Math.PI / 2 : 0.4;
             b.v += dt * 9; b.a = Math.min(target, b.a + b.v * dt * 2.2); b.g.rotation.set(b.a, yaw, 0);
           });
           if (jarT < 0 && run > books.length * 0.28 + 0.3) {
