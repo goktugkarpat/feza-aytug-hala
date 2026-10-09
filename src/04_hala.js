@@ -302,7 +302,7 @@ const HALA = (() => {
     const g = paramGeo((u, v, o) => {
       const d = bunDir(AH(u) * v, u * TAU), th = thOf(d), ph = phOf(d);
       surfAt(d, hairThick(th, ph) * (1 - sstep(0.8, 1.0, v)) + 0.0013 + 0.004 * (1 - sstep(0.9, 1.0, v)), o);
-    }, 96, 44, HC, true);
+    }, 80, 36, HC, true);
     const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 14, uv.getY(i) * 3);
     const R = mulberry32(5);
     const ns = []; for (let i = 0; i < 9; i++) ns.push([R() * TAU, 3 + R() * 9, R() * 0.5]);
@@ -323,13 +323,13 @@ const HALA = (() => {
       const lift = (hairThick(th, ph) + 0.001) * sstep(0.0, 0.3, f) - 0.002 + (lift0 * Math.sin(Math.min(1, f * 1.25) * Math.PI * 0.85) + 0.006 * Math.sin(f * Math.PI)) * sstep(0.05, 0.4, f);
       P.push(surfAt(d, lift, v3())); U.push(headNormal(th, ph, v3()));
     }
-    const pts = curvePts(P, 22), ups = pts.map((p, i) => U[Math.min(U.length - 1, Math.round(i / 22 * N))]);
+    const pts = curvePts(P, 16), ups = pts.map((p, i) => U[Math.min(U.length - 1, Math.round(i / 16 * N))]);
     return sweep(pts, ups, t => w * (0.3 + 0.7 * sstep(0, 0.25, t)) * (1 - 0.45 * t), t => 0.0085 * (0.25 + 0.75 * sstep(0, 0.2, t)) * (1 - 0.4 * t), 6, 0.25,
       (t, c) => hairTone(tone + 0.25 * Math.sin(t * 9 + phase), c, 0.8), null);
   }
   // kıvrık tutam: P0'dan P1'e sarmal (yaylı: aFlex uca doğru artar)
   function curlLock(P0, P1, out, r0, turns, w, tone) {
-    const ax = v3().subVectors(P1, P0), t1 = v3().crossVectors(ax, out).normalize(), o1 = out.clone().normalize(), N = 56, P = [], U = [];
+    const ax = v3().subVectors(P1, P0), t1 = v3().crossVectors(ax, out).normalize(), o1 = out.clone().normalize(), N = 40, P = [], U = [];
     for (let i = 0; i <= N; i++) {
       const f = i / N, a = f * turns * TAU, r = r0 * (0.35 + 0.65 * sstep(0, 0.25, f)) * (1 - 0.35 * f);
       P.push(P0.clone().addScaledVector(ax, f).addScaledVector(o1, Math.cos(a) * r).addScaledVector(t1, Math.sin(a) * r));
@@ -356,7 +356,7 @@ const HALA = (() => {
       k.add(G.torus(TAU, 0.32, 36), CO, [S.x, S.y, S.z], q, [0.05, 0.05, 0.05]);
       for (let i = 0; i < 14; i++) {
         const a = i / 14 * TAU, p = S.clone().addScaledVector(BE1, Math.cos(a) * 0.053).addScaledVector(BE2, Math.sin(a) * 0.053);
-        k.add(G.sphere(10, 7), i & 1 ? 0xf05a50 : 0xd9443b, [p.x, p.y, p.z], q, [0.017, 0.017, 0.02]);
+        k.add(G.sphere(8, 6), i & 1 ? 0xf05a50 : 0xd9443b, [p.x, p.y, p.z], q, [0.017, 0.017, 0.02]);
       }
     }), null, 0.1));
     // topuzdan kaçan iki kıvrık tutam
@@ -469,7 +469,7 @@ const HALA = (() => {
     return o.crossVectors(c.sub(d), a.sub(b)).normalize(); };
   function torsoGeo() {
     const Y0 = 0.785, Y1 = 1.535;
-    const g = paramGeo((u, v, o) => torsoPt(u * TAU - Math.PI, lerp(Y0, Y1, v), o), 80, 56, v3(0, 1.15, 0), true);
+    const g = paramGeo((u, v, o) => torsoPt(u * TAU - Math.PI, lerp(Y0, Y1, v), o), 64, 46, v3(0, 1.15, 0), true);
     const uv = g.attributes.uv, P = g.attributes.position;
     for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * TAU * 0.17 / TILE, P.getY(i) / TILE);
     return g;
@@ -1322,6 +1322,8 @@ const HALA = (() => {
     for (let i = S.timers.length - 1; i >= 0; i--) { const tm = S.timers[i]; tm[0] -= dt; if (tm[0] <= 0) { S.timers.splice(i, 1); try { tm[1](); } catch (e) { /* yut */ } } }
     S.look = { x: P.pos.x, z: P.pos.z };
     S.y = 0;
+    // Feza'yı havada bıraktıysak (yarıda kesilen zıplama/fırlatma) yere indir
+    if (S.liftY && !(S.act && (S.act.k === 'team' || S.act.k === 'boost'))) { P.pos.y = 0; if (ctx.H) ctx.H.root.position.y = 0; S.liftY = false; }
     const dF = onScreenDist(P);
     if (S.act) runAct(S.act, dt, ctx);
     else if (ctx.title) {
@@ -1498,7 +1500,7 @@ const HALA = (() => {
           if (a.ph === 1 && a.phT > 0.2) { next(); A.sfx('bounce', { vol: 0.6, pitch: 1.1 }); }
           else if (a.ph === 2) {
             const u = clamp(a.phT / a.air, 0, 1), h = 1.15 * Math.sin(u * Math.PI);
-            S.y = h; P.pos.y = h * 0.95; if (ctx.H) ctx.H.root.position.y = P.pos.y;
+            S.y = h; P.pos.y = h * 0.95; S.liftY = true; if (ctx.H) ctx.H.root.position.y = P.pos.y;
             if (!a.blasted && u >= 0.5) {
               a.blasted = true;
               const n = a.blast ? a.blast(P.pos.x, P.pos.z, 8) : 0;
@@ -1538,7 +1540,7 @@ const HALA = (() => {
           if (a.phT > 0.38) { next(); A.sfx('whoosh', { vol: 0.6, pitch: 0.9 }); A.burst('star', P.pos.x, 0.6, P.pos.z, { count: 10, color: '#fff0b3' }); A.shield(a.dur + 0.6); }
         } else if (a.ph === 2) {
           const u = clamp(a.phT / a.dur, 0, 1), tx = a.x ?? a.fx0, tz = a.z ?? a.fz0;
-          P.pos.x = lerp(a.fx0, tx, easeIO(u)); P.pos.z = lerp(a.fz0, tz, easeIO(u)); P.pos.y = a.h * 4 * u * (1 - u);
+          P.pos.x = lerp(a.fx0, tx, easeIO(u)); P.pos.z = lerp(a.fz0, tz, easeIO(u)); P.pos.y = a.h * 4 * u * (1 - u); S.liftY = true;
           if (ctx.H) { ctx.H.root.position.copy(P.pos); fezaUp(ctx.H, Math.sin(u * Math.PI) * 0.8 + 0.2); }
           if (Math.hypot(tx - a.fx0, tz - a.fz0) > 0.5) P.face = Math.atan2(tx - a.fx0, tz - a.fz0);
           faceTo(P.pos.x, P.pos.z, dt, 8);
@@ -1655,6 +1657,7 @@ const HALA = (() => {
     get act_() { return S.act && S.act.k; },
   };
 
+  Object.defineProperty(api, 'busy', { get: () => (S.act ? S.act.k : null), enumerable: true });   // şu anki eylem (yoksa null)
   return Object.assign(api, { create, update, onFezaHurt, onFezaLow, onFezaDown, onCheer, teamReady, teamMove, pointTo, say, boost, dance, cheer,
-    get busy() { return S.act ? S.act.k : null; }, _S: S, _M: M, _qa });
+    _S: S, _M: M, _qa });
 })();
