@@ -103,6 +103,17 @@ Hala hasar almaz, düşmanlar onu hedeflemez. UI: sağ altta saldırı düğmesi
 `STORY.lostItem({id,zone})` · `STORY.locked({index})` · `STORY.station(st)` · `STORY.ending()` (true dönerse eski 'son' cümlesi söylenmez) ·
 `STORY.buildTitle(L, api)` (tanımlanırsa başlık ekranı sahnesi bölüm kur()'u yerine bunu kurar; başlık = bölge 0 masa). Sesler: `AUD.LINES`
 (02_audio.js, `/*SESLER*/` JSON) + `python3 gen_voice.py` (tr-TR-EmelNeural, sessizlik kırpılır). Kayıt yoksa yer tutucu kısa yazı (toast).
+Başlık = normal boy mutfak (STORY kurar, `L._storyTitle`; oynanamaz → yeni oyunda masa yeniden kurulur). Ek kancalar:
+`STORY.titleTick(dt)` (07 titleUpdate: başlıkta Feza/Bilbo/Hala'yı STORY oynatır), `STORY.playIntro()` (09 startGame, yeni oyun: ~35 s
+giriş sinematiği, Promise; dokun = sonraki an, "Geç" = sona; `?girissiz` ya da `startGame(..., {noIntro:true})` atlar; `__qa.start` atlar,
+`__qa.intro()` oynatır), `STORY.ownsWorld(dt)` (07 update, state 'end': final sahnesi dünyayı durdurur), `STORY.camera(dt, camera)`
+(09 step, UI kamerasından sonra: başlık/sinematik/hikâye anı kamerası), `STORY.busy()`, `STORY.endingDone` (09 victory: final bitince
+`playAgain()` → masa + Şeker Yağmuru turu), `STORY.logo(el)` (başlık logosu). QA: `GAME._victory()` finali başlatır.
+Aytuğ Hala için isteğe bağlı: `HALA.pose(dt, {x, y, z, face, scale, act, t})` — sinematikte HALA.update yerine çağrılır;
+act: 'idle' | 'serp' (şeker serpme) | 'yuru' | 'saskin' | 'isaret' | 'alkis' | 'dans' | 'saril' | 'mum' | 'bitti' (sahne bitti, boy 1).
+`HALA.celebrate(kind, s)` ('dans' malzeme kutlaması, 'alkis' kayıp eşya). Yoksa STORY yer tutucu modeli `HALA._S.root/arm` ile konumlar.
+Seslendirme: her ajan cümlelerini `src/02l_<ad>.js` içinde `Object.assign(AUD.LINES, {...})` ile ekler; `gen_voice.py` bunları da okur
+(`--liste` yalnız listeler, ağ gerekmez).
 
 ### Kayda giren durum (GAME.P, `snapshot().koleksiyon`)
 `P.malzemeler {malzeme: bölümId}`, `P.bossNese {bölümId: true}`, `P.kayipEsyalar {bölümId: eşyaId}`, `P.cikartmalar {id: {tur:'huysuz'|'boss'|'gizli', bolum}}`
