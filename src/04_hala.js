@@ -1141,9 +1141,15 @@ const HALA = (() => {
     if (S.act && S.act.end) { try { S.act.end(S.act, true); } catch (e) { /* yut */ } }
     S.act = Object.assign({ k, t: 0, ph: 0, phT: 0, look: false }, o);
     if (S.held) S.held.visible = false;
+    if (SHIELD) SHIELD.visible = false;
     return S.act;
   }
-  function endAct() { const a = S.act; S.act = null; if (a && a.end) { try { a.end(a, false); } catch (e) { /* yut */ } } }
+  function endAct() {
+    const a = S.act; S.act = null;
+    if (S.held) S.held.visible = false;
+    if (SHIELD) SHIELD.visible = false;
+    if (a && a.end) { try { a.end(a, false); } catch (e) { /* yut */ } }
+  }
   function actPose(a, P, Q, t, dt) {
     const u = a.dur ? clamp(a.t / a.dur, 0, 1) : 0;
     switch (a.k) {
@@ -1469,7 +1475,22 @@ const HALA = (() => {
           if (d < 0.12 || a.phT > 2.2) { S.x = lx; S.z = lz; next(); }
         } else {
           S.vel = 0; faceTo(fz.x, fz.z, dt, 12);
-          if (H && H.bones) { const hb = H.bones.foreL && H.bones.foreR ? (s < 0 ? H.bones.foreL : H.bones.foreR) : null; if (hb) { hb.updateWorldMatrix(true, false); a.hand.set(0, -0.2, 0); hb.localToWorld(a.hand); } }
+          const B = H && H.bones;
+          if (B && B.foreL && B.foreR && B.armL && B.armR) {
+            // Feza'nın Hala'ya yakın eli: Hala o eli tutar, Feza da kolunu ona uzatır
+            if (!a.side) { B.foreL.updateWorldMatrix(true, false); B.foreR.updateWorldMatrix(true, false);
+              const l = B.foreL.localToWorld(v3(0, -0.2, 0)), r = B.foreR.localToWorld(v3(0, -0.2, 0));
+              a.side = Math.hypot(l.x - S.x, l.z - S.z) < Math.hypot(r.x - S.x, r.z - S.z) ? 'L' : 'R'; }
+            const arm = B['arm' + a.side], fore = B['fore' + a.side];
+            const w = a.ph === 1 ? sstep(0.2, 0.7, a.phT) : a.ph === 2 ? 1 - sstep(0.35, 0.6, a.phT) : 0;
+            if (w > 0.01) {
+              S.handR.getWorldPosition(_w); H.root.updateMatrixWorld(true);
+              const o = [0, 0, 0]; aimArm(arm, _w, 1, o);
+              arm.rotation.set(lerp(arm.rotation.x, o[0], w), arm.rotation.y * (1 - w), lerp(arm.rotation.z, o[1], w)); fore.rotation.x *= 1 - 0.8 * w; fore.rotation.z *= 1 - w;
+              H.root.updateMatrixWorld(true);
+            }
+            fore.updateWorldMatrix(true, false); a.hand.set(0, -0.2, 0); fore.localToWorld(a.hand);
+          }
           if (a.ph === 1 && a.phT > 0.9) { next(); if (A.revive(1)) { A.burst('heal', fz.x, 0.8, fz.z, {}); A.burst('hearts', fz.x, 1.3, fz.z, { count: 10 }); A.sfx('levelup', { vol: 0.4, pitch: 1.3 }); } }
           else if (a.ph === 2 && a.phT > 0.6) { next(); sayVar('kalkti', 2); }
           else if (a.ph === 3 && a.phT > 1.0) endAct();
