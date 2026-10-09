@@ -148,6 +148,7 @@
   background: radial-gradient(circle at 40% 35%, #fff, #fff2c4 70%); box-shadow: 0 0 0 8px #fff, 0 0 60px rgba(255, 210, 80, 0.9); animation: hbRise 0.9s cubic-bezier(.2, 1.5, .4, 1) both; }
 .hb-prize img { width: 86%; height: 86%; object-fit: contain; }
 .hb-prize .hb-emo { font-size: 130px; }
+.hb-emo.gold { filter: sepia(1) saturate(5) hue-rotate(-12deg) brightness(1.12) drop-shadow(0 0 14px rgba(255, 200, 40, 0.9)); }
 @keyframes hbRise { from { transform: translateY(160px) scale(0.2); opacity: 0; } to { transform: translateY(-40px) scale(1); opacity: 1; } }
 .hb-pname { position: absolute; left: 0; right: 0; bottom: 4%; text-align: center; font-weight: 900; font-size: 38px; color: #a03a20; text-shadow: 0 3px 0 #fff; z-index: 4;
   animation: hbIn 0.5s 0.4s both; }

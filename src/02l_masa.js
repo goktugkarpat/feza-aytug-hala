@@ -1,6 +1,14 @@
 /* ── Aytuğ Hala'nın mutfak masası cümleleri (merkez, pasta, süsleme, istasyonlar) ──
    gen_voice.py tüm src/02l_*.js dosyalarını okur (tr-TR-EmelNeural). Kısa, sıcak, ilk ağızdan; "Aa/Oo" yok, İngilizce yok. */
 Object.assign(AUD.LINES, {
+  // masaya dönüş
+  "masa_donus1": "Masaya döndük! Pastamıza bir bakalım.",
+  "masa_donus2": "Hoş geldin Feza! Hangi kapıdan gidelim?",
+  "masa_donus3": "Burası bizim evimiz. Biraz oynayalım mı?",
+  // oyuncaklar
+  "oyuncak_sunger1": "Hop hop! Zıpla Feza!",
+  "oyuncak_sunger2": "Sünger yumuşacık, zıpla bakalım!",
+  "oyuncak_muzik": "Ne güzel bir şarkı! Hadi dans edelim.",
   // pasta aşamaları (malzeme gelince masada pasta büyür)
   "masa_pasta0": "Pastam bomboş kaldı. Malzemeleri bulup getirelim!",
   "masa_pasta1": "Un geldi! Bak, pastanın tabanı pişti bile!",

@@ -20,7 +20,7 @@ const MASA = (() => {
     { zone: 'pasta', x: 49, col: 0xf28fb4, col2: 0xffe6f0, ikon: '🎂', ramp: 'seker' },
   ];
   T.st = {
-    gardirop: { x: 19.5, z: 23 }, bilbo: { x: 52.5, z: 23 }, album: { x: 18.6, z: 36.4 }, mini: { x: 51, z: 38.6 }, surpriz: { x: 36, z: 37.4 },
+    gardirop: { x: 19.5, z: 23 }, bilbo: { x: 52.5, z: 23 }, album: { x: 18.6, z: 36.4 }, mini: { x: 51, z: 38.6 }, surpriz: { x: 28.5, z: 25.2 },
   };
   T.toys = { sunger: { x: 27.5, z: 32 }, bezelye: { x: 44.5, z: 33 }, muzik: { x: 44.5, z: 21.2 } };
   // ── küçük yardımcılar ──
@@ -136,8 +136,30 @@ const MASA = (() => {
     }
     return c;
   }
+  // Kek gözenekleri (kesit/yan yüz): açık zeminde küçük koyu-açık delikler (döşenir)
+  function crumbCanvas() {
+    const c = cv(256, 256), g = c.getContext('2d');
+    g.fillStyle = '#f4f0ea'; g.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 520; i++) {
+      const x = Math.random() * 256, y = Math.random() * 256, r = 1 + Math.random() * 3.6;
+      g.fillStyle = 'rgba(150,100,50,' + (0.18 + Math.random() * 0.25) + ')'; g.beginPath(); g.ellipse(x, y, r * 1.3, r, Math.random() * 3, 0, Math.PI * 2); g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.35)'; g.beginPath(); g.ellipse(x - r * 0.3, y - r * 0.3, r * 0.5, r * 0.35, 0, 0, Math.PI * 2); g.fill();
+    }
+    return c;
+  }
+  // Pişmiş kek üstü: altın-kahve, kenara doğru koyulaşan, ince çatlaklar, pudra şekeri serpintisi
+  function bakedTopCanvas() {
+    const c = cv(512, 512), g = c.getContext('2d');
+    const gr = g.createRadialGradient(256, 256, 20, 256, 256, 256); gr.addColorStop(0, '#f2c27e'); gr.addColorStop(0.7, '#dc9e55'); gr.addColorStop(1, '#b8743a');
+    g.fillStyle = gr; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 260; i++) { const a = Math.random() * 6.283, r = Math.random() * 240, x = 256 + Math.cos(a) * r, y = 256 + Math.sin(a) * r; g.fillStyle = 'rgba(140,80,30,' + (0.06 + Math.random() * 0.12) + ')'; g.beginPath(); g.arc(x, y, 3 + Math.random() * 10, 0, 6.283); g.fill(); }
+    g.strokeStyle = 'rgba(150,84,34,0.22)'; g.lineCap = 'round';
+    for (let k = 0; k < 5; k++) { let x = 256 + (Math.random() - 0.5) * 140, y = 256 + (Math.random() - 0.5) * 140; g.lineWidth = 2 + Math.random() * 2; g.beginPath(); g.moveTo(x, y); for (let j = 0; j < 4; j++) { x += (Math.random() - 0.5) * 50; y += (Math.random() - 0.5) * 50; g.lineTo(x, y); } g.stroke(); }
+    for (let i = 0; i < 900; i++) { const a = Math.random() * 6.283, r = Math.pow(Math.random(), 0.7) * 200, x = 256 + Math.cos(a) * r, y = 256 + Math.sin(a) * r; g.fillStyle = 'rgba(255,255,255,' + (0.35 + Math.random() * 0.5) + ')'; g.fillRect(x, y, 2 + Math.random() * 2, 2 + Math.random() * 2); }
+    return c;
+  }
   const sx = (o, k = 1) => o;   // (yer tutucu: okunurluk)
-  return { T, V2, hash, tex, woodCanvas, ginghamCanvas, tileCanvas, wallCanvas, skyCanvas, radialCanvas, badgeCanvas, seedCanvas, cv, sx };
+  return { T, V2, hash, tex, crumbCanvas, bakedTopCanvas, woodCanvas, ginghamCanvas, tileCanvas, wallCanvas, skyCanvas, radialCanvas, badgeCanvas, seedCanvas, cv, sx };
 })();
 
 /* ── CAKE: Aytuğ Hala'nın sürpriz pastası ──
@@ -169,6 +191,13 @@ const CAKE = (() => {
     }
     g.computeVertexNormals();
     return geos.ros = keepG(g);
+  }
+  function domeG() {   // kek üstü kubbe: düzlemsel uv (pişmiş üst dokusu)
+    if (geos.dome) return geos.dome;
+    const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(V2(Math.max(0.001, Math.sin(t * Math.PI / 2)), Math.cos(t * Math.PI / 2))); }
+    const g = new THREE.LatheGeometry(pts.reverse(), 64), p = g.attributes.position, uv = g.attributes.uv;
+    for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) * 0.5 + 0.5, p.getZ(i) * 0.5 + 0.5);
+    return geos.dome = keepG(g);
   }
   function berryG() {   // çilek gövdesi (uv'li: çekirdek dokusu)
     return lathe('berry', [[0.001, 0], [0.18, 0.06], [0.32, 0.22], [0.4, 0.42], [0.42, 0.58], [0.38, 0.72], [0.26, 0.82], [0.001, 0.86]], 24);
@@ -233,11 +262,13 @@ const CAKE = (() => {
     return ORDER.filter((id, i) => i < FREE || ac[id] || st >= (i - FREE + 1) * 2);   // her 2 çıkartmada bir yeni süs
   }
   // ── Malzemeler (her model kendi kopyası; dünya bölüm değişince disposeTree temizler) ──
-  let seedTex = null;
+  let seedTex = null, crumbTex = null, topTex = null;
   function mats() {
     if (!seedTex) { seedTex = MASA.tex('seed', MASA.seedCanvas); seedTex.userData.keep = true; }
+    if (!crumbTex) { crumbTex = MASA.tex('crumb', MASA.crumbCanvas, [6, 2]); topTex = MASA.tex('top', MASA.bakedTopCanvas); }
     return {
-      crumb: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }),
+      crumb: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, map: crumbTex }),
+      top: new THREE.MeshStandardMaterial({ map: topTex, roughness: 0.75 }),
       cream: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.32, metalness: 0 }),
       gloss: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.18, metalness: 0 }),
       porc: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.16, metalness: 0.05 }),
@@ -271,15 +302,16 @@ const CAKE = (() => {
       const fm = mesh(k, M.crumb, false); g.add(fm); surf.push(fm);
     }
     const body = new Kit(), cream = new Kit(), gloss = new Kit(), berries = new Kit();
+    let domeAt = null;
     const layer = (yb, h, r) => body.add(cylG('cake', 64, 6), crumbCol(yb, yb + h), [0, yb + h / 2, 0], null, [r, h, r]);
     if (stage >= 1 && stage < 4) {
-      if (stage === 1) { layer(Y0, 1.0, R); body.add(G.sphere(40, 12), (x, y, z) => C(0xd99a4c).multiplyScalar(0.92 + hash(Math.round(x * 6), 1, Math.round(z * 6)) * 0.12), [0, Y0 + 1.0, 0], null, [R * 0.995, 0.15, R * 0.995]); }
+      if (stage === 1) { layer(Y0, 1.0, R); domeAt = [Y0 + 1.0, 0.16]; }
       else {
         layer(Y0, 0.95, R);
         cream.add(cylG('cake', 64, 2), (x, y, z) => C(0xfff6ec), [0, Y0 + 1.0, 0], null, [R * 0.985, 0.12, R * 0.985]);
         if (stage >= 3) gloss.add(cylG('cake', 64, 2), () => C(0xe0304f), [0, Y0 + 1.08, 0], null, [R * 0.97, 0.08, R * 0.97]);
         layer(Y0 + (stage >= 3 ? 1.12 : 1.06), 1.02, R);
-        body.add(G.sphere(40, 12), (x, y, z) => C(0xd99a4c).multiplyScalar(0.92 + hash(Math.round(x * 6), 1, Math.round(z * 6)) * 0.12), [0, Y0 + (stage >= 3 ? 2.14 : 2.08), 0], null, [R * 0.995, 0.12, R * 0.995]);
+        if (stage === 2) domeAt = [Y0 + 2.08, 0.14];
         if (stage >= 3) {   // üstte çilek sosu ve çilek halkası, yanlarda damlalar
           gloss.add(G.cyl(1, 1, 56), () => C(0xe8344f), [0, top - 0.02, 0], null, [R * 0.93, 0.06, R * 0.93]);
           for (let i = 0; i < 12; i++) { const a = i * TAU2 / 12; berries.add(berryG(), 0xffffff, [Math.sin(a) * (R - 0.45), top - 0.04, Math.cos(a) * (R - 0.45)], [0.25 * Math.cos(a), 0, -0.25 * Math.sin(a)], 0.95); }
@@ -310,6 +342,7 @@ const CAKE = (() => {
       }
     }
     if (body.parts.length) { const m = mesh(body, M.crumb); g.add(m); surf.push(m); }
+    if (domeAt) { const m = new THREE.Mesh(domeG(), M.top); m.position.y = domeAt[0]; m.scale.set(R * 0.995, domeAt[1], R * 0.995); m.castShadow = m.receiveShadow = true; g.add(m); surf.push(m); }
     if (cream.parts.length) { const m = mesh(cream, M.cream); g.add(m); surf.push(m); }
     if (gloss.parts.length) { const m = mesh(gloss, M.gloss); g.add(m); surf.push(m); }
     if (berries.parts.length) g.add(mesh(berries, M.berry));
@@ -370,6 +403,10 @@ const CAKE = (() => {
     const from = S.shown >= 0 && S.shown < st ? S.shown : st;   // yeni malzeme geldiyse eski aşamadan büyüyerek
     S.stage = -1; show(from);
     if (from !== st) setTimeout(() => grow(st), 1600);
+    else if (!api.L._title) {   // masaya dönüş: Aytuğ Hala karşılar (ilk açılışta hikâye anlatır, burada susar)
+      S.visits = (S.visits || 0) + 1;
+      if (S.visits > 1) setTimeout(() => { const g = typeof GAME !== 'undefined' && GAME; if (g && g.state === 'play' && g.P.zone === 0 && typeof HUB !== 'undefined') HUB.say(['masa_donus1', 'masa_donus2', 'masa_donus3'][S.visits % 3], 2); }, 2200);
+    }
     S.shown = st;
     // pastanın çevresinde altın ışıltı (pişmiş ışık havuzu) ve tabak gölgesi
     api.glow(spot.x, spot.z, 5.5, 0xfff0d0, 0.12);
@@ -416,6 +453,9 @@ MASA.kur = function (L, api) {
   const kitMesh = (k, mat, cast = true) => { const m = new THR.Mesh(k.build(), mat); m.castShadow = cast; m.receiveShadow = true; api.add(m); return m; };
   const P = typeof GAME !== 'undefined' && GAME.P;
   if (api.floor) api.floor.visible = false;   // masa kendi ahşap yüzeyini çizer
+  if (!L._title && typeof CAM !== 'undefined') {   // güvenli üs: kamera biraz geride (masanın daha çoğu görünsün); bölüm değişince eski uzaklık
+    const prev = CAM.dist; CAM.dist = prev * 1.2; api.dispose({ dispose() { CAM.dist = prev; } });
+  }
   const FLOOR_Y = -19.5;
   // ── 1) Masa: ahşap üst, yuvarlak kenar pervazı, bacaklar ──
   const tw = TP.x1 - TP.x0, td = TP.z1 - TP.z0, tcx = (TP.x0 + TP.x1) / 2, tcz = (TP.z0 + TP.z1) / 2;
@@ -638,18 +678,19 @@ MASA.kur = function (L, api) {
     const hm = own(holeGeo, isOpen ? new THR.MeshBasicMaterial({ color: glowC, fog: false }) : new THR.MeshStandardMaterial({ color: 0xf6a6c4, roughness: 0.5 }), d.x, 0.01, doorZ - 0.05, { recv: !isOpen });
     // eşik basamağı + taban halısı
     DK.add(G.rbox(2), d.col, [d.x, 0.07, doorZ + 0.95], null, [2.8, 0.14, 1.5]);
-    DK.add(G.cyl(1, 1, 24), 0xfff6e8, [d.x, 0.03, T.z0 + 1.6], null, [1.3, 0.06, 1.3]);
     DK.add(G.torus(TAU3, 0.1, 32), d.col, [d.x, 0.07, T.z0 + 1.6], [Math.PI / 2, 0, 0], [1.3, 1.3, 1.3]);
     // kemerin tepesinde küçük altın top süsleri
     for (const sx2 of [-1, 1]) DK.add(G.sphere(12, 8), 0xf2c44a, [d.x + sx2 * 1.65, 0.25, doorZ + 0.2], null, 0.26);
     // aşağı inen rampa (kapının arkasından kuzeye)
     const rz0 = doorZ - 0.9, drop = 14;
-    if (d.ramp === 'kurdele') for (let i = 0; i < 14; i++) DK.add(G.box(), i % 2 ? 0x7aa6dc : 0x8fb6e6, [d.x + Math.sin(i * 0.8) * 0.6, -i * drop / 14 - 0.1, rz0 - i * 1.0], [0.75, Math.sin(i * 0.8) * 0.3, 0], [2.6, 0.14, 1.2]);
-    else if (d.ramp === 'kasik') { DK.add(G.rbox(2), 0xd9a46a, [d.x, -drop / 2, rz0 - 7], [0.78, 0, 0], [1.4, 0.4, 19]); DK.add(G.sphere(16, 10), 0xd9a46a, [d.x, -drop - 0.5, rz0 - 13.6], [0.78, 0, 0], [2.2, 0.5, 3.0]); }
-    else if (d.ramp === 'cubuk') for (let i = 0; i < 4; i++) DK.add(G.rbox(2), i % 2 ? 0xf0dcb4 : 0xe8d0a4, [d.x + (i % 2 ? 0.6 : -0.6), -2 - i * 3.6, rz0 - 2.5 - i * 3.2], [0.8, 0, 0], [1.4, 0.3, 5.6]);
-    else for (let i = 0; i < 22; i++) DK.add(G.cyl(1, 1, 14), i % 2 ? 0xff4f6e : 0xffffff, [d.x, -i * 0.64 - 0.2, rz0 - i * 0.6], [0.82, 0, 0], [0.75, 0.62, 0.75]);
+    if (d.ramp === 'kurdele') for (let i = 0; i < 14; i++) DK.add(G.box(), i % 2 ? 0x7aa6dc : 0x8fb6e6, [d.x + Math.sin(i * 0.8) * 0.6, -i * drop / 14 - 0.1, rz0 - i * 1.0], [-0.75, Math.sin(i * 0.8) * 0.3, 0], [2.6, 0.14, 1.2]);
+    else if (d.ramp === 'kasik') { DK.add(G.rbox(2), 0xd9a46a, [d.x, -drop / 2, rz0 - 7], [-0.78, 0, 0], [1.4, 0.4, 19]); DK.add(G.sphere(16, 10), 0xd9a46a, [d.x, -drop - 0.5, rz0 - 13.6], [-0.78, 0, 0], [2.2, 0.5, 3.0]); }
+    else if (d.ramp === 'cubuk') for (let i = 0; i < 4; i++) DK.add(G.rbox(2), i % 2 ? 0xf0dcb4 : 0xe8d0a4, [d.x + (i % 2 ? 0.6 : -0.6), -2 - i * 3.6, rz0 - 2.5 - i * 3.2], [-0.8, 0, 0], [1.4, 0.3, 5.6]);
+    else for (let i = 0; i < 22; i++) DK.add(G.cyl(1, 1, 14), i % 2 ? 0xff4f6e : 0xffffff, [d.x, -i * 0.64 - 0.2, rz0 - i * 0.6], [-0.82, 0, 0], [0.75, 0.62, 0.75]);
     // oda rozeti (kemerin üstünde, hafifçe sallanır)
     const badge = tx('badge_' + d.zone, () => MASA.badgeCanvas(d.ikon, '#' + d.col.toString(16).padStart(6, '0')));
+    const med = own(new THR.CircleGeometry(1.32, 40), new THR.MeshStandardMaterial({ map: badge, roughness: 0.5, transparent: true }), d.x, 0.05, T.z0 + 1.6, { rx: -Math.PI / 2 });   // yerde oda madalyonu (yukarıdan bakan kamera görür)
+    med.renderOrder = 1;
     const sp = new THR.Sprite(new THR.SpriteMaterial({ map: badge, transparent: true, depthWrite: false }));
     sp.scale.set(1.8, 1.8, 1); sp.position.set(d.x, 5.15, doorZ); api.add(sp);
     doorAnims.push({ sp, ph: d.x * 0.3, hm, open: isOpen, col: glowC });
@@ -727,10 +768,20 @@ MASA.kur = function (L, api) {
     SK.add(G.rbox(2), 0xe8404f, [x, 0.8, z], [0, 0.2, 0], [1.6, 1.6, 1.6]);
     SK.add(G.box(), 0xf6c443, [x, 0.8, z], [0, 0.2, 0], [1.66, 1.64, 0.36]);
     SK.add(G.box(), 0xf6c443, [x, 0.8, z], [0, 0.2 + Math.PI / 2, 0], [1.66, 1.64, 0.36]);
-    if (!opened) { for (const sd of [-1, 1]) SK.add(G.torus(TAU3, 0.28, 18), 0xffd45a, [x + sd * 0.38, 1.85, z], [0.3, 0.2, sd * 0.6], [0.42, 0.42, 0.42]); SK.add(G.rbox(2), 0xe8404f, [x, 1.67, z], [0, 0.2, 0], [1.74, 0.22, 1.74]); }
-    else SK.add(G.rbox(2), 0xe8404f, [x + 1.4, 0.15, z + 0.6], [0.2, 0.9, 0.3], [1.74, 0.22, 1.74]);   // açılmış: kapak yanda
     SK.pop();
   }
+  // kapak + fiyonk ayrı (Günün Sürprizi açılınca uçar, ertesi gün yine kapalı)
+  const lid = (() => { const k = new Kit();
+    k.add(G.rbox(2), 0xe8404f, [0, 0, 0], null, [1.74, 0.22, 1.74]); k.add(G.box(), 0xf6c443, [0, 0, 0], null, [1.78, 0.24, 0.38]); k.add(G.box(), 0xf6c443, [0, 0, 0], [0, Math.PI / 2, 0], [1.78, 0.24, 0.38]);
+    for (const sd of [-1, 1]) k.add(G.torus(TAU3, 0.28, 18), 0xffd45a, [sd * 0.38, 0.18, 0], [0.3, 0, sd * 0.6], [0.42, 0.42, 0.42]);
+    k.add(G.sphere(12, 8), 0xffd45a, [0, 0.16, 0], null, 0.16);
+    const m = new THR.Mesh(k.build(), new THR.MeshStandardMaterial({ vertexColors: true, roughness: 0.35 })); m.castShadow = true;
+    const x = S.surpriz.x, z = S.surpriz.z - 1.6;
+    m.scale.setScalar(0.88); m.rotation.y = 0.2;
+    if (opened) { m.position.set(x + 1.3, 0.15, z + 0.6); m.rotation.set(0.25, 0.9, 0.3); } else m.position.set(x, 1.47, z);
+    api.add(m); return { m, x, z, t: opened ? 9 : -1 };
+  })();
+  MASA.giftOpened = () => { lid.t = 0; burst('confetti', lid.x, 2, lid.z, {}); sfx('chest', { vol: 0.8 }); };
   kitMesh(SK, new THR.MeshStandardMaterial({ vertexColors: true, roughness: 0.36 }));
   // album sayfaları: çıkartma ızgarası (renkli/gri), yıldızlar
   const albumT = tx('album', () => {
@@ -813,6 +864,11 @@ MASA.kur = function (L, api) {
     t += dt;
     for (const b of doorAnims) { b.sp.position.y = 5.15 + Math.sin(t * 1.6 + b.ph) * 0.12; if (b.open) b.hm.material.color.copy(b.col).multiplyScalar(0.92 + 0.1 * Math.sin(t * 2.2 + b.ph)); }
     for (const b of badges) { b.sp.position.y = b.y + Math.sin(t * 1.8 + b.ph) * 0.18; }
+    if (lid.t >= 0 && lid.t < 1.2) {   // kapak uçar: yukarı zıplar, döner, yana düşer
+      lid.t += dt; const k = Math.min(1, lid.t / 1.1), m = lid.m;
+      m.position.set(lid.x + 1.3 * k, 1.47 + Math.sin(k * Math.PI) * 2.6 - 1.32 * k, lid.z + 0.6 * k);
+      m.rotation.set(0.25 * k + Math.sin(k * Math.PI) * 1.2, 0.2 + 0.7 * k, 0.3 * k);
+    } else if (lid.t < 0) lid.m.position.y = 1.47 + Math.max(0, Math.sin(t * 3.1)) * 0.06;   // kapalı kutu kıpır kıpır
     for (let i = 0; i < rings.length; i++) rings[i].material.opacity = 0.55 + 0.3 * Math.sin(t * 2.4 + i);
     for (const s of steam) { s.t += dt; const k = (s.t % 3.6) / 3.6; s.s.position.set(TGx + Math.sin(s.t * 1.3) * 0.4 * k, 3.9 + k * 3.4, TGz + 0.2); s.s.scale.setScalar(0.6 + k * 1.6); s.s.material.opacity = 0.42 * Math.sin(k * Math.PI); }
     for (const s of dust) { s.t += dt; const k = (s.t % 7.8) / 7.8; s.s.position.set(FBx + 1.2 + Math.sin(s.t * 0.7 + 1) * 2.0, 7.4 + k * 2.6, FBz + 1 + Math.cos(s.t * 0.5) * 1.6); s.s.scale.setScalar(1.6 + k * 2.4); s.s.material.opacity = 0.35 * Math.sin(k * Math.PI); }
@@ -820,7 +876,7 @@ MASA.kur = function (L, api) {
     const H = typeof GAME !== 'undefined' && GAME.H, playing = typeof GAME !== 'undefined' && GAME.state === 'play';
     // sünger: üstüne çıkınca Feza zıplar (boing), sünger ezilir
     const sp0 = T.toys.sunger, onS = playing && Math.abs(fx - sp0.x) < 2.1 && Math.abs(fz - sp0.z) < 1.5;
-    if (onS && !onSponge && bounceT > 0.5) { bounceT = 0; sfx('bounce', { vol: 0.9 }); burst('sparkle', sp0.x, 1.4, sp0.z, {}); }
+    if (onS && !onSponge && bounceT > 0.5) { bounceT = 0; sfx('bounce', { vol: 0.9 }); burst('sparkle', sp0.x, 1.4, sp0.z, {}); if (typeof HUB !== 'undefined' && Math.random() < 0.35) HUB.say(Math.random() < 0.5 ? 'oyuncak_sunger1' : 'oyuncak_sunger2', 1); }
     onSponge = onS;
     if (onS && bounceT > 0.95) { bounceT = 0; sfx('bounce', { vol: 0.7, pitch: 1.12 }); }
     bounceT += dt;
@@ -845,7 +901,7 @@ MASA.kur = function (L, api) {
     }
     // müzik kutusu: önündeki kırmızı düğmeye basınca melodi, atlıkarınca döner, notalar uçar
     const bx = T.toys.muzik.x, bz = T.toys.muzik.z - 0.6 + 1.9, onB = playing && Math.hypot(fx - bx, fz - bz) < 1.0;
-    if (onB && !onBtn) { musicT = 6; noteK = 0; noteAt = 0; burst('sparkle', bx, 1, bz, {}); }
+    if (onB && !onBtn) { musicT = 6; noteK = 0; noteAt = 0; burst('sparkle', bx, 1, bz, {}); if (typeof HUB !== 'undefined' && Math.random() < 0.4) HUB.say('oyuncak_muzik', 1); }
     onBtn = onB;
     music.btn.scale.y = onB ? 0.12 : 0.3; music.btn.position.y = onB ? 0.07 : 0.15;
     if (musicT > 0) {
@@ -893,7 +949,7 @@ BOLUM.define('masa', {
     const st = L.stations = [];
     const put = (id, kind, x, z, o) => st.push(Object.assign({ id, kind, x, z, r: 1.6 }, o));
     for (const d of T.doors) put('kapi_' + d.zone, 'kapi', d.x, T.z0 + 1.6, { zone: d.zone, r: 1.5 });
-    put('pasta', 'pasta', T.cake.x, T.cake.z, { r: T.cake.r + 1.0 });
+    put('pasta', 'pasta', T.cake.x, T.cake.z, { r: T.cake.r + 0.65 });   // pastaya değince süsleme açılır
     for (const id of ['gardirop', 'bilbo', 'album', 'mini', 'surpriz']) put(id, id, T.st[id].x, T.st[id].z, { r: id === 'surpriz' ? 1.5 : 1.7 });
     // istasyon nesnelerinin katı gövdeleri (Feza önüne gelir, içine girmez)
     api.solid(T.st.gardirop.x, T.st.gardirop.z - 2.6, 1.5, 'gardirop');

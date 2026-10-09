@@ -423,7 +423,7 @@ const HUB = (() => {
       const res = verOdul(surprizOdul());
       setTimeout(() => {
         const pz = el('div', 'hb-prize', stage);
-        if (res.img) { const im = el('img', '', pz); im.src = res.img; } else el('div', 'hb-emo', pz, res.ikon || '⭐');
+        if (res.img) { const im = el('img', '', pz); im.src = res.img; } else el('div', 'hb-emo' + (res.gold ? ' gold' : ''), pz, res.ikon || '⭐');
         el('div', 'hb-pname', stage, res.ad);
         pop(innerWidth / 2, innerHeight * 0.42, 30); setTimeout(() => pop(innerWidth / 2, innerHeight * 0.42, 24, 'heart'), 250);
         say('surpriz_ac', 4); setTimeout(() => say(res.line, 3), 1600);
