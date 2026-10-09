@@ -379,7 +379,7 @@ const OTURMA = (() => {
       else api.ball(x, 0.16, z, 0.17, 0.17, 0.17, [0xf48fb1, 0x7fd0f0, 0x8fd18a][k % 3]);
     });
     // domino kitaplar: odanın kenarında dizili dik kitaplar; dokununca sırayla devrilir, sonuncusu şeker kavanozunu devirir
-    const dr = L.rooms[rooms[rooms.length - 1]], spots = rimSpots(L, dr, 1.1).filter(s => s.z < dr.z + dr.r * 0.3);
+    const dr = L.rooms[rooms[rooms.length - 1]], spots = rimSpots(L, dr, 1.1).filter(s => s.z < dr.z + dr.r * 0.3 && !occ(s.x, s.z));
     const s0 = spots.sort((p1, p2) => p1.z - p2.z)[0];
     if (s0) (() => {
       const tx = Math.cos(s0.a), tz = -Math.sin(s0.a), yaw = Math.atan2(tx, tz);   // kenara teğet yön (devrilme yönü)
@@ -421,7 +421,10 @@ const OTURMA = (() => {
         } });
     })();
     // kaset şeridi: odada yatan kaset; dokununca parlak şerit kıvrılarak uzar, ucunda şekerler
-    const cr = L.rooms[rooms[0]], cs = rimSpots(L, cr, 0.4).sort((p1, p2) => p2.z - p1.z).find(s => s.z > cr.z - cr.r * 0.2) || rimSpots(L, cr, 0.4)[0];
+    const cands = [];   // halının dışında (şerit parkede görünsün), odanın güney yarısında yatan kaset
+    for (const ri of rooms) { const r0 = L.rooms[ri]; for (const q of rimSpots(L, r0, 0.4)) if (!occ(q.x, q.z) && q.z > r0.z - r0.r * 0.2) cands.push(Object.assign(q, { rm: r0 })); }
+    cands.sort((p1, p2) => p2.z - p1.z);
+    const cs = cands[0] || null, cr = cs ? cs.rm : L.rooms[rooms[0]];
     if (cs) {
       const cas = K.mesh(api, vhsGeo(1), cs.x, 0.2, cs.z, 0.4); cas.scale.set(2.2, 0.3, 1.2); cas.rotation.y = Math.atan2(cr.x - cs.x, cr.z - cs.z) + Math.PI / 2;
       const N = 90, pts = [];
