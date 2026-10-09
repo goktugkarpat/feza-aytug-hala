@@ -206,11 +206,15 @@ const OTURMA = (() => {
     for (const q of rugs) {
       K.slab(api, L, { x: (q.x0 + q.x1) / 2, z: (q.z0 + q.z1) / 2, w: q.x1 - q.x0, d: q.z1 - q.z0, h: 0.12, tex: 'carpet', size: 8, rough: 0.97 });
     }
-    const items = [], fringe = [];
+    const items = [], fringe = [], PP = L.path || [];
+    const pathD = (x, z) => { let d = 1e9; for (let i = 1; i < PP.length; i++) { const a = PP[i - 1], b = PP[i], dx = b.x - a.x, dz = b.z - a.z, l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / l2)); d = Math.min(d, Math.hypot(x - a.x - dx * t, z - a.z - dz * t)); } return d; };
     for (const q of rugs) {
       for (let z = q.z0 + 0.3; z < q.z1 - 0.2; z += 0.72) for (let x = q.x0 + 0.3; x < q.x1 - 0.2; x += 0.72) {
         const px = x + (rnd() - 0.5) * 0.5, pz = z + (rnd() - 0.5) * 0.5;
-        if (K.isF(L, px, pz)) continue;
+        if (K.isF(L, px, pz)) {   // yürünür halıda: seyrek, kısa ilmek kümeleri (yolun üstünde değil)
+          if (q === rug1 && rnd() < 0.16 && pathD(px, pz) > 1.6) items.push({ x: px, z: pz, h: 0.22 + rnd() * 0.2, s: 1.1 + rnd() * 0.5, c: K.carpetColor(px, pz).multiplyScalar(1.08), yaw: rnd() * TAU });
+          continue;
+        }
         const fd = K.floorDist(L, px, pz, 8);
         if (fd < 0.5 || fd > 8) continue;
         let h = 0.45 + Math.min(1, fd / 2.5) * (0.6 + rnd() * 0.6);

@@ -289,7 +289,7 @@ const ODAKIT = (() => {
     const col = (x, y) => { const t = Math.min(1, Math.max(0, y)); const v = 0.45 + 0.62 * t * t * (3 - 2 * t); return new THREE.Color(v, v, v); };
     const arcs = loop ? [[0, 0, 0, 1]] : [[0, 0, 0, 1], [1.05, 0.06, 0.05, 0.86], [2.1, -0.05, 0.07, 0.93]];
     for (const [yaw, ox, oz, hh] of arcs) {
-      const g = archGeo(0.26, hh, 0.085, loop ? 7 : 9, 4);
+      const g = archGeo(0.26, hh, 0.09, loop ? 5 : 7, 3);
       k.add(g, col, [ox, 0, oz], [0, yaw, 0]);
     }
     return (GEOC[key] = keepG(k.build()));
@@ -313,12 +313,17 @@ const ODAKIT = (() => {
   // items: [{x, z, h, s (genişlik), c: THREE.Color, yaw}]
   function tufts(api, items, kind = 'tuft') {
     if (!items.length) return null;
-    const im = new THREE.InstancedMesh(tuftGeo(kind), swayMat(), items.length), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), e = new THREE.Euler();
-    items.forEach((it, i) => { p.set(it.x, 0, it.z); q.setFromEuler(e.set(0, it.yaw || 0, 0)); s.set(it.s, it.h, it.s); m4.compose(p, q, s); im.setMatrixAt(i, m4); im.setColorAt(i, it.c); });
-    im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
-    im.receiveShadow = true; im.castShadow = false; im.name = 'odakit-lifler'; im.computeBoundingSphere();
-    api.add(im);
-    return im;
+    const chunks = new Map(), CK = 14;   // görüş dışındaki parçalar çizilmesin: 14 m'lik parçalar
+    for (const it of items) { const key = Math.floor(it.x / CK) * 4096 + Math.floor(it.z / CK); let a = chunks.get(key); if (!a) chunks.set(key, a = []); a.push(it); }
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), e = new THREE.Euler(), out = [];
+    for (const list of chunks.values()) {
+      const im = new THREE.InstancedMesh(tuftGeo(kind), swayMat(), list.length);
+      list.forEach((it, i) => { p.set(it.x, 0, it.z); q.setFromEuler(e.set(0, it.yaw || 0, 0)); s.set(it.s, it.h, it.s); m4.compose(p, q, s); im.setMatrixAt(i, m4); im.setColorAt(i, it.c); });
+      im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
+      im.receiveShadow = true; im.castShadow = false; im.name = 'odakit-lifler'; im.computeBoundingSphere();
+      api.add(im); out.push(im);
+    }
+    return out;
   }
 
   // ── oyuncak malzemesi (köşe renkli, parlak/mat) ──
