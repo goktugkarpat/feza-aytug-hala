@@ -89,6 +89,17 @@
     const w = Math.sin(s.hzB * 30) * Math.exp(-s.hzB * 5.5) * 0.22 * k;
     b.scale.y *= 1 + w; b.scale.x *= 1 - w * 0.6; b.scale.z *= 1 - w * 0.6;
   }
+  // Komik bekleme hareketi: dururken (yürümüyor, saldırmıyor) arada bir D saniyelik bir gösteri; dönen 0..1 = ilerleme, -1 = yok
+  function gag(s, st, dt, D, every = 5) {
+    const idle = s.mv < 0.15 && st.windup < 0 && st.attack < 0 && !(st.dying >= 0) && !(st.hurt > 0.3);
+    if (s.gagT === undefined) s.gagT = frand(1.5, every);
+    if (!idle) { if (s.gagU >= 0) s.gagU = -1; s.gagT = Math.max(s.gagT, 1.2); return -1; }
+    if (s.gagU >= 0) { s.gagU += dt / D; if (s.gagU >= 1) { s.gagU = -1; s.gagT = frand(every * 0.7, every * 1.5); return -1; } return s.gagU; }
+    s.gagT -= dt;
+    if (s.gagT <= 0) { s.gagU = 0; return 0; }
+    return -1;
+  }
+  const bumpU = (u, a, b) => (u > a && u < b ? Math.sin(PI * (u - a) / (b - a)) : 0);
   // zıplayarak ilerleme (toz tavşanı, jöle ayıcık, kaşık): {y, sy, sxz, u}
   const HOP = { y: 0, sy: 1, sxz: 1, u: 0, air: 0 };
   function hopGait(s, st, dt, rate, h) {
@@ -190,20 +201,33 @@
       if (a < 1) { const k = Math.sin(PI * a); sy *= 1 + 0.25 * k; sxz *= 1 - 0.1 * k; rx += 0.3 * k; ear -= 0.6 * k; }
       else { sy *= 0.85; sxz *= 1.1; ear += 0.3; }   // inişten sonra yayvan
     }
+    { const u = gag(s, st, dt, 2.2, 4.5);   // bekleme: burun kıpır kıpır → derin nefes → hapşırık (kulaklar fırlar)
+      if (u >= 0) {
+        const tw = bumpU(u, 0, 0.45), inh = sm((u - 0.4) / 0.3) * (1 - sm((u - 0.72) / 0.05)), sn = bumpU(u, 0.72, 0.9);
+        b.position.x += Math.sin(s.t * 70) * 0.006 * tw; rx -= 0.28 * inh; sy *= 1 + 0.12 * inh; ear += 0.5 * inh;
+        rx += 0.45 * sn; sy *= 1 - 0.22 * sn; sxz *= 1 + 0.12 * sn; ear -= 1.2 * sn; y += 0.06 * sn;
+        s.eyeK = 1 - 0.85 * Math.max(inh, sn);
+      }
+    }
     B.earL.rotation.x = ear; B.earR.rotation.x = ear;
     b.position.y = y; b.scale.set(sxz, sy, sxz); b.rotation.x = rx;
     B.feet.position.y += g.air * 0.12; B.feet.rotation.x = -0.4 * g.air;
     boing(s, st, dt, b);
   }
 
-  // ── Haylaz Kumanda: TV kumandası; tuşları yanıp söner, tepedeki kızılötesi ışıktan zararsız kırmızı ışık topu atar ──
+  // ── Haylaz Kumanda: yuvarlak köşeli TV kumandası; açık renkli ön panelde kocaman renkli tuşlar (bazıları yanıp söner), tepede
+  // anten ucunda kızılötesi göz. Bekleme: kendi tuşuna basıp şaşırır. Saldırı: tuşlar sırayla parlar, antenden zararsız ışık topu. ──
+  const KM_BTN = [['#ff4f6a', '#ffd23f', '#3fd27a'], ['#4fa8ff', '#ff9a2e', '#b07aff'], ['#ff7ac0', '#3fd8d8', '#ffffff']];
+  const KM_BLINK = [[0, 0], [1, 1], [2, 2], [0, 2]];   // yanıp sönen tuşlar (satır, sütun)
+  const kmBtnPos = (row, c2) => [(c2 - 1) * 0.092, 0.42 - row * 0.078, 0.112];
   function buildKumanda(r, o) {
-    const shell = col('#4b5164'), shellL = col('#6b7388'), shellD = col('#2f3442');
+    const shell = col('#4a4c8a'), shellL = col('#7a7cc8'), shellD = col('#2c2d58');
     r.bone('hips', 'root', [0, 0.16, 0]);
     r.bone('body', 'hips', [0, 0.2, 0]);
-    r.bone('armL', 'body', [0.19, 0.52, 0]); r.bone('armR', 'body', [-0.19, 0.52, 0]);
+    r.bone('armL', 'body', [0.2, 0.55, 0]); r.bone('armR', 'body', [-0.2, 0.55, 0]);
     r.bone('legL', 'hips', [0.08, 0.17, 0]); r.bone('legR', 'hips', [-0.08, 0.17, 0]);
-    r.bone('btn', 'body', [0, 0.38, 0.09]);
+    r.bone('ant', 'body', [0.08, 0.94, -0.02]);
+    for (let i = 0; i < 4; i++) { const p = kmBtnPos(...KM_BLINK[i]); r.bone('blink' + i, 'body', p); }
     // bacaklar + kırmızı spor ayakkabılar
     for (const sd of [-1, 1]) {
       r.on(sd > 0 ? 'legL' : 'legR');
@@ -211,66 +235,99 @@
       shoe(r, 0.09 * sd, 0.05, 0.05, 0.07, 0.05, 0.105, '#ff5a5f');
       r.fx(0, 0.3).add(G.sphere(10, 6), '#ffffff', [0.09 * sd, 0.025, 0.05], null, [0.074, 0.016, 0.11]).fx(0, 0);
     }
-    // gövde: yumuşak köşeli uzun kutu, üstü açık renk, kenarlarda ince parlak hat
-    r.on('body').fx(0, 0.45);
-    r.add(sbox(0.38, 0.76, 0.17, 0.07, 3), K.vgrad(0.16, 0.92, [[0, shellD], [0.5, shell], [1, shellL]]), [0, 0.54, 0]);
-    r.fx(0, 0.8).add(sbox(0.3, 0.17, 0.02, 0.008, 2), '#1c2230', [0, 0.73, 0.083]);   // yüz camı (koyu ekran)
+    // gövde: iyice yuvarlatılmış kutu (mor-lacivert), açık lila ön panel, koyu ekran
+    r.on('body').fx(0, 0.5);
+    r.add(sbox(0.42, 0.82, 0.2, 0.11, 4), K.vgrad(0.14, 0.95, [[0, shellD], [0.45, shell], [1, shellL]]), [0, 0.55, 0]);
+    r.fx(0, 0.3).add(sbox(0.33, 0.36, 0.03, 0.06, 3), K.vgrad(0.18, 0.56, [[0, '#cfcbe8'], [1, '#f4f2ff']]), [0, 0.37, 0.092]);
+    r.fx(0, 0.9).add(sbox(0.33, 0.22, 0.03, 0.06, 3), K.vgrad(0.62, 0.84, [[0, '#14182c'], [1, '#2a3354']]), [0, 0.73, 0.092]);
+    r.fx(1, 0).add(G.sphere(10, 6), hdr('#9fe8ff', 0.9), [-0.1, 0.8, 0.108], [0, 0, 0.5], [0.05, 0.008, 0.003]);   // ekran parıltısı
+    // arkada pil kapağı: ince çizgili dikdörtgen + tırnak oyukları
+    r.fx(0, 0.2);
+    for (const [x, y, w, h] of [[0, 0.62, 0.26, 0.012], [0, 0.22, 0.26, 0.012], [0.13, 0.42, 0.012, 0.41], [-0.13, 0.42, 0.012, 0.41]]) r.add(G.box(), '#24264a', [x, y, -0.1], null, [w, h, 0.01]);
+    for (let k = 0; k < 3; k++) r.add(G.box(), '#24264a', [0, 0.57 - k * 0.025, -0.1], null, [0.08, 0.008, 0.01]);
     r.fx(0, 0);
-    // tepede kızılötesi ışık (kırmızı cam kubbe)
-    r.fx(0.85, 1).add(G.sphere(14, 10), hdr('#ff4058', 1.4), [0, 0.925, 0.03], null, [0.05, 0.03, 0.05]);
-    r.fx(1, 0).add(G.sphere(8, 6), hdr('#ffffff', 1.6), [-0.015, 0.94, 0.06], null, 0.012).fx(0, 0);
-    // yüz: koyu cam üstünde ışıklı gözler gibi değil — sevimli büyük gözler (yüzü ekranın önüne oturtmak için arkadan büyük küre)
-    K.face(r, [0, 0.72, -0.62], 0.708, yuz({ bone: 'body', tilt: 0.0, ex: 0.07, ey: 0.01, er: 0.058, iris: '#2a6fd8', skin: shell, browCol: '#c9d4ff', browY: 1.32,
-      mouthY: -0.075, mouthW: 0.07, noHearts: true, blushCol: '#ff7fa8', inset: 0.012 }));
-    hearts(r, [[0.25, 0.98, 0.1, 0.075], [-0.23, 1.04, 0.1, 0.06]]);
-    // tuşlar: renkli düğmeler (ayrı kemik: hazırlıkta parlar/zıplar)
-    r.on('btn');
-    const BC = ['#ff5a6a', '#ffd23f', '#4fd17a', '#4fb3ff'];
-    r.fx(0, 0.8);
-    r.add(G.torus(TAU, 0.22, 24), '#8ea0c4', [0, 0.47, 0.089], null, [0.06, 0.06, 0.05]);   // yön halkası
-    r.add(G.cyl(1, 1, 18), '#e8ecf8', [0, 0.47, 0.087], [PI / 2, 0, 0], [0.03, 0.012, 0.03]);
-    for (let i = 0; i < 4; i++) { const a = i / 4 * TAU; r.add(G.sphere(8, 6), '#e8ecf8', [Math.sin(a) * 0.06, 0.47 + Math.cos(a) * 0.06, 0.093], null, [0.012, 0.012, 0.01]); }
+    // anten + kızılötesi göz (yuvarlak kırmızı cam)
+    r.on('ant').fx(0, 0.6).seg([0.08, 0.93, -0.02], [0.12, 1.08, -0.02], 0.012, '#b8bce0', 0.009, 6);
+    r.fx(0.85, 1).add(G.sphere(14, 10), hdr('#ff3a5a', 1.5), [0.12, 1.1, -0.02], null, 0.035);
+    r.fx(1, 0).add(G.sphere(8, 6), hdr('#ffffff', 1.6), [0.11, 1.115, 0.008], null, 0.01);
+    r.on('body').fx(0.85, 1).add(G.sphere(14, 10), hdr('#ff3a5a', 1.3), [-0.08, 0.955, 0.04], null, [0.05, 0.028, 0.04]);   // tepedeki ışık camı
+    r.fx(0, 0);
+    // yüz: koyu ekranın üstünde büyük gözler (yüz hafif yukarı bakar; yukarıdaki kameradan da görünür)
+    K.face(r, [0, 0.73, -0.6], 0.704, yuz({ bone: 'body', tilt: 0.0, ex: 0.075, ey: 0.01, er: 0.064, iris: '#3fa8ff', skin: col('#20263e'), browCol: '#d8e0ff', browY: 1.32,
+      mouthY: -0.075, mouthW: 0.072, noHearts: true, blushCol: '#ff7fa8', inset: 0.006, mouthCol: '#ffffff', tongue: '#ff6f9a' }));
+    hearts(r, [[0.27, 1.0, 0.1, 0.075], [-0.25, 1.06, 0.1, 0.06]]);
+    // tuşlar: artı yön tuşu + 3x3 kocaman renkli tuş + güç tuşu
+    r.on('body').fx(0, 0.8);
+    r.add(G.rbox(2), '#ff9a2e', [0, 0.515, 0.113], null, [0.11, 0.032, 0.02]);
+    r.add(G.rbox(2), '#ff9a2e', [0, 0.515, 0.113], null, [0.032, 0.11, 0.02]);
+    r.fx(1, 0).add(G.sphere(6, 4), hdr('#ffffff', 1.2), [-0.03, 0.524, 0.124], null, [0.012, 0.005, 0.003]);
     for (let row = 0; row < 3; row++) for (let c2 = 0; c2 < 3; c2++) {
-      const x = (c2 - 1) * 0.085, y = 0.355 - row * 0.065, cc = row === 0 ? BC[c2] : (row === 1 ? '#d9deea' : BC[(c2 + 1) % 4]);
-      r.fx(row === 0 ? 0.35 : 0, 0.8).add(G.cyl(1, 1, 14), cc, [x, y, 0.087], [PI / 2, 0, 0], [0.026, 0.016, 0.026]);
-      r.fx(1, 0).add(G.sphere(6, 4), hdr('#ffffff', 1.2), [x - 0.008, y + 0.009, 0.096], null, [0.007, 0.005, 0.003]);
+      const [x, y, z] = kmBtnPos(row, c2);
+      r.fx(0.15, 0.8).add(G.cyl(1, 1, 16), KM_BTN[row][c2], [x, y, z], [PI / 2, 0, 0], [0.034, 0.02, 0.034]);
+      r.fx(1, 0).add(G.sphere(6, 4), hdr('#ffffff', 1.25), [x - 0.011, y + 0.012, z + 0.011], null, [0.009, 0.006, 0.003]);
     }
-    r.fx(0.45, 0.9).add(G.cyl(1, 1, 18), '#ff4a5a', [0.11, 0.61, 0.087], [PI / 2, 0, 0], [0.03, 0.016, 0.03]);   // güç düğmesi
+    r.fx(0.45, 0.9).add(G.cyl(1, 1, 18), '#ff3a4a', [0.15, 0.655, 0.08], [PI / 2, 0, 0], [0.026, 0.02, 0.026]);   // güç tuşu (yanda)
+    r.fx(0, 0);
+    // yanıp sönen tuş ışıkları (ayrı kemikte, anim açar/kapar)
+    for (let i = 0; i < 4; i++) {
+      const [row, c2] = KM_BLINK[i], p = kmBtnPos(row, c2);
+      r.on('blink' + i).fx(1, 0).add(G.cyl(1, 1, 16), hdr(KM_BTN[row][c2] === '#ffffff' ? '#ffffc0' : KM_BTN[row][c2], 1.9), [p[0], p[1], p[2] + 0.004], [PI / 2, 0, 0], [0.037, 0.022, 0.037]);
+    }
     r.fx(0, 0);
     // kollar + beyaz eldivenler
     for (const sd of [-1, 1]) {
       r.on(sd > 0 ? 'armL' : 'armR');
-      r.seg([0.19 * sd, 0.52, 0], [0.27 * sd, 0.36, 0.04], 0.026, '#2b2f3a', 0.024, 8);
-      mitt(r, [0.285 * sd, 0.33, 0.05], 0.055);
+      r.seg([0.2 * sd, 0.55, 0], [0.29 * sd, 0.37, 0.05], 0.026, '#2b2f3a', 0.024, 8);
+      mitt(r, [0.3 * sd, 0.34, 0.06], 0.055);
     }
-    r.on('body').mark('muzzle', [0, 0.95, 0.05]);
-    return { height: 1.0, glowC: col('#ff4058'), mat: { rough: 0.38, rim: '#bcd0ff', rimK: 0.36, rimP: 2.4 } };
+    r.on('ant').mark('muzzle', [0.12, 1.1, 0.02]);
+    return { height: 1.1, glowC: col('#ff4058'), glowK: 0.6, hide: ['blink0', 'blink1', 'blink2', 'blink3'],
+      mat: { rough: 0.32, rim: '#c8d0ff', rimK: 0.4, rimP: 2.2 } };
   }
+  const _kq = HAS ? new THREE.Quaternion() : null;
+  const KM_PRESS = HAS ? new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(-0.09, -0.18, 0.05).normalize(), new THREE.Vector3(0.21, -0.1, 0.16).normalize()) : null;
+  const KM_ID = HAS ? new THREE.Quaternion() : null;
   function animKumanda(m, dt, st, s) {
     const B = m.B, k = walkPh(s, dt, 7), ph = s.walk;
     B.legL.rotation.x = Math.sin(ph) * 0.7 * k; B.legR.rotation.x = -Math.sin(ph) * 0.7 * k;
     B.hips.position.y += Math.abs(Math.cos(ph)) * 0.035 * k;
     B.body.rotation.z = Math.sin(ph) * 0.12 * k + Math.sin(s.t * 1.6 + s.ph) * 0.03;   // paytak paytak
-    B.body.rotation.x = 0.06 * k;
+    B.body.rotation.x = -0.12 + 0.08 * k;   // hafif geriye yaslı: yüzü yukarıdan da görünür
     B.armL.rotation.x = -Math.sin(ph) * 0.6 * k; B.armR.rotation.x = Math.sin(ph) * 0.6 * k;
     B.armL.rotation.z = 0.15 + 0.08 * breath(s); B.armR.rotation.z = -0.15 - 0.08 * breath(s);
-    // tuşlar arada bir sırayla yanıp söner gibi minik zıplar
-    B.btn.position.z += Math.max(0, Math.sin(s.t * 5 + s.ph)) * 0.004;
-    if (st.windup >= 0) {   // hazırlık: geriye yaslanıp tepesini Feza'ya doğrultur, tuşlara basar
+    B.ant.rotation.z = Math.sin(s.t * 3.1 + s.ph) * 0.12 + Math.sin(ph * 2) * 0.15 * k;
+    // tuş ışıkları: kendi kendine ağır ağır yanıp söner
+    const on = [0, 0, 0, 0];
+    for (let i = 0; i < 4; i++) on[i] = Math.sin(s.t * (1.3 + i * 0.4) + s.ph + i * 1.7) > 0.55 ? 1 : 0;
+    // bekleme: sağ eliyle kendi tuşuna basar → bütün tuşlar yanar, şaşırıp zıplar
+    const u = gag(s, st, dt, 2.2, 5);
+    if (u >= 0) {
+      const reach = sm(u / 0.25) * (1 - sm((u - 0.55) / 0.2));
+      _kq.copy(KM_ID).slerp(KM_PRESS, reach); B.armR.quaternion.multiply(_kq);
+      B.body.rotation.y = -0.2 * reach;
+      if (u > 0.3 && u < 0.6) on.fill(1);
+      const hop = bumpU(u, 0.4, 0.62);
+      B.hips.position.y += hop * 0.12; B.armL.rotation.z += hop * 1.2; B.legL.rotation.x -= hop * 0.4; B.legR.rotation.x += hop * 0.4;
+      s.eyeK = 1 + 0.35 * hop;
+    }
+    if (st.windup >= 0) {   // hazırlık: geriye yaslanıp anteni Feza'ya doğrultur, iki eliyle tuşlara basar; tuşlar sırayla yanar
       const w = sm(st.windup * 1.5);
-      B.body.rotation.x = -0.55 * w; B.hips.position.z -= 0.05 * w;
-      B.armR.rotation.x = -1.1 * w; B.armR.rotation.z = -0.15 - 0.5 * w;
-      B.armL.rotation.x = -0.8 * w; B.armL.rotation.z = 0.15 + 0.35 * w;
-      B.btn.position.z += 0.006 * Math.abs(Math.sin(s.t * 30)) * w;
+      B.body.rotation.x = -0.12 - 0.45 * w; B.hips.position.z -= 0.05 * w;
+      _kq.copy(KM_ID).slerp(KM_PRESS, w); B.armR.quaternion.multiply(_kq);
+      B.armL.rotation.x = -0.9 * w; B.armL.rotation.z = 0.15 + 0.5 * w * Math.abs(Math.sin(s.t * 18));
+      const seq = Math.floor(st.windup * 10) % 4;
+      on.fill(0); on[seq] = 1; if (st.windup > 0.85) on.fill(1);
+      B.ant.rotation.z = Math.sin(s.t * 40) * 0.15 * w; B.ant.rotation.x = -0.5 * w;
       B.body.position.x += Math.sin(s.t * 55) * 0.006 * st.windup;
     }
-    if (st.attack >= 0 && st.attack < 1) {   // geri tepme
+    if (st.attack >= 0 && st.attack < 1) {   // geri tepme, bütün tuşlar parlar
       const a = st.attack, kk = Math.sin(PI * Math.min(1, a * 2));
-      B.body.rotation.x = -0.55 * (1 - sm(a * 1.5)) - 0.15 * kk; B.hips.position.z -= 0.06 * kk;
+      B.body.rotation.x = -0.12 - 0.45 * (1 - sm(a * 1.5)) - 0.15 * kk; B.hips.position.z -= 0.06 * kk;
+      if (a < 0.5) on.fill(1);
     }
+    for (let i = 0; i < 4; i++) B['blink' + i].scale.setScalar(on[i] ? 1 : 0.0001);
     boing(s, st, dt, B.body);
   }
-
   // ── Tek Çorap: eşini kaybetmiş çizgili çorap; tırtıl gibi kıvrılarak gelir, geriye esneyip "şap" diye vurur ──
   function sockCols(o) {
     if (o.rare) return { band: y => rainbowAt(y * 2.6), toe: col('#ffffff'), cuff: col('#ffffff') };
@@ -311,6 +368,9 @@
     B.top.rotation.z = Math.sin(s.t * 1.3 + s.ph) * 0.08;
     if (st.windup >= 0) { const w = sm(st.windup * 1.4); bend = lerp(bend, -0.75, w); sy *= 1 + 0.1 * w; B.top.rotation.z += Math.sin(s.t * 45) * 0.05 * w; }
     if (st.attack >= 0 && st.attack < 1) { const a = st.attack, hit = sm(a / 0.3), back = sm((a - 0.45) / 0.55); bend = lerp(-0.75, 1.0, hit) * (1 - back); }
+    { const u = gag(s, st, dt, 2.6, 5);
+      if (u >= 0) { const str = bumpU(u, 0.02, 0.72), flop = bumpU(u, 0.7, 1); bend += -0.5 * str + 0.55 * flop; B.top.scale.y = 1 + 0.28 * str; B.top.scale.x = B.top.scale.z = 1 - 0.08 * str; s.eyeK = 1 - 0.85 * str; B.top.rotation.z += Math.sin(u * 20) * 0.08 * str; }
+    }
     B.top.rotation.x = bend;
     B.body.scale.set(1 - (sy - 1) * 0.5, sy, 1 - (sy - 1) * 0.5);
     B.body.position.z = Math.sin(ph) * 0.03 * k;
@@ -326,6 +386,7 @@
     r.bone('leg', 'root', [0, 0.08, 0]);
     r.bone('body', 'leg', [0, 0.45, 0]);
     r.bone('armL', 'body', [0.06, 0.62, 0]); r.bone('armR', 'body', [-0.06, 0.62, 0]);
+    r.bone('head', 'body', [0, 0.68, 0]);   // kepçe hep hafif yukarı bakar (anim): yukarıdaki kameradan yüz görünür
     const gl = gold ? 2 : 0.25;
     // sap (ayak) + küçük kırmızı çizme
     r.on('leg').fx(0, gl);
@@ -336,14 +397,16 @@
     r.on('body').fx(0, gl);
     r.seg([0, 0.44, 0], [0, 0.66, 0], 0.05, wood, 0.055, 14);
     r.add(G.sphere(16, 10), wood, [0, 0.66, 0], null, [0.06, 0.05, 0.05]);
+    r.on('head').fx(0, gl).add(G.sphere(16, 10), wood, [0, 0.68, 0], null, [0.055, 0.05, 0.05]);
     r.add(G.sphere(32, 24), wood, [0, 0.9, -0.03], null, [0.23, 0.29, 0.1]);
     // ön yüz: sığ kepçe çukuru (açık renk iç yüzey + çevresinde kalın yuvarlak kenar)
     r.fx(0, gl * 0.8).add(G.sphere(32, 20), (x, y, z) => out.copy(wood(x, y, z)).lerp(col(gold ? '#fff0a0' : '#f6d6a8'), 0.45), [0, 0.9, 0.035], null, [0.2, 0.26, 0.035]);
     r.fx(0, gl).add(G.torus(TAU, 0.16, 40), wood, [0, 0.9, 0.04], null, [0.205, 0.265, 0.12]);
     r.fx(0, 0);
     // sapın üstünde yakılmış minik kalp
-    r.fx(0, 0.2).add(K.heartGeo(), gold ? '#c06a10' : '#7a4220', [0, 0.53, 0.05], null, [0.045, 0.045, 0.02]).fx(0, 0);
-    K.face(r, [0, 0.9, -0.62], 0.69, yuz({ bone: 'body', tilt: 0.0, ex: 0.08, ey: 0.03, er: 0.066, inset: 0.01, iris: '#3a2412', skin: wA, browCol: '#5a3214', browY: 1.35,
+    r.on('body').fx(0, 0.2).add(K.heartGeo(), gold ? '#c06a10' : '#7a4220', [0, 0.53, 0.05], null, [0.045, 0.045, 0.02]).fx(0, 0);
+    r.on('head');
+    K.face(r, [0, 0.9, -0.62], 0.69, yuz({ bone: 'head', tilt: 0.0, ex: 0.08, ey: 0.03, er: 0.066, inset: 0.01, iris: '#3a2412', skin: wA, browCol: '#5a3214', browY: 1.35,
       mouthY: -0.1, mouthW: 0.08, noHearts: true }));
     hearts(r, [[0.29, 1.1, 0.12, 0.08], [-0.27, 1.16, 0.12, 0.065]]);
     for (const sd of [-1, 1]) {
@@ -351,9 +414,9 @@
       r.seg([0.05 * sd, 0.62, 0], [0.16 * sd, 0.52, 0.04], 0.02, wood, 0.018, 8);
       r.fx(0, 0); mitt(r, [0.18 * sd, 0.5, 0.05], 0.045);
     }
-    if (E) K.crown(r.on('body'), [0, 1.16, -0.02], 0.55);
-    if (gold) glints(r.on('body'), [[0.2, 1.1, 0.06, 0.035], [-0.24, 0.8, 0.08, 0.028], [0.12, 0.4, 0.1, 0.022]]);
-    r.on('body').mark('muzzle', [0, 0.9, 0.2]);
+    if (E) K.crown(r.on('head'), [0, 1.16, -0.02], 0.55);
+    if (gold) { glints(r.on('head'), [[0.2, 1.1, 0.06, 0.035], [-0.24, 0.8, 0.08, 0.028]]); glints(r.on('body'), [[0.12, 0.4, 0.1, 0.022]]); }
+    r.on('head').mark('muzzle', [0, 0.9, 0.2]);
     return { height: 1.2, glowC: col('#ff9a4a'), mat: { rough: gold ? 0.25 : 0.62, rim: gold ? '#fff2b0' : '#ffe4c4', rimK: gold ? 0.45 : 0.3, rimP: 2.4 } };
   }
   function animKasik(m, dt, st, s) {
@@ -375,9 +438,19 @@
       const a = st.attack, hit = sm(a / 0.28), back = sm((a - 0.45) / 0.55);
       lean = lerp(-0.6, 0.9, hit) * (1 - back); y = 0.06 * Math.sin(PI * Math.min(1, a * 1.5));
     }
+    // bekleme: tek ayakta dengesi bozulur, sağa sola gittikçe çok sallanır, kollarını çırpıp toparlanır
+    const g = gag(s, st, dt, 2.6, 5.5);
+    if (g >= 0) {
+      const amp = sm(g / 0.6) * (1 - sm((g - 0.75) / 0.2));
+      B.leg.rotation.z += Math.sin(g * 26) * 0.32 * amp;
+      B.armL.rotation.z += 1.1 * amp + Math.sin(s.t * 30) * 0.5 * amp; B.armR.rotation.z -= 1.1 * amp + Math.sin(s.t * 30 + 1) * 0.5 * amp;
+      s.eyeK = 1 + 0.3 * amp; y *= 1 - amp;
+      if (g > 0.78) y += bumpU(g, 0.78, 0.98) * 0.08;   // "hop!" toparlandı
+    }
     B.leg.position.y += y; B.leg.scale.set(1 - (sy - 1) * 0.4, sy, 1 - (sy - 1) * 0.4);
     B.body.rotation.x = lean;
-    boing(s, st, dt, B.body, 1.2);
+    B.head.rotation.x = -0.5 * (1 - sm(Math.max(0, lean) / 0.6)) + Math.sin(s.t * 2.1 + s.ph) * 0.04;   // yüz yukarı bakar (vururken öne döner)
+    boing(s, st, dt, B.head, 1.2);
   }
 
   // ── Köpük Balonu: deterjan köpüğü; havada süzülür, şişip köpük atar (sedef renkli baloncuk kümesi) ──
@@ -394,7 +467,7 @@
     r.bone('body', 'root', [0, 0.5, 0]);
     r.bone('b0', 'body', [0.2, 0.6, -0.08]); r.bone('b1', 'body', [-0.2, 0.62, -0.06]); r.bone('b2', 'body', [0, 0.25, -0.05]);
     r.bone('armL', 'body', [0.3, 0.45, 0.08]); r.bone('armR', 'body', [-0.3, 0.45, 0.08]);
-    const P = pearl('#dfe8ff');
+    const P = pearl('#cfdcff');
     r.on('body').fx(0, 1, 0, 1).add(G.sphere(30, 22), P, [0, 0.5, 0], null, [0.29, 0.28, 0.27]);
     // parlak yansımalar (pencere ışığı gibi)
     r.fx(1, 0, 0, 1).add(G.sphere(12, 8), hdr('#ffffff', 1.5), [-0.13, 0.66, 0.17], [0.4, -0.5, 0.5], [0.06, 0.03, 0.01]);
@@ -409,10 +482,10 @@
       r.add(G.sphere(10, 8), P, [0.38 * sd, 0.47, 0.13], null, 0.035);
     }
     r.fx(0, 0);
-    K.face(r, [0, 0.5, 0], 0.285, yuz({ bone: 'body', tilt: 0.2, ex: 0.1, ey: 0.03, er: 0.088, iris: '#2e7fc8', skin: col('#f4f8ff'), browCol: '#6a7fb0', browY: 1.36,
-      mouthY: -0.1, mouthW: 0.085, heartY: 0.95, heartX: 1.15, blushCol: '#ff9cc8' }));
+    K.face(r, [0, 0.5, 0], 0.285, yuz({ bone: 'body', tilt: 0.2, ex: 0.105, ey: 0.035, er: 0.096, iris: '#1a5ab8', skin: col('#e4ebff'), browCol: '#4a5a9a', browY: 1.36,
+      mouthY: -0.1, mouthW: 0.085, heartY: 0.95, heartX: 1.15, blushCol: '#ff6fae' }));
     r.on('body').mark('muzzle', [0, 0.42, 0.3]);
-    return { height: 0.9, glowC: col('#9ad8ff'), mat: { rough: 0.1, sss: col('#e8f4ff').multiplyScalar(0.04), rim: '#c8a8ff', rimK: 0.5, rimP: 1.6, wob: 0.012, wobF: 4, wobS: 4 } };
+    return { height: 0.9, glowC: col('#9ad8ff'), mat: { rough: 0.1, sss: col('#e8f4ff').multiplyScalar(0.03), rim: '#90d070', rimK: -0.45, rimP: 2.8, wob: 0.012, wobF: 4, wobS: 4 } };
   }
   function animKopuk(m, dt, st, s) {
     const B = m.B;
@@ -424,6 +497,9 @@
     let sc = 1 + 0.03 * breath(s, 2);
     if (st.windup >= 0) { const w = sm(st.windup * 1.3); sc *= 1 + 0.22 * w; B.body.rotation.x = -0.25 * w; B.armL.rotation.z = 0.9 * w; B.armR.rotation.z = -0.9 * w; }
     if (st.attack >= 0 && st.attack < 1) { const kk = Math.sin(PI * st.attack); sc *= 1 - 0.15 * kk; B.body.rotation.x = 0.3 * kk; }
+    { const u = gag(s, st, dt, 2.0, 5);
+      if (u >= 0) { B.body.rotation.y += TAU * sm(u / 0.7); sc *= 1 + 0.08 * Math.sin(u * 30) * (1 - u); B.b0.scale.multiplyScalar(u < 0.35 ? 1 + u : u < 0.4 ? 0.0001 : sm((u - 0.4) / 0.5)); s.eyeK = 1 - 0.7 * bumpU(u, 0.3, 0.5); }
+    }
     B.body.scale.setScalar(sc);
     boing(s, st, dt, B.body);
   }
@@ -445,11 +521,13 @@
     r.add(G.torus(TAU, 0.28, 24), '#b07a44', [0, 0.69, 0], [PI / 2, 0, 0], [0.095, 0.095, 0.08]);   // ip
     for (const sd of [-1, 1]) r.add(G.torus(TAU, 0.3, 16), '#b07a44', [0.07 * sd, 0.7, 0.07], [0.3, sd * 0.6, 0], [0.04, 0.03, 0.03]);   // fiyonk
     r.fx(0, 0);
-    // tepeden taşan un bulutu
+    // tepeden taşan un bulutu (kendi kemiğinde: bekleme hareketinde "puf" diye kabarır)
+    r.bone('puf', 'body', [0, 0.8, 0]);
     r.fx(0.15, 0, 0, 1);
     for (let k = 0; k < 6; k++) { const a = k / 6 * TAU; r.add(G.sphere(10, 8), '#ffffff', [Math.sin(a) * 0.06, 0.81 + 0.02 * (k & 1), Math.cos(a) * 0.06], null, 0.045); }
     r.add(G.sphere(12, 8), '#ffffff', [0, 0.85, 0], null, 0.055);
     r.fx(0, 0);
+    r.on('body');
     // ön etiket: mavi şerit ve buğday başağı
     r.fx(0, 0.3);
     { const [p, n] = K.onLathe(SACK_P, 0.2, 0, 0.004); r.add(G.cyl(1, 1, 30, true), '#4f8fe0', [0, 0.2, 0], null, [0.333, 0.07, 0.333]); r.add(G.sphere(14, 8), '#ffffff', p, K.qz(...n), [0.06, 0.045, 0.01]); }
@@ -486,6 +564,10 @@
         s.roll = 0; b.rotation.z += Math.sin(s.t * 9) * 0.18; b.rotation.y = Math.sin(s.t * 6) * 0.3;
       }
     } else s.roll = 0;
+    { const u = gag(s, st, dt, 2.0, 5);   // bekleme: titrer, "puf!" — tepesindeki un bulutu kabarır, kendisi de şaşırır
+      if (u >= 0) { const sh = bumpU(u, 0, 0.4), pf = bumpU(u, 0.35, 1); b.position.x += Math.sin(s.t * 60) * 0.012 * sh; sy *= 1 - 0.1 * sh + 0.12 * bumpU(u, 0.35, 0.55);
+        B.puf.scale.setScalar(1 + 1.6 * pf); B.puf.position.y += 0.12 * pf; s.eyeK = 1 + 0.35 * pf; }
+    }
     b.scale.set(1 - (sy - 1) * 0.5, sy, 1 - (sy - 1) * 0.5);
     boing(s, st, dt, b);
   }
@@ -531,6 +613,11 @@
     if (st.windup >= 0) { const w = sm(st.windup * 1.4); sy -= 0.12 * w; b.rotation.x = -0.25 * w; b.position.x += Math.sin(s.t * 70) * 0.014 * st.windup; }
     if (st.attack >= 0 && st.attack < 1) { b.rotation.x = 0.3; b.rotation.y = Math.sin(st.attack * PI * 4) * 0.25; sy = 0.95; }
     else if (st.attack >= 1) { b.rotation.y = s.t * 8 % TAU; }   // döne döne durur
+    { const u = gag(s, st, dt, 2.2, 5);
+      if (u >= 0) { const sl = bumpU(u, 0, 0.75), tip = sm((u - 0.15) / 0.3) * (1 - sm((u - 0.62) / 0.2));
+        b.position.x += 0.18 * sl; b.rotation.z += 0.55 * tip + Math.sin(u * 40) * 0.06 * tip; b.position.y += 0.05 * tip;
+        B.armL.rotation.z += 1.4 * tip + Math.sin(s.t * 34) * 0.6 * tip; B.armR.rotation.z -= 1.4 * tip + Math.sin(s.t * 34 + 1) * 0.6 * tip; s.eyeK = 1 + 0.4 * tip; }
+    }
     b.scale.set(1 + (1 - sy) * 0.5, sy, 1 + (1 - sy) * 0.5);
     boing(s, st, dt, b);
   }
@@ -587,6 +674,10 @@
     s.wobA = damp(s.wobA ?? 0.014, 0.014, 3.5, dt);
     if (g.u > 0.85 && s.hopK > 0.3) s.wobA = 0.04;
     if (st.hurt > 0.5) s.wobA = Math.max(s.wobA, 0.05 * st.hurt);
+    { const u = gag(s, st, dt, 1.8, 4.5);
+      if (u >= 0) { const hop = Math.abs(Math.sin(u * PI * 3)) * (1 - u * 0.5); b.position.y += 0.1 * hop; b.scale.y *= 1 + 0.12 * Math.sin(u * 45) * (1 - u);
+        B.armL.rotation.z = 0.4 + 2.0 * hop; B.armR.rotation.z = -0.4 - 2.0 * hop; B.legL.position.y += 0.1 * hop; B.legR.position.y += 0.1 * hop; s.wobA = Math.max(s.wobA, 0.05 * (1 - u)); }
+    }
     m.U.uWob.value.x = s.wobA;
     boing(s, st, dt, b, 1.3);
   }
@@ -596,7 +687,7 @@
   function buildSut(r, o) {
     r.bone('body', 'root', [0, 0, 0]);
     r.bone('tip', 'body', [0, 0.62, 0]);
-    const milk = K.vgrad(0, 0.72, [[0, '#dfe8f6'], [0.35, '#fbfdff'], [1, '#ffffff']]);
+    const milk = K.vgrad(0, 0.72, [[0, '#a9bbe8'], [0.3, '#e4ecfb'], [0.6, '#fbfdff'], [1, '#ffffff']]);
     r.on('body').fx(0, 0.9, 0, (x, y) => sm(y / 0.5)).add(K.lathe('hzDrop', DROP_P, 36), milk, [0, 0.01, 0]);
     // dibindeki minik sıçrama tacı
     r.fx(0, 0.9, 0, 0);
@@ -608,10 +699,10 @@
     r.add(G.sphere(10, 8), '#ffffff', [0.06, 0.78, -0.02], null, 0.03);
     r.add(G.sphere(8, 6), '#ffffff', [0.1, 0.8, -0.02], null, 0.022);
     r.fx(0, 0);
-    K.face(r, [0, 0.25, 0], 0.318, yuz({ bone: 'body', tilt: 0.18, ex: 0.1, ey: 0.04, er: 0.09, iris: '#4a7ad0', skin: col('#f6f9ff'), browCol: '#8aa0c8', browY: 1.35,
-      mouthY: -0.1, mouthW: 0.085, heartY: 1.2, heartX: 1.25, blushCol: '#ffa0c4' }));
+    K.face(r, [0, 0.25, 0], 0.318, yuz({ bone: 'body', tilt: 0.18, ex: 0.105, ey: 0.045, er: 0.098, iris: '#1f4fb0', skin: col('#e8eefb'), browCol: '#4a5a8a', browY: 1.35,
+      mouthY: -0.1, mouthW: 0.085, heartY: 1.2, heartX: 1.25, blushCol: '#ff6f9f' }));
     r.on('body').mark('muzzle', [0, 0.25, 0.32]);
-    return { height: 0.8, glowC: col('#ffffff'), mat: { rough: 0.15, sss: col('#ffffff').multiplyScalar(0.1), rim: '#ffffff', rimK: 0.4, rimP: 2.0, wob: 0.012, wobF: 3, wobS: 4 } };
+    return { height: 0.8, glowC: col('#9ad0ff'), mat: { rough: 0.15, sss: col('#ffffff').multiplyScalar(0.04), rim: '#ffd890', rimK: -0.42, rimP: 3.0, wob: 0.012, wobF: 3, wobS: 4 } };
   }
   function animSut(m, dt, st, s) {
     const B = m.B, b = B.body;
@@ -622,6 +713,9 @@
     B.tip.rotation.z = Math.sin(s.t * 2.2 + s.ph) * 0.3; B.tip.rotation.x = -0.15 * s.mv;
     if (st.windup >= 0) { const w = sm(st.windup * 1.4); sy *= 1 + 0.18 * w; sxz *= 1 - 0.08 * w; b.rotation.x = -0.25 * w; B.tip.rotation.z += Math.sin(s.t * 30) * 0.3 * w; }
     if (st.attack >= 0 && st.attack < 1) { const kk = Math.sin(PI * st.attack); sy *= 1 - 0.22 * kk; sxz *= 1 + 0.14 * kk; b.rotation.x = 0.25 * kk; }
+    { const u = gag(s, st, dt, 2.0, 5);
+      if (u >= 0) { const bb = Math.abs(Math.sin(u * PI * 2)); b.position.y += 0.08 * bb; sy *= 1 + 0.15 * bb - 0.18 * bumpU((u * 2) % 1, 0.85, 1); B.tip.rotation.y += u * TAU * 2; B.tip.rotation.z += 0.6 * bb; b.rotation.z += Math.sin(u * TAU * 2) * 0.15; }
+    }
     b.scale.set(sxz, sy, sxz);
     boing(s, st, dt, b);
   }
@@ -639,7 +733,7 @@
     // bacaklar: şeker çubuğu çizgili + parlak siyah çizmeler
     for (const sd of [-1, 1]) {
       r.on(sd > 0 ? 'legL' : 'legR').fx(0, 0.8);
-      r.seg([0.08 * sd, 0.26, 0], [0.085 * sd, 0.08, 0.01], 0.032, (x, y) => (Math.floor((y + x * 0.3) / 0.04) % 2 ? red : wht), 0.03, 10);
+      r.seg([0.08 * sd, 0.26, 0], [0.085 * sd, 0.08, 0.01], 0.036, (x, y) => (Math.floor((y + x * 0.3) / 0.045) % 2 ? red : wht), 0.034, 10);
       r.fx(0, 0); shoe(r, 0.09 * sd, 0.05, 0.04, 0.065, 0.05, 0.095, '#2a2440', 0.9);
     }
     // gövde: nane şekeri girdabı (yüz bölgesi beyaz)
@@ -657,27 +751,28 @@
     // kâğıt şapka (katlanmış gazete kayığı)
     r.on('hat').fx(0, 0.1);
     const hatS = () => { const s2 = new THREE.Shape(); s2.moveTo(-0.24, 0); s2.lineTo(0.24, 0); s2.quadraticCurveTo(0.12, 0.08, 0.02, 0.24); s2.quadraticCurveTo(0, 0.26, -0.02, 0.24); s2.quadraticCurveTo(-0.12, 0.08, -0.24, 0); return s2; };
-    r.add(K.extrude('hzHat', hatS, 0.1, 0.012, 8), (x, y) => (y < 0.82 ? col('#ffffff') : col('#f6efe2')), [0, 0.75, -0.01]);
-    r.fx(0, 0.3).add(sbox(0.5, 0.05, 0.13, 0.015, 2), '#ff6a8a', [0, 0.77, -0.01]);
-    r.fx(0.3, 0.8).add(G.sphere(10, 8), '#ffd23f', [0, 0.92, 0.055], null, [0.035, 0.035, 0.012]);   // şapka rozeti
+    r.add(K.extrude('hzHat', hatS, 0.12, 0.014, 8), (x, y) => (y < 0.83 ? col('#ffffff') : col('#fff2c8')), [0, 0.75, -0.01], null, [1.1, 1.1, 1]);
+    r.fx(0, 0.4).add(sbox(0.55, 0.065, 0.15, 0.02, 2), '#e8204a', [0, 0.775, -0.01]);
+    r.fx(0.3, 1).add(G.cyl(1, 1, 5), '#2f6fff', [0, 0.9, 0.07], [PI / 2, 0, 0], [0.05, 0.012, 0.05]);   // şapka rozeti (mavi beşgen)
+    r.fx(0.4, 1).add(G.sphere(10, 8), '#ffd23f', [0, 0.9, 0.08], null, [0.026, 0.026, 0.01]);
     r.fx(0, 0);
     // kollar: ambalajın kıvrılmış uçları (yelpaze)
     for (const sd of [-1, 1]) {
       r.on(sd > 0 ? 'armL' : 'armR').fx(0.05, 1);
       K.cone(r, [0.25 * sd, 0.52, 0], [sd, 0.1, 0], 0.08, 0.05, '#ffc2d2', 12);
-      r.add(G.cone(16), '#ffb0c8', [0.36 * sd, 0.52, 0.02], [0, 0, sd * PI / 2], [0.1, 0.12, 0.1]);
+      r.add(G.cone(16), '#ff9cbc', [0.38 * sd, 0.52, 0.02], [0, 0, sd * PI / 2], [0.13, 0.15, 0.13]);
       r.add(G.sphere(10, 8), '#ffd0de', [0.3 * sd, 0.52, 0.02], null, 0.035);
       r.fx(0, 0);
     }
     // lolipop
     r.on('pop').fx(0, 0.3);
-    r.seg([-0.42, 0.42, 0.06], [-0.42, 0.78, 0.06], 0.012, '#ffffff', 0.012, 6);
+    r.seg([-0.42, 0.42, 0.06], [-0.42, 0.78, 0.06], 0.016, (x, y) => (Math.floor(y / 0.05) % 2 ? col('#ff4a7a') : col('#ffffff')), 0.016, 8);
     r.fx(0, 1).add(G.cyl(1, 1, 28), (x, y, z) => rainbowAt(Math.atan2(y - 0.84, x + 0.42) / TAU + Math.hypot(y - 0.84, x + 0.42) * 6), [-0.42, 0.84, 0.06], [PI / 2, 0, 0], [0.085, 0.03, 0.085]);
     r.fx(0, 0);
     K.face(r, [0, 0.52, 0], 0.275, yuz({ bone: 'body', tilt: 0.2, ex: 0.09, ey: 0.04, er: 0.084, iris: '#1a2458', skin: wht, browCol: '#5a2a3a', browY: 1.36,
       mouthY: -0.09, mouthW: 0.075, heartY: 1.15, heartX: 1.3, heartS: 0.3 }));
     r.on('body').mark('muzzle', [0, 0.52, 0.28]);
-    return { height: 1.0, glowC: col('#ff7a9a'), mat: { rough: 0.2, sss: col('#ffffff').multiplyScalar(0.04), rim: '#ffffff', rimK: 0.32, rimP: 2.4 } };
+    return { height: 1.0, glowC: col('#ff7a9a'), mat: { rough: 0.2, sss: col('#ffffff').multiplyScalar(0.02), rim: '#60c8c8', rimK: -0.38, rimP: 3.2 } };
   }
   function animSeker(m, dt, st, s) {
     const B = m.B, k = walkPh(s, dt, 7.5), ph = s.walk;
@@ -688,6 +783,11 @@
     B.armL.rotation.x = -Math.sin(ph) * 0.5 * k; B.armR.rotation.x = Math.sin(ph) * 0.3 * k;
     B.armL.rotation.z = 0.1 * breath(s, 3); B.armR.rotation.z = -0.1 * breath(s, 3);
     B.hat.rotation.z = Math.sin(ph) * 0.06 * k + Math.sin(s.t * 1.5 + s.ph) * 0.03;
+    { const u = gag(s, st, dt, 2.2, 5);
+      if (u >= 0) { const sal = sm(u / 0.2) * (1 - sm((u - 0.75) / 0.2)), click = bumpU(u, 0.05, 0.2);
+        B.armL.rotation.z = 2.3 * sal; B.armL.rotation.x = -0.4 * sal; B.hips.position.y += 0.05 * click; B.legL.rotation.z = 0.3 * click; B.legR.rotation.z = -0.3 * click;
+        B.hat.rotation.z += Math.sin(u * 30) * 0.08 * bumpU(u, 0.2, 0.5); B.body.rotation.x -= 0.1 * sal; }
+    }
     if (st.windup >= 0) {   // lolipopu havaya kaldırır
       const w = sm(st.windup * 1.3);
       B.armR.rotation.x = -2.3 * w; B.armR.rotation.z = -0.25 * w; B.pop.rotation.x = 0.8 * w;
@@ -756,6 +856,9 @@
       if (st.attack < 1 && s.mv > 0.5) { s.roll = (s.roll || 0) + dt * 15; b.rotation.x = s.roll; B.feet.scale.setScalar(0.0001); B.armL.scale.setScalar(0.0001); B.armR.scale.setScalar(0.0001); }
       else { s.roll = 0; b.rotation.y = Math.sin(s.t * 7) * 0.35; b.rotation.z += Math.sin(s.t * 10) * 0.15; }
     } else s.roll = 0;
+    { const u = gag(s, st, dt, 1.8, 5);
+      if (u >= 0) { const up = bumpU(u, 0, 1); b.rotation.y += TAU * sm(u); b.position.y += 0.07 * up; sy *= 1 + 0.08 * up; B.armL.rotation.z += 1.6 * up; B.armR.rotation.z -= 1.6 * up; B.leaf.rotation.y += TAU * u; }
+    }
     b.scale.set(1 - (sy - 1) * 0.5, sy, 1 - (sy - 1) * 0.5);
     boing(s, st, dt, b);
   }
@@ -765,7 +868,7 @@
     [0.16, 0.51], [0.15, 0.55], [0.09, 0.62], [0.04, 0.69], [0, 0.72]];
   function buildKrema(r, o) {
     const E = o.elite;
-    const cream = col(E ? '#ffe2f0' : '#fff6ee'), creamD = col(E ? '#f0b0d0' : '#f2dccb'), out = new THREE.Color();
+    const cream = col(E ? '#ffd8ec' : '#fff4ea'), creamD = col(E ? '#e890c0' : '#eeb0bc'), out = new THREE.Color();
     r.bone('body', 'root', [0, 0.06, 0]);
     r.bone('top', 'body', [0, 0.55, 0]);
     // kurabiye taban
@@ -778,7 +881,7 @@
       return 1 + 0.07 * Math.sin(a * 7 + y * 26) * sm(y / 0.08) * (1 - 0.85 * face);
     };
     r.on('body').fx(0, 0.55, 0, (x, y) => sm((y - 0.1) / 0.5));
-    r.add(wavyLathe('hzCream', CREAM_P, 64, swirl), (x, y, z) => out.copy(creamD).lerp(cream, sm((y - 0.07) / 0.2)), [0, 0.06, 0]);
+    r.add(wavyLathe('hzCream', CREAM_P, 64, swirl), (x, y, z) => out.copy(creamD).lerp(cream, sm((y - 0.07) / 0.2) * (0.55 + 0.45 * sm(0.5 + 0.5 * Math.sin(Math.atan2(x, z) * 7 + y * 26 + 1.2)))), [0, 0.06, 0]);
     // renkli şeker serpintisi
     r.fx(0.1, 0.8, 0, (x, y) => sm((y - 0.1) / 0.5));
     const SP = ['#ff6a9a', '#ffd23f', '#5fd3c8', '#9b7bff', '#ff9f43'];
@@ -794,11 +897,11 @@
     r.fx(1, 0).add(G.sphere(8, 6), hdr('#ffffff', 1.5), [-0.025, 0.83, 0.05], null, 0.014);
     r.fx(0, 0.4); r.seg([0, 0.86, 0], [0.04, 0.97, -0.03], 0.008, '#5a8a2a', 0.006, 6);
     r.fx(0, 0);
-    K.face(r, [0, 0.33, 0], 0.365, yuz({ bone: 'body', tilt: 0.2, ex: 0.105, ey: 0.035, er: 0.096, iris: '#2a1420', skin: mixc(cream, creamD, 0.5), browCol: '#a06a7a', browY: 1.35,
-      mouthY: -0.1, mouthW: 0.085, heartY: 1.15, heartX: 1.25, blushCol: '#ff9ac0' }));
+    K.face(r, [0, 0.33, 0], 0.365, yuz({ bone: 'body', tilt: 0.2, ex: 0.105, ey: 0.035, er: 0.096, iris: '#2a1420', skin: mixc(cream, creamD, 0.5), browCol: '#7a3a52', browY: 1.35,
+      mouthY: -0.1, mouthW: 0.085, heartY: 1.15, heartX: 1.25, blushCol: '#ff6fa0' }));
     if (E) K.crown(r.on('top'), [0, 0.86, 0], 0.5);
     r.on('top').mark('muzzle', [0, 0.72, 0.1]);
-    return { height: 0.95, glowC: col('#ffc0dc'), mat: { rough: 0.4, sss: col('#fff0e8').multiplyScalar(0.08), rim: '#ffffff', rimK: 0.35, rimP: 2.2, wob: 0.01, wobF: 4, wobS: 4 } };
+    return { height: 0.95, glowC: col('#ffc0dc'), mat: { rough: 0.4, sss: col('#fff0e8').multiplyScalar(0.03), rim: '#70c0a0', rimK: -0.38, rimP: 3.2, wob: 0.01, wobF: 4, wobS: 4 } };
   }
   function animKrema(m, dt, st, s) {
     const B = m.B, b = B.body;
@@ -808,6 +911,10 @@
     B.top.rotation.z = Math.sin(s.t * 2 + s.ph) * 0.12; B.top.rotation.y = s.t * 0.6;
     if (st.windup >= 0) { const w = sm(st.windup * 1.4); sy *= 1 + 0.2 * w; sxz *= 1 - 0.1 * w; b.rotation.x = -0.2 * w; B.top.position.y += 0.05 * w; b.rotation.y = Math.sin(s.t * 40) * 0.05 * w; }
     if (st.attack >= 0 && st.attack < 1) { const kk = Math.sin(PI * st.attack); sy *= 1 - 0.25 * kk; sxz *= 1 + 0.15 * kk; b.rotation.x = 0.2 * kk; }
+    { const u = gag(s, st, dt, 2.0, 5);
+      if (u >= 0) { const sq = bumpU(u, 0, 0.18), fly = bumpU(u, 0.15, 0.75), cat = bumpU(u, 0.72, 0.95);
+        sy *= 1 - 0.18 * sq - 0.15 * cat; sxz *= 1 + 0.1 * sq + 0.08 * cat; B.top.position.y += 0.45 * fly; B.top.rotation.y += TAU * 2 * sm((u - 0.15) / 0.6); s.eyeK = 1 + 0.4 * fly; }
+    }
     b.scale.set(sxz, sy, sxz);
     boing(s, st, dt, b);
   }
