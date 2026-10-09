@@ -41,7 +41,7 @@
   }
   function seedGeo(THREE) {   // ayçiçeği çekirdeği: damla biçimli yassı tohum
     const g = new THREE.SphereGeometry(1, 16, 10), p = g.attributes.position;
-    for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); p.setXYZ(i, x * 0.42 * (0.75 + 0.25 * z), y * 0.2, z); }
+    for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); p.setXYZ(i, x * 0.6 * (0.7 + 0.3 * z), y * 0.32 + 0.05, z * 0.85); }
     g.computeVertexNormals(); return g;
   }
 
@@ -154,9 +154,10 @@
       function seeds(x, z, n, s) {
         for (let i = 0; i < n; i++) {
           const a = rnd() * PI * 2, d = rnd() * s * 1.6, sx = x + Math.sin(a) * d, sz = z + Math.cos(a) * d, k = s * (0.45 + rnd() * 0.3);
-          const dark = rnd() < 0.7;
-          api.put(seed, sx, k * 0.2, sz, k, k, k, dark ? 0x3a3a40 : 0xe8d2a0, rnd() * PI * 2, 0, (rnd() - 0.5) * 0.4);
-          if (dark) api.put(seed, sx, k * 0.21 + 0.005, sz, k * 0.35, k * 1.02, k * 0.98, 0xd8d8de, 0, 0, 0);   // açık çizgi
+          const dark = rnd() < 0.55;
+          const yaw = rnd() * PI * 2;
+          api.put(seed, sx, k * 0.12, sz, k, k, k, dark ? 0x55505a : 0xf2dca8, yaw, 0, 0);
+          if (dark) for (const o of [-0.18, 0.18]) api.put(seed, sx + Math.cos(yaw) * o * k, k * 0.125, sz - Math.sin(yaw) * o * k, k * 0.14, k * 1.04, k * 0.9, 0xf4f0f8, yaw, 0, 0);   // açık çizgiler
         }
       }
       // ── alanlara göre süsleme: yürünür alanın kenarı boyunca (ekranda görünsün), her nokta en yakın odanın alanına göre ──
@@ -167,12 +168,12 @@
       for (let z = 1; z < L.H - 1; z += STEP) for (let x = 1; x < L.W - 1; x += STEP) {
         const px = x + (rnd() - 0.5) * 1.6, pz = z + (rnd() - 0.5) * 1.6;
         if (api.isFloor(px, pz) || api.linkDist(px, pz) < 2.6) continue;
-        const edge = nearFloor(px, pz, 2.4), far = !edge && nearFloor(px, pz, 6);
+        const edge = nearFloor(px, pz, 2.4), far = !edge && nearFloor(px, pz, 8);
         if (!edge && !far) continue;
-        if (far && rnd() < 0.45) continue;
-        const ai = areaOf(px, pz), ar = A[ai], low = !southOpen(px, pz), r = rnd();
+        if (far && rnd() < 0.3) continue;
+        const ai = areaOf(px, pz), ar = A[ai], low = edge || !southOpen(px, pz), r = rnd();   // kenarda hep alçak; uzun şeyler geride
         if (ar && ar.boss) { if (r < 0.6) bigPot(px, pz, low ? 1.3 + rnd() * 0.4 : 1.8 + rnd() * 0.8, low); else flower(px, pz, low ? 1.3 : 2.2, low ? 0.9 : 3.2 + rnd() * 1.5, rnd() < 0.5 ? 'papatya' : 'gerbera'); continue; }
-        if (ai === 0) { if (r < 0.7) bigPot(px, pz, low ? 1.2 + rnd() * 0.5 : 2.0 + rnd() * 1.4, low); else for (let k = 0; k < 3; k++) { const ls = 0.9 + rnd() * 0.6; api.put(leaf, px, 0.05, pz, ls, ls, ls, GREEN[k % 4], PI + (rnd() - 0.5) * 2.4, 0.15, 0); } }
+        if (ai === 0) { if (r < 0.7) bigPot(px, pz, low ? 1.2 + rnd() * 0.5 : 2.0 + rnd() * 1.4, low); else if (low) { for (let k = 0; k < 3; k++) flower(px + (rnd() - 0.5) * 1.6, pz + (rnd() - 0.5) * 1.6, 0.7 + rnd() * 0.3, 0.35 + rnd() * 0.3, rnd() < 0.5 ? 'papatya' : 'gerbera'); } else for (let k = 0; k < 3; k++) { const ls = 0.6 + rnd() * 0.4; api.put(leaf, px, 0.05, pz, ls, ls, ls, GREEN[k % 4], PI + (rnd() - 0.5) * 2.4, 0.15, 0); } }
         else if (ai === 1) { flower(px, pz, low ? 1.2 + rnd() * 0.4 : 2.0 + rnd() * 1.2, low ? 0.6 + rnd() * 0.5 : 2.6 + rnd() * 2.6, rnd() < 0.5 ? 'papatya' : 'gerbera'); }
         else { if (low || r < 0.55) seeds(px, pz, 4 + ((rnd() * 4) | 0), 0.9); else bigPot(px, pz, 1.8 + rnd() * 1.0, false); }
       }
@@ -349,9 +350,15 @@
         const c = s.kind === 'mini' ? 0x5ac8ff : 0xffb35c;
         api.cyl(s.x, 0.04, s.z, s.r, 0.08, c);
         api.glow(s.x, s.z, 2.4, c, 0.16);
-        api.put(cyl, s.x, 1.2, s.z - 1.4, 0.08, 2.4, 0.08, 0xb07a4a);
-        api.put(sph, s.x, 2.6, s.z - 1.4, 0.75, 0.75, 0.2, c);
-        api.put(sph, s.x, 2.6, s.z - 1.27, 0.5, 0.5, 0.12, 0xffffff);
+        api.put(cyl, s.x, 0.8, s.z - 1.4, 0.08, 1.6, 0.08, 0xb07a4a);
+        api.put(sph, s.x, 1.85, s.z - 1.4, 0.62, 0.62, 0.16, c);
+        if (s.kind === 'mini') {   // tabelada minik sulama kabı
+          api.put(cyl, s.x - 0.05, 1.82, s.z - 1.2, 0.22, 0.34, 0.12, 0x2f8fd8); api.put(cyl, s.x + 0.25, 1.95, s.z - 1.2, 0.04, 0.4, 0.04, 0x2f8fd8, 0, 0, -0.9);
+          api.put(tor, s.x - 0.05, 2.05, s.z - 1.2, 0.12, 0.12, 0.12, 0x2f8fd8);
+        } else {                   // tabelada kemik
+          api.put(cyl, s.x, 1.85, s.z - 1.2, 0.06, 0.6, 0.06, 0xffffff, 0, 0, PI / 2);
+          for (const sx of [-1, 1]) for (const sy of [-1, 1]) api.put(sph, s.x + sx * 0.3, 1.85 + sy * 0.07, s.z - 1.2, 0.09, 0.09, 0.09, 0xffffff);
+        }
       }
     },
   });
