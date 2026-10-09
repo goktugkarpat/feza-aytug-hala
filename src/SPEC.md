@@ -154,6 +154,24 @@ parıltılar döner (`H.setComplete` = set id), Hala `set_tamam` der. **Eşya ka
 (ayrıntı: src/04_feza.js `const ITEMS` üstündeki açıklama; ev temalı eşyalar src/04_esyalar.js'de).
 Sesler: `src/02l_feza.js` (`kostum_<id>`, `set_tamam`, Bilbo cümleleri).
 
+### Bilbo (src/04_bilbo.js model, 04_bilbo_follow.js takip, 04_bilbo_fun.js oyunlar)
+**Model** `BILBO.create()` → `{ root, update(dt, st), bones, meshes, mouthAnchor, saddle (eyer: dünya konumu = Feza'nın oturduğu yer),
+head, neck, body, setAccessory(id|null), accessory(), sneeze(onAchoo(pos)), isSneezing(), fetchBone… }`. `st` = `{ speed, hop, pounce, bark,
+sit, happy 0..1 (hızlı mutlu kuyruk + arka sallama + dil dışarıda), sniff, dig, ride }`. Oyunda ölçek 0.78.
+**Aksesuarlar**: `BILBO.ACCESSORIES = [{id, ad, simge}]`: `tasma` (Kırmızı Tasma, kemik biçimli altın künye), `bandana` (Puantiyeli Bandana),
+`sapka` (Parti Şapkası), `gozluk` (Havalı Gözlük), `pelerin` (Süper Pelerin, koşarken dalgalanır). Kemiklere bağlı küçük mesh'ler; ilk takılışta
+kurulur, saklanır. `GAME.setBilboAccessory(id)` takar; `bilboAcc` olayında Hala `bilbo_<id>` (yoksa `bilbo_aksesuar`) der.
+**Binme**: `GAME.rideBilbo(true, saniye=14)` / `GAME.rideBilbo(false)`. Bölüm tasarımcısı istasyonla başlatır:
+`L.stations.push({ id: 'binis1', kind: 'binis', x, z, r: 1.6, sure: 14 })`. Binerken `P.rideMul = 1.6` (hız), Feza saldırabilir; süre bitince,
+bölüm değişince, Feza düşünce biter. Durum: `BILBO_FUN.riding`, `BILBO_FUN.rideLeft`. Sesler `bilbo_bin`, `bilbo_in`.
+**Kayıp eşya**: bölümün `kayipEsya`'sı (`gozluk`, `anahtar`, `toka`; başka id → hediye kutusu) için yer: `L.lostSpot = {x, z, id?}` (ya da
+`L.lostSpots[0]`; yerlesim'de verilebilir), yoksa ortadaki/sonraki bir ana odada (başlangıç ve boss arenası değil) otomatik seçilir. Merkezde (hub) ve
+`P.kayipEsyalar[bölüm]` doluysa yok. Yerde parıldayan küçük halı tüyü tümseği; Feza ~7 m yaklaşınca ve 5 m içinde huysuz yokken Bilbo koşar,
+koklar, havlar, kazar (~4-5 s), eşya kavisle Feza'nın yanına düşer → `GAME.foundLostItem(id, bölüm)` (+ `STORY.lostItem`), Hala `bilbo_buldu_<id>`.
+Tehlike gelirse yarıda bırakır, sonra yeniden dener. Durum: `BILBO_FUN.lost` `{x, z, id, phase: wait|go|sniff|dig|pop|done}`.
+**Hapşırma**: `GAME.bilboSneeze()` (dünya efektleri: bulut + konfeti, küçük sarsıntı, öndeki boss olmayan huysuzlar geri savrulup 1,4 s sersemler,
+Hala `bilbo_hapsu`); yalnız görüntü için `GAME.Bilbo.sneeze()`. Hikâye sahneleri kullanabilir.
+
 ### QA
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
 cheerAll(), hurt(n), down(), info() }`. Python: `scratchpad/qa/hala_qa.py` (sınıf `Hala`, kullanım dosyanın başında), duman testi `hala_smoke.py`.
