@@ -129,6 +129,17 @@ Bölüm içine de istasyon konabilir (yerlesim'de `L.stations`). `CAKE.build(api
 katmanı, #ui içinde; bitince silinir), t, score, from: 'hub'|'zone', data }`. `MINIGAME.start(id, {from, onEnd})`, `.finish()`, `.list()`, `.active`,
 `.current`. GAME.update her kare `MINIGAME.update(dt)`; holdsWorld iken dünya durur. Sonuç `GAME.miniResult` ile kayda girer. Yer tutucu: `sekerYakala`.
 
+### Buzdolabı + Pasta Krallığı (odalar B: src/06z_buzdolabi.js, src/06z_pasta.js, sesler src/02l_odalarB.js)
+Ortak araç `ODAB` (06z_buzdolabi.js'te; pasta da kullanır): birleştirilmiş çizim (`batch`), malzemeler (`mat('ice'|'jelly'|'cream'|'candy'|…)`),
+hareket düzeni (`rig`: zıplatan tepecik, buzda kayma, kaydırak/sal yolculuğu — Feza'yı LEVEL.update'te `GAME.P.pos` + `GAME.H.root` ile taşır),
+`goldSugar` (altın şeker → `GAME.addGoldSugar` + çıkartma), `coins` (GAME.coins'e şeker fışkırtır), `edgeSpots` (yürünür alanın kıyısı).
+Diğer ajanlar için: `ODAB.riding()` → Feza şu an zıplıyor / kayıyor / salda (Hala ve Bilbo beklesin), `ODAB.lift` (Feza'nın yüksekliği).
+`L.kayipSpot = {x, z, id:'toka', zone}` (Buzdolabı, 3. alan): Bilbo ajanı kendi kazmasını kurarsa `L.kayipSpot._bilbo = true` yapar; yoksa
+Feza 2,6 m yaklaşınca kar tümseği açılır ve `GAME.foundLostItem('toka','buzdolabi')`. Gizli çıkartmalar: `gizli_jole_altin`, `gizli_buz_iglo`,
+`gizli_buzdolabi_isigi`, `gizli_buz_canlari`, `gizli_krema_sal`, `gizli_krema_torbasi`, `gizli_lolipop_fener`, `gizli_kurabiye_ev`,
+`gizli_seker_mum`, `gizli_pamuk_altin`. Pasta arenası `GAME.boss` canına göre süslenir (≤%67 süs ipleri + ışık balonları, ≤%34 mumlar yanar),
+boss neşelenince havai fişek + konfeti kendiliğinden başlar (STORY.ending'den bağımsız).
+
 ### QA
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
 cheerAll(), hurt(n), down(), info() }`. Python: `scratchpad/qa/hala_qa.py` (sınıf `Hala`, kullanım dosyanın başında), duman testi `hala_smoke.py`.
