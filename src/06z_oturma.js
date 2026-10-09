@@ -572,27 +572,8 @@ const OTURMA = (() => {
         }
       } });
     // Aytuğ Hala'nın gözlüğü: Bilbo'nun kokladığı toz tepeciği; yaklaşınca kazılır
-    const ke = L.kayipEsya, done = () => !!(GAME.P && GAME.P.kayipEsyalar && GAME.P.kayipEsyalar.oturma);
-    if (ke && !done()) {
-      const mound = new THREE.Group(); mound.position.set(ke.x, 0, ke.z); api.add(mound);
-      const md = new THREE.Mesh(dustGeo(), K.vmat(0.95)); md.scale.set(1.3, 0.8, 1.3); md.castShadow = true; mound.add(md);
-      const gl = new THREE.Mesh(glassesGeo(), K.vmat(0.3)); gl.visible = false; gl.scale.setScalar(0.9); mound.add(gl);
-      let dig = -1;
-      T.add({ x: ke.x, z: ke.z, r: 2.2, hint: { y: 2 }, line: 'oda_gozluk_ipucu', near: 8, once: true,
-        can: () => !done(),
-        use: () => { dig = 0; K.sfx('dig', { x: ke.x, z: ke.z }); if (typeof GAME.bilboDig === 'function') { try { GAME.bilboDig(ke.x, ke.z); } catch (e) { /* */ } } },
-        tick: (dt, t) => {
-          if (dig < 0) { md.rotation.y = Math.sin(t) * 0.1; if (Math.random() < dt * 1.5) K.burst('sparkle', ke.x, 0.8, ke.z); return; }
-          if (dig > 3) return;
-          dig += dt;
-          if (dig < 1.3) { if (Math.random() < dt * 10) K.burst('dirt', ke.x + (Math.random() - 0.5), 0.3, ke.z + (Math.random() - 0.5)); md.scale.y = 0.8 * (1 - dig / 1.3) + 0.05; }
-          else {
-            if (!gl.visible) { gl.visible = true; K.sfx('unlock', { x: ke.x, z: ke.z }); K.burst('confetti', ke.x, 1.5, ke.z); K.ring(ke.x, ke.z, 3, '#ffe28a');
-              try { GAME.foundLostItem('gozluk', 'oturma'); } catch (e) { /* */ } K.say('oda_gozluk'); }
-            const u = Math.min(1, (dig - 1.3) / 1.2); gl.position.y = 0.4 + Math.sin(u * Math.PI * 0.5) * 2.2; gl.rotation.y += dt * 4;
-          }
-        } });
-    }
+    const ke = L.kayipEsya;
+    if (ke) K.lost(api, T, { zone: 'oturma', id: 'gozluk', x: ke.x, z: ke.z, mound: dustGeo(), item: glassesGeo(), itemScale: 0.9, ipucu: 'oda_gozluk_ipucu', bulundu: 'oda_gozluk', dirt: 'dirt' });
   }
 
   function duvar(L, api) {

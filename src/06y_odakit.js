@@ -444,7 +444,8 @@ const ODAKIT = (() => {
         if (dig < 1.3) { if (Math.random() < dt * 10) burst(o.dirt || 'dirt', o.x + (Math.random() - 0.5), 0.3, o.z + (Math.random() - 0.5)); md.scale.y = sy * (1 - dig / 1.3) + 0.03; }
         else {
           if (!it.visible) { it.visible = true; sfx('unlock', { x: o.x, z: o.z }); burst('confetti', o.x, 1.5, o.z); ring(o.x, o.z, 3, '#ffe28a');
-            const gg = G_(); try { if (gg) gg.foundLostItem(o.id, o.zone); } catch (e) { /* */ } say(o.bulundu); }
+            const gg = G_(); try { if (gg) gg.foundLostItem(o.id, o.zone); } catch (e) { /* */ }
+            if (!(typeof AUD !== 'undefined' && AUD.LINES && AUD.LINES['kayip_' + o.id])) say(o.bulundu); }   // (hikâyenin kendi cümlesi varsa o söyler)
           const u = Math.min(1, (dig - 1.3) / 1.2); it.position.y = 0.4 + Math.sin(u * Math.PI * 0.5) * 2.2; it.rotation.y += dt * 4;
         }
       } });
