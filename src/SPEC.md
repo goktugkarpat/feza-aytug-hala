@@ -129,6 +129,68 @@ Bölüm içine de istasyon konabilir (yerlesim'de `L.stations`). `CAKE.build(api
 katmanı, #ui içinde; bitince silinir), t, score, from: 'hub'|'zone', data }`. `MINIGAME.start(id, {from, onEnd})`, `.finish()`, `.list()`, `.active`,
 `.current`. GAME.update her kare `MINIGAME.update(dt)`; holdsWorld iken dünya durur. Sonuç `GAME.miniResult` ile kayda girer. Yer tutucu: `sekerYakala`.
 
+### Feza (src/04_feza.js): kıyafet, kostümler, ifadeler, binme
+Görünüş (gerçek Feza): kahverengi kısa saç, alna düşen yan kakül; krem zemin üstünde ince lacivert + açık mavi YATAY çizgili uzun kollu
+tişört (krem riba yaka/kol ağzı, göğüste küçük lacivert etiket), koyu gri eşofman altı (lastikli paça), turuncu-turkuaz çizgili çoraplar,
+mavi-beyaz spor ayakkabı. (Eski "bulut/uçak baskılı tişört" metni geçersiz.)
+**Kostümler** — eşyalardan AYRI katman. `GAME.setCostume(id)` → `H.setCostume(id)` (+ `recalcStats`, `costume` olayı, Hala `kostum_<id>` cümlesi).
+`FEZA.COSTUMES`, `FEZA.costumes()` → `[{id, ad, arti}]` (Gardırop ekranı için), `FEZA.costumeBonus(id)` → `{hp, dmg, armor, speed}` (recalcStats okur):
+| id | ad | görünüş | artı |
+|---|---|---|---|
+| `gunluk` (= null) | Günlük Feza | çizgili tişört | — |
+| `pastaci` | Pastacı Feza | beyaz aşçı şapkası, pembe kenarlı önlük, cepte tahta kaşık | can +%12 |
+| `superkahraman` | Süper Kahraman Feza | kırmızı maske, sarı F rozeti, altın kemer, F'li kırmızı pelerin | hız +%10 |
+| `sovalye` | Şövalye Feza | oluklu karton zırh (bant, boyalı yıldız), karton omuzluk ve püsküllü karton miğfer, sol kolda tencere kapağı kalkan | zırh +8 |
+| `kasif` | Kâşif Feza | kâşif şapkası (yeşil bant), dürbün, çapraz askılı deri çanta | vuruş +%7 |
+| `astronot` | Astronot Feza | cam baloncuk kask + yaka, ışıklı sırt çantası, göğüs paneli | hız +%5, zırh +4 |
+Başlıklı kostüm (pastacı, şövalye, kâşif, astronot) takılı eşya şapkasını GİZLER; pelerinli/sırt çantalı kostüm (süper kahraman, astronot) eşya pelerinini
+gizler (eşyanın gücü sürer). Kayıttan yüklenince `applyLooks()` (07_game) kostümü ve Bilbo aksesuarını yeniden giydirir. Kostümün kilidi: `GAME.unlockCostume(id)`.
+**İfadeler**: `H.express('sevinc'|'saskin'|'kararli', saniye, sonraki?)`, `H.wink()` (sol göz). Feza kendisi de tepki verir: huysuz neşelenince
+ara sıra sevinç, boss gelince kararlılık, eşya/kayıp eşya/malzeme/altın şekerde şaşkınlık → sevinç, seviye atlayınca göz kırpma, boştayken ara sıra göz kırpma.
+**Binme**: `H.update(dt, { …, ride: 0..1 })` → Bilbo'nun sırtında oturma pozu (bacaklar iki yana, eller öne, gövde öne eğik; vuruş yine yapılır).
+Oyun `H.root.position.y`'yi Bilbo'nun eyer yüksekliğine koyar; poz kasığı köke oturtur.
+**Eşya setleri**: silah + şapka + pelerin aynı sete (`ITEMS.setOf(item)`, `ITEMS.SETS[set].renk`) aitse Feza'nın çevresinde setin renginde
+parıltılar döner (`H.setComplete` = set id), Hala `set_tamam` der. **Eşya kaydı** `ITEMS.register / paintCape / clearBases / setStarter / BOSS_GIFT / SETS / KIT`
+(ayrıntı: src/04_feza.js `const ITEMS` üstündeki açıklama; ev temalı eşyalar src/04_esyalar.js'de).
+Sesler: `src/02l_feza.js` (`kostum_<id>`, `set_tamam`, Bilbo cümleleri).
+
+### Bilbo (src/04_bilbo.js model, 04_bilbo_follow.js takip, 04_bilbo_fun.js oyunlar)
+**Model** `BILBO.create()` → `{ root, update(dt, st), bones, meshes, mouthAnchor, saddle (eyer: dünya konumu = Feza'nın oturduğu yer),
+head, neck, body, setAccessory(id|null), accessory(), sneeze(onAchoo(pos)), isSneezing(), fetchBone… }`. `st` = `{ speed, hop, pounce, bark,
+sit, happy 0..1 (hızlı mutlu kuyruk + arka sallama + dil dışarıda), sniff, dig, ride }`. Oyunda ölçek 0.78.
+**Aksesuarlar**: `BILBO.ACCESSORIES = [{id, ad, simge}]`: `tasma` (Kırmızı Tasma, kemik biçimli altın künye), `bandana` (Puantiyeli Bandana),
+`sapka` (Parti Şapkası), `gozluk` (Havalı Gözlük), `pelerin` (Süper Pelerin, koşarken dalgalanır). Kemiklere bağlı küçük mesh'ler; ilk takılışta
+kurulur, saklanır. `GAME.setBilboAccessory(id)` takar; `bilboAcc` olayında Hala `bilbo_<id>` (yoksa `bilbo_aksesuar`) der.
+**Binme**: `GAME.rideBilbo(true, saniye=14)` / `GAME.rideBilbo(false)`. Bölüm tasarımcısı istasyonla başlatır:
+`L.stations.push({ id: 'binis1', kind: 'binis', x, z, r: 1.6, sure: 14 })`. Binerken `P.rideMul = 1.6` (hız), Feza saldırabilir; süre bitince,
+bölüm değişince, Feza düşünce biter. Durum: `BILBO_FUN.riding`, `BILBO_FUN.rideLeft`. Sesler `bilbo_bin`, `bilbo_in`.
+**Kayıp eşya**: bölümün `kayipEsya`'sı (`gozluk`, `anahtar`, `toka`; başka id → hediye kutusu) için yer: `L.lostSpot = {x, z, id?}` (ya da
+`L.lostSpots[0]`; yerlesim'de verilebilir), yoksa ortadaki/sonraki bir ana odada (başlangıç ve boss arenası değil) otomatik seçilir. Merkezde (hub) ve
+`P.kayipEsyalar[bölüm]` doluysa yok. Yerde parıldayan küçük halı tüyü tümseği; Feza ~7 m yaklaşınca ve 5 m içinde huysuz yokken Bilbo koşar,
+koklar, havlar, kazar (~4-5 s), eşya kavisle Feza'nın yanına düşer → `GAME.foundLostItem(id, bölüm)` (+ `STORY.lostItem`), Hala `bilbo_buldu_<id>`.
+Tehlike gelirse yarıda bırakır, sonra yeniden dener. Durum: `BILBO_FUN.lost` `{x, z, id, phase: wait|go|sniff|dig|pop|done}`.
+**Hapşırma**: `GAME.bilboSneeze()` (dünya efektleri: bulut + konfeti, küçük sarsıntı, öndeki boss olmayan huysuzlar geri savrulup 1,4 s sersemler,
+Hala `bilbo_hapsu`); yalnız görüntü için `GAME.Bilbo.sneeze()`. Hikâye sahneleri kullanabilir.
+
+### Eşyalar (src/04_esyalar.js)
+`ITEMS.clearBases()` ile eski ışın kılıcı/uzay eşyaları kaldırılır (eski kayıtlar `make` içinde LEGACY'den bulunur), yerine ev eşyaları
+`ITEMS.register` ile gelir. Modeller Kit ile birleştirilmiş 2–4 parça, geometri/malzeme önbellekte; nadirlik ≥ 2 renkli kenar ışığı.
+Başlangıç: `ITEMS.setStarter('kasik', 'cirpici')`. id (minLvl; * efsane, ! boss hazinesi):
+- Kılıç: kasik Tahta Kaşık Kılıç 0 · oklava 1 · spatula 2 · catal Çatal Işın Kılıcı 3 · kepce 4 · sekerkamisi Şeker Kamışı Kılıcı 5 ·
+  ekmekbicagi Tırtıklı Ekmek Bıçağı 6 · dondurmakasigi 7 · pastakurek* Altın Pasta Küreği · gokkusagiseker* Gökkuşağı Şeker Kılıcı · dondurmakilic! Dondurma Külahı Kılıcı
+- Değnek (heroClass 'wizard'): cirpici Çırpıcı 0 · lolipop 1 (eski model, reuse) · kurabiye 3 · kraker Sihirli Çubuk Kraker 5 · kremasikacagi 7 ·
+  mumdegnek* Doğum Günü Mumu · supurgedegnek! Süpürge Teli
+- Şapka: kevgir 0 · bere Kurdeleli Bere 1 · kekkalibi Kek Kalıbı Kask 2 · fincan 3 · yumurta Yumurta Kabuğu 4 · cupcake 5 · makaron 6 · pastadilimi 7 ·
+  pastataci* Pasta Tacı · kocapastatac! · duduklukask! Düdüklü Kask · dondurmatac! (eski dondurma şapkası, reuse)
+- Pelerin (`ITEMS.paintCape`): onluk Önlük 0 · mutfakbezi 1 · krep 2 · potikare Pötikare Masa Örtüsü 3 · cilekli 5 · buzlu 6 · makaronpelerin 7 ·
+  krema* Krema Pelerin · tozbezi! Toz Bezi Pelerini
+Setler (`ITEMS.SETS`, `def.set`): pastaci (kasik + kekkalibi + onluk, #ffb347) · kahvalti (catal + fincan + krep, #7fe8ff) ·
+sekerci (sekerkamisi + cupcake + cilekli, #ff6fae) · kurabiyeci (kurabiye + yumurta + potikare, #ffcf5a; büyücü seti).
+Boss hazineleri (`ITEMS.BOSS_GIFT`, nadirlik 3; boss eşyalarında classLock yok, silah türü kuralı yine geçerli):
+uykucuSupurge → savaşçı cape:tozbezi, büyücü/ikiz weapon:supurgedegnek · dudukluTencere → hat:duduklukask (hepsi) ·
+dondurmaKrali → savaşçı/ikiz weapon:dondurmakilic, büyücü hat:dondurmatac · kocaPasta → hat:kocapastatac (hepsi).
+Yedek: aynı hediyeler eski taban adlarıyla da (kraljole, kefirdev, lavkaplumbaga, ejderha, kostebekusta, sovalye, duduklu).
+
 ### QA
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
 cheerAll(), hurt(n), down(), info() }`. Python: `scratchpad/qa/hala_qa.py` (sınıf `Hala`, kullanım dosyanın başında), duman testi `hala_smoke.py`.

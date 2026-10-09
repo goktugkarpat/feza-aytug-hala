@@ -692,12 +692,15 @@ const GAME = (() => {
   function recalcStats() {
     const w = P.equip.weapon, h = P.equip.hat, c = P.equip.cape;
     const old = P.maxHp;
-    P.maxHp = Math.round(T.baseHp + 12 * (P.lvl - 1) + 5 * (h ? h.power : 0));
+    // Dev Ev: kostümün küçük artısı (FEZA.costumeBonus, src/04_feza.js) ve Bilbo'ya binerken hız (P.rideMul)
+    let cb = null; try { cb = typeof FEZA !== 'undefined' && FEZA.costumeBonus ? FEZA.costumeBonus(P.kostum) : null; } catch (err) { cb = null; }
+    cb = cb || {};
+    P.maxHp = Math.round((T.baseHp + 12 * (P.lvl - 1) + 5 * (h ? h.power : 0)) * (1 + (cb.hp || 0)));
     const base = 8 + 2 * (P.lvl - 1), wand = P.heroClass === 'hybrid' ? P.equip.offhand : w;
-    P.meleeDmg = base + (w ? w.power : 0); P.magicDmg = base + (wand ? wand.power : 0);
+    P.meleeDmg = Math.round((base + (w ? w.power : 0)) * (1 + (cb.dmg || 0))); P.magicDmg = Math.round((base + (wand ? wand.power : 0)) * (1 + (cb.dmg || 0)));
     P.dmg = P.heroClass === 'hybrid' ? Math.max(P.meleeDmg, P.magicDmg) : P.meleeDmg;
-    P.armor = Math.min(45, c ? c.power : 0);
-    P.speed = T.speed * (1 + 0.04 * (c ? c.rarity : 0));
+    P.armor = Math.min(50, (c ? c.power : 0) + (cb.armor || 0));
+    P.speed = T.speed * (1 + 0.04 * (c ? c.rarity : 0)) * (1 + (cb.speed || 0)) * (P.rideMul || 1);
     if (P.maxHp > old) P.hp += P.maxHp - old;
     P.hp = Math.min(P.hp, P.maxHp);
     P.xpNext = xpFor(P.lvl);
@@ -821,20 +824,23 @@ const GAME = (() => {
     if (bilboFollow) bilboFollow.reset(P.pos, p.x, p.z, P.face);
     Bilbo.root.position.set(p.x, 0, p.z); Bilbo.root.rotation.y = bilboFace;
     Bilbo.root.scale.setScalar(BILBO_SCALE);
+    funCall('onPlace', bilboCtx());
     Bilbo.update(0, { speed: 0, bark: 0 });
   }
   function updateBilbo(dt) {
     if (!Bilbo) return;
     let speed = 0, hop = 0, pounce = 0;
     let face = bilboFace;
-    if (bilboFollow && GAME.state !== 'transition') {
+    const fun = funCall('step', dt, bilboCtx());   // Dev Ev: BILBO_FUN (binme, kokla-kaz) Bilbo'yu yönetiyorsa
+    if (fun) { bilboPos.x = fun.x; bilboPos.z = fun.z; speed = fun.speed; face = fun.face; hop = fun.hop || 0; bilboTarget = null; }
+    else if (bilboFollow && GAME.state !== 'transition') {
       const f = bilboFollow.step(dt, P.pos);
       bilboPos.x = f.pos.x; bilboPos.z = f.pos.z; speed = f.speed; face = f.face; hop=f.hop||0; pounce=f.pounce||0;
       if(f.impact && !f.impact.dead && !hidden(f.impact) && enemies.includes(f.impact) && GAME.state==='play' && !P.dead && los(bilboPos.x,bilboPos.z,f.impact.x,f.impact.z)) {damage(f.impact, Math.max(5, Math.round(P.meleeDmg*.65)), {kind:'bilbo',silent:true});if(!f.impact.boss) {f.impact.stun=Math.max(f.impact.stun||0,1);cancelWindup(f.impact);}burst('hearts',f.impact.x,1,f.impact.z,{count:8});}
     }
     bilboBark = Math.max(0, bilboBark - dt);
     bilboProtect();
-    if (GAME.state === 'play' && !P.dead && !finale && !merchantNear() && !speaking() && gt >= storyUntil && gt >= bilboNext) {
+    if (!fun && GAME.state === 'play' && !P.dead && !finale && !merchantNear() && !speaking() && gt >= storyUntil && gt >= bilboNext) {
       const e = nearestEnemy(bilboPos.x, bilboPos.z, 4.8, true);
       if (e && dist2(e.x, e.z, P.pos.x, P.pos.z) < 60 && los(bilboPos.x,bilboPos.z,e.x,e.z) && (!Bilbo.isFetching || !Bilbo.isFetching())) {
         bilboTarget = e;
@@ -848,14 +854,35 @@ const GAME = (() => {
     else bilboTarget = null;
     const fetchFace = Bilbo.fetchFacing ? Bilbo.fetchFacing() : null;
     if (fetchFace !== null && Number.isFinite(fetchFace)) face = fetchFace;
-    bilboFace = dampAngle(bilboFace, face, 9, dt);
+    bilboFace = fun && fun.speed > 2 ? face : dampAngle(bilboFace, face, 9, dt);
     Bilbo.root.position.set(bilboPos.x, hop, bilboPos.z);
     Bilbo.root.rotation.y = bilboFace;
     Bilbo.root.scale.setScalar(BILBO_SCALE * (GAME.state === 'transition' ? Math.max(0.05, 1 - C.transT / 0.7) : 1));
-    Bilbo.update(dt, { speed, hop, pounce, bark: bilboBark, sit: GAME.state === 'dead' });
+    BST.speed = speed; BST.hop = hop; BST.pounce = pounce; BST.bark = bilboBark; BST.sit = GAME.state === 'dead';
+    funCall('pose', BST, bilboCtx());
+    Bilbo.update(dt, BST);
   }
+  // ── Dev Ev: Bilbo oyunları (src/04_bilbo_fun.js): binme, kayıp eşya kazma, hapşırma ──
+  const BST = { speed: 0, hop: 0, pounce: 0, bark: 0, sit: false, happy: 0, sniff: false, dig: false, ride: false };
+  const BCTX = { P: null, H: null, L: null, Bilbo: null, pos: bilboPos, follow: null, zone: null, state: '', t: 0, heroVel: 0, scale: BILBO_SCALE, api: null,
+    speaking: () => speaking(), ftext: (x, y, z, t, s) => ftext(x, y, z, t, s), shake: a => shake(a), recalcStats: () => recalcStats(),
+    foundLostItem: (id, z) => foundLostItem(id, z), busy: () => finale || merchantNear() || gt < storyUntil,
+    push: (e, dx, dz, stun) => { if (!e || e.dead || e.boss) return; e.kvx += dx * 7; e.kvz += dz * 7; e.stun = Math.max(e.stun || 0, stun); cancelWindup(e); } };
+  function bilboCtx() {
+    BCTX.P = P; BCTX.H = H; BCTX.L = L; BCTX.Bilbo = Bilbo; BCTX.follow = bilboFollow; BCTX.zone = L ? zdef() : null; BCTX.state = GAME.state;
+    BCTX.t = gt; BCTX.heroVel = C.vel; BCTX.api = HALA_API; return BCTX;
+  }
+  function funCall(fn, a, b) {
+    if (!Bilbo || typeof BILBO_FUN === 'undefined' || !BILBO_FUN || typeof BILBO_FUN[fn] !== 'function') return null;
+    try { return BILBO_FUN[fn](a, b); } catch (err) { warnOnce('BILBO_FUN.' + fn, err); return null; }
+  }
+  function rideBilbo(on = true, seconds = 14) {   // GAME.rideBilbo(true, s) / (false); istasyon kind 'binis'
+    if (!Bilbo || typeof BILBO_FUN === 'undefined' || !BILBO_FUN || !BILBO_FUN.ride) return false;
+    try { return !!BILBO_FUN.ride(!!on, seconds, bilboCtx()); } catch (err) { warnOnce('rideBilbo', err); return false; }
+  }
+  function bilboSneeze() { return !!funCall('sneeze', bilboCtx()); }
   function bone() {
-    if(!Bilbo || GAME.state!=='play' || GAME.paused || P.dead || finale || merchantNear() || gt<storyUntil || gt<boneAt || Bilbo.isFetching())return false;
+    if(!Bilbo || GAME.state!=='play' || GAME.paused || P.dead || finale || merchantNear() || gt<storyUntil || gt<boneAt || Bilbo.isFetching() || funCall('busy'))return false;
     const targets=enemies.filter(e=>!e.dead && !hidden(e) && inView(e.x,e.z) && dist2(e.x,e.z,bilboPos.x,bilboPos.z)<sq(8+e.r) && los(bilboPos.x,bilboPos.z,e.x,e.z)).sort((a,b)=>dist2(a.x,a.z,bilboPos.x,bilboPos.z)-dist2(b.x,b.z,bilboPos.x,bilboPos.z)).slice(0,5);
     const heldLevel=L;
     const ok=Bilbo.fetchBone(P.pos,targets,e=>{
@@ -6513,6 +6540,9 @@ const GAME = (() => {
     HST.spin = P.spin > 0; HST.hurt = C.hurtT; HST.dead = P.dead; HST.cheer = C.cheerT > 0; HST.idleT = C.idleT;
     HST.sitRead = !!(GAME.state === 'title' && L && L.readingSpot);
     H.root.position.copy(P.pos); H.root.rotation.y = P.face;
+    const lift = funCall('heroLift', bilboCtx(), dt);   // Dev Ev: Bilbo'ya binmiş (HST.ride 0..1, sırt yüksekliği)
+    HST.ride = lift ? lift.k : 0;
+    if (lift) { H.root.position.y = lift.y; HST.move *= 1 - lift.k; }
     bladeLight(dt);
     try { H.update(dt, HST); } catch (err) { warnOnce('H.update', err); }
   }
@@ -6789,6 +6819,7 @@ const GAME = (() => {
   function resetKoleksiyon() {
     for (const k of KOL_OBJ) P[k] = {};
     P.kostum = null; P.bilboAksesuar = { sahip: {}, takili: null }; P.pastaSusleri = []; P.altinSeker = 0; P.gununSurprizi = null; P.area = -1;
+    applyLooks();
   }
   function koleksiyonKaydi() {
     const o = {};
@@ -6805,6 +6836,12 @@ const GAME = (() => {
     const ba = obj(s.bilboAksesuar); P.bilboAksesuar = { sahip: obj(ba.sahip), takili: typeof ba.takili === 'string' && ba.sahip && ba.sahip[ba.takili] ? ba.takili : null };
     P.pastaSusleri = Array.isArray(s.pastaSusleri) ? s.pastaSusleri.filter(d => d && d.id).map(d => ({ id: String(d.id), a: +d.a || 0, h: +d.h || 0 })) : [];
     P.altinSeker = Math.max(0, s.altinSeker | 0); P.gununSurprizi = typeof s.gununSurprizi === 'string' ? s.gununSurprizi : null;
+    applyLooks();
+  }
+  // Kayıttaki kostüm ve Bilbo aksesuarı modellere giydirilir (yeni oyun / devam)
+  function applyLooks() {
+    if (H && typeof H.setCostume === 'function') { try { H.setCostume(P.kostum || null); } catch (err) { warnOnce('setCostume', err); } }
+    if (Bilbo && typeof Bilbo.setAccessory === 'function') { try { Bilbo.setAccessory((P.bilboAksesuar && P.bilboAksesuar.takili) || null); } catch (err) { warnOnce('setAccessory', err); } }
   }
   // Çıkartma: her huysuz türü / boss / gizli şey ilk neşelendirmede (ya da bulununca) albüme girer
   function giveSticker(id, kind = 'gizli') {
@@ -6820,6 +6857,7 @@ const GAME = (() => {
     if (id && !P.kostumler[id]) return false;
     P.kostum = id || null; emit('costume', { id: P.kostum });
     if (H && typeof H.setCostume === 'function') { try { H.setCostume(P.kostum); } catch (err) { warnOnce('setCostume', err); } }
+    try { recalcStats(); } catch (err) { warnOnce('recalcStats', err); }
     return true;
   }
   function unlockBilboAccessory(id) { if (!id || P.bilboAksesuar.sahip[id]) return false; P.bilboAksesuar.sahip[id] = true; emit('bilboAccNew', { id }); return true; }
@@ -6880,7 +6918,8 @@ const GAME = (() => {
   function teleport(x, z) { placeHero(x, z, P.face); P.checkpoint = { x, z }; C.hasT = false; C.drag = false; return true; }
 
   const GAME = {
-    revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API,
+    revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API, recalcStats,
+    rideBilbo, bilboSneeze,
     giveSticker, addGoldSugar, unlockCostume, setCostume, unlockBilboAccessory, setBilboAccessory, addCakeDecoration, cakeStage, dailySurprise,
     miniResult, unlockMinigame, startMinigame: (id, o) => (typeof MINIGAME !== 'undefined' && MINIGAME ? MINIGAME.start(id, o) : false),
     get teamCharge() { const v = typeof HALA !== 'undefined' && HALA ? HALA.charge : 0; return typeof v === 'number' ? v : 0; },

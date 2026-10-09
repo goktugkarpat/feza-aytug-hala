@@ -260,7 +260,7 @@ const { FEZA, ITEMS } = (function () {
 
   // ── Hair: a shell over the scalp plus ~75 short, tousled locks (a boy's shaggy cut: nape at the top of the neck,
   // ears half covered, fringe swept diagonally so one corner of the forehead shows) and a few cowlicks ──
-  const HAIR_D = new THREE.Color(0x2c180c), HAIR_L = new THREE.Color(0x4a2b16), HAIR_H = new THREE.Color(0x6b4424);
+  const HAIR_D = new THREE.Color(0x352010), HAIR_L = new THREE.Color(0x56351c), HAIR_H = new THREE.Color(0x7d532d);
   function hairline(th) {
     const a = Math.abs(th), saw = th * 2.3 + 0.35 - Math.floor(th * 2.3 + 0.35);
     const front = 0.46 + 0.06 * th + 0.06 * Math.pow(saw, 1.7);                              // the locks make the fringe edge
@@ -317,15 +317,15 @@ const { FEZA, ITEMS } = (function () {
     for (const s of [1, -1]) {
       for (let i = 0; i < 3; i++) {   // temples / sideburns
         const th0 = s * (0.8 + i * 0.16 + r(-0.03, 0.03)), ph0 = 0.5 + r(-0.03, 0.06);
-        lock4(th0, ph0, th0 + s * (0.14 + r(0, 0.08)), -0.13 - r(0, 0.06), [0, 0.019, 0.026, 0.048], r(0.056, 0.068), 0.022, r(0.1, 0.9), 1, s * 0.04);
+        lock4(th0, ph0, th0 + s * (0.14 + r(0, 0.08)), -0.06 - r(0, 0.05), [0, 0.018, 0.022, 0.03], r(0.056, 0.068), 0.021, r(0.1, 0.9), 1, s * 0.04);
       }
       for (let i = 0; i < 3; i++) {   // over the ear: covers its top half
         const th0 = s * (1.36 + i * 0.17 + r(-0.03, 0.03)), ph0 = 0.56 + r(-0.03, 0.06);
-        lock4(th0, ph0, th0 + s * r(0.04, 0.14), -0.03 - r(0, 0.05), [0, 0.022, 0.032, 0.052], r(0.06, 0.072), 0.023, r(0, 1), 1);
+        lock4(th0, ph0, th0 + s * r(0.04, 0.14), 0.1 - r(0, 0.05), [0, 0.02, 0.026, 0.032], r(0.06, 0.072), 0.022, r(0, 1), 1);
       }
       for (let i = 0; i < 3; i++) {   // behind the ear
         const th0 = s * (1.95 + i * 0.2 + r(-0.04, 0.04)), ph0 = 0.62 + r(-0.03, 0.08);
-        lock4(th0, ph0, th0 + s * r(0.04, 0.16), -0.16 - r(0, 0.08), [0, 0.022, 0.03, 0.05], r(0.064, 0.076), 0.024, r(0, 1), 1);
+        lock4(th0, ph0, th0 + s * r(0.04, 0.16), -0.02 - r(0, 0.06), [0, 0.02, 0.025, 0.03], r(0.064, 0.076), 0.023, r(0, 1), 1);
       }
       for (let i = 0; i < 4; i++) {   // short upper-side layer (volume seen from above)
         const th0 = s * (0.8 + i * 0.42 + r(-0.05, 0.05)), ph0 = 1.02 + r(0, 0.1);
@@ -334,8 +334,8 @@ const { FEZA, ITEMS } = (function () {
     }
     // nape: uneven tips at the top of the neck, flicking out
     for (let i = 0; i < 9; i++) {
-      const th0 = Math.PI + (i - 4) * 0.22 + r(-0.04, 0.04), ph0 = 0.72 + r(0, 0.1), th1 = th0 + r(-0.16, 0.16), ph1 = -0.06 - r(0, 0.18) + (i & 1) * 0.06;
-      lock4(th0, ph0, th1, ph1, [0, 0.022, 0.032, 0.045 + r(0, 0.035)], r(0.068, 0.082), 0.025, r(0, 0.9), 1);
+      const th0 = Math.PI + (i - 4) * 0.22 + r(-0.04, 0.04), ph0 = 0.72 + r(0, 0.1), th1 = th0 + r(-0.12, 0.12), ph1 = 0.04 - r(0, 0.08) + (i & 1) * 0.05;
+      lock4(th0, ph0, th1, ph1, [0, 0.02, 0.026, 0.03 + r(0, 0.012)], r(0.068, 0.082), 0.024, r(0, 0.9), 1);
     }
     // shorter layer over the back of the head, so the back reads layered and tousled, not as one straight curtain
     for (let i = 0; i < 7; i++) {
@@ -418,7 +418,14 @@ const { FEZA, ITEMS } = (function () {
   const ARM_P = [[0, 0.455], [0.03, 0.458], [0.041, 0.47], [0.043, 0.5], [0.046, 0.56], [0.047, 0.605], [0.05, 0.65], [0.053, 0.7], [0.054, 0.74], [0.05, 0.775], [0.035, 0.79], [0, 0.795]];
   const LEG_P = [[0, 0.06], [0.03, 0.063], [0.043, 0.08], [0.046, 0.11], [0.057, 0.17], [0.059, 0.2], [0.056, 0.245], [0.06, 0.29], [0.068, 0.35], [0.072, 0.4], [0.07, 0.45], [0.05, 0.48], [0, 0.49]];
   const SLEEVE_P = [[0.055, 0.628], [0.066, 0.632], [0.069, 0.66], [0.068, 0.71], [0.062, 0.755], [0.048, 0.785], [0.026, 0.8], [0, 0.803]];
-  const PANTLEG_P = [[0.078, 0.325], [0.09, 0.33], [0.095, 0.35], [0.095, 0.39], [0.091, 0.43], [0.07, 0.45], [0, 0.46]];
+  // uzun eşofman paçası (bilekte lastik), uzun kol, çorap
+  const PANTLEG_P = [[0.042, 0.158], [0.057, 0.161], [0.062, 0.172], [0.064, 0.186], [0.07, 0.21], [0.075, 0.24], [0.077, 0.27], [0.08, 0.3], [0.087, 0.34],
+    [0.09, 0.38], [0.093, 0.41], [0.091, 0.44], [0.07, 0.455], [0, 0.46]];
+  const LSLEEVE_P = [[0.036, 0.462], [0.054, 0.465], [0.058, 0.48], [0.057, 0.51], [0.059, 0.56], [0.062, 0.605], [0.065, 0.65], [0.068, 0.7], [0.069, 0.74], [0.064, 0.775],
+    [0.048, 0.795], [0.026, 0.805], [0, 0.808]];
+  const SOCK_P = (() => { const P = [[0.03, 0.085]]; for (let y = 0.09; y <= 0.181; y += 0.006) P.push([y < 0.1 ? 0.049 : y > 0.165 ? 0.056 : 0.051 + (y - 0.1) * 0.06, y]); P.push([0.044, 0.184], [0, 0.185]); return P; })();
+  const sockCol = (() => { const A = new THREE.Color(0xff8a3d), B = new THREE.Color(0x35b8a8), Y = new THREE.Color(0xffd84a), c = new THREE.Color();
+    return (x, y) => { const k = Math.floor((y - 0.085) / 0.012); return c.copy(y > 0.165 ? Y : k % 2 ? B : A); }; })();
   const SHIRT_P = [[0, 0.44], [0.13, 0.438], [0.172, 0.445], [0.18, 0.46], [0.185, 0.5], [0.184, 0.55], [0.178, 0.61], [0.17, 0.67], [0.163, 0.72],
     [0.152, 0.76], [0.13, 0.79], [0.1, 0.81], [0.07, 0.822], [0.056, 0.826], [0, 0.827]];
   const SHORTS_P = [[0, 0.375], [0.1, 0.378], [0.155, 0.398], [0.178, 0.43], [0.187, 0.47], [0.186, 0.5], [0.18, 0.52], [0, 0.525]];
@@ -426,32 +433,36 @@ const { FEZA, ITEMS } = (function () {
   function buildBody() {
     if (BODY) return BODY;
     const t0 = performance.now();
-    const skin = [], cloth = [], shoe = [];
-    const pink = (x, y, z) => new THREE.Color(1, 0.95 - 0.06 * Math.exp(-sq((y - 0.245) / 0.03)) * (z > 0 ? 1 : 0.3), 0.94 - 0.08 * Math.exp(-sq((y - 0.245) / 0.03)) * (z > 0 ? 1 : 0.3));
+    const skin = [], cloth = [], shoe = [], pants = [];
+    // Dev Ev kıyafeti: uzun kollu çizgili tişört, koyu gri eşofman altı (lastikli paça), renkli çizgili çoraplar
+    const cream = g => { const u = g.attributes.uv; for (let i = 0; i < u.count; i++) u.setXY(i, 0.5, 0.968); return g; };   // ribanalar: çizgisiz krem
+    const PANT = 0x474b54, PANT_D = 0x3a3d45;
     skin.push({ geo: headGeo(), bone: 3 });
     for (const s of [1, -1]) skin.push({ geo: earGeo(s), bone: 3 });
     skin.push({ geo: lathe(NECK_P, 16, 0, 0.004, 1, 0.92), w: (x, y) => [2, 3, sstep(0.8, 0.87, y)] });
     for (const s of [1, -1]) {
       const up = s > 0 ? 4 : 6, fo = up + 1, th = s > 0 ? 8 : 10, sh = th + 1, ax = 0.175 * s;
-      skin.push({ geo: lathe(ARM_P, 14, ax, -0.005, 1, 0.95), w: (x, y) => [up, fo, sstep(0.64, 0.57, y)] });
+      skin.push({ geo: lathe(ARM_P.filter(p => p[1] < 0.5), 12, ax, -0.005, 1, 0.95), bone: fo });   // bilek (kolun gerisi kolluğun içinde)
       skin.push({ geo: kitGeo(k => {
         k.add(G.sphere(14), 0xffffff, [ax, 0.42, 0.002], 0, [0.046, 0.052, 0.048]);
         k.add(G.sphere(10), 0xffffff, [ax - 0.034 * s, 0.432, 0.026], [0, 0, 0.5 * s], [0.017, 0.026, 0.018]);
       }), bone: fo, color: 0xfff0ea });
-      skin.push({ geo: lathe(LEG_P, 14, 0.088 * s, 0, 1, 1), w: (x, y) => [th, sh, sstep(0.28, 0.21, y)], color: pink });
-      cloth.push({ geo: lathe(SLEEVE_P, 18, ax * 0.97, -0.005, 1, 0.95, TILE), w: (x, y) => [2, up, sstep(0.8, 0.72, y)], color: 0xeeeae6 });
-      cloth.push({ geo: kitGeo(k => k.add(G.torus(TAU, 0.14, 20), 0xffffff, [ax, 0.633, -0.005], [Math.PI / 2, 0, 0], [0.064, 0.061, 0.064])), bone: up, color: 0xf1ecf4 });
-      cloth.push({ geo: lathe(PANTLEG_P, 18, 0.09 * s, 0, 1, 0.95, TILE), w: (x, y) => [1, th, sstep(0.43, 0.37, y)], color: 0xe4e0ec });
+      cloth.push({ geo: lathe(LSLEEVE_P, 18, ax * 0.985, -0.005, 1, 0.95, TILE), w: (x, y) => y > 0.66 ? [2, up, sstep(0.8, 0.72, y)] : [up, fo, sstep(0.64, 0.57, y)], color: 0xffffff });
+      cloth.push({ geo: cream(kitGeo(k => k.add(G.torus(TAU, 0.2, 20), 0xffffff, [ax, 0.468, -0.005], [Math.PI / 2, 0, 0], [0.054, 0.051, 0.054]))), bone: fo, color: 0xf6f0e6 });   // kol ağzı ribanası
+      pants.push({ geo: lathe(PANTLEG_P, 18, 0.09 * s, 0, 1, 0.95, TILE), w: (x, y) => y > 0.37 ? [1, th, sstep(0.43, 0.37, y)] : [th, sh, sstep(0.28, 0.21, y)],
+        color: (x, y, z) => new THREE.Color(PANT).lerp(new THREE.Color(PANT_D), 0.5 * Math.exp(-sq((y - 0.27) / 0.03)) + 0.35 * sstep(0.2, 0.16, y)) });
+      pants.push({ geo: kitGeo(k => k.add(G.torus(TAU, 0.3, 18), 0xffffff, [0.09 * s, 0.172, 0], [Math.PI / 2, 0, 0], [0.058, 0.055, 0.057])), bone: sh, color: PANT_D });   // lastikli paça
       shoe.push({ geo: shoeGeo(s), bone: sh });
+      shoe.push({ geo: lathe(SOCK_P, 16, 0.088 * s, 0.004, 1, 1), bone: sh, color: sockCol });
     }
-    cloth.push({ geo: lathe(SHIRT_P, 32, 0, 0, 1, 0.8, TILE), w: (x, y) => [1, 2, sstep(0.5, 0.6, y)], color: 0xeeeae6 });
-    cloth.push({ geo: kitGeo(k => k.add(G.torus(TAU, 0.2, 24), 0xffffff, [0, 0.821, 0.002], [Math.PI / 2, 0, 0], [0.064, 0.052, 0.064])), bone: 2, color: 0xf3eef4 });
-    cloth.push({ geo: kitGeo(k => k.add(G.torus(TAU, 0.05, 32), 0xffffff, [0, 0.443, 0], [Math.PI / 2, 0, 0], [0.178, 0.143, 0.178])), bone: 1, color: 0xf0ebf2 });
-    cloth.push({ geo: lathe(SHORTS_P, 28, 0, 0, 1, 0.82, TILE), bone: 1, color: 0xe4e0ec });
+    cloth.push({ geo: lathe(SHIRT_P, 32, 0, 0, 1, 0.8, TILE), w: (x, y) => [1, 2, sstep(0.5, 0.6, y)], color: 0xffffff });
+    cloth.push({ geo: cream(kitGeo(k => k.add(G.torus(TAU, 0.2, 24), 0xffffff, [0, 0.821, 0.002], [Math.PI / 2, 0, 0], [0.064, 0.052, 0.064]))), bone: 2, color: 0xf6f0e6 });
+    cloth.push({ geo: kitGeo(k => k.add(G.torus(TAU, 0.05, 32), 0xffffff, [0, 0.443, 0], [Math.PI / 2, 0, 0], [0.178, 0.143, 0.178])), bone: 1, color: 0xffffff });
+    pants.push({ geo: lathe(SHORTS_P, 28, 0, 0, 1, 0.82, TILE), bone: 1, color: PANT });
     // hair: shell + locks + cowlicks in ONE mesh (cowlicks are collapsed in the shader under a hat)
     const hair = [hairCapGeo()];
     for (const L of hairLocks()) hair.push(lockGeo(L));
-    BODY = { skin: mergeSkinned(skin, true), cloth: mergeSkinned(cloth), shoe: mergeSkinned(shoe), hair: keep(concat(hair)), xray: xrayBodyGeo() };
+    BODY = { skin: mergeSkinned(skin, true), cloth: mergeSkinned(cloth), pants: mergeSkinned(pants), shoe: mergeSkinned(shoe), hair: keep(concat(hair)), xray: xrayBodyGeo() };
     BODY.ms = Math.round(performance.now() - t0);
     return BODY;
   }
@@ -489,7 +500,7 @@ const { FEZA, ITEMS } = (function () {
 
   // ── The face, drawn inside the skin shader ──
   const FACE_GLSL = `
-    uniform vec4 fzEye; uniform vec3 fzEyeW; uniform vec4 fzMouth; uniform vec3 fzBrow;
+    uniform vec4 fzEye; uniform float fzWink; uniform vec3 fzEyeW; uniform vec4 fzMouth; uniform vec3 fzBrow;
     varying vec2 vFace;
     #define SRGB(r, g, b) pow(vec3(r, g, b), vec3(2.2))
     float fzSq(float x) { return x * x; }
@@ -502,6 +513,7 @@ const { FEZA, ITEMS } = (function () {
       col = mix(col, SRGB(0.97, 0.66, 0.6), 0.22 * exp(-fzSq(q.x / 0.04) - fzSq((q.y + 0.252) / 0.035)));
       // eyes (e: eye-local, +x = outer corner)
       float side = q.x < 0.0 ? -1.0 : 1.0;
+      float fzBk = max(fzEye.x, side > 0.0 ? fzWink : 0.0);   // göz kırpma: yalnız sol göz
       vec2 ec = vec2(0.252 * side, -0.11), er = vec2(0.138, 0.158);
       vec2 e = vec2((q.x - ec.x) * side, q.y - ec.y) / er;
       float aE = aa / er.y;
@@ -511,7 +523,7 @@ const { FEZA, ITEMS } = (function () {
       // frame is a smiling squint, never a see-through pale ghost eye
       float hx = clamp(e.x, -0.95, 0.95), hy = -0.08 + 0.62 * (1.0 - hx * hx);
       float sq = clamp(1.0 - fzEyeW.x, 0.0, 1.0), tgt = mix(0.04, hy, fzEyeW.y / max(fzEyeW.y + fzEyeW.z, 1e-3));
-      float lid = mix(mix(top, tgt + 0.03, sq), bot * 0.9 + 0.06, fzEye.x);
+      float lid = mix(mix(top, tgt + 0.03, sq), bot * 0.9 + 0.06, fzBk);
       lid = min(lid, top - fzEye.w * 0.6 * cx);
       float rr = length(vec2(e.x, e.y > 0.0 ? e.y / max(0.05, top / max(cx, 0.05)) : e.y / 0.92));
       float lidL = mix(-1.6, tgt - 0.03, sq);
@@ -530,7 +542,7 @@ const { FEZA, ITEMS } = (function () {
       float cl = max(c1, c2 * 0.9);
       eye = mix(eye, vec3(1.0), cl);
       // thin, even upper lid line (no outer flick: a boy, not mascara)
-      float lw = (0.12 + 0.08 * fzEye.x) * mix(0.8, 1.0, smoothstep(-1.0, 0.3, e.x));
+      float lw = (0.12 + 0.08 * fzBk) * mix(0.8, 1.0, smoothstep(-1.0, 0.3, e.x));
       float ly = e.y - lid;
       float lash = smoothstep(-0.05 - aE, -0.05 + aE, ly) * (1.0 - smoothstep(lw - aE, lw + aE, ly)) * (1.0 - smoothstep(0.88, 1.02, abs(e.x)));
       // closed variants: happy ^ and wince >
@@ -538,7 +550,7 @@ const { FEZA, ITEMS } = (function () {
       float wd = min(fzSeg(e, vec2(0.95, 0.5), vec2(-0.5, 0.02)), fzSeg(e, vec2(-0.5, 0.02), vec2(0.95, -0.42)));
       float wince = fzLine(wd, 0.16, aE);
       vec3 lashC = SRGB(0.17, 0.09, 0.06);
-      float lower = fzLine(abs(e.y - max(bot, lidL) - 0.05), 0.045, aE) * smoothstep(0.95, 0.4, abs(e.x - 0.1)) * (1.0 - max(fzEye.x, sq));
+      float lower = fzLine(abs(e.y - max(bot, lidL) - 0.05), 0.045, aE) * smoothstep(0.95, 0.4, abs(e.x - 0.1)) * (1.0 - max(fzBk, sq));
       float ow = smoothstep(0.05, 0.35, fzEyeW.x), cw = smoothstep(0.45, 0.9, sq);   // open eye fades only once nearly shut
       col = mix(col, col * SRGB(0.8, 0.62, 0.58), lower * 0.7 * ow);
       col = mix(col, eye, vis * ow);
@@ -596,7 +608,7 @@ const { FEZA, ITEMS } = (function () {
   const knee = m => patchMat(m, { fOut: KNEE, key: 'knee' });
   function makeSkinMat() {
     const m = stencil(vcMat({ color: SKIN, roughness: 0.55, envMapIntensity: 0.75 }));
-    const U = { fzEye: { value: new THREE.Vector4(0, 0, 0, 0) }, fzEyeW: { value: v3(1, 0, 0) }, fzMouth: { value: new THREE.Vector4(1, 0, 0, 0) }, fzBrow: { value: v3() } };
+    const U = { fzEye: { value: new THREE.Vector4(0, 0, 0, 0) }, fzWink: { value: 0 }, fzEyeW: { value: v3(1, 0, 0) }, fzMouth: { value: new THREE.Vector4(1, 0, 0, 0) }, fzBrow: { value: v3() } };
     m.onBeforeCompile = sh => {
       Object.assign(sh.uniforms, U);
       sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec2 aFace; varying vec2 vFace;')
@@ -636,7 +648,7 @@ const { FEZA, ITEMS } = (function () {
           ${KNEE}
           #include <opaque_fragment>`);
     };
-    m.customProgramCacheKey = () => 'fezaSkin3';
+    m.customProgramCacheKey = () => 'fezaSkin4';
     m.userData.fz = U;
     return m;
   }
@@ -673,12 +685,36 @@ const { FEZA, ITEMS } = (function () {
     m.userData.fz = U; m.userData.depth = d;
     return m;
   }
+  // Dev Ev: Feza'nın gerçek tişörtü — krem zemin üstünde ince lacivert ve açık mavi yatay çizgiler (örgü dokulu).
+  // Bir doku tekrarı = TILE (0,4 m); 14 çizgi çifti → ~2,9 cm aralık. v yukarı (lathe yay uzunluğu), u çevre boyunca.
+  let STRIPE = null;
+  function stripeTex() {
+    if (STRIPE) return STRIPE;
+    const W = 128, H = 448, cv = canvasEl(W, H), g = cv.getContext('2d'), R = mulberry32(4242), N = 14, per = H / N;
+    g.fillStyle = '#f3ecdf'; g.fillRect(0, 0, W, H);
+    for (let i = 0; i < N; i++) {
+      const y = i * per;
+      g.fillStyle = '#26365f'; g.fillRect(0, y + per * 0.12, W, per * 0.2);      // lacivert
+      g.fillStyle = '#7fb0e0'; g.fillRect(0, y + per * 0.58, W, per * 0.16);     // açık mavi
+    }
+    // örgü: küçük ilmek gölgeleri ve hafif ton dalgası (düz renk görünmesin)
+    const img = g.getImageData(0, 0, W, H), D = img.data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const o = (y * W + x) * 4, k = 0.94 + 0.05 * Math.sin(x * 1.57) * Math.sin(y * 1.2) + 0.03 * (R() - 0.5) + 0.02 * Math.sin(y * 0.07 + x * 0.02);
+      D[o] = Math.min(255, D[o] * k); D[o + 1] = Math.min(255, D[o + 1] * k); D[o + 2] = Math.min(255, D[o + 2] * k);
+    }
+    g.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = ANISO;
+    return (STRIPE = keep(t));
+  }
   let SHARED = null;
   function sharedMats() {
     if (SHARED) return SHARED;
-    const t = tex('shirt');
+    const t = tex('shirt'), f = tex('fabric') ? TEX.rep('fabric', 4, 4) : null;
     SHARED = {
-      cloth: keep(stencil(rimify(knee(vcMat({ roughness: 0.86, envMapIntensity: 0.55, map: t ? t.map : null, normalMap: t ? t.normalMap : null, normalScale: V2(0.8, 0.8) })), 0xfff2e6, 0.07))),
+      cloth: keep(stencil(rimify(knee(vcMat({ roughness: 0.86, envMapIntensity: 0.55, map: stripeTex(), normalMap: t ? t.normalMap : null, normalScale: V2(0.7, 0.7) })), 0xfff2e6, 0.07))),
+      // koyu gri pamuklu eşofman altı (yumuşak, mat; kumaş dokusu)
+      pants: keep(stencil(rimify(knee(vcMat({ roughness: 0.95, envMapIntensity: 0.45, normalMap: f ? f.normalMap : null, normalScale: V2(0.35, 0.35) })), 0xc8d0e0, 0.12))),
       shoe: keep(stencil(rimify(knee(vcMat({ roughness: 0.5, envMapIntensity: 0.7 })), 0xffffff, 0.08))),
     };
     return SHARED;
@@ -825,7 +861,9 @@ const { FEZA, ITEMS } = (function () {
   const nowT = () => (typeof TIME !== 'undefined' && TIME.u ? TIME.u.value : performance.now() / 1000);
   // ITEMS.bladeColor(item | baseId) → '#rrggbb' (the rainbow blade: its colour right now, at mid-blade)
   function bladeColor(item) {
-    const id = typeof item === 'string' ? item : item ? baseId(item) : 'tahta', d = WAND[id] || saberDef(id);
+    const id = typeof item === 'string' ? item : item ? baseId(item) : 'tahta', cu = CUSTOM['weapon:' + id];
+    if (cu && cu.def.col && !cu.reuse) return cu.def.col;   // Dev Ev eşyası: vuruş izi rengi
+    const d = WAND[(cu && cu.reuse) || id] || saberDef((cu && cu.reuse) || id);
     return d.rainbow ? hsvHex(fract(nowT() * RB_SPEED + RB_Y * RB_GRAD), RB_SAT, 1) : d.trail || d.col;
   }
   // (Round 6) blade variants (glow shell + halo only, one program each): SB_GRAD colour ramp hilt → tip (uCol → uCol2),
@@ -1511,6 +1549,13 @@ const { FEZA, ITEMS } = (function () {
   const CAPE_TEX = {};
   function capeTex(id) {
     if (CAPE_TEX[id]) return CAPE_TEX[id];
+    if (CAPE_PAINT[id]) {   // Dev Ev: kayıtlı pelerin boyacısı painter(g, S, ge, R): g renk, ge parlama (siyah = parlamaz), S = 256
+      const S = 256, cv = canvasEl(S, S), g = cv.getContext('2d'), ev = canvasEl(S, S), ge = ev.getContext('2d');
+      ge.fillStyle = '#000'; ge.fillRect(0, 0, S, S);
+      try { CAPE_PAINT[id](g, S, ge, mulberry32(id.length * 97 + 5)); } catch (e) { console.warn('cape paint ' + id, e); }
+      const mk = c => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = ANISO; return keep(t); };
+      return (CAPE_TEX[id] = { map: mk(cv), emissiveMap: mk(ev) });
+    }
     const d = CAPE_DEF[id] || CAPE_DEF.kirmizi, S = 256, cv = canvasEl(S, S), g = cv.getContext('2d'), ev = canvasEl(S, S), ge = ev.getContext('2d'), R = mulberry32(id.length * 97 + 5);
     ge.fillStyle = '#000'; ge.fillRect(0, 0, S, S);
     const edge = x => {
@@ -1751,8 +1796,15 @@ const { FEZA, ITEMS } = (function () {
 
   // ── Item templates (for ground display, thumbnails) ──
   const TPL = {};
+  // Dev Ev: dışarıdan kaydedilen eşyalar (src/04_esyalar.js → ITEMS.register). CUSTOM['slot:id'] = { def, build?, reuse? }
+  const CUSTOM = {}, CAPE_PAINT = {};
   function buildItem(slot, id, r, own) {
-    const o = slot === 'weapon' ? buildSword(id, r) : slot === 'hat' ? buildHat(id, r) : buildCape(id, r, own);
+    const cu = CUSTOM[slot + ':' + id];
+    if (cu && cu.reuse) id = cu.reuse;   // eski bir modeli yeni adla kullan
+    let o = null;
+    if (cu && cu.build) { try { o = cu.build(r, own, ITEM_KIT); } catch (e) { console.warn('ITEMS build ' + slot + ':' + id, e); o = null; } }
+    if (o && slot === 'cape' && !o.fzCapeU) o = null;
+    if (!o) o = slot === 'weapon' ? buildSword(id, r) : slot === 'hat' ? buildHat(id, r) : buildCape(id, r, own);
     o.traverse(m => {
       if (!m.isMesh) return;
       // only parts big enough to make a visible shadow cast one (gems, small stars, the cape clasp don't)
@@ -2014,6 +2066,219 @@ const { FEZA, ITEMS } = (function () {
   }
   function keysBetween(out, base, A, B, t) { for (let i = 0; i < NCH; i++) { const a = A[i] ?? base[i], b = B[i] ?? base[i]; out[i] = a + (b - a) * t; } }
 
+  let SPARK = null;
+  function sparkTex() {
+    if (SPARK) return SPARK;
+    const S = 64, cv = canvasEl(S, S), g = cv.getContext('2d'), c = S / 2;
+    const gr = g.createRadialGradient(c, c, 0, c, c, c); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, S, S);
+    g.fillStyle = '#fff'; g.beginPath(); for (let i = 0; i < 8; i++) { const a = i / 8 * TAU, r = i & 1 ? 4 : 30; g.lineTo(c + Math.cos(a) * r, c + Math.sin(a) * r); } g.closePath(); g.fill();
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; return (SPARK = keep(t));
+  }
+  // ── Dev Ev: KOSTÜMLER (Aytuğ Hala'nın gardırobu) — eşyalardan ayrı katman; kemiklere takılan parçalar ──
+  // id → { ad, artı (küçük yetenek), bonus {hp, dmg, armor, speed} (GAME.recalcStats okur), hat: başlığı var mı (eşya şapkasını gizler),
+  // cape: pelerini var mı / sırt dolu mu (eşya pelerinini gizler) }
+  const COSTUMES = {
+    gunluk: { ad: 'Günlük Feza', arti: 'Kendi çizgili tişörtü', bonus: {} },
+    pastaci: { ad: 'Pastacı Feza', arti: 'Biraz daha fazla can', bonus: { hp: 0.12 }, hat: true },
+    superkahraman: { ad: 'Süper Kahraman Feza', arti: 'Biraz daha hızlı', bonus: { speed: 0.1 }, cape: true },
+    sovalye: { ad: 'Şövalye Feza', arti: 'Biraz daha dayanıklı', bonus: { armor: 8 }, hat: true },
+    kasif: { ad: 'Kâşif Feza', arti: 'Biraz daha güçlü vuruş', bonus: { dmg: 0.07 }, hat: true },
+    astronot: { ad: 'Astronot Feza', arti: 'Hafif adımlar, biraz koruma', bonus: { speed: 0.05, armor: 4 }, hat: true, cape: true },
+  };
+  const BONE_AT = { hips: [0, 0.47, 0], chest: [0, 0.6, 0], head: [0, 0.84, 0], armL: [0.175, 0.76, -0.005], armR: [-0.175, 0.76, -0.005],
+    foreL: [0.175, 0.605, -0.005], foreR: [-0.175, 0.605, -0.005] };
+  // gövde yüzeyi (bağlama duruşu): tişört / eşofman belinin önü-arkası
+  const torsoR = y => y >= 0.44 ? profR(SHIRT_P, y) : profR(SHORTS_P, y);
+  const torsoZ = (x, y) => (y >= 0.44 ? 0.8 : 0.82) * Math.sqrt(Math.max(0, sq(torsoR(y)) - x * x));
+  // gövdeye oturan plaka (önlük, zırh): u → x (genişlik w(v)), v → y; side +1 ön, −1 arka; lift = yüzeyden uzaklık
+  function bodyPlate(y0, y1, wf, lift, side, nu = 16, nv = 14, bend = 0) {
+    return paramGeo((u, v, o) => {
+      const y = lerp(y0, y1, v), w = wf(v), x = (u * 2 - 1) * w;
+      const z = torsoZ(x * 0.97, y) + lift + bend * (1 - sq(u * 2 - 1));
+      o.set(x, y, side * z);
+    }, nu, nv, v3(0, (y0 + y1) / 2, -side * 0.4), false);
+  }
+  const ink = c => new THREE.Color(c);
+  // maske: göz çevresinde yüze oturan halkalar (yüz koordinatı q = (th·cos ph, ph); göz merkezleri ±0,252, −0,11)
+  function maskGeo() {
+    const parts = [], n = v3();
+    for (const sd of [-1, 1]) {
+      const ec = [0.252 * sd, -0.11], er = [0.138, 0.158];
+      parts.push(paramGeo((u, v, o) => {
+        const a = u * TAU, ca = Math.cos(a), sa = Math.sin(a), out = Math.max(0, ca * sd);
+        const k = lerp(1.1, 1.95 + 0.6 * Math.pow(out, 3) * sstep(-0.2, 0.6, sa + 0.3), v);
+        const qx = ec[0] + ca * er[0] * k, qy = ec[1] + sa * er[1] * k * (sa > 0 ? 0.95 : 0.8);
+        const ph = qy, th = qx / Math.max(0.3, Math.cos(ph));
+        headSurf(th, ph, o); headNormal(th, ph, n); o.addScaledVector(n, 0.007 + 0.004 * Math.sin(v * Math.PI));
+      }, 40, 4, HC, true));
+    }
+    return concat(parts);
+  }
+  const kitC = (key, f) => geoC('kost:' + key, () => kitGeo(f));
+  function costumeParts(id) {
+    // → { bones: { boneName: [Mesh…] }, hat: Object3D (baş merkezi, başlık), hatIn, cape: capeId }
+    const out = { bones: {}, hat: null, hatIn: null, cape: null };
+    const add = (bone, geo, m) => { const mesh = new THREE.Mesh(geo, m); const b = BONE_AT[bone]; mesh.position.set(-b[0], -b[1], -b[2]); (out.bones[bone] || (out.bones[bone] = [])).push(mesh); return mesh; };
+    const cloth = (key, o) => vcM('kostK:' + key, Object.assign({ roughness: 0.85, side: THREE.DoubleSide }, o || {}));
+    const woodM = () => mat('kostWood', () => { const t = tex('wood'); return rimify(vcMat({ roughness: 0.6, map: t ? t.map : null, normalMap: t ? t.normalMap : null, normalScale: V2(0.5, 0.5) }), 0xfff0d0, 0.12); });
+    if (id === 'pastaci') {
+      const PINK = ink(0xff8fb3), W = ink(0xfbfaf6);
+      const apron = kitC('apron', k => {
+        const wf = v => lerp(0.175, 0.085, sstep(0.45, 1, v)) + 0.012 * Math.sin(v * 3);
+        k.add(bodyPlate(0.4, 0.765, wf, 0.012, 1, 18, 16), (x, y) => {
+          const v = (y - 0.4) / 0.365, w = wf(v), e = Math.min(w - Math.abs(x), (y - 0.4) * 0.8, 0.765 - y);
+          return e < 0.011 ? PINK : W.clone().multiplyScalar(0.97 + 0.03 * Math.sin(x * 140));
+        });
+        // cep (çilekli), askı, bel bağı
+        k.add(G.rbox(2), PINK, [0.0, 0.5, torsoZ(0, 0.5) + 0.02], [0.05, 0, 0], [0.12, 0.07, 0.012]);
+        k.add(G.sphere(10), 0xe8323c, [0.035, 0.505, torsoZ(0, 0.5) + 0.028], 0, [0.012, 0.014, 0.006]);
+        k.add(G.cone(6), 0x3ca84a, [0.035, 0.52, torsoZ(0, 0.5) + 0.028], 0, [0.008, 0.008, 0.004]);
+        for (const s of [-1, 1]) {
+          k.seg([s * 0.08, 0.76, torsoZ(0.08, 0.76) + 0.012], [s * 0.065, 0.815, 0.04], 0.007, PINK, 0.007, 6);
+          k.seg([s * 0.065, 0.815, 0.04], [s * 0.05, 0.825, -0.05], 0.007, PINK, 0.007, 6);
+          k.seg([s * 0.17, 0.47, torsoZ(0.17, 0.47) * 0.6], [s * 0.12, 0.47, -torsoZ(0.12, 0.47) - 0.01], 0.009, PINK, 0.009, 6);
+          k.add(G.sphere(10), PINK, [s * 0.03, 0.47, -torsoZ(0, 0.47) - 0.02], [0, 0, s * 0.6], [0.035, 0.018, 0.012]);   // fiyonk
+        }
+      });
+      add('chest', apron, cloth('apron'));
+      // cepteki tahta kaşık
+      add('chest', kitC('apronSpoon', k => {
+        const z = torsoZ(0, 0.5) + 0.03;
+        k.seg([-0.025, 0.49, z], [-0.04, 0.6, z + 0.012], 0.007, 0xc98a4b, 0.006, 8);
+        k.add(G.sphere(12), 0xd39a5c, [-0.043, 0.625, z + 0.014], [0.15, 0, 0.12], [0.022, 0.03, 0.01]);
+      }), woodM());
+      // aşçı şapkası: bant + kabarık tepe
+      const hatG = kitC('chefHat', k => {
+        k.add(G.cyl(1, 0.97, 32, true), W, [0, 0.13, 0], 0, [0.29, 0.13, 0.295]);
+        for (let i = 0; i < 7; i++) { const a = i / 7 * TAU; k.add(G.sphere(18), W, [Math.sin(a) * 0.17, 0.3 + 0.02 * Math.sin(a * 3), Math.cos(a) * 0.17], 0, [0.15, 0.13, 0.15]); }
+        k.add(G.sphere(20), W, [0, 0.34, 0], 0, [0.2, 0.15, 0.2]);
+        k.add(G.torus(TAU, 0.12, 40), 0xf0eee8, [0, 0.07, 0], [Math.PI / 2, 0, 0], [0.292, 0.297, 0.3]);
+      });
+      out.hat = new THREE.Mesh(hatG, mat('kostChef', () => rimify(vcMat({ roughness: 0.9, side: THREE.DoubleSide }), 0xffffff, 0.15)));
+      out.hat.rotation.set(-0.08, 0, 0.06); out.hat.position.set(0, 0.02, -0.01);
+      out.hatIn = [[0, 0.02, 0], [0.285, 0.28, 0.29], 0.04, 0.07];
+    } else if (id === 'superkahraman') {
+      add('head', geoC('kost:mask', () => { const g = maskGeo(); const c = new Float32Array(g.attributes.position.count * 3); for (let i = 0; i < c.length; i += 3) { c[i] = 0.72; c[i + 1] = 0.05; c[i + 2] = 0.1; } g.setAttribute('color', new THREE.BufferAttribute(c, 3)); return g; }),
+        vcM('kostMask', { roughness: 0.4, side: THREE.DoubleSide })).position.set(0, 0, 0);   // maske baş kemiği uzayında kuruldu
+      add('chest', kitC('superEmblem', k => {
+        const z = torsoZ(0, 0.67) + 0.008;
+        const sh = new THREE.Shape(); sh.moveTo(0, -0.06); sh.quadraticCurveTo(0.06, -0.02, 0.062, 0.035); sh.lineTo(0.035, 0.05); sh.lineTo(-0.035, 0.05); sh.lineTo(-0.062, 0.035); sh.quadraticCurveTo(-0.06, -0.02, 0, -0.06);
+        k.add(flatGeo(sh, 0.006, 0.003), 0xffd23f, [0, 0.665, z], [-0.12, 0, 0], 1);
+        // F harfi
+        k.add(G.rbox(1), 0xe8323c, [-0.012, 0.665, z + 0.007], [-0.12, 0, 0], [0.013, 0.075, 0.006]);
+        k.add(G.rbox(1), 0xe8323c, [0.008, 0.695, z + 0.004], [-0.12, 0, 0], [0.05, 0.013, 0.006]);
+        k.add(G.rbox(1), 0xe8323c, [0.004, 0.67, z + 0.007], [-0.12, 0, 0], [0.036, 0.012, 0.006]);
+      }), vcM('kostEmblem', { roughness: 0.35, metalness: 0.1 }, 0xfff2a0));
+      add('hips', kitC('superBelt', k => {
+        k.add(G.torus(TAU, 0.09, 48), 0xffc93a, [0, 0.448, 0], [Math.PI / 2, 0, 0], [0.18, 0.146, 0.16]);
+        k.add(G.rbox(2), 0xffe27a, [0, 0.448, 0.152], 0, [0.05, 0.036, 0.012]);
+      }), metalMat('kostGold', 0xffc93a, 0.3, 0));
+      out.cape = 'kost_super';
+    } else if (id === 'sovalye') {
+      const CB = ink(0xc89a62), CD = ink(0xa87a46), TAPE = ink(0xb9bcc4);
+      const cardCol = (x, y, z) => {
+        const tape = Math.abs(y - 0.72) < 0.014 || Math.abs(y - 0.52) < 0.014;
+        return tape ? TAPE : CB.clone().lerp(CD, 0.35 + 0.35 * Math.sin(x * 160));   // oluklu karton
+      };
+      add('chest', kitC('knightArmor', k => {
+        const wf = v => 0.16 - 0.025 * sq(v * 2 - 1);
+        k.add(bodyPlate(0.46, 0.79, wf, 0.024, 1, 16, 14, 0.012), cardCol);
+        k.add(bodyPlate(0.46, 0.79, wf, 0.024, -1, 16, 14, 0.008), cardCol);
+        const z = torsoZ(0, 0.64) + 0.04;
+        k.add(starGeo(0.045, 0.003), 0xffd23f, [0, 0.64, z], [-0.1, 0, 0], 1);   // keçeli kalemle boyanmış yıldız
+        for (const s of [-1, 1]) for (let i = 0; i < 3; i++) k.add(G.rbox(1), 0x8a5c30, [s * 0.165, 0.5 + i * 0.1, 0], 0, [0.012, 0.03, 0.04]);   // yan bağlar
+      }), cloth('card', { roughness: 0.95 }));
+      for (const [b, s] of [['armL', 1], ['armR', -1]]) add(b, kitC('pad' + s, k => {
+        k.add(G.hemi(20), CB, [s * 0.19, 0.765, -0.005], [0, 0, -s * 0.35], [0.09, 0.075, 0.095]);
+        k.add(G.torus(TAU, 0.12, 24), CD, [s * 0.19, 0.765, -0.005], [Math.PI / 2, 0, -s * 0.35], [0.09, 0.095, 0.09]);
+      }), cloth('card', { roughness: 0.95 }));
+      // tencere kapağı kalkan (sol ön kolda, dışa bakar)
+      const lid = add('foreL', geoC('kost:lid', () => kitGeo(k => {
+        k.add(lathe([[0, 0.03], [0.06, 0.026], [0.12, 0.015], [0.165, 0.003], [0.172, -0.004], [0.165, -0.006], [0, -0.002]], 40, 0, 0, 1, 1), 0xd8dde6, [0, 0, 0], 0, 1);
+        k.add(G.torus(TAU, 0.08, 48), 0xc4cad4, [0, -0.002, 0], [Math.PI / 2, 0, 0], 0.17);
+        k.add(G.sphere(16), 0x2b2b30, [0, 0.05, 0], 0, [0.03, 0.02, 0.03]);
+        k.add(G.cyl(1, 1, 12), 0x2b2b30, [0, 0.036, 0], 0, [0.012, 0.02, 0.012]);
+      })), mat('kostLid', () => { const t = tex('metal'); return rimify(vcMat({ metalness: 0.9, roughness: 0.22, map: t ? t.map : null, envMapIntensity: 1.2 }), 0xffffff, 0.2); }));
+      lid.position.set(0.075, -0.07, 0.015); lid.rotation.set(0, 0, -Math.PI / 2);
+      // karton miğfer: kubbe + bant + burun koruyucu + kırmızı kâğıt püskül
+      const helm = kitC('cardHelm', k => {
+        k.add(G.hemi(28), (x, y, z) => CB.clone().lerp(CD, 0.3 + 0.3 * Math.sin(Math.atan2(x, z) * 18)), [0, 0.07, 0], 0, [0.315, 0.3, 0.325]);
+        k.add(G.cyl(1, 1, 32, true), CD, [0, 0.085, 0], 0, [0.318, 0.06, 0.328]);
+        k.add(G.cyl(1, 1, 32, true), TAPE, [0, 0.24, 0], [0, 0, 0], [0.25, 0.025, 0.26]);
+        k.add(G.rbox(1), CD, [0, 0.03, 0.315], [-0.15, 0, 0], [0.035, 0.12, 0.018]);
+        for (let i = 0; i < 5; i++) k.add(G.sphere(12), i & 1 ? 0xff6a5a : 0xe8323c, [(i - 2) * 0.035, 0.43 + 0.025 * (2 - Math.abs(i - 2)), -0.05 - Math.abs(i - 2) * 0.015], [-0.6, 0, (i - 2) * 0.32], [0.03, 0.11, 0.012]);
+      });
+      out.hat = new THREE.Mesh(helm, mat('kostHelm', () => rimify(vcMat({ roughness: 0.92, side: THREE.DoubleSide }), 0xffe6c0, 0.12)));
+      out.hat.position.set(0, 0.0, -0.005);
+      out.hatIn = [[0, 0.02, 0], [0.305, 0.3, 0.315], 0.06, 0.07];
+    } else if (id === 'kasif') {
+      const KH = ink(0xe0c993), KD = ink(0xc8ad72), GR = ink(0x4f7a3a), BR = ink(0x7a4a26);
+      const hatG = kitC('pith', k => {
+        k.add(lathe([[0, 0.39], [0.08, 0.385], [0.17, 0.36], [0.24, 0.31], [0.29, 0.24], [0.31, 0.16], [0.315, 0.09], [0, 0.09]], 36, 0, 0, 1, 1.03), (x, y) => KH.clone().lerp(KD, sstep(0.3, 0.1, y) * 0.4 + 0.1 * Math.sin(Math.atan2(x, 0.001) * 6)), [0, 0, 0], 0, 1);
+        k.add(lathe([[0.31, 0.105], [0.37, 0.085], [0.42, 0.06], [0.435, 0.05], [0.42, 0.045], [0.36, 0.07], [0.3, 0.09]], 40, 0, 0, 1, 1.05), KD, [0, 0, 0], 0, 1);
+        k.add(G.cyl(1, 1, 36, true), GR, [0, 0.135, 0], 0, [0.318, 0.05, 0.328]);
+        k.add(G.sphere(10), KD, [0, 0.39, 0], 0, [0.025, 0.012, 0.025]);
+      });
+      out.hat = new THREE.Mesh(hatG, mat('kostPith', () => rimify(vcMat({ roughness: 0.8, side: THREE.DoubleSide }), 0xffffff, 0.12)));
+      out.hat.rotation.set(-0.06, 0.12, -0.05);
+      out.hatIn = [[0, 0.02, 0], [0.305, 0.3, 0.315], 0.06, 0.07];
+      add('chest', kitC('binoc', k => {
+        const z = torsoZ(0, 0.63) + 0.035;
+        for (const s of [-1, 1]) {
+          k.add(G.cyl(1, 1, 16), 0x2a2c30, [s * 0.03, 0.63, z], [Math.PI / 2, 0, 0], [0.026, 0.07, 0.026]);
+          k.add(G.torus(TAU, 0.2, 16), 0xd8a64a, [s * 0.03, 0.63, z + 0.036], 0, 0.026);
+          k.add(G.sphere(12), 0x9fd2ff, [s * 0.03, 0.63, z + 0.036], 0, [0.02, 0.02, 0.004]);
+        }
+        k.add(G.rbox(1), 0x3a3c42, [0, 0.63, z], 0, [0.03, 0.025, 0.04]);
+        for (const s of [-1, 1]) { k.seg([s * 0.055, 0.64, z - 0.01], [s * 0.07, 0.76, torsoZ(0.07, 0.76) + 0.006], 0.004, BR, 0.004, 5); k.seg([s * 0.07, 0.76, torsoZ(0.07, 0.76) + 0.006], [s * 0.055, 0.83, -0.04], 0.004, BR, 0.004, 5); }
+        // çanta askısı: sol omuzdan sağ kalçaya
+        const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10, x = lerp(0.11, -0.165, t), y = lerp(0.79, 0.48, t); pts.push([x, y, torsoZ(x, y) + 0.009]); }
+        for (let i = 0; i < 10; i++) k.seg(pts[i], pts[i + 1], 0.009, BR, 0.009, 5);
+      }), cloth('kasif', { roughness: 0.7 }));
+      add('hips', kitC('satchel', k => {
+        k.add(G.rbox(2), BR, [-0.19, 0.44, 0.03], [0, 0.4, 0.05], [0.05, 0.11, 0.13]);
+        k.add(G.rbox(2), ink(0x8c5a30), [-0.212, 0.475, 0.035], [0, 0.4, 0.05], [0.012, 0.06, 0.12]);
+        k.add(G.rbox(1), 0xd8a64a, [-0.22, 0.455, 0.04], [0, 0.4, 0], [0.008, 0.02, 0.02]);
+      }), cloth('kasif', { roughness: 0.7 }));
+    } else if (id === 'astronot') {
+      const WH = ink(0xf4f5f7), GY = ink(0xb8bec8);
+      add('chest', kitC('astroPack', k => {
+        k.add(G.rbox(3), WH, [0, 0.66, -0.2], 0, [0.26, 0.28, 0.12]);
+        k.add(G.rbox(2), GY, [0, 0.59, -0.265], 0, [0.2, 0.07, 0.02]);
+        for (const s of [-1, 1]) {
+          k.add(G.cyl(1, 1, 16), WH, [s * 0.09, 0.71, -0.272], [Math.PI / 2, 0, 0], [0.03, 0.03, 0.03]);
+          k.seg([s * 0.1, 0.78, -0.2], [s * 0.08, 0.81, -0.08], 0.012, GY, 0.012, 8);
+        }
+        k.add(G.torus(TAU, 0.3, 40), WH, [0, 0.805, 0], [Math.PI / 2, 0, 0], [0.12, 0.115, 0.12]);   // kask yakası
+        const z = torsoZ(0, 0.66) + 0.02;
+        k.add(G.rbox(2), WH, [0, 0.66, z], [-0.1, 0, 0], [0.1, 0.07, 0.025]);   // göğüs paneli
+      }), vcM('kostAstro', { roughness: 0.45 }));
+      add('chest', kitC('astroLights', k => {
+        const z = torsoZ(0, 0.66) + 0.035;
+        [[0xff4a5a, -0.03], [0x3ae07a, 0], [0x4aa8ff, 0.03]].forEach(([c, x]) => k.add(G.sphere(10), c, [x, 0.67, z], 0, [0.009, 0.009, 0.005]));
+        k.add(G.sphere(10), 0xffd23f, [-0.05, 0.75, -0.27], 0, [0.01, 0.01, 0.005]);
+      }), glowVC('kostLights', 1.6));
+      const bubble = new THREE.Mesh(G.sphere(40), mat('kostGlass', () => rimify(stdMat({ color: 0xdff0ff, transparent: true, opacity: 0.12, roughness: 0.08, metalness: 0, envMapIntensity: 0.8, depthWrite: false }), 0xcfeaff, 0.6, 2.4)));
+      bubble.scale.set(0.42, 0.42, 0.43); bubble.position.set(0, 0.03, 0.015); bubble.userData.noShadow = true; bubble.renderOrder = 30;
+      out.hat = bubble;
+    }
+    return out;
+  }
+  // süper kahraman pelerini: kırmızı, sarı yıldızlı kenar
+  CAPE_PAINT.kost_super = (g, S, ge) => {
+    const edge = x => S * (0.9 + 0.05 * Math.cos((x / S) * TAU * 2.5));
+    g.save(); g.beginPath(); g.moveTo(0, 0); g.lineTo(S, 0); for (let x = S; x >= 0; x -= 2) g.lineTo(x, edge(x)); g.closePath(); g.clip();
+    const gr = g.createLinearGradient(0, 0, 0, S); gr.addColorStop(0, '#e8323c'); gr.addColorStop(1, '#b8202e'); g.fillStyle = gr; g.fillRect(0, 0, S, S);
+    for (let i = 0; i < 9; i++) { g.strokeStyle = 'rgba(0,0,0,0.07)'; g.lineWidth = 3; g.beginPath(); g.moveTo(i * S / 8, 0); g.lineTo(i * S / 8 + (i - 4) * 6, S); g.stroke(); }
+    g.strokeStyle = '#ffd23f'; g.lineWidth = 12; g.beginPath(); for (let x = 0; x <= S; x += 2) x ? g.lineTo(x, edge(x) - 4) : g.moveTo(x, edge(x) - 4); g.stroke();
+    // büyük sarı F rozeti
+    g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(S / 2, S * 0.42, 40, 0, TAU); g.fill();
+    g.save(); g.translate(S, 0); g.scale(-1, 1); g.fillStyle = '#e8323c'; g.fillRect(S / 2 - 14, S * 0.42 - 26, 11, 52); g.fillRect(S / 2 - 14, S * 0.42 - 26, 34, 11); g.fillRect(S / 2 - 14, S * 0.42 - 4, 26, 10); g.restore();
+    ge.fillStyle = '#3a2a00'; ge.beginPath(); ge.arc(S / 2, S * 0.42, 40, 0, TAU); ge.fill();
+    g.restore();
+  };
+
   // ── Hero ──
   function create() {
     const body = buildBody(), sh = sharedMats();
@@ -2024,7 +2289,7 @@ const { FEZA, ITEMS } = (function () {
     const skel = new THREE.Skeleton(bones);
     const skinMat = makeSkinMat(), hairMat = makeHairMat();
     const sk = (geo, m) => { const o = new THREE.SkinnedMesh(geo, m); root.add(o); o.bind(skel); o.frustumCulled = false; o.castShadow = true; return o; };
-    const skinMesh = sk(body.skin, skinMat); sk(body.cloth, sh.cloth); sk(body.shoe, sh.shoe);
+    const skinMesh = sk(body.skin, skinMat), clothMesh = sk(body.cloth, sh.cloth), pantsMesh = sk(body.pants, sh.pants); sk(body.shoe, sh.shoe);
     const B = { root: bones[0], hips: bones[1], chest: bones[2], head: bones[3], armL: bones[4], foreL: bones[5], armR: bones[6], foreR: bones[7], thighL: bones[8], shinL: bones[9], thighR: bones[10], shinR: bones[11] };
     const hairG = new THREE.Group(); B.head.add(hairG);
     const hair = new THREE.Mesh(body.hair, hairMat);
@@ -2033,9 +2298,20 @@ const { FEZA, ITEMS } = (function () {
     const wSlot = new THREE.Group(); wSlot.position.set(0, -0.18, 0.012); wSlot.rotation.order = 'ZXY'; B.foreR.add(wSlot);
     const offSlot = new THREE.Group(); offSlot.position.set(0, -0.18, 0.012); offSlot.rotation.order = 'ZXY'; B.foreL.add(offSlot);
     const capeSlot = new THREE.Group(); capeSlot.position.set(0, 0.205, -0.01); B.chest.add(capeSlot);
+    // kostüm katmanı (eşyalardan ayrı): başlık yuvası şapka yuvasıyla aynı yerde, pelerin yuvası pelerinle aynı yerde
+    const kHat = new THREE.Group(); kHat.position.copy(HC); hairG.add(kHat);
+    const kCape = new THREE.Group(); kCape.position.set(0, 0.205, -0.01); B.chest.add(kCape);
+    const KOST = { id: null, list: [], hatE: null, capeU: null, cache: {} };
     const handR = new THREE.Object3D(); handR.position.set(0, -0.18, 0.01); B.foreR.add(handR);
     const tip0 = new THREE.Object3D(); tip0.position.set(0, 0.35, 0); wSlot.add(tip0);
     const headC = new THREE.Object3D(); headC.position.copy(HC); B.head.add(headC);
+    // göğüsteki küçük etiket (Feza'nın tişörtündeki gibi): lacivert dikişli küçük kumaş etiket, üstünde minik yıldız
+    const label = new THREE.Mesh(geoC('fzLabel', () => kitGeo(k => {
+      k.add(G.rbox(2), 0x23345e, [0, 0, 0], 0, [0.042, 0.03, 0.006]);
+      k.add(G.rbox(2), 0xf6efe2, [0, 0, 0.0022], 0, [0.034, 0.022, 0.003]);
+      k.add(starGeo(0.0085, 0.002), 0xff6a4a, [0, 0, 0.0042], 0, 1);
+    })), vcM('fzLabel', { roughness: 0.8 }));
+    label.position.set(0.062, 0.1, 0.133); label.rotation.set(-0.12, 0.42, 0); label.userData.noShadow = true; B.chest.add(label);
     let readingBook = null;
     function makeReadingBook() {
       const book = new THREE.Group(); book.name = 'Feza open dream book';
@@ -2075,7 +2351,9 @@ const { FEZA, ITEMS } = (function () {
       hOff: v3(), hVel: v3(), hPrev: null, hPrevV: v3(), flow: 0, side: 0,
       eq: { weapon: null, offhand: null, hat: null, cape: null }, cache: {}, xray: false, capeU: null, fixed: null,
       bl: { e: 1, tgt: 1, t: 9, fx: false, sleep: false, dead: false },   // lightsaber blade: extension 0..1 → target
+      expr: null, exprT: 0, exprD: 1, exprNext: null, winkT: 0, wRide: 0, sub: false,
     };
+    const SETG = { obj: null, mat: null, id: null };
     const U = skinMat.userData.fz, HU = hairMat.userData.fz;
     const _v = v3(), _w = v3(), _a = v3(), _q = new THREE.Quaternion(), MW = [1, 0, 0, 0];
     const face = { blink: 0, happy: 0, grin: 0, o: 0, small: 0, wince: 0, squint: 0, look: 0, lookX: 0, lookY: 0, browR: 0, browT: 0, blush: 0 };
@@ -2225,6 +2503,29 @@ const { FEZA, ITEMS } = (function () {
         P[C.aLX] = lerp(P[C.aLX], -1.55, w); P[C.aLY] = lerp(P[C.aLY], -0.12, w); P[C.fL] = lerp(P[C.fL], -0.08, w);
         P[C.aRX] = lerp(P[C.aRX], -0.15, w); P[C.aRY] = lerp(P[C.aRY], 0, w); P[C.fR] = lerp(P[C.fR], -0.35, w);
       }
+      // Bilbo'ya binme (st.ride 0..1): bacaklar iki yana açık, dizler bükük, eller öne (Bilbo'nun boynuna), gövde öne eğik.
+      // Oyun H.root'u eyerin yüksekliğine koyar; kasık (eşofmanın ağı) kökte durur.
+      S.wRide = dmp(S.wRide || 0, dead ? 0 : clamp(st.ride || H._rideTest || 0, 0, 1), 8);
+      if (S.wRide > 0.001) {
+        const w = S.wRide, bob = Math.sin(t * 13), arms = w * (1 - Math.max(S.atkW, S.castW, S.wSpin));
+        const L = (i, v, k = w) => { P[i] += (v - P[i]) * k; };
+        L(C.bY, -0.355 + 0.012 * bob); L(C.bX, 0); L(C.bZ, 0); L(C.bRX, 0.2 + 0.03 * bob); L(C.bRZ, 0);
+        L(C.hRX, 0); L(C.hRY, 0); L(C.hRZ, 0);
+        L(C.tLX, -0.5); L(C.tRX, -0.5); L(C.tLZ, 1.05); L(C.tRZ, -1.05); L(C.sL, 1.0 + 0.08 * bob); L(C.sR, 1.0 + 0.08 * bob);
+        L(C.aLX, -1.0, arms); L(C.aRX, -1.0, arms); L(C.aLZ, 0.22, arms); L(C.aRZ, -0.22, arms); L(C.aLY, 0, arms); L(C.aRY, 0, arms);
+        L(C.fL, -0.5, arms); L(C.fR, -0.5, arms); L(C.kRX, -0.22 - 0.03 * bob); L(C.cRX, 0.05);
+        face.happy = Math.max(face.happy, w * (0.5 + 0.5 * (bob > 0.3 ? 1 : 0))); face.grin = Math.max(face.grin, w); face.blush = Math.max(face.blush, 0.6 * w);
+      }
+      // ifadeler: sevinç, şaşkınlık, kararlılık (H.express) + göz kırpma
+      if (S.exprT > 0 && !dead) {
+        S.exprT -= dt;
+        const e = Math.min(1, S.exprT / 0.25, (S.exprD - S.exprT) / 0.12 + 0.01);
+        if (S.expr === 'sevinc') { face.happy = Math.max(face.happy, e); face.grin = Math.max(face.grin, e); face.blush = Math.max(face.blush, 0.8 * e); face.browR = Math.max(face.browR, 0.6 * e); P[C.kRZ] += 0.08 * e * Math.sin(t * 9); }
+        else if (S.expr === 'saskin') { face.o = Math.max(face.o, e); face.browR = Math.max(face.browR, e); face.grin *= 1 - e; face.happy *= 1 - e; P[C.kRX] -= 0.08 * e; }
+        else if (S.expr === 'kararli') { face.browT = Math.min(face.browT, -0.9 * e); face.squint = Math.max(face.squint, 0.35 * e); face.small = Math.max(face.small, e * (1 - face.grin)); P[C.kRX] += 0.06 * e; P[C.cRX] -= 0.04 * e; }
+      }
+      if (S.winkT > 0) { S.winkT = Math.max(0, S.winkT - dt); const u = 1 - S.winkT / 0.42; U.fzWink.value = Math.sin(Math.PI * clamp(u * 1.15, 0, 1)); face.grin = Math.max(face.grin, 0.8); }
+      else U.fzWink.value = 0;
       if (S.fixed) S.fixed(P, face);
       const reading = !!st.sitRead && !dead;
       if (reading) {
@@ -2313,6 +2614,20 @@ const { FEZA, ITEMS } = (function () {
       S.flow = dmp(S.flow, Math.max(S.wRun * 1.05, S.wSpin * 1.35, S.atkW * 0.3, jump * 0.7, S.hurt * 0.4, S.castW * 0.25), 4.5);
       S.side = dmp(S.side, clamp(-S.yawRate * 0.06, -0.7, 0.7) - 0.5 * S.wSpin, 5);
       if (S.capeU) { S.capeU.cpFlow.value = S.flow; S.capeU.cpSide.value = S.side; S.capeU.cpTime.value = t; }
+      if (KOST.capeU) { KOST.capeU.cpFlow.value = S.flow; KOST.capeU.cpSide.value = S.side; KOST.capeU.cpTime.value = t; }
+      if (SETG.obj && SETG.obj.visible) { SETG.obj.rotation.y = t * 1.6; SETG.obj.position.y = 0.05 * Math.sin(t * 2.2); SETG.mat.opacity = 0.75 + 0.25 * Math.sin(t * 5); }
+      // oyun olaylarına yüz tepkisi (bir kez abone olunur)
+      if (!S.sub && typeof GAME !== 'undefined' && GAME && GAME.on && GAME.H === H) {
+        S.sub = true;
+        GAME.on('happy', () => { if (Math.random() < 0.35) H.express('sevinc', 0.9); });
+        GAME.on('boss', () => H.express('kararli', 2.2));
+        for (const ev of ['item', 'lostItem', 'ingredient', 'goldSugar']) GAME.on(ev, () => H.express('saskin', 0.9, 'sevinc'));
+        GAME.on('levelup', () => H.wink());
+        GAME.on('costume', d => { H.express('sevinc', 1.2); hsay('kostum_' + ((d && d.id) || 'gunluk'), { interrupt: true }); });
+      }
+      if (S.exprT <= 0 && S.exprNext) { const n = S.exprNext; S.exprNext = null; H.express(n, 1.1); }
+      // ara sıra (boştayken) göz kırpar
+      if (idleT > 4 && S.winkT <= 0 && !dead && Math.random() < dt * 0.04) H.wink();
 
       handR.getWorldPosition(H.hand);
       (S.eq.offhand && S.eq.offhand.tip ? S.eq.offhand.tip : S.eq.weapon && S.eq.weapon.tip ? S.eq.weapon.tip : tip0).getWorldPosition(H.wandTip);
@@ -2389,9 +2704,37 @@ const { FEZA, ITEMS } = (function () {
       if (slot === 'weapon') { ignite(); applyBlade(); }   // a new lightsaber in hand ignites (asleep: blade stays in)
     }
     function setTwins(obj, on) { obj.traverse(o => { if (o.userData.xrayTwin) o.visible = on; }); }
+    // kostümün başlığı / sırtı eşya şapkasını / pelerinini gizler (iki katman çakışmaz); saç, takılı olan başlığın içine toplanır
+    const hairHat = () => KOST.hatE || S.eq.hat;
+    const hsay = (k, o) => { try { const a = GAME.halaApi; if (a && a.hasLine && a.hasLine(k)) a.say(k, 2, o); } catch (e) { /* isteğe bağlı */ } };
+    function kostVis() {
+      const d = KOST.id ? COSTUMES[KOST.id] : null;
+      hatSlot.visible = !(d && d.hat); capeSlot.visible = !(d && d.cape);
+    }
+    // set tamamlanınca: Feza'nın çevresinde dönen, setin renginde parıltılar
+    function setGlow() {
+      let id = null;
+      if (typeof ITEMS !== 'undefined' && ITEMS.setOf && S.eq.weapon && S.eq.hat && S.eq.cape) {
+        const a = ITEMS.setOf(S.eq.weapon.item), b = ITEMS.setOf(S.eq.hat.item), c = ITEMS.setOf(S.eq.cape.item);
+        if (a && a === b && b === c) id = a;
+      }
+      const was = SETG.id; SETG.id = id; H.setComplete = id;
+      if (id && id !== was && typeof GAME !== 'undefined' && GAME && GAME.H === H && GAME.state === 'play') { hsay('set_tamam'); H.express('sevinc', 1.5); }
+      if (!id) { if (SETG.obj) SETG.obj.visible = false; return; }
+      if (!SETG.obj) {
+        const N = 18, pos = new Float32Array(N * 3);
+        for (let i = 0; i < N; i++) { const a = i / N * TAU * 2, y = 0.15 + 1.2 * (i / N); pos[i * 3] = Math.sin(a) * 0.48; pos[i * 3 + 1] = y; pos[i * 3 + 2] = Math.cos(a) * 0.48; }
+        const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        SETG.mat = new THREE.PointsMaterial({ size: 0.19, map: sparkTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: 0xffffff });
+        SETG.obj = new THREE.Points(g, SETG.mat); SETG.obj.frustumCulled = false; SETG.obj.renderOrder = HERO_ORDER + 2; root.add(SETG.obj);
+      }
+      const set = ITEMS.SETS && ITEMS.SETS[id];
+      SETG.mat.color.set((set && set.renk) || '#ffd23f').multiplyScalar(1.6);
+      SETG.obj.visible = true;
+    }
 
     const H = {
-      root, tip: v3(), wandTip: v3(), hand: v3(), bones: B, skeleton: skel, slots: { weapon: wSlot, offhand: offSlot, hat: hatSlot, cape: capeSlot },
+      root, tip: v3(), wandTip: v3(), hand: v3(), bones: B, skeleton: skel, slots: { weapon: wSlot, offhand: offSlot, hat: hatSlot, cape: capeSlot, kHat, kCape },
       update, readSeatHeight: .40,
       bladeOn: true,       // lightsaber on (or igniting); false while retracted / asleep
       ignite,              // H.ignite(): blade grows out of the hilt (0 → full in 0.3 s) with a small flash
@@ -2403,9 +2746,47 @@ const { FEZA, ITEMS } = (function () {
         if (!S.eq.weapon) H.bladeOn = false;
         swap('hat', eq.hat || null, hatSlot);
         swap('cape', eq.cape || null, capeSlot);
-        hatUniforms(S.eq.hat);
+        hatUniforms(hairHat());
         S.capeU = S.eq.cape ? S.eq.cape.capeU : null;
+        kostVis();
+        setGlow();
       },
+      // Dev Ev kostümü: id ('pastaci', 'superkahraman', 'sovalye', 'kasif', 'astronot'; null / 'gunluk' = kendi kıyafeti)
+      setCostume(id) {
+        id = id && COSTUMES[id] && id !== 'gunluk' ? id : null;
+        if (KOST.id === id) return;
+        for (const m of KOST.list) if (m.parent) m.parent.remove(m);
+        KOST.list.length = 0; kHat.clear(); kCape.clear(); KOST.capeU = null; KOST.hatE = null; KOST.id = id;
+        if (id) {
+          let c = KOST.cache[id];
+          if (!c) {
+            const p = costumeParts(id), meshes = [];
+            for (const bn in p.bones) for (const m of p.bones[bn]) { m.userData.bone = bn; meshes.push(m); }
+            let capeObj = null;
+            if (p.cape) capeObj = buildCape(p.cape, 0, true);
+            if (p.hat && p.hatIn) p.hat.fzHatIn = { h: new THREE.Object3D(), c: p.hatIn[0], r: p.hatIn[1], y0: p.hatIn[2], fade: p.hatIn[3] };
+            const all = [...meshes]; if (p.hat) all.push(p.hat); if (capeObj) all.push(capeObj);
+            for (const o of all) o.traverse(q => { if (q.isMesh) { q.frustumCulled = false; if (!q.renderOrder || q.renderOrder < HERO_ORDER) q.renderOrder = HERO_ORDER; q.castShadow = !q.userData.noShadow; q.receiveShadow = false; } });
+            // duvar arkasında da görünsün (x-ray ikizleri)
+            for (const m of meshes) xrayTwin(m.geometry, xrayBase(), m);
+            if (p.hat && !p.hat.material.transparent) xrayTwin(p.hat.geometry, xrayBase(), p.hat);
+            if (capeObj) addXrayItem(capeObj, 'kost:cape:' + p.cape);
+            for (const o of all) setTwins(o, false);
+            c = KOST.cache[id] = { meshes, hat: p.hat, cape: capeObj };
+          }
+          for (const m of c.meshes) { B[m.userData.bone].add(m); KOST.list.push(m); }
+          if (c.hat) { kHat.add(c.hat); KOST.hatE = { obj: c.hat }; }
+          if (c.cape) { kCape.add(c.cape); KOST.capeU = c.cape.fzCapeU; }
+          for (const m of c.meshes) setTwins(m, S.xray);
+          if (c.hat) setTwins(c.hat, S.xray); if (c.cape) setTwins(c.cape, S.xray);
+        }
+        kostVis();
+        hatUniforms(hairHat());
+      },
+      get costume() { return KOST.id; },
+      // yüz ifadesi: 'sevinc' | 'saskin' | 'kararli' (dur s); then: ardından gelecek ifade
+      express(kind, dur = 1.2, then = null) { S.expr = kind; S.exprT = S.exprD = Math.max(0.2, dur); S.exprNext = then; },
+      wink() { if (S.winkT <= 0) S.winkT = 0.42; },
       setXray(on) {
         S.xray = !!on;
         if (S.xray) for (const k of ['weapon', 'offhand', 'hat', 'cape']) { const e = S.eq[k]; if (e) addXrayItem(e.obj, e.xkey); }
@@ -2456,7 +2837,7 @@ const { FEZA, ITEMS } = (function () {
   // → { url } when it is cached, else a picture (draw / finish, see picNow) of that hat on Feza
   function portraitPic(H, hatItem) {
     const S = H._S, e = hatItem === undefined || !H._hat ? S.eq.hat : (hatItem ? H._hatEntry(hatItem) : null);
-    const hk = e ? e.key : '-';
+    const hk = (e ? e.key : '-') + (H.costume ? '|' + H.costume : '');
     if (PORTRAITS[hk]) return { url: PORTRAITS[hk] };
     return {
       draw() {
@@ -2469,7 +2850,7 @@ const { FEZA, ITEMS } = (function () {
         const ws = H.slots.weapon, wv = ws.visible, cs = H.slots.cape, cvis = cs.visible; const os = H.slots.offhand, ov = os.visible; ws.visible = false; os.visible = false; cs.visible = false;
         try {
           OFF.scene.add(root); root.position.set(0, 0, 0); root.rotation.set(0, -0.32, 0); root.scale.set(1, 1, 1); root.updateMatrixWorld(true);
-          const box = new THREE.Box3().setFromObject(H.slots.hat), top = clamp(box.isEmpty() ? 0 : box.max.y, 1.42, 1.62), ex = (top - 1.42) * 0.5;
+          const box = new THREE.Box3().setFromObject(H.slots.hat.visible ? H.slots.hat : H.slots.kHat || H.slots.hat), top = clamp(box.isEmpty() ? 0 : box.max.y, 1.42, 1.62), ex = (top - 1.42) * 0.5;
           offDraw(v3(0.0, 1.13 + ex, 0.03), 0.39 + ex, v3(-0.4, 0.1, 1), 24);
         } finally {   // always put Feza back where he was
           OFF.scene.remove(root);
@@ -2697,7 +3078,7 @@ const { FEZA, ITEMS } = (function () {
   let UID = (Date.now() % 1e9) * 10;
   function make(slot, id, rarity = 0, ilvl = 1) {
     if (!BASES[slot]) slot = 'weapon';
-    const b = BASES[slot].find(q => q.id === id) || BASES[slot][0];
+    const b = BASES[slot].find(q => q.id === id) || (LEGACY[slot] || []).find(q => q.id === id) || BASES[slot][0];
     rarity = clamp(rarity | 0, 0, 3); ilvl = Math.max(1, ilvl | 0);
     return { uid: ++UID, slot, base: b.id, rarity, ilvl, power: Math.round((ilvl * 2 + 4) * MULT[rarity]), ad: b.ad + (rarity >= 2 ? ' ✦' : '') };
   }
@@ -2713,6 +3094,8 @@ const { FEZA, ITEMS } = (function () {
     return !!base && (!base.classLock || base.classLock === heroClass) && (item.slot !== 'weapon' || heroClass === 'hybrid' || (base.heroClass || 'warrior') === (heroClass === 'wizard' ? 'wizard' : 'warrior'));
   }
   function bossReward(type, heroClass = 'warrior', ilvl = 1) {
+    const bg = ITEMS.BOSS_GIFT[type];   // Dev Ev bossları
+    if (bg) { const gg = bg[heroClass] || bg.warrior; return gg ? make(gg[0], gg[1], 3, ilvl) : null; }
     const wizard = heroClass === 'wizard', gift = heroClass === 'hybrid' ? {
       kopukusta: ['weapon', 'kopukikiz'], aytavsan: ['weapon', 'aytavsanikiz'],
       kraljole: ['weapon', 'joleikiz'], kefirdev: ['weapon', 'kefirikiz'], kostebekusta: ['weapon', 'magaraikiz'],
@@ -2779,7 +3162,7 @@ const { FEZA, ITEMS } = (function () {
         if (b) { b.scale.y = 1; wrap.updateMatrixWorld(true); }
         const wk = SB_U.k.value, wg = SB_U.grad.value, wr = SB_U.ramp.value;
         if (slot === 'weapon') { SB_U.k.value = 0.45; SB_U.grad.value = 1.15; SB_U.ramp.value = 1 / 0.6; }
-        try { offDraw(c, Math.max(sz.x, sz.y, sz.z) * (slot === 'weapon' ? 0.46 : 0.56), dir, fov); }
+        try { offDraw(c, Math.max(sz.x, sz.y, sz.z) * (slot === 'weapon' ? (b ? 0.46 : 0.5) : 0.56), dir, fov); }
         finally { SB_U.k.value = wk; SB_U.grad.value = wg; SB_U.ramp.value = wr; OFF.scene.remove(wrap); }
       },
       finish(cv) {
@@ -2791,7 +3174,7 @@ const { FEZA, ITEMS } = (function () {
         g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 4; g.shadowOffsetY = 2;
         g.drawImage(cv, 4, 4, 120, 120);
         g.restore();
-        if (slot === 'weapon' && !WAND[id]) {   // the blade fades out into the top-right corner (instead of a hard cut)
+        if (slot === 'weapon' && !WAND[id] && !(CUSTOM['weapon:' + id] && !CUSTOM['weapon:' + id].reuse) && !WAND[(CUSTOM['weapon:' + id] || {}).reuse]) {   // the blade fades out into the top-right corner (instead of a hard cut)
           g.save(); g.globalCompositeOperation = 'destination-out';
           const fd = g.createLinearGradient(96, 32, 124, 4); fd.addColorStop(0, 'rgba(0,0,0,0)'); fd.addColorStop(1, 'rgba(0,0,0,1)');
           g.fillStyle = fd; g.fillRect(64, 0, 64, 64); g.restore();
@@ -2851,6 +3234,11 @@ const { FEZA, ITEMS } = (function () {
     }
     g.restore();
   }
+  const STARTER = { warrior: 'tahta', wizard: 'findik' }, LEGACY = {};
+  // Eşya modeli yapım takımı (src/04_esyalar.js kullanır). Hepsi 04_feza.js içindeki yardımcılar.
+  const ITEM_KIT = { THREE, G, Kit, kitGeo, geoC, mat, vcM, vcMat, stdMat, glowMat, glowVC, metalMat, steelM, goldM, feltMat, rimify, patchMat, stencil, keep, tex,
+    sweep, lathe, curvePts, kcyl, flatGeo, starShape, starGeo, heartShape, capsuleGeo, v3, V2, rarCol, mulberry32, buildCape: (id, r, own) => buildCape(id, r, own),
+    buildHat: (id, r) => buildHat(id, r), buildSword: (id, r) => buildSword(id, r), canvasEl, TAU };
   const ITEMS = {
     RARITY, BASES,
     make, roll, model, thumb, prebake, nameOf, allowed, bossReward,
@@ -2861,14 +3249,34 @@ const { FEZA, ITEMS } = (function () {
       const gift = bossReward(type, heroClass, item.ilvl);
       return { ...item, slot: gift.slot, base: gift.base, ad: nameOf({ ...gift, rarity: item.rarity }) };
     },
-    isWand: item => !!item && item.slot === 'weapon' && !!WAND[baseId(item)],
+    isWand: item => { if (!item || item.slot !== 'weapon') return false; const id = baseId(item), cu = CUSTOM['weapon:' + id]; return cu ? (cu.def.heroClass === 'wizard' || !!WAND[cu.reuse]) : !!WAND[id]; },
     bladeColor,   // ITEMS.bladeColor(item | baseId) → '#rrggbb' (rainbow blade: its current colour)
-    starter: (heroClass = 'warrior') => ({ weapon: make('weapon', heroClass === 'wizard' ? 'findik' : 'tahta', 0, 1), ...(heroClass === 'hybrid' ? { offhand: make('weapon', 'findik', 0, 1) } : {}), hat: null, cape: null }),
+    starter: (heroClass = 'warrior') => ({ weapon: make('weapon', heroClass === 'wizard' ? STARTER.wizard : STARTER.warrior, 0, 1), ...(heroClass === 'hybrid' ? { offhand: make('weapon', STARTER.wizard, 0, 1) } : {}), hat: null, cape: null }),
+    // ── Dev Ev eşya kaydı (src/04_esyalar.js) ──
+    // ITEMS.register(slot, def, build?) · def: { id, ad, minLvl, legendary?, boss?, heroClass?, set?, col? (vuruş izi), reuse? (eski model id) }
+    //   build(r, own, KIT) → THREE.Group (silah: tutma yeri orijinde, +Y ucu, g.fzTip = uç Object3D; şapka: baş merkezi orijin,
+    //   isteğe bağlı g.fzHatIn = {h, c, r, y0, fade}); pelerin için build yerine ITEMS.paintCape(id, painter) kullan.
+    register(slot, def, build) {
+      if (!BASES[slot] || !def || !def.id) return false;
+      const L = BASES[slot], i = L.findIndex(q => q.id === def.id);
+      if (i >= 0) L[i] = def; else L.push(def);
+      if (def.boss && !def.classLock) def.classLock = def.heroClass || 'warrior';
+      CUSTOM[slot + ':' + def.id] = { def, build: build || null, reuse: def.reuse || null };
+      return true;
+    },
+    paintCape(id, painter) { CAPE_PAINT[id] = painter; delete CAPE_TEX[id]; },
+    clearBases(keep) { for (const slot of Object.keys(BASES)) { LEGACY[slot] = BASES[slot].slice(); BASES[slot].length = 0; } if (keep) for (const [slot, id] of keep) { const b = LEGACY[slot].find(q => q.id === id); if (b) BASES[slot].push(b); } },
+    setStarter(warrior, wizard) { if (warrior) STARTER.warrior = warrior; if (wizard) STARTER.wizard = wizard; },
+    BOSS_GIFT: {},     // ITEMS.BOSS_GIFT[bossType] = { warrior: [slot, id], wizard: [slot, id], hybrid: [slot, id] }
+    SETS: {},          // ITEMS.SETS[setId] = { ad, renk, parca: ['weapon:id', 'hat:id', 'cape:id'] } (üçü takılınca parlak görünüm)
+    setOf: it => { const cu = it && CUSTOM[it.slot + ':' + baseId(it)]; return cu ? cu.def.set || null : null; },
+    get KIT() { return ITEM_KIT; },
     // Stars show only how strong a piece is (its power), never its rarity (that is the colour/glow): a stronger item
     // never shows fewer stars (parent: a stronger castle drop with fewer stars than a shiny forest one confused Feza).
     stars: it => { const p = it ? it.power || 0 : 0; return p >= 34 ? 5 : p >= 24 ? 4 : p >= 16 ? 3 : p >= 10 ? 2 : 1; },
   };
-  const FEZA = { create, portrait, warm, bodyStats: () => BODY && { ms: BODY.ms, skinVerts: BODY.skin.attributes.position.count, clothVerts: BODY.cloth.attributes.position.count,
+  const FEZA = { create, portrait, warm, COSTUMES, costumeBonus: id => (id && COSTUMES[id] ? COSTUMES[id].bonus : null) || null,
+    costumes: () => Object.keys(COSTUMES).map(id => ({ id, ad: COSTUMES[id].ad, arti: COSTUMES[id].arti })), bodyStats: () => BODY && { ms: BODY.ms, skinVerts: BODY.skin.attributes.position.count, clothVerts: BODY.cloth.attributes.position.count,
     hairVerts: BODY.hair.attributes.position.count, bake: { warm: BAKE.warmQ.length + (BAKE.cur ? 1 : 0), queue: BAKE.q.length + (RB.pic ? 1 : 0), reading: RB.pic ? 1 : 0, async: !RB.off, thumbs: Object.keys(THUMBS).length, portraits: Object.keys(PORTRAITS).length, portraitKeys: Object.keys(PORTRAITS) } } };
   return { FEZA, ITEMS };
 })();
