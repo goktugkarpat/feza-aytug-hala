@@ -241,12 +241,25 @@ const STORY = (() => {
     const finished = !!o.finished;
     if (!finished) {
       KS.add(lathe('frost', [[0, 0], [0.31, 0], [0.315, 0.02], [0.24, 0.045], [0, 0.05]], 40), cream, [cx, cakeY + 0.225, cz]);
-      for (let k = 0; k < 9; k++) { const a = -0.6 + k * 0.32; KS.add(SPH(), cream, [cx + Math.sin(a) * 0.29, cakeY + 0.2, cz + Math.cos(a) * 0.29], null, [0.035, 0.07, 0.035]); }   // ön yüze akan krema damlaları
+      for (let k = 0; k < 16; k++) {   // yan yüze akan ince krema damlaları (farklı boyda)
+        const a = -1.5 + k * 0.2 + Math.sin(k * 12.9898) * 0.06, L = 0.018 + Math.abs(Math.sin(k * 78.233)) * 0.075;
+        KS.add(CYL(10), cream, [cx + Math.sin(a) * 0.304, cakeY + 0.225 - L / 2, cz + Math.cos(a) * 0.304], null, [0.017, L, 0.017]);
+        KS.add(SPH(), cream, [cx + Math.sin(a) * 0.304, cakeY + 0.225 - L, cz + Math.cos(a) * 0.304], null, [0.019, 0.022, 0.019]);
+      }
+      for (let k = 0; k < 7; k++) { const a = k / 7 * TAU + 0.3, r = 0.2; KS.add(SPH(), 0xffd1e0, [cx + Math.sin(a) * r, cakeY + 0.262, cz + Math.cos(a) * r], null, [0.03, 0.022, 0.03]); }   // pembe krema tepecikleri
     }
     // ── un torbası (yerde) + dökülmüş un ──
     const [bx, bz] = SPOT.bag;
-    const sack = (x, y, z) => (y > 0.18 && y < 0.36 ? C(0x4f8fd0) : C(0xd9bd8c).multiplyScalar(1 + 0.05 * Math.sin(x * 40 + z * 33) * Math.sin(y * 25)));
-    KM.add(lathe('sack', [[0, 0], [0.24, 0], [0.3, 0.06], [0.32, 0.25], [0.28, 0.5], [0.24, 0.6], [0.27, 0.64], [0.25, 0.66], [0.2, 0.62]], 28), sack, [bx, 0, bz], [0, 0.4, 0.12]);
+    // kese kâğıdı un torbası: krem-kraft, keskin kenarlı mavi bant + kırmızı şerit, kıvrılmış ağız
+    const sack = (x, y, z) => {
+      const w = 1 + 0.06 * Math.sin(x * 47 + z * 31) * Math.sin(y * 29);   // kâğıt kırışığı tonu
+      if (y > 0.20005 && y <= 0.36005) return C(0x3f86d6);
+      if (y > 0.36005 && y <= 0.38505) return C(0xe8463f);
+      return C(0xe2c99b).multiplyScalar(w);
+    };
+    KM.add(lathe('sack2', [[0, 0], [0.22, 0], [0.28, 0.03], [0.31, 0.1], [0.32, 0.2], [0.32, 0.2001], [0.318, 0.36], [0.318, 0.3601], [0.315, 0.385], [0.315, 0.3851],
+      [0.3, 0.5], [0.27, 0.6], [0.265, 0.62], [0.2, 0.6]], 32), sack, [bx, 0, bz], [0, 0.4, 0]);
+    KM.add(TOR(TAU, 0.35), 0xcfb07c, [bx, 0.625, bz], [Math.PI / 2, 0, 0], [0.255, 0.255, 0.18]);   // kıvrılmış ağız
     KM.add(SPH(), 0xffffff, [bx + 0.04, 0.6, bz], null, [0.2, 0.08, 0.2]);
     KM.add(lathe('spill', [[0, 0], [0.5, 0], [0.3, 0.01], [0, 0.016]], 30), 0xf4efe4, [bx + 0.3, 0, bz + 0.12], null, [1, 1, 0.7]);
     for (let k = 0; k < 6; k++) KM.add(SPH(), 0xffffff, [bx + 0.3 + Math.cos(k * 1.7) * 0.5, 0, bz + 0.2 + Math.sin(k * 1.7) * 0.35], null, [0.06 + (k % 3) * 0.02, 0.03, 0.06]);
@@ -452,11 +465,17 @@ const STORY = (() => {
     const g = G_(), H = g && g.H; if (!H || !H.setEquip || CH.noWeapon) return;
     const e = (g.P && g.P.equip) || {};
     try { H.setEquip({ weapon: null, offhand: null, hat: e.hat || null, cape: e.cape || null }); CH.noWeapon = true; } catch (err) { /* ignore */ }
+    if (H.setXray) { try { H.setXray(false); CH.xrayOff = true; } catch (err) { /* ignore */ } }   // kapı kasasının arkasında mavi hayalet görünmesin
   }
   function restoreWeapon() {
     const g = G_(), H = g && g.H; if (!H || !H.setEquip || !CH.noWeapon) return;
     CH.noWeapon = false;
     try { H.setEquip(g.P.equip); } catch (err) { /* ignore */ }
+    restoreXray();
+  }
+  function restoreXray() {
+    const g = G_(), H = g && g.H; if (!H || !H.setXray || !CH.xrayOff) return;
+    CH.xrayOff = false; try { H.setXray(true); } catch (err) { /* ignore */ }
   }
   // sahne bitince modelleri oyunun beklediği hale döndür (boy, eğim)
   function restoreChars() {
@@ -577,7 +596,7 @@ const STORY = (() => {
     f.x = SPOT.feza[0] - 0.12 * peek; f.lean = 0.06 * peek; f.face = -0.92 + 0.1 * Math.sin(T * 0.4);
     // Bilbo burnu un torbasında, kuyruk sallanır; ara ara un pofu
     b.nose = 0.8 + 0.2 * Math.sin(T * 1.7); b.speed = 0.12;
-    if ((T % 2.3) < dt) burst('dust', origin.x + SPOT.bag[0] + 0.1, 0.72, origin.z + SPOT.bag[1], { count: 3 });   // ara ara un tozu
+    if ((T % 2.3) < dt) puff(TS.puffs, SPOT.bag[0] + 0.15, 0.82, SPOT.bag[1] + 0.05, 1, 0.25, 0.16);   // ara ara un tozu
     // Hala şeker serper: kavanozdan birkaç şeker pastaya yağar
     h.act = 'serp'; h.face = -0.12 + 0.05 * Math.sin(T * 0.8);
     sprAt -= dt;
@@ -693,7 +712,7 @@ const STORY = (() => {
     else overlay(false);
     WH.a = WH.to = 0; WH.hold = 0; WH.then = null;
     restoreNear();
-    if (kind === 'intro') { titlePose(); TS.mug.g.visible = false; }   // (yeni oyun resetPlayer ile donanımı kendisi giydirir)   // başlık karesi yeni oyun yüklenene kadar normal boyda
+    if (kind === 'intro') { titlePose(); TS.mug.g.visible = false; restoreXray(); }   // (yeni oyun resetPlayer ile donanımı kendisi giydirir)   // başlık karesi yeni oyun yüklenene kadar normal boyda
     restoreChars();
     if (res) res();
   }
@@ -1154,6 +1173,7 @@ const STORY = (() => {
   }
   function malzemeCount() { const g = G_(); const m = g && g.P && g.P.malzemeler; return m ? Object.keys(m).filter(k => m[k]).length : 0; }
   function zone(o) {
+    restoreXray();   // başlıktan (Devam Et / harita) oyuna geçiş
     const id = o && o.id; if (!id) return;
     if (id === 'masa') {
       if (seen.firstHub) return;   // ilk geliş: intro() anlatır
@@ -1239,7 +1259,7 @@ const STORY = (() => {
     const ending_ = CINE.on && CINE.kind === 'ending';
     if (!title && !ending_ && !MOM.on) { if (c.near !== 0.5 || c.fov !== 40) restoreNear(); return false; }
     if (MOM.on && !title && !ending_) { momentCamera(dt); return true; }
-    if (title && !CINE.on) titleCamera();
+    if (title && !CINE.on && !window.__camHold) titleCamera();   // (__camHold: QA yakın çekim)
     const k = 1 - Math.exp(-CAM_.k * dt);
     CAM_.pos.lerp(CAM_.tpos, CAM_.snap ? 1 : k); CAM_.look.lerp(CAM_.tlook, CAM_.snap ? 1 : k); CAM_.snap = false;
     CAM_.fov += (CAM_.tfov - CAM_.fov) * k;
@@ -1316,6 +1336,6 @@ const STORY = (() => {
     busy: () => CINE.on,
     endingDone: false,
     get cine() { return CINE.on ? CINE.kind : ''; },
-    _CINE: CINE, _TS: TS, _ACT: ACT, _SPOT: SPOT, _END: END, _MOM: MOM, _FLY: FLY, _skip: () => skipAll(), _next: () => nextBeat(), _blow: () => blowNow(),
+    _CINE: CINE, _TS: TS, _ACT: ACT, _SPOT: SPOT, _END: END, _MOM: MOM, _FLY: FLY, _skip: () => skipAll(), _next: () => nextBeat(), _blow: () => blowNow(), _camTo: camTo,
   };
 })();
