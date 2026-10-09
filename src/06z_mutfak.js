@@ -466,6 +466,14 @@ const MUTFAK = (() => {
     for (let row = 0; row * 0.7 < 14; row++) for (let x = -w / 2 + (row % 2 ? 0.7 : 0); x < w / 2; x += 1.4) api.box(ex.x + x, row * 0.7 + 0.35, z + 0.01, 0.06, 0.7, 0.04, 0xd8d6d0);
     api.box(ex.x, 5.6, z + 0.05, 6.4, 11.2, 0.14, 0xfdf6ea); for (const s of [-1, 1]) api.box(ex.x + s * 3.35, 5.7, z + 0.12, 0.4, 11.4, 0.3, 0xffffff);
     api.box(ex.x, 11.45, z + 0.12, 7.1, 0.4, 0.3, 0xffffff); api.ball(ex.x + 2.5, 5, z + 0.25, 0.3, 0.3, 0.3, 0xe2b649);
+    // ocak düğmeleri (duvarda, kapının iki yanında): krem gövde, kırmızı çizgi; hepsi "kapalı"
+    for (const sd of [-1, 1]) for (let k = 0; k < 2; k++) {
+      const kx = ex.x + sd * (5.2 + k * 2.6); if (Math.abs(kx - ex.x) > w / 2 - 1) continue;
+      api.put(G.cyl(1, 1, 24), kx, 2.4, z + 0.35, 0.95, 0.5, 0.95, 0xf4efe4, 0, Math.PI / 2);
+      api.put(G.cyl(1, 1, 20), kx, 2.4, z + 0.65, 0.72, 0.25, 0.72, 0xe8e2d4, 0, Math.PI / 2);
+      api.box(kx, 2.75, z + 0.78, 0.14, 0.5, 0.06, 0xe8504d);
+      api.ball(kx, 3.7, z + 0.1, 0.22, 0.22, 0.05, 0x7fb8a6);   // küçük "kapalı" ışığı (yeşil)
+    }
   }
 
   return { yerlesim, kur };
