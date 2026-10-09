@@ -101,6 +101,36 @@ const MUTFAK = (() => {
     k.add(G.rbox(2), 0x5aa0e8, [1.2, 1.2, 0], null, [1.2, 0.5, 0.5]);   // mavi kol
     return k.build();
   });
+  const tomatoGeo = () => C('mkTomato', () => {
+    const k = new Kit(); k.add(G.sphere(22, 16), 0xe2412c, [0, 1, 0], null, [1.05, 0.95, 1.05]); k.add(G.sphere(10, 8), 0xff9a86, [-0.4, 1.5, 0.5], null, [0.2, 0.12, 0.12]);
+    for (let j = 0; j < 5; j++) { const a = j * TAU / 5; k.add(G.sphere(8, 4), 0x4f9a3a, [Math.sin(a) * 0.32, 1.93, Math.cos(a) * 0.32], [0, a, 0.3], [0.32, 0.05, 0.12]); }
+    k.add(G.cyl(1, 1, 6), 0x4f8a3a, [0, 2.1, 0], null, [0.07, 0.35, 0.07]); return k.build();
+  });
+  const cheeseGeo = () => C('mkCheese', () => {
+    const k = new Kit(); k.add(G.cyl(1, 1, 3), 0xf6cc52, [0, 0.8, 0], [0, 0.5, 0], [1.9, 1.6, 1.9]);
+    for (let j = 0; j < 7; j++) { const a = j * 2.2; k.add(G.sphere(10, 6), 0xd9a830, [Math.cos(a) * 0.7, 0.4 + (j % 3) * 0.45, Math.sin(a) * 0.7], null, [0.22, 0.2, 0.22]); }
+    return k.build();
+  });
+  const breadGeo = () => C('mkBread', () => {
+    const k = new Kit(); k.add(G.sphere(24, 14), (x, y) => new THREE.Color().setHSL(0.08, 0.6, 0.36 + Math.min(0.18, y * 0.08)), [0, 0.9, 0], null, [2.6, 1.2, 1.4]);
+    for (let j = 0; j < 3; j++) k.add(G.sphere(12, 6), 0xf0d29a, [(j - 1) * 1.2, 2.02, 0], [0, 0.6, 0], [0.45, 0.06, 0.9]);
+    return k.build();
+  });
+  const plateGeo = () => C('mkPlate', () => {
+    const k = new Kit(), cy = G.cyl(1, 0.85, 32);
+    for (let j = 0; j < 4; j++) { k.add(cy, 0xfbfbf8, [0, 0.16 + j * 0.3, 0], null, [2.3, 0.26, 2.3]); k.add(G.torus(TAU, 0.05, 32), 0x4f8fdc, [0, 0.3 + j * 0.3, 0], [Math.PI / 2, 0, 0], [2.0, 2.0, 1]); }
+    return k.build();
+  });
+  const mugGeo = i => C('mkMug' + (i % 3), () => {
+    const k = new Kit(), c = [0xf28a9a, 0x7fc8f0, 0xf6d04d][i % 3];
+    k.add(G.cyl(1, 1, 24), c, [0, 1.1, 0], null, [1.1, 2.2, 1.1]); k.add(G.cyl(1, 1, 24), 0x6a4630, [0, 2.15, 0], null, [0.95, 0.06, 0.95]);
+    k.add(G.torus(TAU, 0.16, 16), c, [1.2, 1.1, 0], null, [0.55, 0.62, 0.8]);
+    k.add(G.sphere(10, 8), 0xffffff, [0, 1.2, 1.08], null, [0.35, 0.3, 0.05]); return k.build();
+  });
+  const forkGeo = () => C('mkFork', () => {
+    const k = new Kit(), m = 0xd6dde5; k.add(G.rbox(2), m, [-1.5, 0, 0], null, [3.6, 0.18, 0.55]); k.add(G.rbox(2), m, [0.7, 0, 0], null, [1.0, 0.16, 0.9]);
+    for (let j = 0; j < 4; j++) k.add(G.box(), m, [1.75, 0, -0.33 + j * 0.22], null, [1.3, 0.12, 0.1]); return k.build();
+  });
   const pastaGeo = () => C('mkPasta', () => {
     const k = new Kit(), cy = G.cyl(1, 1, 6);
     for (let j = 0; j < 22; j++) { const off = (j % 11) / 10 - 0.5, lay = Math.floor(j / 11); k.add(cy, j % 3 ? 0xf6d36a : 0xf0c856, [off * 3.2, 0.12 + lay * 0.2, (j * 0.13) % 0.3 - 0.15], [Math.PI / 2, 0.03 * (j % 5 - 2), Math.PI / 2], [0.09, 6.4, 0.09]); }
@@ -135,8 +165,9 @@ const MUTFAK = (() => {
       region: (x, z) => { const c = soft(cupQ, x, z); return [soft(sinkQ, x, z) * (1 - c), c, c * 0.55]; }, out: [0.5, 0.48, 0.48], shade: 0.4 });
     if (stoveQ) K.slab(api, L, { x: (stoveQ.x0 + stoveQ.x1) / 2, z: (stoveQ.z0 + stoveQ.z1) / 2, w: stoveQ.x1 - stoveQ.x0, d: stoveQ.z1 - stoveQ.z0, h: 0.1, tex: 'stove', size: 6, rough: 0.25 });
     const T = K.toys(api);
-    if (a1) tezgah(L, api, T, a1, rnd);
+    L._mkSink = null;
     if (a2) lavabo(L, api, T, a2, rnd);
+    if (a1) tezgah(L, api, T, a1, rnd);
     if (a3) dolap(L, api, T, a3, cupQ, rnd);
     if (ar) ocak(L, api, T, ar, stoveQ, rnd);
     // alan girişlerinde Aytuğ Hala'nın kısa sözü
@@ -147,22 +178,24 @@ const MUTFAK = (() => {
     K.edge(L, api, (x, z) => (inRect(stoveQ, x, z) ? 0x8a8e98 : inRect(cupQ, x, z) ? 0xe2c9a2 : inRect(sinkQ, x, z) ? 0xb8c2cc : 0xe6d6bc), 0.1);
   }
 
+  const sinkQ0 = L => (L.areas && L.areas[1] ? K.bbox(L, L.areas[1].rooms, 5) : null), cupQ0 = L => (L.areas && L.areas[2] ? K.bbox(L, L.areas[2].rooms, 4) : null);
   // Alan 1 · Tezgâh Tepeleri
   function tezgah(L, api, T, a1, rnd) {
     const rooms = mainOf(L, a1);
     // kesme tahtası (ikinci odanın altında, üstünde yürünür) + kırıntılar, un dağları
     const br = L.rooms[rooms[rooms.length - 1]];
     K.slab(api, L, { x: br.x + 1, z: br.z - 0.5, w: br.r * 1.7, d: br.r * 1.3, h: 0.16, tex: 'board', size: 6, rough: 0.6 });
-    for (const ri of rooms) {
+    const skip1 = (x, z) => soft(sinkQ0(L), x, z, 1) > 0 || soft(cupQ0(L), x, z, 1) > 0 || inRect(L._mkSink, x, z);
+    K.fill(L, rnd, L.areas[0].rooms, (x, z, maxH, fd, k) => {
+      const kind = k % 7, s = 0.8 + rnd() * 0.5;
+      if (kind === 1 && maxH > 1.6) api.put(flourGeo(), x, 0, z, s, Math.min(s, maxH / 2), s, null, rnd() * TAU);
+      else if (kind === 3 && maxH > 1.8) api.put(tomatoGeo(), x, 0, z, 1.2, 1.2, 1.2, null, rnd() * TAU);
+      else if (kind === 5 && maxH > 2.2) api.put(k % 2 ? cheeseGeo() : breadGeo(), x, 0, z, 1, 1, 1, null, rnd() * TAU);
+      else if (kind === 6 && maxH > 1.5) api.put(sugarCubeGeo(), x, -0.1, z, 0.9, 0.9, 0.9, null, rnd() * TAU);
+      else { const c = Math.min(1.1 + rnd() * 1.2, maxH / 1.3); if (c > 0.3) api.put(crumbGeo(k), x, 0, z, c, c, c, null, rnd() * TAU); }
+    }, { skip: skip1, step: 2.5 });
+    for (const ri of rooms) {   // yürünür alanda minik kırıntılar (süs)
       const r0 = L.rooms[ri];
-      for (let k = 0; k < 16; k++) {
-        const a = k * TAU / 16 + rnd() * 0.2, d = r0.r + 2 + rnd() * 4, x = r0.x + Math.sin(a) * d, z = r0.z + Math.cos(a) * d;
-        if (K.floorDist(L, x, z, 2.5) < 2) continue;
-        const fN = K.floorNorth(L, x, z, 8), maxH = fN < 99 ? 0.25 + fN * 0.3 : 9;
-        if (k % 3 === 1 && maxH > 1.6) { const s = 0.8 + rnd() * 0.5; api.put(flourGeo(), x, 0, z, s, Math.min(s, maxH / 2), s, null, rnd() * TAU); }
-        else { const s = Math.min(1.2 + rnd() * 1.2, maxH / 1.3); if (s > 0.3) api.put(crumbGeo(k), x, 0, z, s, s, s, null, rnd() * TAU); }
-      }
-      // yürünür alanda minik kırıntılar ve şeker taneleri (süs)
       for (let k = 0; k < 10; k++) { const a = rnd() * TAU, d = rnd() * r0.r * 0.85, x = r0.x + Math.sin(a) * d, z = r0.z + Math.cos(a) * d; if (K.isF(L, x, z)) api.put(crumbGeo(k), x, 0, z, 0.22, 0.18, 0.22, null, rnd() * TAU); }
     }
     // gizli hazineler: şeker küpü, kurabiye
@@ -198,8 +231,8 @@ const MUTFAK = (() => {
     })();
     if (lane) {
       const yaw = Math.atan2(-lane.uz, lane.ux), cx = (lane.x0 + lane.x1) / 2, cz = (lane.z0 + lane.z1) / 2;
-      api.put(G.rbox(2), cx, 0.08, cz, lane.len, 0.16, 2.4, 0xffdf6e, yaw);
-      api.put(G.rbox(2), cx, 0.17, cz, lane.len - 0.6, 0.02, 1.6, 0xfff0a8, yaw);
+      api.put(G.rbox(2), cx, 0.08, cz, lane.len, 0.2, 2.4, 0xffc92e, yaw);
+      api.put(G.rbox(2), cx, 0.19, cz, lane.len - 0.6, 0.02, 0.5, 0xffe88a, yaw);
       api.put(G.rbox(2), lane.x0 - lane.ux * 1.2, 0.5, lane.z0 - lane.uz * 1.2, 2.2, 1.0, 2.8, 0xffe27a, yaw);   // tereyağı kalıbı
       api.put(G.box(), lane.x0 - lane.ux * 1.9, 0.55, lane.z0 - lane.uz * 1.9, 1.0, 1.12, 2.95, 0xe8eef2, yaw);   // ambalaj kâğıdı
       T.add({ x: lane.x0, z: lane.z0, r: 1.5, hint: { y: 1.8 }, line: 'mut_tereyag_ipucu', near: 8, cd: 2, repeat: true,
@@ -237,23 +270,26 @@ const MUTFAK = (() => {
 
   // Alan 2 · Lavabo Gölü
   function lavabo(L, api, T, a2, rnd) {
-    const rooms = mainOf(L, a2), rm = L.rooms[rooms.slice().sort((p, q) => L.rooms[p].z - L.rooms[q].z)[0]];
-    const HW = 7.5, HD = 4.6;
-    const p = K.northOf(L, rm.x, rm.z - rm.r - HD - 0.2, HW + 0.8, HD + 0.8, 0.2, 14);
-    // çevrede: deterjan şişesi, köpük yığınları, bulaşık fırçası
-    for (const ri of rooms) {
-      const r0 = L.rooms[ri];
-      for (let k = 0; k < 12; k++) {
-        const a = k * TAU / 12 + rnd() * 0.3, d = r0.r + 2 + rnd() * 3, x = r0.x + Math.sin(a) * d, z = r0.z + Math.cos(a) * d;
-        if (K.floorDist(L, x, z, 2.5) < 2 || (p && Math.abs(x - p.x) < HW + 2 && Math.abs(z - p.z) < HD + 2)) continue;
-        const fN = K.floorNorth(L, x, z, 8), maxH = fN < 99 ? 0.25 + fN * 0.3 : 9;
-        if (k % 4 === 0 && maxH > 6) {   // deterjan şişesi
-          api.put(G.cyl(1, 1, 20), x, 2.8, z, 1.3, 5.6, 1.0, 0x5ac88a); api.put(G.cyl(1, 1, 16), x, 6.0, z, 0.5, 0.8, 0.5, 0xffffff); api.put(G.box(), x, 3, z + 0.98, 1.6, 2, 0.05, 0xfff8ea);
-        } else for (let j = 0; j < 5; j++) { const s = Math.min(0.5 + rnd() * 0.7, maxH * 0.6); api.ball(x + (rnd() - 0.5) * 1.6, s * 0.6, z + (rnd() - 0.5) * 1.2, s, s * 0.8, s, j % 2 ? 0xffffff : 0xf4eefc); }
-      }
+    const rooms = mainOf(L, a2); let rm = L.rooms[rooms.slice().sort((p, q) => L.rooms[p].z - L.rooms[q].z)[0]];
+    let HW = 7.5, HD = 4.6, p = null;
+    for (const sc of [1, 0.85, 0.7]) {
+      for (const ri of rooms.slice().sort((a, b) => L.rooms[a].z - L.rooms[b].z)) { p = K.outRect(L, L.rooms[ri], HW * sc + 0.8, HD * sc + 0.8, 0.2); if (p) { rm = L.rooms[ri]; break; } }
+      if (p) { HW *= sc; HD *= sc; break; }
     }
+    // çevrede: deterjan şişeleri, tabak yığınları, kupalar, çatallar, köpük
+    K.fill(L, rnd, L.areas[1].rooms, (x, z, maxH, fd, k) => {
+      if (p && Math.abs(x - p.x) < HW + 2 && Math.abs(z - p.z) < HD + 2) return;
+      const kind = k % 6;
+      if (kind === 0 && maxH > 6) { api.put(G.cyl(1, 1, 20), x, 2.8, z, 1.3, 5.6, 1.0, 0x5ac88a); api.put(G.cyl(1, 1, 16), x, 6.0, z, 0.5, 0.8, 0.5, 0xffffff); api.put(G.box(), x, 3, z + 0.98, 1.6, 2, 0.05, 0xfff8ea); api.put(G.box(), x, 3.3, z + 1.0, 1.1, 0.3, 0.05, 0x3f8fd8); }
+      else if (kind === 1 && maxH > 1.2) api.put(plateGeo(), x, 0, z, 1, Math.min(1, maxH / 1.4), 1, null, rnd());
+      else if (kind === 2 && maxH > 2.4) api.put(mugGeo(k), x, 0, z, 1, 1, 1, null, rnd() * TAU);
+      else if (kind === 3) api.put(forkGeo(), x, 0.1, z, 1, 1, 1, null, rnd() * TAU);
+      else if (kind === 4 && maxH > 1.6) api.put(spongeGeo(), x, 0, z, 0.6, 0.6, 0.6, null, rnd() * TAU);
+      else for (let j = 0; j < 5; j++) { const s2 = Math.min(0.5 + rnd() * 0.7, maxH * 0.6); api.ball(x + (rnd() - 0.5) * 1.6, s2 * 0.6, z + (rnd() - 0.5) * 1.2, s2, s2 * 0.8, s2, j % 2 ? 0xffffff : 0xf4eefc); }
+    }, { skip: (x, z) => soft(cupQ0(L), x, z, 1) > 0, step: 2.6 });
     if (!p) return;
     const sx = p.x, sz = p.z, steel = 0xc4ccd5;
+    L._mkSink = { x0: sx - HW - 3, x1: sx + HW + 3, z0: sz - HD - 4, z1: sz + HD + 3.5 };
     // lavabo: çelik kenar, su yüzeyi (dalgalı), köpük adaları
     api.box(sx, 0.35, sz - HD - 0.4, HW * 2 + 1.6, 0.7, 0.8, steel); api.box(sx, 0.22, sz + HD + 0.4, HW * 2 + 1.6, 0.44, 0.8, steel);
     for (const s of [-1, 1]) api.box(sx + s * (HW + 0.4), 0.35, sz, 0.8, 0.7, HD * 2, steel);
@@ -277,7 +313,12 @@ const MUTFAK = (() => {
     const stM = new THREE.MeshStandardMaterial({ color: 0xcfeeff, roughness: 0.05, transparent: true, opacity: 0.65 }); api.dispose(stM);
     const stream = new THREE.Mesh(stG, stM); stream.position.set(sx, 2.65, fz0 + 3.6); stream.visible = false; api.add(stream);
     // musluk düğmesi: lavabonun güney kenarında, yürünür alanda
-    const bt = (() => { for (let d = 0; d < 8; d += 0.5) for (const o of [0, 2, -2, 4, -4]) { const x = sx + o, z = sz + HD + 1.2 + d; if (api.circleFree(x, z, 1.0)) return { x, z }; } return null; })();
+    const fdx = rm.x - sx, fdz = rm.z - sz, sideZ = Math.abs(fdx) / HW <= Math.abs(fdz) / HD, sgn = sideZ ? Math.sign(fdz) || 1 : Math.sign(fdx) || 1;
+    const edgeP = (o, d) => (sideZ ? { x: sx + o * HW, z: sz + sgn * (HD + 1.2 + d) } : { x: sx + sgn * (HW + 1.2 + d), z: sz + o * HD });
+    const cands = [];
+    for (let d = 0; d < 8; d += 0.5) for (let o = -0.9; o <= 0.91; o += 0.15) { const q = edgeP(o, d); if (api.circleFree(q.x, q.z, 1.1)) { q.d = d + Math.abs(o) * 2; cands.push(q); } }
+    cands.sort((a, b) => a.d - b.d);
+    const bt = cands[0] || null;
     let flow = false, flowT = 0;
     if (bt) {
       const k = new Kit(); k.add(G.cyl(1, 1, 24), 0x3f8fd8, [0, 0.12, 0], null, [0.9, 0.24, 0.9]); k.add(G.sphere(12, 8), 0xffffff, [0, 0.26, 0.05], null, [0.25, 0.04, 0.32]); k.add(G.cone(12), 0xffffff, [0, 0.26, -0.25], [Math.PI / 2, 0, 0], [0.18, 0.3, 0.04]);
@@ -299,12 +340,12 @@ const MUTFAK = (() => {
         } });
     }
     // yoğurt kabı tekne: lavabonun güney kenarında iskele; binince göl turu
-    const dock = (() => { for (let d = 0; d < 8; d += 0.5) for (const o of [-HW * 0.55, HW * 0.55, -HW * 0.3, HW * 0.3]) { const x = sx + o, z = sz + HD + 1.2 + d; if (api.circleFree(x, z, 1.1) && (!bt || Math.hypot(x - bt.x, z - bt.z) > 3)) return { x, z }; } return null; })();
+    const dock = cands.find(q => !bt || Math.hypot(q.x - bt.x, q.z - bt.z) > 3.2) || null;
     if (dock) {
       const boat = new THREE.Mesh(cupGeo(), K.vmat(0.35)); boat.castShadow = true; api.add(boat);
-      const home = { x: dock.x, z: sz + HD - 1.0 };
+      const home = sideZ ? { x: dock.x, z: sz + sgn * (HD - 1.0) } : { x: sx + sgn * (HW - 1.0), z: dock.z };
       boat.position.set(home.x, 0.05, home.z);
-      api.put(G.box(), dock.x, 0.5, sz + HD + 0.4, 2.4, 0.2, 1.4, 0xd8a868);   // tahta iskele
+      api.put(G.box(), (dock.x + home.x) / 2, 0.5, (dock.z + home.z) / 2, sideZ ? 2.4 : Math.abs(dock.x - home.x), 0.2, sideZ ? Math.abs(dock.z - home.z) : 2.4, 0xd8a868);   // tahta iskele
       let riding = false;
       T.add({ x: dock.x, z: dock.z, r: 1.6, hint: { y: 2.2 }, line: 'mut_tekne_ipucu', near: 9, cd: 2, repeat: true,
         use: (TT) => {
@@ -347,17 +388,14 @@ const MUTFAK = (() => {
     const wall = K.northOf(L, (q.x0 + q.x1) / 2, nr.z - nr.r - 1.4, Math.min(20, (q.x1 - q.x0) / 2), 0.5, 0.3, 10);
     if (wall) { const w = Math.min(40, q.x1 - q.x0); api.box(wall.x, 6, wall.z - 0.4, w, 12, 0.8, 0xf3e6d0); api.box(wall.x, 9, wall.z + 0.3, w, 0.5, 1.6, 0xe8d6b8); }
     // kavanozlar (makarna, mercimek, fasulye, pirinç, nohut) ve baharatlar: yürünür alanın dışında
-    for (const ri of a3.rooms) {
-      const r0 = L.rooms[ri];
-      for (let k = 0; k < 14; k++) {
-        const a = k * TAU / 14 + rnd() * 0.25, d = r0.r + 2 + rnd() * 3, x = r0.x + Math.sin(a) * d, z = r0.z + Math.cos(a) * d;
-        if (K.floorDist(L, x, z, 2.5) < 2) continue;
-        const fN = K.floorNorth(L, x, z, 8), maxH = fN < 99 ? 0.25 + fN * 0.3 : 9;
-        if (maxH > 3.4 && k % 2 === 0) api.put(jarGeo(k), x, 0, z, 1, 1, 1, null, (rnd() - 0.5) * 0.6);
-        else if (maxH > 2.6) api.put(spiceGeo(k), x, 0, z, 1, 1, 1, null, rnd() * TAU);
-        else if (maxH > 0.6) api.put(penneGeo(), x, 0, z, 1, 1, 1, null, rnd() * TAU);
-      }
-    }
+    K.fill(L, rnd, a3.rooms, (x, z, maxH, fd, k) => {
+      if ((wall && z < wall.z + 0.6) || inRect(L._mkSink, x, z)) return;
+      if (maxH > 3.4 && k % 3 === 0) api.put(jarGeo(k), x, 0, z, 1, 1, 1, null, (rnd() - 0.5) * 0.6);
+      else if (maxH > 2.6 && k % 3 === 1) api.put(spiceGeo(k), x, 0, z, 1, 1, 1, null, rnd() * TAU);
+      else if (maxH > 1.2 && k % 5 === 2) api.put(cookieGeo(), x, 0, z, 1, 1, 1, null, rnd() * TAU);
+      else if (maxH > 0.6) { api.put(penneGeo(), x, 0, z, 1, 1, 1, null, rnd() * TAU); api.put(penneGeo(), x + 0.8, 0, z + 0.5, 1, 1, 1, null, rnd() * TAU); }
+      else for (let j = 0; j < 6; j++) api.ball(x + (rnd() - 0.5) * 1.4, 0.12, z + (rnd() - 0.5) * 1.0, 0.28, 0.12, 0.14, 0xfbf7ee);   // pirinç taneleri
+    }, { step: 2.5, margin: 7 });
     // makarna köprüsü: 3. alanın yan koridorunda spagetti demeti
     const side = a3.rooms.find(i => L.rooms[i].kind === 'side');
     const sl = side != null && L.links.find(l => !l.main && (l.b === side || l.a === side) && l.curve);

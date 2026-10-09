@@ -99,7 +99,7 @@ const ODAKIT = (() => {
   // Açık renk dolap rafı (beyaz-krem melamin + ince ahşap damar), 6 m
   function shelf() {   // dolap rafı: krem beyazı melamin, ince damar, 2 m'de bir birleşim
     return makeTex('shelf', 512, (u, v, out) => {
-      const gp = u * 140 + Math.sin(v * TAU * 3) * 2 + Math.sin(v * TAU * 11) * 0.4;
+      const gp = u * 26 + Math.sin(v * TAU * 3) * 0.6 + Math.sin(v * TAU * 7) * 0.15;
       let s = 0.97 + 0.025 * Math.sin(gp) * Math.sin(gp * 0.13 + 2) + 0.015 * hash(Math.floor(u * 512), Math.floor(v * 512));
       const fv = (v * 3) % 1; if (fv < 0.012 || fv > 0.988) s *= 0.8;
       out[0] = 0xf4 * s; out[1] = 0xea * s; out[2] = 0xda * s;
@@ -120,7 +120,7 @@ const ODAKIT = (() => {
       const fu = u * 10 - strip; if (fu < 0.03 || fu > 0.97) s *= 0.8;
       const cut = Math.abs(Math.sin((u * 3 + v * 7) * TAU * 3 + id)) > 0.997 || Math.abs(Math.sin((u * 5 - v * 4) * TAU * 2)) > 0.998;
       if (cut) s *= 0.86;
-      out[0] = 0xf0 * s; out[1] = 0xd2 * s; out[2] = 0x9a * s;
+      out[0] = 0xd6 * s; out[1] = 0xa8 * s; out[2] = 0x70 * s;
     });
   }
   const TEX_BY = { parquet, carpet, counter, steel, shelf, stove, board };
@@ -223,6 +223,17 @@ const ODAKIT = (() => {
     for (let j = Math.floor(z - hd - m); j <= z + hd + m; j++) for (let i = Math.floor(x - hw - m); i <= x + hw + m; i++)
       if (i >= 0 && j >= 0 && i < L.W && j < L.H && L.grid[j * L.W + i]) return false;
     return true;
+  }
+  // odanın çevresinde (önce kuzey, sonra yanlar) yürünür alanla çakışmayan dikdörtgen yeri
+  function outRect(L, rm, hw, hd, m = 0.3) {
+    for (const a of [Math.PI, Math.PI * 0.8, Math.PI * 1.2, Math.PI * 0.62, Math.PI * 1.38, Math.PI / 2, Math.PI * 1.5]) {
+      const sx = Math.sin(a), sz = Math.cos(a);
+      for (let d = rm.r * 0.5; d < rm.r + 16; d += 0.5) {
+        const x = rm.x + sx * (d + Math.abs(sx) * hw), z = rm.z + sz * (d + Math.abs(sz) * hd);
+        if (rectFree(L, x, z, hw, hd, m)) return { x, z, a };
+      }
+    }
+    return null;
   }
   // kuzeyde (küçük z) ilk boş yer: odanın kuzey kenarından başlayıp kuzeye kayar
   function northOf(L, x, z0, hw, hd, m = 0.6, maxGo = 14) {
@@ -501,7 +512,7 @@ const ODAKIT = (() => {
       cb(px, pz, maxH, fd, k++);
     }
   }
-  const K_ = { tex, carpetColor, fill, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
+  const K_ = { tex, carpetColor, fill, outRect, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
     say, sfx, burst, ring, sugar, playing, heroY, sticker, toys, hash, sm, keepG, GEOC, last: null };
   return K_;
 })();
