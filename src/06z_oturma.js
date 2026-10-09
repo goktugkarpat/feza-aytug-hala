@@ -583,7 +583,8 @@ const OTURMA = (() => {
       use: () => {
         race = 14; got = 0; balls.forEach(b => { b.on = true; b.m.visible = true; b.m.scale.setScalar(0.01); });
         K.say('oda_bilbo_yaris'); K.sfx('bilboBark', {}); K.burst('star', pp.x, 1, pp.z); K.sticker('oturma_bilbo');
-        if (typeof GAME.bilboRide === 'function') { try { GAME.bilboRide({ dur: 14, x: pp.x, z: pp.z }); } catch (e) { /* yer tutucu koşu */ } }
+        const rideFn = typeof GAME.bilboRide === 'function' ? GAME.bilboRide : typeof BILBO_FOLLOW !== 'undefined' && BILBO_FOLLOW && typeof BILBO_FOLLOW.ride === 'function' ? BILBO_FOLLOW.ride : null;   // (Bilbo ajanının binme kancası)
+        if (rideFn) { try { rideFn({ dur: 14, x: pp.x, z: pp.z }); } catch (e) { /* yer tutucu koşu */ } }
         T.boost(1.75, 14, () => { race = 0; balls.forEach(b => { b.on = false; b.m.visible = false; }); K.say('oda_bilbo_bitti', 1); });
       },
       tick: (dt, t, hx, hz) => {
