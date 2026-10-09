@@ -87,7 +87,7 @@
       env: [0xa8d8ff, 0xfff4e0, 0xb88a60, 1.0], bloom: 0.42, exposure: 1.02, sat: 1.1, vig: 0.2 },
     zemin: { tA: 0xf2b089, tB: 0xffd9b8, tC: 0xffe9c8, out: 0x6fa850, outAmt: 0.7, macro: 0xfff2e2 },
     minimap: { zemin: '#efb08a' },
-    harita: { ad: 'Balkon Bahçesi', detay: 'Güneşli çiçek bahçesi ve uykucu arılar', renk: '#9be37a', x: 80, y: 28, simge: '🌻' },
+    harita: { ad: 'Balkon Bahçesi', detay: 'Güneşli çiçek bahçesi ve uykucu arılar', renk: '#9be37a', x: 50, y: 74, simge: '🌻' },
 
     // saf veri: istasyonlar (mini oyun + Bilbo binişi), zıplatan çiçek yatakları, sulama kabı, serçeler, rüzgâr çanı yerleri
     yerlesim(L, api) {
