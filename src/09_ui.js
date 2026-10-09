@@ -3,7 +3,7 @@
 const UI = (() => {
   'use strict';
 
-  const PREF_KEY = 'fezaKotulereKarsi.ayar';
+  const PREF_KEY = 'fezaAytugHala.ayar';
   const SLOTS = ['weapon', 'hat', 'cape'];
   const SLOT_AD = { weapon: 'Işın Kılıçları', hat: 'Şapkalar', cape: 'Pelerinler' };
   const SLOT_EMO = { weapon: '⚔️', hat: '🎩', cape: '🦸' };   // weapon: replaced by the tiny saber SVG once SVG exists (below)
@@ -16,7 +16,7 @@ const UI = (() => {
   // (the game has 3 skills); more would spill onto an outer arc.
   const ARC = [[142, 45], [142, 0], [142, 90], [238, 45], [238, 14], [238, 76]];
   const MAP_VIEW = 22, MAP_REVEAL = 11;   // minimap: metres from centre to rim; fog reveal radius
-  const SAVE_KEY = 'fezaKotulereKarsi.v3';   // same key as GAME's (only manual saves: Mola › Kaydet)
+  const SAVE_KEY = 'fezaAytugHala.v1';   // same key as GAME's (only manual saves: Mola › Kaydet)
 
   // ── Modules (resolved at boot; any may be missing in tests). typeof on a module that threw at load → TDZ error. ──
   const M = {};
@@ -490,6 +490,9 @@ const UI = (() => {
     D.boneBtn = el('button', 'u-skill u-bone', pad, '<span class="u-ico">🦴</span><span class="u-cd"></span><span class="u-cdn"></span><span class="u-key">K</span><span class="u-bone-label">Bilbo</span>');
     D.boneBtn.style.setProperty('--x', 0); D.boneBtn.style.setProperty('--y', -265);
     D.boneBtn.setAttribute('aria-label', FEZA_LANG.t('Bilbo’ya kemik at'));
+    D.teamBtn = el('button', 'u-skill u-team', pad, '<span class="u-ico">💞</span><span class="u-team-fill"></span><span class="u-key">T</span><span class="u-bone-label">Takım</span>');
+    D.teamBtn.style.setProperty('--x', -265); D.teamBtn.style.setProperty('--y', 0);
+    D.teamBtn.setAttribute('aria-label', 'Aytuğ Hala ile Takım Hamlesi');
     const nSk = clamp((M.SKILLS && M.SKILLS.length) || 3, 1, ARC.length);
     for (let i = 0; i < nSk; i++) {
       const b = el('button', 'u-skill u-hide', pad, `<span class="u-ico"></span><span class="u-cd"></span><span class="u-cdn"></span><span class="u-key">${i + 1}</span>`);
@@ -511,11 +514,11 @@ const UI = (() => {
     const t = D.title = el('div', 'u-screen u-title', root);
     el('div', 'u-tshade', t);
     const logo = D.logo = el('div', 'u-logo', t);
-    logo.setAttribute('role', 'img'); logo.setAttribute('aria-label', FEZA_LANG.t('Feza ve Bilbo Huysuzlara Karşı'));
+    logo.setAttribute('role', 'img'); logo.setAttribute('aria-label', 'Feza, Bilbo ve Aytuğ Hala: Dev Ev Macerası');
     const word = el('div', 'u-word', logo);
     for (const ch of 'FEZA') el('span', 'u-let', word, `<b>${ch}</b><i>${ch}</i>`);
     el('span', 'u-sidekick', word, `<span class="u-sidekick-ve">${ol('ve')}</span>${ol('Bilbo')}`);
-    el('div', 'u-ribbon', logo, ol('Huysuzlara Karşı'));
+    el('div', 'u-ribbon', logo, ol('Dev Ev Macerası'));
     [[-8, 12, 0], [104, 6, 0.7], [96, 64, 1.4], [-4, 70, 1.9], [50, -8, 1.1]].forEach(([x, y, d]) => {
       const s = el('span', 'u-spark', logo, '✦'); s.style.left = x + '%'; s.style.top = y + '%'; s.style.animationDelay = d + 's';
     });
@@ -523,9 +526,6 @@ const UI = (() => {
     D.playBtn = el('button', 'u-btn g', bt, SVG.play + '<span>Oyna</span>');   // always: a new game (a saved game is never touched)
     D.contBtn = el('button', 'u-btn b', bt, SVG.cont + '<span>Devam Et</span>');   // only with a save (Mola › Kaydet)
     D.titleMap = el('button', 'u-btn p u-title-map u-hide', bt, '<span>🗺️ Hayal Haritası</span>');
-    const langBtn = el('button', 'u-lang-btn', t, '🌐 ' + (FEZA_LANG.language() === 'en' ? 'English' : 'Türkçe'));
-    langBtn.setAttribute('aria-label', FEZA_LANG.language() === 'en' ? 'Change language' : 'Dil değiştir');
-    onPress(langBtn, () => { aud('stopVoice'); FEZA_LANG.reopen(); }, { menu: true });
     const tg = el('div', 'u-ttog', t);
     D.tMus = el('button', 'u-rbtn', tg, SVG.note + '<span class="u-slash"></span>'); D.tMus.dataset.tog = 'music';   // sound effects: pause menu only
   }
@@ -744,20 +744,16 @@ const UI = (() => {
   }
 
   // The dream atlas is made from local SVG artwork: it also works offline and from file://.
-  const DREAM_PLACES = [
-    ['tuvalet', 'Köpük Krallığı', 'Kaka, çiş ve pırıl pırıl köpükler', '#67ded6', 14, 29],
-    ['ay', 'Ay Bahçesi', 'Yıldızların arasında zıp zıp!', '#c9b7f6', 38, 25],
-    ['orman', 'Neşeli Orman', 'Ağaçların arasında eski dostlar', '#82ce82', 62, 29],
-    ['kefir', 'Kefir Vadisi', 'Fokur fokur bir yolculuk', '#f3d49b', 86, 25],
-    ['magara', 'Kristal Mağara', 'Parıldayan taşların sırrı', '#9fb6ec', 86, 69],
-    ['yanardag', 'Yanardağ Adası', 'Sıcacık bir kaplumbağa', '#f6a888', 62, 73],
-    ['sehir', 'Surlu Şehir', 'Renkli sokaklar, neşeli komşular', '#dfa5c5', 38, 69],
-    ['kale', 'Dostluk Kalesi', 'Hayalin kalbinde buluşalım', '#e3b4ed', 14, 73]
-  ];
+  // Dev Ev haritası: 4 oda, bölüm tanımlarından (ZONE_DEFS[id].harita = { ad, detay, renk, x, y, simge })
+  const DREAM_PLACES = (typeof ZONES !== 'undefined' ? ZONES : []).map((Z, i) => {
+    const h = (Z.def && Z.def.harita) || {};
+    return [Z.id, h.ad || Z.ad, h.detay || '', h.renk || '#f6c7a8', h.x ?? (20 + i * 20), h.y ?? (i % 2 ? 66 : 32), h.simge || '🏠'];
+  });
   function dreamArt(id, color) {
     const tree = (x, y, s = 1) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 0v39" stroke="#895d49" stroke-width="9"/><path d="M0-52L-27-11H-16L-35 13H35L16-11H27Z" fill="#42a984" stroke="#267c6c" stroke-width="2"/><path d="M-16-14L0-39L14-14" fill="#91d887"/></g>`;
     const face = (x, y) => `<g transform="translate(${x} ${y})"><circle cx="-7" cy="0" r="2.4" fill="#433455"/><circle cx="7" cy="0" r="2.4" fill="#433455"/><path d="M-6 8Q0 15 6 8" fill="none" stroke="#815159" stroke-width="2" stroke-linecap="round"/></g>`;
     let art = '';
+    { const P = DREAM_PLACES.find(p => p[0] === id); if (P) art = `<text x="88" y="104" font-size="64" text-anchor="middle">${P[6]}</text>`; }
     if (id === 'tuvalet') art = `<path d="M67 48h28v45H67Z" fill="#fffaf1" stroke="#8daecc" stroke-width="3"/><rect x="63" y="46" width="36" height="8" rx="4" fill="#e5f5fc"/><path d="M60 83h49Q111 106 92 112v11H76v-13Q59 105 60 83" fill="#fffdf6" stroke="#8daecc" stroke-width="3"/><ellipse cx="84" cy="84" rx="26" ry="7" fill="#b7e8ef"/><path d="M132 65Q116 85 132 94Q148 85 132 65" fill="#ffdf68" stroke="#e4b94d" stroke-width="2"/>${face(132,83)}<path d="M33 98Q24 92 34 84Q25 74 40 70Q47 60 51 68Q64 75 52 82Q67 90 57 98Z" fill="#b78062" stroke="#8d5b45" stroke-width="2"/>${face(44,87)}<g fill="#dbffff" stroke="#93ddd9"><circle cx="29" cy="54" r="9"/><circle cx="114" cy="44" r="7"/><circle cx="150" cy="103" r="6"/></g>`;
     if (id === 'ay') art = `<circle cx="85" cy="81" r="43" fill="#e9e2fa" stroke="#a29ac8" stroke-width="3"/><g fill="#c5bddd"><ellipse cx="65" cy="61" rx="10" ry="7"/><ellipse cx="99" cy="87" rx="14" ry="10"/><ellipse cx="72" cy="108" rx="8" ry="5"/></g><path d="M111 39v42M112 41q17-9 30 2v21q-15-10-30-2" fill="#fecc7a" stroke="#716699" stroke-width="2"/><path d="M39 90h35v18H39Z" fill="#8be0dc" stroke="#6e6f9d" stroke-width="3"/><circle cx="44" cy="111" r="7" fill="#666582"/><circle cx="70" cy="111" r="7" fill="#666582"/><path d="M50 89v-15h17v15" fill="#ebffff" stroke="#6e6f9d" stroke-width="3"/><circle cx="132" cy="21" r="12" fill="#6cbcb3"/><path d="M122 17q12-4 19 7" fill="none" stroke="#cae98d" stroke-width="4"/>`;
     if (id === 'orman') art = `${tree(40,77,.75)}${tree(118,67,.95)}${tree(75,61,1)}<path d="M119 112q-15-27 9-38q27-5 28 19q14 4 2 14l-5 7Z" fill="#b496e2" stroke="#7f6aad" stroke-width="2"/><path d="M128 81l-4-12 10 6M145 80l8-10-1 17" fill="#ffe4a3"/>${face(140,96)}<g fill="#f5a4bb"><circle cx="31" cy="113" r="4"/><circle cx="94" cy="124" r="4"/></g>`;
@@ -781,9 +777,9 @@ const UI = (() => {
     D.dreamScreen = el('div', 'u-screen u-dream-screen', root);
     D.dreamScreen.setAttribute('role', 'dialog'); D.dreamScreen.setAttribute('aria-modal', 'true'); D.dreamScreen.setAttribute('aria-labelledby', 'dreamTitle');
     const panel = el('div', 'u-dream-panel', D.dreamScreen);
-    el('span', 'u-dream-kicker', panel, 'FEZA VE BİLBO’NUN');
-    const heading = el('h2', 'u-dream-title', panel, 'Hayal Haritası'); heading.id = 'dreamTitle';
-    el('p', 'u-dream-hint', panel, 'Bir adaya dokun. Hayalin seni oraya götürsün!');
+    el('span', 'u-dream-kicker', panel, 'AYTUĞ HALA’NIN EVİ');
+    const heading = el('h2', 'u-dream-title', panel, 'Dev Ev Haritası'); heading.id = 'dreamTitle';
+    el('p', 'u-dream-hint', panel, 'Bir odaya dokun. Hadi gidelim!');
     const board = D.dreamBoard = el('div', 'u-dream-board', panel);
     const sky = el('div', 'u-dream-starfield', board);
     sky.setAttribute('aria-hidden', 'true');
@@ -821,7 +817,11 @@ const UI = (() => {
     if (S.menu) showScreen(S.menu === 'bag' ? D.bagS : S.menu === 'merchant' ? D.shop : D.pause, false);
     S.menu = 'dream'; setPaused(true);
     const current = M.GAME && M.GAME.P && M.GAME.P.zone;
-    D.dreamPlaces.forEach((b, i) => { b.classList.toggle('current', S.mode === 'play' && i === current); });
+    D.dreamPlaces.forEach((b, i) => {
+      b.classList.toggle('current', S.mode === 'play' && i === current);
+      const open = !M.GAME || !M.GAME.zoneOpen || M.GAME.zoneOpen(i);   // Pasta Krallığı 3 malzemeyle açılır
+      b.classList.toggle('locked', !open); b.setAttribute('aria-disabled', open ? 'false' : 'true');
+    });
     showScreen(D.dreamScreen, true); D.dreamClose.focus({ preventScroll: true });
   }
   function closeDreamMap() {
@@ -838,6 +838,7 @@ const UI = (() => {
   async function travelTo(index, options) {
     const g = M.GAME;
     if (!g || !g.travelTo || !mapUnlocked() || S.busy) return;
+    if (g.zoneOpen && !g.zoneOpen(index)) { const b = D.dreamPlaces && D.dreamPlaces[index]; if (b) nope(b, true); if (typeof STORY !== 'undefined' && STORY.locked) safe('STORY.locked', () => STORY.locked({ index })); return; }
     // A fresh atlas trip uses the same readable hero cards as Oyna, and keeps the chosen island.
     if (!options && g.state === 'title' && !(g.hasSave && safe('hasSave', () => g.hasSave()))) {
       S.dreamChoiceIndex = index; S.menu = null;
@@ -858,6 +859,10 @@ const UI = (() => {
       refreshAllSkills(); portraitSoon(0); renderNow(); await frames(2); fade(0, 0.6, null);
     } catch (e) { warn('dream travel', e); fade(0, 0.4, null); }
     finally { S.busy = false; }
+  }
+  function teamMove() {
+    const g = M.GAME; if (!g || !playing() || !g.teamMove) return;
+    if (safe('teamMove', () => g.teamMove())) bump(D.teamBtn, 1.2, true); else nope(D.teamBtn, true);
   }
   function throwBone() {
     const g = M.GAME; if (!g || !playing() || !g.bone) return;
@@ -920,6 +925,7 @@ const UI = (() => {
   function wireButtons() {
     [D.dreamBtn, D.titleMap, D.pauseMap, D.winMap].forEach(b => accessiblePress(b, openDreamMap));
     accessiblePress(D.boneBtn, throwBone, false);
+    accessiblePress(D.teamBtn, teamMove, false);
     onPress(D.playBtn, () => startGame(false), { menu: true });
     onPress(D.contBtn, () => startGame(true), { menu: true });
     onPress(D.tMus, () => setPref('music', !S.prefs.music), { menu: true });
@@ -1055,6 +1061,7 @@ const UI = (() => {
       if (!playing()) return;
       if (c === 'Space') { e.preventDefault(); attack(); bump(D.atk, 1.1, true); }
       else if (c === 'KeyK') { e.preventDefault(); throwBone(); }
+      else if (c === 'KeyT') { e.preventDefault(); teamMove(); }
       else if (/^Digit[1-6]$/.test(c)) { const i = +c.slice(5) - 1, s = D.sk[i]; if (s && s.shown) { const ok = safe('cast', () => M.GAME.input.cast(i)); if (ok) { s.b.classList.remove('new'); bump(s.b, 1.15, true); } } }
       else if (c === 'KeyE') { if (M.GAME.visitMerchant) M.GAME.visitMerchant(); }
       else if (c === 'KeyQ') { if (safe('potion', () => M.GAME.input.potion())) bump(D.pot, 1.18); }
@@ -1378,8 +1385,8 @@ const UI = (() => {
   }
   function gridCanvas(L) {   // fallback base when LEVEL gave no (or an empty) mapCanvas
     const c = cnv(L.W, L.H), x = c.getContext('2d'), img = x.createImageData(L.W, L.H), d = img.data;
-    const theme = (L.Z && L.Z.theme) || 'forest';
-    const col = new THREE.Color(theme === 'cave' ? '#86a9c9' : theme === 'castle' ? '#c3b2e6' : theme === 'volcano' ? '#e0a47a' : theme === 'dairy' ? '#fff0d2' : theme === 'town' ? '#efc47e' : '#94d470');
+    const theme = (L.Z && L.Z.theme) || 'forest', mmc = L.Z && L.Z.def && L.Z.def.minimap && L.Z.def.minimap.zemin;
+    const col = mmc ? new THREE.Color(mmc) : new THREE.Color(theme === 'cave' ? '#86a9c9' : theme === 'castle' ? '#c3b2e6' : theme === 'volcano' ? '#e0a47a' : theme === 'dairy' ? '#fff0d2' : theme === 'town' ? '#efc47e' : '#94d470');
     const r = Math.round(Math.pow(col.r, 1 / 2.2) * 255), gg = Math.round(Math.pow(col.g, 1 / 2.2) * 255), b = Math.round(Math.pow(col.b, 1 / 2.2) * 255);
     for (let i = 0; i < L.W * L.H; i++) {
       if (!L.grid[i]) continue;
@@ -1557,6 +1564,10 @@ const UI = (() => {
     D.boneBtn.classList.toggle('cool', boneCd > 0);
     D.boneBtn.querySelector('.u-cd').style.setProperty('--p', clamp(boneCd / boneMax, 0, 1).toFixed(3));
     D.boneBtn.querySelector('.u-cdn').textContent = FEZA_LANG.t(boneCd > 0.05 ? Math.ceil(boneCd) : '');
+    if (D.teamBtn) {   // Takım Hamlesi: HALA.charge (0..1) dolunca parlar
+      const tc = clamp(Number(g.teamCharge) || 0, 0, 1), tk = Math.round(tc * 100);
+      if (tk !== S.teamK) { S.teamK = tk; D.teamBtn.style.setProperty('--fill', tc.toFixed(2)); D.teamBtn.classList.toggle('ready', tc >= 1); D.teamBtn.classList.toggle('cool', tc < 1); }
+    }
     const list = g.skills || [];
     for (let i = 0; i < D.sk.length; i++) {
       const s = list[i], v = D.sk[i];
@@ -2261,14 +2272,9 @@ const UI = (() => {
     } finally { S.busy = false; }
   }
   // GAME.newGame() says giris1/giris2 itself; only say them here if it didn't (keeps the lines from doubling).
-  function newGameWithIntro(g, o) {
-    const A = M.AUD;
-    let said = false;
-    const orig = A && A.say;
-    if (orig) A.say = function (k) { if (k === 'giris1' || k === 'giris_buyu' || k === 'giris_hibrit' || k === 'tekrar') said = true; return orig.apply(this, arguments); };
+  function newGameWithIntro(g, o) {   // Dev Ev: giriş hikâyesini GAME.newGame() → STORY.intro() anlatır
     S.cheered = 0;
-    try { safe('newGame', () => g.newGame(o)); } finally { if (orig) A.say = orig; }
-    if (!said && A && (!o || !o.plus)) { aud('say', o && o.heroClass === 'hybrid' ? 'giris_hibrit' : o && o.heroClass === 'wizard' ? 'giris_buyu' : 'giris1', { prio: 3 }); if (!o || (!o.heroClass || o.heroClass === 'warrior')) aud('say', 'giris2', { prio: 3 }); }
+    safe('newGame', () => g.newGame(o));
   }
   function restartAll() {
     if (!M.GAME || S.busy) return;
@@ -2510,9 +2516,10 @@ const UI = (() => {
         }
         await fade(1, 0.8, 'load');
         clearBanners(); clearCards(); hideBoss(); S.cine = null; stopHint();
-        ensureTex((g.P.zone | 0) + 1);
+        const nz = g.nextZoneIndex ? g.nextZoneIndex() : (g.P.zone | 0) + 1;
+        ensureTex(nz);
         aud('stopVoice');   // the old zone's boss 'bitti' / 'kapi' lines must not talk about a door in the new zone
-        safe('loadZone', () => g.loadZone((g.P.zone | 0) + 1));
+        safe('loadZone', () => g.loadZone(nz));
         renderNow(); await frames(2);
         fade(0, 0.7, null);
       } finally { S.busy = false; }
@@ -3108,7 +3115,7 @@ const UI = (() => {
   function boot() {
     if (S.booted) return readyP;
     S.booted = true;
-    FEZA_LANG.choose().then(prepareBoot);
+    prepareBoot();
     return readyP;
   }
   function prepareBoot() {
@@ -3185,3 +3192,22 @@ if (!window.UI_MANUAL) {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 }
+
+// ── QA / test kancaları (Python aracı: hala_qa.py; src/SPEC.md › Dev Ev API › QA) ──
+window.__step = (n = 1, dt = 1 / 60) => UI._step(n, dt);   // rAF'tan bağımsız, deterministik kareler
+window.__qa = {
+  ready: () => UI.ready,
+  async start(heroClass = 'warrior') { await UI.ready; await UI.startGame(false, heroClass); return GAME.state; },
+  async zone(i) { if (typeof i === 'string') i = ZONES.findIndex(z => z.id === i); await UI.travelTo(i, { qa: true }); return GAME.P.zone; },
+  put(x, z) { return GAME.teleport(x, z); },
+  spawn(type, dx = 3, dz = -3, o) { const P = GAME.P, e = GAME.spawnEnemy(type, P.pos.x + dx, P.pos.z + dz, o); return e ? { type: e.type, name: e.name, x: e.x, z: e.z } : null; },
+  cheerAll() { let n = 0; for (const e of GAME.enemies.slice()) if (!e.dead && !e.boss) { GAME.damage(e, e.hp + 1, {}); n++; } return n; },
+  hurt(n) { return GAME.hurtPlayer(n); },
+  down() { GAME.P.hp = 1; return GAME.hurtPlayer(50); },   // Feza'yı düşür (Aytuğ Hala kaldırır)
+  info() {
+    const P = GAME.P, L = GAME.L, Z = ZONES[P.zone];
+    return { state: GAME.state, mode: UI.mode, menu: UI.menu, zone: P.zone, id: Z && Z.id, x: +P.pos.x.toFixed(2), z: +P.pos.z.toFixed(2), hp: P.hp, maxHp: P.maxHp,
+      dead: P.dead, enemies: GAME.enemies.length, boss: GAME.boss && GAME.boss.type, start: L && L.start, exit: L && L.exit, bossAt: L && L.boss,
+      malzemeler: P.malzemeler, bossNese: P.bossNese, charge: GAME.teamCharge, hala: typeof HALA !== 'undefined' && HALA._S ? { x: HALA._S.x, z: HALA._S.z, mode: HALA._S.mode } : null };
+  },
+};

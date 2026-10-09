@@ -4,27 +4,10 @@
    Bölge 4 = Surlu Şehir (Feza'nın isteği): ejderhanın kalesinin önündeki surlu şehir; nehir ve kanallar, taş köprüler,
    renkli ahşap çatılı evler, pazar tezgâhları, surlar ve kuleler, en sonda Turnuva Meydanı ve Kale Kapısı.
    LEVEL.generate() saf veri üretir, LEVEL.build() sahneyi kurar (bkz. src/SPEC.md). */
-const ZONES = [
-  { id: 'tuvalet', ad: 'Köpüklü Tuvalet Rüyası', theme: 'bathroom', line: 'tuvalet', music: 'tuvalet', size: 90, rooms: 6, side: 2,
-    enemies: { kakacik: 4, cisdamlasi: 3, sabunkopugu: 2 }, elites: ['kakacik', 'sabunkopugu'], hpMult: 0.78, dmgMult: 0.65, xpMult: 0.85, gold: 1, ilvl: 1, boss: 'kopukusta' },
-  { id: 'ay', ad: 'Zıp Zıp Ay', theme: 'moon', line: 'ay', music: 'ay', size: 96, rooms: 6, side: 2,
-    enemies: { ayponpon: 4, yildizcik: 3, kratercik: 2 }, elites: ['ayponpon', 'yildizcik'], hpMult: 0.9, dmgMult: 0.8, xpMult: 0.95, gold: 1.15, ilvl: 1, boss: 'aytavsan' },
-  { id: 'orman', ad: 'Huysuz Orman', theme: 'forest', line: 'orman', music: 'orman', size: 100, rooms: 6, side: 2,
-    enemies: { jole: 4, mantar: 2, yarasa: 2, goblin: 3 }, elites: ['jole', 'goblin'], hpMult: 1, dmgMult: 1, xpMult: 1, gold: 1, ilvl: 1, boss: 'kraljole' },
-  { id: 'kefir', ad: 'Kefir Vadisi', theme: 'dairy', line: 'kefir', music: 'kefir', size: 100, rooms: 6, side: 2,
-    enemies: { yogurt: 4, kaymak: 3, kopuk: 3, peynir: 1, jole: 2 }, variants: { jole: ['muhallebi'] }, elites: ['yogurt', 'kaymak'],
-    hpMult: 1.4, dmgMult: 1.2, xpMult: 1.35, gold: 1.5, ilvl: 2, boss: 'kefirdev' },
-  { id: 'magara', ad: 'Köstebek ve Salyangoz Mağarası', theme: 'cave', line: 'magara', music: 'magara', size: 100, rooms: 6, side: 2,
-    enemies: { kostebek: 4, salyangoz: 3, yarasa: 2, golem: 1 }, elites: ['kostebek', 'salyangoz'], hpMult: 1.8, dmgMult: 1.4, xpMult: 1.7, gold: 2, ilvl: 4, boss: 'kostebekusta' },
-  { id: 'yanardag', ad: 'Lav Yanardağı', theme: 'volcano', line: 'yanardag', music: 'yanardag', size: 100, rooms: 6, side: 2,
-    enemies: { jole: 3, kaplumbaga: 4, ateskusu: 3, atescik: 2, golem: 1 }, variants: { jole: ['lava'], golem: ['magma'] }, elites: ['kaplumbaga', 'ateskusu'],
-    hpMult: 2.3, dmgMult: 1.65, xpMult: 2.1, gold: 2.5, ilvl: 6, boss: 'lavkaplumbaga' },
-  { id: 'sehir', ad: 'Surlu Şehir', theme: 'town', line: 'sehir', music: 'sehir', size: 100, rooms: 6, side: 2,
-    enemies: { nobetci: 4, simitci: 3, supurgeci: 3, tellal: 1 }, elites: ['nobetci', 'simitci'],
-    hpMult: 2.55, dmgMult: 1.8, xpMult: 2.3, gold: 2.8, ilvl: 7, boss: 'sovalye' },
-  { id: 'kale', ad: 'Ejderhanın Kalesi', theme: 'castle', line: 'kale', music: 'kale', size: 104, rooms: 6, side: 2,
-    enemies: { asker: 4, atescik: 3, hayalet: 2, golem: 1 }, elites: ['asker', 'atescik'], hpMult: 3.0, dmgMult: 2.0, xpMult: 2.7, gold: 3.2, ilvl: 8, boss: 'ejderha', final: true },
-];
+// Dev Ev Macerası: bölümler src/06z_<id>.js dosyalarında BOLUM.define() ile kaydolur (src/06a_bolum_kayit.js);
+// eski 8 hayal bölümü çıkarıldı. Eski tema çizicileri (bathroom, moon, forest, cave, volcano, dairy, town, castle) yalnızca
+// bölüm tanımındaki `taban` zemin/ışık teması olarak kullanılabilir.
+const ZONES = typeof BOLUM !== 'undefined' ? BOLUM.zones() : [];
 
 const LEVEL = (function () {
   'use strict';
@@ -421,6 +404,13 @@ const LEVEL = (function () {
     place(L);
     placeMerchant(L);
     fixReach(L, unBreak, dropUnreachable);   // a breakable cluster must never seal a corridor mouth; ones Feza can't get to go
+    const zd = Z.def;   // Dev Ev: bölümün yerleşim kancası (saf veri: başlangıç, düşman grupları, boss, kapı, katı engeller)
+    if (zd && typeof zd.yerlesim === 'function') {
+      try { zd.yerlesim(L, { isFloor: (x, z) => isFloor(L, x, z), circleFree: (x, z, r) => circleFree(L, x, z, r), linkDist: (x, z) => linkDist(L, x, z),
+        randomFloorNear: (x, z, a, b) => randomFloorNear(L, x, z, a, b), solid: (x, z, r, tag) => { const o = { x, z, r, alive: true, tag: tag || 'zone' }; L.solids.push(o); L._sh = null; return o; },
+        rnd: () => RNG.r(), main: rooms.slice(0, Z.rooms), arena: Z.boss ? rooms[Z.rooms - 1] : null }); }
+      catch (e) { console.warn('LEVEL: ' + Z.id + '.yerlesim', e); }
+    }
     return L;
   }
 
@@ -537,7 +527,7 @@ const LEVEL = (function () {
 
     // village edge (zone 0): owl on a stump, well, lamps, houses north of the plaza
     if (L.theme === 'forest') buildVillageData(L, S, taken, addSolid, dW, clearOfPath);
-    if (zi === 0 && L.theme === 'bathroom') {
+    if (zi === 0 && L.theme === 'bathroom' && Z.npc) {
       const p = spot(S, 1.5, 1, 60, 99, (x, z) => hyp(x - L.start.x, z - L.start.z) > 3.8 && clearOfPath(x, z, 1.8, 2));
       L.npc = p || { x: S.x + 4, z: S.z - 1 };
       taken.push({ x: L.npc.x, z: L.npc.z, r: 1.5 });
@@ -2131,6 +2121,12 @@ const LEVEL = (function () {
     const mask = buildMask(L);
     B.dispose.push(mask);
     const m = floorMat(L.theme);
+    {   // Dev Ev: bölüm tanımındaki zemin renkleri (zemin: { tA, tB, tC, out, outAmt, macro }); yoksa temanın kendi renkleri
+      const th0 = FLOOR[L.theme], zf = (L.Z && L.Z.def && L.Z.def.zemin) || {}, U = m.userData.u, pk = k => zf[k] ?? th0[k];
+      U.uTintA.value.copy(lin(pk('tA'), th0.tAk ?? 1)); U.uTintB.value.copy(lin(pk('tB'), th0.tBk ?? 1)); U.uTintC.value.copy(lin(pk('tC'), th0.tCk ?? 1));
+      U.uTintA2.value.copy(lin(zf.tA ?? th0.tA2 ?? th0.tA, th0.tAk ?? 1)); U.uTintC2.value.copy(lin(zf.tC ?? th0.tC2 ?? th0.tC, th0.tCk ?? 1));
+      const oc = lin(pk('out')); U.uOut.value.set(oc.r, oc.g, oc.b, pk('outAmt')); U.uMacro.value.copy(lin(pk('macro')));
+    }
     m.userData.u.tMask.value = mask; m.userData.u.uMaskInv.value.set(1 / L.W, 1 / L.H);
     m.userData.u.uDream.value = !L._title ? L.theme === 'moon' ? 2 : L.theme === 'bathroom' ? 1 : 0 : 0;
     let fg;
@@ -2151,6 +2147,7 @@ const LEVEL = (function () {
     const floor = new THREE.Mesh(fg, m);
     floor.receiveShadow = true; floor.name = 'floor';
     B.g.add(floor);
+    L.floorMesh = floor;   // (Dev Ev: bir bölüm kendi zeminini kurarsa api.floor.visible = false)
   }
   // Baked glow pools: soft coloured discs accumulated into a small RGB texture (2 px/m) the floor adds as light
   const GPX = 2, GLOW_K = 3;
@@ -8689,6 +8686,31 @@ const LEVEL = (function () {
     glowAt(B, x, z - 1, 5, 0xffe4bd, 0.12);
   }
 
+  // Dev Ev: bölüm dosyalarının kur(L, api) / kurSon(L, api) kancalarına verilen araçlar (src/SPEC.md › Dev Ev API)
+  function zoneApi(L, B) {
+    const box = G.box(), sph = G.sphere(), cyl = G.cyl();
+    const api = {
+      L, B, group: B.g, rnd: B.rnd, THREE, mat4, lin, keep, G,
+      get floor() { return L.floorMesh || null; },
+      // birleştirilmiş, gölgeli statik süs (parça başına çizim çağrısı yok): matKey 'shiny' | 'decor' | 'prop' | 'glow' | 'stone'
+      put(geo, x, y, z, sx = 1, sy = sx, sz = sx, color = 0xffffff, yaw = 0, rx = 0, rz = 0, matKey = 'shiny') { return dec(B, matKey, geo, mat4(x, y, z, yaw, sx, sy, sz, rx, rz), color == null ? null : lin(color)); },
+      box(x, y, z, w, h, d, color, yaw = 0, matKey) { return api.put(box, x, y, z, w, h, d, color, yaw, 0, 0, matKey); },   // G.box: merkezli birim kutu
+      ball(x, y, z, sx, sy, sz, color, matKey) { return api.put(sph, x, y, z, sx, sy, sz, color, 0, 0, 0, matKey); },
+      cyl(x, y, z, r, h, color, matKey) { return api.put(cyl, x, y, z, r, h, r, color, 0, 0, 0, matKey); },
+      solid(x, z, r, tag) { return propSolid(L, x, z, r, tag || 'zone'); },   // çarpışma dairesi
+      glow(x, z, r, color, k = 0.15) { glowAt(B, x, z, r, color, k); },        // zemine pişmiş yumuşak ışık havuzu
+      light(x, y, z, color, int = 3, dist = 7, flicker = 0) { B.lights.push({ x, y, z, col: new THREE.Color(color), int, dist, fl: flicker, ph: B.rnd() * 10 }); },
+      anim(fn) { B.anim.push(fn); },                                         // fn(dt, heroX, heroZ) her kare
+      add(obj) { B.g.add(obj); return obj; },                                // kendi Object3D'si (bölüm değişince disposeTree)
+      dispose(x) { B.dispose.push(x); return x; },
+      tmp(geo) { B.tmpGeo.push(geo); return geo; },                          // süse birleşince atılacak geçici geometri
+      noDecor(x, z) { const i = Math.floor(x), j = Math.floor(z); if (i >= 0 && j >= 0 && i < L.W && j < L.H) B.noDec[j * L.W + i] = 1; },
+      isFloor: (x, z) => isFloor(L, x, z), linkDist: (x, z) => linkDist(L, x, z), circleFree: (x, z, r) => circleFree(L, x, z, r),
+      dreamEdge: () => buildDreamBoundary(L, B),                               // yürünür alanın kenarına alçak bordür
+    };
+    return api;
+  }
+
   function build(L) {
     if (!L) return L;
     if (L.group) dispose(L);
@@ -8697,7 +8719,8 @@ const LEVEL = (function () {
     ensureRes();
     const g = L.group = new THREE.Group(); g.name = 'level'; scene.add(g);
     if (L.solids.some(s => s.built)) { L.solids = L.solids.filter(s => !s.built); L._sh = null; }   // rebuilding the same L
-    const th = THEME[L.theme] || THEME.forest;
+    const zd = L.Z && L.Z.def;   // Dev Ev: bölüm tanımı (src/06z_<id>.js)
+    const th = zd && zd.isik ? Object.assign({}, THEME[L.theme] || THEME.forest, zd.isik) : THEME[L.theme] || THEME.forest;
     setLighting(th); POST.saturation = th.sat; POST.vignette = th.vig ?? 0.32;   // (Kefir Vadisi: a lighter vignette, the others keep 0.32)
     const ru = R.mat.rock.userData.u, mc = lin(th.moss[0]);
     ru.uMoss.value.set(mc.r, mc.g, mc.b, th.moss[1]);
@@ -8739,13 +8762,17 @@ const LEVEL = (function () {
     tp = lap('field', tp);
     buildFloor(L, B);
     tp = lap('floor', tp);
-    if (L.theme === 'bathroom' || L.theme === 'moon') buildDream(L, B); else if (L.theme === 'forest') buildForest(L, B); else if (L.theme === 'dairy') buildDairy(L, B); else if (L.theme === 'cave') buildCave(L, B); else if (L.theme === 'volcano') buildVolcano(L, B); else if (L.theme === 'town') buildTown(L, B); else buildCastle(L, B);
+    const zapi = zd ? zoneApi(L, B) : null;
+    if (L._title && typeof STORY !== 'undefined' && STORY && typeof STORY.buildTitle === 'function') { try { STORY.buildTitle(L, zapi || zoneApi(L, B)); } catch (e) { console.warn('LEVEL: STORY.buildTitle', e); } }
+    else if (zd && typeof zd.kur === 'function') { try { zd.kur(L, zapi); } catch (e) { console.warn('LEVEL: ' + L.Z.id + '.kur', e); } }
+    else if (L.theme === 'bathroom' || L.theme === 'moon') buildDream(L, B); else if (L.theme === 'forest') buildForest(L, B); else if (L.theme === 'dairy') buildDairy(L, B); else if (L.theme === 'cave') buildCave(L, B); else if (L.theme === 'volcano') buildVolcano(L, B); else if (L.theme === 'town') buildTown(L, B); else buildCastle(L, B);
     if (V) buildVillage(L, B);
     tp = lap('theme', tp);
     L.fixedProps = fixReach(L, unProp, dropUnreachable);   // build-time rocks / props must not cut off a room, chest or checkpoint
     tp = lap('reach', tp);
     finishSigns(L, B);
     buildProps(L, B);
+    if (zd && typeof zd.kurSon === 'function') { try { zd.kurSon(L, zapi); } catch (e) { console.warn('LEVEL: ' + L.Z.id + '.kurSon', e); } }
     finishBanners(B); finishSlime(B); finishWindows(B); finishLavafalls(B);
     finishInst(L, B); finishDecor(L, B); finishPoints(L, B); finishFlames(L, B); buildGlowTex(L, B);
     lap('finish', tp);

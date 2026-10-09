@@ -190,12 +190,13 @@ const GAME = (() => {
   };
   // v3: only manual saves (Kaydet) from now on — the automatic v2 saves are ignored, so every device starts fresh once.
   // Older keys (.v1, .v2) stay untouched on the device as leftovers. Keep in sync with 09_ui.js.
-  const SAVE_KEY = 'fezaKotulereKarsi.v3';
+  const SAVE_KEY = 'fezaAytugHala.v1';
   // The picture map is available from the very first adventure, including a fresh title screen.
   function mapUnlocked() { return true; }
   function travelTo(index, o = {}) {
     const Z = zones();
     if (!Z || !Number.isInteger(index) || index < 0 || index >= Z.length || GAME.state === 'transition') return false;
+    if (!zoneOpen(index)) { story('locked', { index, id: Z[index].id }); return false; }
     if (GAME.state === 'title') {
       const saved = readSave();
       if (saved) applySave(saved);
@@ -726,6 +727,7 @@ const GAME = (() => {
     P.bag = [P.equip.weapon, P.equip.offhand, P.equip.hat, P.equip.cape].filter(Boolean);
     for (const s of GAME.skills) { s.unlocked = false; s.cd = 0; }
     F = { zl: {}, kapi: {} }; skillQ.length = 0; removeMoustache();
+    P.malzemeler = {}; P.kayipEsyalar = {}; P.bossNese = {};   // Dev Ev hikâyesi: malzeme → bölüm id, bölüm id → true
     recalcStats(); P.hp = P.maxHp;
     if (H) H.setEquip(P.equip);
   }
@@ -884,9 +886,9 @@ const GAME = (() => {
       if (!bilboTarget) bilboTarget = e;
       if (e.boss) {
         // Preserve the puzzle's own longer stun and its progress.
-        if (!e.aggro || bonusHold(e.encounter) || !phases[e.type] || Object.values(phases).includes(e.ph)) continue;
+        if (!e.aggro || bonusHold(e.encounter) || !phases[ALIAS[e.type] || e.type] || Object.values(phases).includes(e.ph)) continue;
         e.bur = 0; e.kvx = e.kvz = 0;
-        bonusStun(e, phases[e.type], BILBO_GUARD.bossStun, false);
+        bonusStun(e, phases[ALIAS[e.type] || e.type], BILBO_GUARD.bossStun, false);
         if (e.encounter) e.encounter.timer = Math.max(e.encounter.timer, BILBO_GUARD.bossStun + 1);
       } else {
         e.stun = Math.max(e.stun, BILBO_GUARD.stun);
@@ -1113,6 +1115,8 @@ const GAME = (() => {
     igniteSaber(0.45);   // vvzzum: the lightsaber lights up as the zone fades in
     if (Z.music) aud('music', Z.music);
     if (i > 0 && Z.line) later(introDelay + 0.8, () => { if (say(Z.line, 3)) F.zl[i] = true; });
+    later(introDelay + 1.5, () => { const p = L && L.path && L.path[Math.min(L.path.length - 1, 3)]; if (p && GAME.state === 'play') hala('pointTo', p.x, p.z); });
+    story('zone', { index: i, id: Z.id });
     skillAt = gt + introDelay + 1.2;   // a new skill's line held back from the last boss: right after this zone's name
   }
 
@@ -1225,7 +1229,7 @@ const GAME = (() => {
       tele: null, ice: null, aura: null, tag: null, sparkT: 0, bar: { trail: 1, delay: 0 }, fade: 1, aggroAt: -99, dead: false,
       bur: 0, upT: 99, digT: 0, digS: 0, trailT: frand(0, 0.2),   // burrow amount (köstebek), time on the surface, fx timers
       // No EDEF entry for a burrower = the stand-in model cannot sink by itself: GAME lowers it into the ground instead.
-      selfBurrow: (def.kind === 'burrow' || type === 'kostebekusta') && !(typeof EDEF !== 'undefined' && EDEF && EDEF[type]),
+      selfBurrow: (def.kind === 'burrow' || isT(type, 'kostebekusta')) && !(typeof EDEF !== 'undefined' && EDEF && EDEF[type]),
       st: { move: 0, windup: -1, attack: -1, hurt: 0, frozen: false, dying: -1, t: 0, burrow: 0, breath: -1, stomp: -1, roar: -1, fireball: -1,
         phase: 'idle', phaseT: 0, air: 0 },   // (phase/phaseT/air: the Round 3 bosses' animation state)
     };
@@ -1512,7 +1516,7 @@ const GAME = (() => {
       e.slamR = (e.def.slamR || 2.2) * (e.elite ? 1.25 : 1);
       e.sx = e.x + Math.sin(e.face) * e.r * 0.9; e.sz = e.z + Math.cos(e.face) * e.r * 0.9;
       e.tele = fx('telegraph', e.sx, e.sz, e.slamR, e.wind, '#ff4a3a');
-      if (e.type === 'tellal') sfx('bell', { x: e.x, z: e.z, vol: 0.55, pitch: frand(1.0, 1.15) });   // (the bell on his hat dings as he raises the mallets)
+      if (isT(e.type, 'tellal')) sfx('bell', { x: e.x, z: e.z, vol: 0.55, pitch: frand(1.0, 1.15) });   // (the bell on his hat dings as he raises the mallets)
     } else if (e.kind === 'ranged') {
       e.wind = Math.max(0.6, e.windup);
     } else {
@@ -1521,7 +1525,7 @@ const GAME = (() => {
   }
   function strike(e) {
     STATS.strike++;
-    if (e.kind === 'slam' && e.type === 'tellal') {   // (Round 5) BOOM on the big davul: a golden ring and music notes, no rocks
+    if (e.kind === 'slam' && isT(e.type, 'tellal')) {   // (Round 5) BOOM on the big davul: a golden ring and music notes, no rocks
       fx('ring', e.sx, e.sz, { r0: 0.4, r1: e.slamR + 0.6, dur: 0.45, color: '#ffd23f', width: 0.5, k: 1.1, edge: 0.3 });
       burst('notes', e.x, e.height * 0.6, e.z, { count: 12 }); burst('dust', e.sx, 0.1, e.sz, { count: 14, scale: 1.2, color: '#efdcb2' });
       shake(0.26 * clamp(1.4 - e.dist / 14, 0.2, 1));
@@ -1530,7 +1534,7 @@ const GAME = (() => {
       return;
     }
     if (e.kind === 'slam') {
-      const cheese = e.type === 'peynir';   // the cheese wedge thumps down: a creamy ring, biscuit/cheese crumbs, no rocks
+      const cheese = isT(e.type, 'peynir');   // the cheese wedge thumps down: a creamy ring, biscuit/cheese crumbs, no rocks
       fx('ring', e.sx, e.sz, { r0: 0.4, r1: e.slamR + 0.6, dur: 0.45, color: cheese ? '#fff0b8' : '#ffd9a0', width: 0.5 });
       burst('dust', e.sx, 0.1, e.sz, cheese ? { count: 14, scale: 1.2, color: '#f3e4c2' } : { count: 26, scale: 1.4 });
       if (cheese) { burst('crumbs', e.sx, 0.2, e.sz, { count: 14 }); burst('debris', e.sx, 0.2, e.sz, { color: '#ffd24a', count: 6 }); }
@@ -1541,7 +1545,7 @@ const GAME = (() => {
       if (Math.hypot(P.pos.x - e.sx, P.pos.z - e.sz) < e.slamR + T.heroR * 0.5) hurtPlayer(e.dmg, e.sx, e.sz, 1.2);
       return;
     }
-    sfx(e.type === 'yarasa' || e.type === 'jole' ? 'bite' : 'whoosh', { x: e.x, z: e.z, vol: 0.7, pitch: frand(0.9, 1.15) });
+    sfx(isT(e.type, 'yarasa') || isT(e.type, 'jole') ? 'bite' : 'whoosh', { x: e.x, z: e.z, vol: 0.7, pitch: frand(0.9, 1.15) });
     const dx = P.pos.x - e.x, dz = P.pos.z - e.z, d = Math.hypot(dx, dz);
     const reach = e.atkRange + e.r + T.heroR * 0.6;
     if (d <= reach + 0.35 && Math.abs(angDiff(e.face, Math.atan2(dx, dz))) < 0.9) { STATS.strikeHit++; hurtPlayer(e.dmg, e.x, e.z, 0.4); }
@@ -1667,7 +1671,7 @@ const GAME = (() => {
     const len = Math.hypot(x1 - x0, z1 - z0);   // older FX: a narrow cone along the lane
     return fx('telegraphCone', x0, z0, Math.atan2(x1 - x0, z1 - z0), clamp(2 * Math.atan2(w * 0.5, Math.max(1, len)) * 1.6, 0.25, 1.2), len, dur, col);
   }
-  const glider = e => e.type === 'kaymak' || e.kind === 'glide' || e.kind === 'slide';
+  const glider = e => isT(e.type, 'kaymak') || e.kind === 'glide' || e.kind === 'slide';
   function rollStep(e, dt, d, ux, uz) {
     const st = e.st, gl = glider(e), R = e.def.roll || (gl ? GLIDE : {});
     if (e.state === 'windup') {
@@ -1852,7 +1856,7 @@ const GAME = (() => {
     const kind = sh.kind || SHOT_KIND[e.type] || 'spore', speed = Math.min(sh.speed || 5.5, 7);
     const dx = P.pos.x - m.x, dz = P.pos.z - m.z, a0 = Math.atan2(dx, dz);
     // an elite fire chick flicks three embers in a little fan
-    const fan = e.elite && e.type === 'ateskusu' ? [-0.26, 0, 0.26] : [0];
+    const fan = e.elite && isT(e.type, 'ateskusu') ? [-0.26, 0, 0.26] : [0];
     for (const da of fan) {
       spawnProjectile({ x: m.x, y: m.y, z: m.z, vx: Math.sin(a0 + da) * speed, vz: Math.cos(a0 + da) * speed, r: sh.r || 0.32, dmg: e.dmg, owner: 'enemy', kind,
         life: (e.atkRange + 4) / speed, color: SHOT_COL[kind] });
@@ -2077,7 +2081,7 @@ const GAME = (() => {
   function startEncounter(b) {
     if (b.encounter) return;
     b.encounter = { eggs: [], eggT: ENCOUNTER.eggEvery, serial: 0, timer: 6, move: null, splits: 0, nextNew: true, sancak: null, bonus: null };
-    if (b.type === 'ejderha') { layEggs(b, 3); ftext(b.x, 1.7, b.z, 'Yumurtalara dikkat!', 'word'); }
+    if (isT(b.type, 'ejderha')) { layEggs(b, 3); ftext(b.x, 1.7, b.z, 'Yumurtalara dikkat!', 'word'); }
   }
   // cheer: the boss itself just cheered up — its playmates stay so bossDown can cheer them up with everyone else
   // (and the ones already cheering finish their happy goodbye); otherwise (nap, calm, zone change) they just go.
@@ -2387,7 +2391,7 @@ const GAME = (() => {
   function encounterStep(b, dt) {
     if (!b.encounter) startEncounter(b);
     const q = b.encounter;
-    if (b.type === 'ejderha') {
+    if (isT(b.type, 'ejderha')) {
       q.eggT -= dt;
       if (q.eggT <= 0) { q.eggT += ENCOUNTER.eggEvery; layEggs(b, 1); }
       for (let i = q.eggs.length - 1; i >= 0; i--) {
@@ -2395,7 +2399,7 @@ const GAME = (() => {
         if (dist2(P.pos.x, P.pos.z, e.x, e.z) < sq(ENCOUNTER.touch)) hatchEgg(b, q, i);
       }
     }
-    if (b.type === 'sovalye') sancakStep(b, q, dt);   // (Round 5: the tournament banners; all down = it is dizzy, even mid-move)
+    if (isT(b.type, 'sovalye')) sancakStep(b, q, dt);   // (Round 5: the tournament banners; all down = it is dizzy, even mid-move)
     if (b.kit.dream) { dreamBonusStep(b, q, dt); return false; }
     bonusStep(b, q, dt);                              // (Round 6: the boss's bonus idea; it may cheer the boss up)
     if (!b.encounter) return false;
@@ -2405,12 +2409,12 @@ const GAME = (() => {
     if (b.ph !== 'idle') return false;
     if (q.timer <= 0 && q.nextNew) { q.nextNew = false; startRaidMove(b, RAID_NEW[b.type]); return true; }
     const old = { kefirdev: 'dance', kostebekusta: 'burrow', lavkaplumbaga: 'wave' }[b.type];
-    if (b.type === 'kraljole' || (!old && b.type !== 'ejderha')) {   // (the knight too: no older timed move, its banners come by hp)
-      if (b.type === 'kraljole' && q.splits < 2 && b.hp / b.maxHp < [0.72, 0.38][q.splits]) { q.nextNew = true; startRaidMove(b, 'split'); return true; }
+    if (isT(b.type, 'kraljole') || (!old && !isT(b.type, 'ejderha'))) {   // (the knight too: no older timed move, its banners come by hp)
+      if (isT(b.type, 'kraljole') && q.splits < 2 && b.hp / b.maxHp < [0.72, 0.38][q.splits]) { q.nextNew = true; startRaidMove(b, 'split'); return true; }
       if (q.timer <= 0) { q.nextNew = true; q.timer = 3; }
     } else if (q.timer <= 0) {
       q.nextNew = true;
-      if (b.type === 'ejderha') { layEggs(b, 1); q.timer = 8; return false; }
+      if (isT(b.type, 'ejderha')) { layEggs(b, 1); q.timer = 8; return false; }
       startRaidMove(b, old); return true;
     }
     return false;
@@ -2608,14 +2612,14 @@ const GAME = (() => {
       if (b.kit.addDmg) e.dmg *= b.kit.addDmg;
       if (e.kind === 'burrow') { e.bur = 1; e.upT = 0; }   // a little mole pops out of the ground
       burst('magic', x, 1, z, { color: b.kit.col || '#c77dff', count: 14 });
-      if (type === 'jole') burst('jelly', x, 0.35, z, { color: b.kit.col || SHOT_COL.jelly, scale: 1.2 });
+      if (isT(type, 'jole')) burst('jelly', x, 0.35, z, { color: b.kit.col || SHOT_COL.jelly, scale: 1.2 });
       else if (e.kind === 'burrow') burst('dirt', x, 0.05, z, { count: 10, color: DIRT });
-      else if (type === 'kaplumbaga') burst('lava', x, 0.1, z, {});
-      else if (type === 'kopuk') burst('fizz', x, 1, z, { count: 14, scale: 1.3 });
-      else if (type === 'nobetci') { burst('hoof', x, 0.05, z, { count: 8 }); burst('sparkle', x, 1, z, { color: '#ffe27a', count: 10 }); }   // (the guards march in at the horn)
+      else if (isT(type, 'kaplumbaga')) burst('lava', x, 0.1, z, {});
+      else if (isT(type, 'kopuk')) burst('fizz', x, 1, z, { count: 14, scale: 1.3 });
+      else if (isT(type, 'nobetci')) { burst('hoof', x, 0.05, z, { count: 8 }); burst('sparkle', x, 1, z, { color: '#ffe27a', count: 10 }); }   // (the guards march in at the horn)
       else burst('shadowPuff', x, 0.8, z, {});
     }
-    sfx(type === 'yarasa' ? 'bat' : type === 'kostebek' ? 'dig' : type === 'jole' ? 'bounce' : type === 'kopuk' ? 'fizz' : 'pop', { x: b.x, z: b.z });
+    sfx(isT(type, 'yarasa') ? 'bat' : isT(type, 'kostebek') ? 'dig' : isT(type, 'jole') ? 'bounce' : isT(type, 'kopuk') ? 'fizz' : 'pop', { x: b.x, z: b.z });
     return made;
   }
   function bossThresholds(b) {
@@ -4452,7 +4456,7 @@ const GAME = (() => {
       if (e.boss) { emit('bossHp', { frac: Math.max(0, e.hp / e.maxHp) }); bossThresholds(e); }
     }
     if (o.kb && o.fromX !== undefined && !e.boss && !(e.bur > 0)) {   // (a köstebek half in the ground is not knocked away)
-      const mass = e.type === 'golem' ? 0.3 : e.elite || HEAVY[e.type] ? 0.5 : 1;   // (the cheese wedge is heavy too)
+      const mass = isT(e.type, 'golem') ? 0.3 : e.elite || HEAVY[e.type] ? 0.5 : 1;   // (the cheese wedge is heavy too)
       let dx = x - o.fromX, dz = z - o.fromZ; const d = Math.hypot(dx, dz);
       if (d > 1e-3) { dx /= d; dz /= d; } else { dx = Math.sin(P.face); dz = Math.cos(P.face); }
       e.kvx += dx * o.kb * 9 * mass; e.kvz += dz * o.kb * 9 * mass;
@@ -4493,6 +4497,8 @@ const GAME = (() => {
       e.giftExtraGold = e.giftItem ? 0 : Math.round(5 * (zdef().gold || 1) * frand(0.8, 1.25));
     }
     dying.push(e);
+    hala('onCheer', { type: e.type, x: e.x, z: e.z, boss: !!e.boss, elite: !!e.elite });
+    if (e.boss) bossCheered(e);
     const cy = e.y + e.height * 0.7;
     burst('cheer', e.x, cy, e.z, { scale: e.boss ? 3 : e.elite ? 1.6 : 1 });
     burst('sparkle', e.x, cy, e.z, { count: e.elite ? 18 : 10 });
@@ -4550,6 +4556,8 @@ const GAME = (() => {
       C.kbx = dx / d * kb * 8; C.kbz = dz / d * kb * 8;
     }
     emit('hurt', { amount: a });
+    hala('onFezaHurt', { amount: a, fromX, fromZ, frac: P.hp / P.maxHp });
+    if (P.hp > 0 && P.hp < P.maxHp * 0.35) hala('onFezaLow', { frac: P.hp / P.maxHp });
     if (P.hp <= 0) defeat();
     else if (P.hp < P.maxHp * 0.3 && P.potions > 0 && gt - lastCanAz > 60) { lastCanAz = gt; say('can_az', 2); }
     return true;
@@ -4580,11 +4588,15 @@ const GAME = (() => {
       if (!e.boss && dist2(e.x, e.z, C.deathX, C.deathZ) < NAP.r * NAP.r) { e.napHp = e.hp; e.napped = e.aggro; }
       if (e.aggro) { if (e.boss) bossCalm(e); else calm(e); }
     }
+    // Dev Ev: HALA.onFezaDown() Feza'yı olduğu yerde kaldırır. Dönen sayı = kaç s sonra kalkacağı (Hala GAME.revive()'ı
+    // kendisi de erken çağırabilir); kanca yoksa 1.2 s sonra animasyonsuz kalkar.
+    const w = hala('onFezaDown', { x: P.pos.x, z: P.pos.z });
+    C.reviveAt = typeof w === 'number' && w >= 0 ? w : 1.2;
     const at = gt;
-    setTimeout(() => { if (P.dead && gt === at && !GAME.paused) respawn(); }, 4500);   // UI stopped ticking us while dead
+    setTimeout(() => { if (P.dead && gt === at && !GAME.paused) respawn(true); }, Math.max(4500, C.reviveAt * 1000 + 3000));   // UI stopped ticking us while dead
   }
   const NAP = { r: 18, heal: 0.25, calm: 4.5, near: 3 };
-  function respawn() {
+  function respawn(inPlace = true) {   // Dev Ev: varsayılan olarak düştüğü yerde kalkar (Aytuğ Hala kaldırır)
     if (!P.dead) return;
     P.dead = false; P.hp = P.maxHp; GAME.state = 'play'; C.invuln = 2; C.hurtT = 0; C.kbx = C.kbz = 0;
     C.lockT = 0; C.cheerT = 0;   // (a story lock from before the nap never freezes him after waking up)
@@ -4609,12 +4621,12 @@ const GAME = (() => {
     for (let i = projectiles.length - 1; i >= 0; i--) if (projectiles[i].owner === 'enemy') killProjectile(i, false);
     for (const m of mortars) { killProjectileObj(m); remove(m.tele); }
     mortars.length = 0;
-    const cp = P.checkpoint;
-    placeHero(cp.x, cp.z, 0);
+    const cp = inPlace && circleFree(P.pos.x, P.pos.z, T.heroR) ? { x: P.pos.x, z: P.pos.z } : P.checkpoint;
+    placeHero(cp.x, cp.z, inPlace ? P.face : 0);
     burst('magic', cp.x, 0.8, cp.z, { count: 24 }); burst('sparkle', cp.x, 1.2, cp.z, { count: 16 });
     sfx('checkpoint');
     igniteSaber(0);
-    emit('respawn', {});
+    emit('respawn', { inPlace });
   }
 
   const wizard = () => P.heroClass === 'wizard';
@@ -6004,7 +6016,7 @@ const GAME = (() => {
     if (crystal) faceTo(crystal.x, crystal.z);
     emit('victory', {});
     aud('stopVoice');   // nothing stale may follow the ending line
-    say('son', 3);
+    if (!story('ending', {})) say('son', 3);
     aud('music', 'zafer');
     for (let i = 0; i < 5; i++) later(i * 0.6, () => { burst('confetti', P.pos.x + frand(-3, 3), 3, P.pos.z + frand(-3, 3), {}); sfx('cheer', { vol: 0.5 }); });
   }
@@ -6218,6 +6230,7 @@ const GAME = (() => {
       bag, roundPower: cleanRoundPower(P.roundPower), shopStock: cleanShop(P), shopWard: P.shopWard && P.shopWard.zone === zdef(zone).id ? Object.assign({}, P.shopWard) : null,
       equip: { weapon: P.bag.indexOf(P.equip.weapon), offhand: P.bag.indexOf(P.equip.offhand), hat: P.bag.indexOf(P.equip.hat), cape: P.bag.indexOf(P.equip.cape) },
       skills: GAME.skills.map(s => !!s.unlocked),
+      malzemeler: Object.assign({}, P.malzemeler), kayipEsyalar: Object.assign({}, P.kayipEsyalar), bossNese: Object.assign({}, P.bossNese),
       flags: Object.assign({ intro0: !!F.intro0, baykus: !!F.baykus, sandik: !!F.sandik, nese: !!F.nese, canta: !!F.canta, zl0: !!(F.zl && F.zl[0]), bossDone,
         yolculuk: !!F.yolculuk }, first),
     };
@@ -6337,6 +6350,8 @@ const GAME = (() => {
         if (!best) P.bag.push(starter[slot]);
       }
     }
+    const obj = v => (v && typeof v === 'object' && !Array.isArray(v) ? Object.assign({}, v) : {});
+    P.malzemeler = obj(s.malzemeler); P.kayipEsyalar = obj(s.kayipEsyalar); P.bossNese = obj(s.bossNese);
     const fl = s.flags || {};
     // Skills come from the level (saves by index are unreliable: the skill list changed from 6 to 3).
     GAME.skills.forEach((sk, i) => { sk.cd = 0; sk.unlocked = i === 0 ? !!(fl.intro0 || P.lvl >= 2 || (s.skills && s.skills[0])) : P.lvl >= (sk.def.lvl || 1); });
@@ -6377,20 +6392,18 @@ const GAME = (() => {
     } else { P.heroClass = heroClassOf(o.heroClass); buildSkills(); resetPlayer(); }
     C.playT = 0; C.lastHurt = gt - 99;
     const zone = plus ? 0 : clamp(Number.isInteger(o.zone) ? o.zone : 0, 0, zones().length - 1);
-    const intro = wizard() ? 'giris_buyu' : P.heroClass === 'hybrid' ? 'giris_hibrit' : 'giris2';
-    const introDelay = plus ? lineLen('tekrar') + 0.3 : lineLen('giris1') + lineLen(intro) + 0.6;
+    const introDelay = plus ? lineLen('tekrar') + 0.3 : 0.6;
     GAME.paused = false;
     if (!plus && zone === 0 && useTitleLevel()) startHere(); else loadZone(zone, { introDelay });
     yolWant = false;
     if (plus) say('tekrar', 3);
     else {
-      say('giris1', 3);
-      const w = say(intro, 3) || lineLen('giris1') + 0.3 + lineLen(intro);   // (AUD.say: s until giris2 has ended)
+      const w = Number(story('intro', { zone })) || 0;   // Dev Ev: STORY.intro() (src/10_story.js) → s until it ends
       // (Round 4 QA: the first skill's line could be dropped from AUD's full queue at the start — it waits for the intro)
       skillAt = Math.max(skillAt, gt + w + 0.6);
       // (Round 4) the whole journey, once per game: forest, kefir valley, cave, volcano, (Round 5) the walled town, the dragon's castle — at the first
       // calm moment after giris2 (the owl first if Feza stands at it): see yolculukStep
-      yolWant = !F.yolculuk && hasLine('yolculuk');
+      yolWant = false;   // (eski oyunun yolculuk anlatımı: Dev Ev'de yok)
     }
   }
   function continueGame() {
@@ -6559,7 +6572,7 @@ const GAME = (() => {
     if (st === 'play') updatePlayer(dt);
     else {
       C.hurtT = Math.max(0, C.hurtT - dt * 3); C.vel = damp(C.vel, 0, 10, dt); C.swing = null;
-      if (st === 'dead') { C.deadT += dt; if (C.deadT >= T.respawn) respawn(); }
+      if (st === 'dead') { C.deadT += dt; if (C.deadT >= (C.reviveAt ?? T.respawn)) respawn(true); }
       if (st === 'transition' && H) { C.transT += dt; H.root.scale.setScalar(baseScale * Math.max(0.05, 1 - C.transT / 0.7)); P.face += dt * 12; }
     }
     if (L) {
@@ -6622,6 +6635,7 @@ const GAME = (() => {
     updateBars(dt);
     updateHero(dt);
     updateBilbo(dt);
+    hala('update', dt, halaCtx(dt));
     moustacheStep(dt);
   }
   function titleUpdate(dt) {
@@ -6632,6 +6646,7 @@ const GAME = (() => {
     if (L && L.npcObj && L.npcObj.model && L.npcObj.model.anim) { try { L.npcObj.model.anim(dt, owlTalking()); } catch (err) { warnOnce('owl.anim', err); } }
     updateHero(dt);
     updateBilbo(dt);
+    hala('update', dt, halaCtx(dt));
   }
 
   function init() {
@@ -6652,6 +6667,7 @@ const GAME = (() => {
       catch (err) { warnOnce('BILBO.create', err); }
     }
     if (H.setXray) { try { H.setXray(true); } catch (err) { warnOnce('setXray', err); } }
+    hala('create', scene);   // Dev Ev: Aytuğ Hala (src/04_hala.js)
     buildSkills();
     resetPlayer();
     const s = readSave();   // title screen: wear the saved outfit
@@ -6663,7 +6679,116 @@ const GAME = (() => {
     }
   }
 
+  // ── Dev Ev bağlantıları: HUYSUZ takma tipleri, Aytuğ Hala (HALA), hikâye (STORY), test kancaları (src/SPEC.md › Dev Ev API) ──
+  // HUYSUZ kaydındaki her tip (src/05a_huysuz_kayit.js) eski bir "base" tipin davranış tablolarını ödünç alır.
+  const ALIAS = {};
+  function isT(t, n) { return t === n || ALIAS[t] === n; }
+  function aliasType(id, d) {
+    const base = d.base;
+    if (!base || base === id) return;
+    ALIAS[id] = base;
+    for (const tb of [SHOT_KIND, ROLLERS, HOPPERS, HEAVY, CREAMY, DUSTY, SLIMY, DEF0]) if (tb[base] !== undefined && tb[id] === undefined) tb[id] = tb[base];
+    if (d.variant) VARIANTS[id] = [d.variant]; else if (VARIANTS[base] && !VARIANTS[id]) VARIANTS[id] = VARIANTS[base];
+    if (DIFF.boss[base] && !DIFF.boss[id]) DIFF.boss[id] = DIFF.boss[base];
+    if (d.boss || BOSS_KIT[base]) {
+      const k = Object.assign({}, BOSS_KIT[base] || BOSS_KIT.kraljole, { bonus: null, gift: false, dream: false }, d.bossKit || {});
+      k.lines = Object.assign({ giris: id + '_giris', bitti: id + '_bitti' }, d.lines || {});
+      BOSS_KIT[id] = k;
+    }
+    if (d.ilkSoz) FIRST_LINE[id] = d.ilkSoz;
+    delete defCache[id];
+  }
+  if (typeof HUYSUZ !== 'undefined' && HUYSUZ && HUYSUZ.each) HUYSUZ.each((id, d) => { try { aliasType(id, d); } catch (err) { warnOnce('alias ' + id, err); } });
+
+  function hala(fn, a, b, c) {
+    if (typeof HALA === 'undefined' || !HALA || typeof HALA[fn] !== 'function') return undefined;
+    try { return HALA[fn](a, b, c); } catch (err) { warnOnce('HALA.' + fn, err); return undefined; }
+  }
+  function story(fn, a) {
+    if (typeof STORY === 'undefined' || !STORY || typeof STORY[fn] !== 'function') return undefined;
+    try { return STORY[fn](a); } catch (err) { warnOnce('STORY.' + fn, err); return undefined; }
+  }
+  const HCTX = { P: null, H: null, L: null, enemies, boss: null, Bilbo: null, state: '', dt: 0, t: 0, dead: false, title: false, api: null };
+  function halaCtx(dt) {   // one reused object (no per-frame garbage)
+    HCTX.P = P; HCTX.H = H; HCTX.L = L; HCTX.boss = boss; HCTX.Bilbo = Bilbo; HCTX.state = GAME.state; HCTX.dt = dt; HCTX.t = gt;
+    HCTX.dead = !!P.dead; HCTX.title = GAME.state === 'title'; HCTX.api = HALA_API;
+    return HCTX;
+  }
+  const HALA_API = { isFloor, circleFree, los, moveXZ, routeTo: (tx, tz, from) => routeTo(tx, tz, from), say: (k, prio, o) => say(k, prio, o),
+    hasLine, sfx: (n, o) => sfx(n, o), burst: (k, x, y, z, o) => burst(k, x, y, z, o), fx: (n, a, b, c, d, e) => fx(n, a, b, c, d, e),
+    heal: (f, q) => heal(f, q), enemiesNear: (x, z, r) => enemiesNear(x, z, r), nearestEnemy: (x, z, r) => nearestEnemy(x, z, r),
+    damage: (e, n, o) => damage(e, n, o), heroDamage: () => heroDamageNow(), spawnProjectile: o => spawnProjectile(o),
+    revive: f => revive(f), shield: s => { P.shield = Math.max(P.shield || 0, s); }, emit: (n, d) => emit(n, d) };
+  // Feza'yı olduğu yerde kaldır (HALA.onFezaDown'dan sonra Hala çağırır; frac: can oranı)
+  function revive(frac = 1) {
+    if (!P.dead) return false;
+    respawn(true);
+    if (frac < 1) P.hp = Math.max(1, Math.round(P.maxHp * frac));
+    return true;
+  }
+  // Takım Hamlesi: Feza ve Aytuğ Hala el ele zıplar; yakındaki her huysuz neşelenir, boss canının bir kısmını kaybeder.
+  function teamBlast(x = P.pos.x, z = P.pos.z, r = 8) {
+    let n = 0;
+    for (const e of enemiesNear(x, z, r).slice()) {
+      if (e.dead) continue;
+      if (e.boss) damage(e, Math.round(e.maxHp * 0.12), { kind: 'team', fromX: x, fromZ: z, kb: 0.4 });
+      else { damage(e, e.hp + 1, { kind: 'team', fromX: x, fromZ: z, kb: 1 }); n++; }
+    }
+    burst('confetti', x, 1.5, z, {}); fx('ring', x, z, { r0: 0.5, r1: r, dur: 0.6, color: '#ff8fb0', width: 0.6 });
+    return n;
+  }
+  function teamMove() {
+    if (GAME.state !== 'play' || P.dead || GAME.paused) return false;
+    if (hala('teamReady') !== true) return false;
+    const r = hala('teamMove', { blast: teamBlast, P, H });
+    if (r === undefined) teamBlast();
+    emit('team', {});
+    return true;
+  }
+  // Bölüm kilitleri ve sıradaki bölüm (BOLUM.isOpen: pasta 3 malzemeyle açılır)
+  function zoneOpen(i) {
+    const Z = zones(), id = Z && Z[i] && Z[i].id;
+    return !id || typeof BOLUM === 'undefined' || !BOLUM.isOpen ? true : !!BOLUM.isOpen(id, P);
+  }
+  function nextZoneIndex() {
+    const Z = zones() || [], done = P.bossNese || {};
+    for (let k = 1; k <= Z.length; k++) { const i = (P.zone + k) % Z.length; if (!done[Z[i].id] && zoneOpen(i) && !Z[i].final) return i; }
+    for (let i = 0; i < Z.length; i++) if (Z[i].final && zoneOpen(i)) return i;
+    return Math.min(Z.length - 1, P.zone + 1);
+  }
+  function bossCheered(e) {
+    const Z = zdef();
+    if (!P.bossNese) P.bossNese = {};
+    P.bossNese[Z.id] = true;
+    if (Z.malzeme && !(P.malzemeler && P.malzemeler[Z.malzeme])) {
+      if (!P.malzemeler) P.malzemeler = {};
+      P.malzemeler[Z.malzeme] = Z.id;
+      emit('ingredient', { id: Z.malzeme, zone: Z.id });
+      later(2.5, () => story('ingredient', Z.malzeme));
+    }
+    if (L && L.exit) later(4, () => { if (GAME.state === 'play' && L && L.exit) hala('pointTo', L.exit.x, L.exit.z); });
+  }
+  // Aytuğ Hala'nın kayıp eşyası bulundu (Bilbo kazınca çağrılır)
+  function foundLostItem(id, zoneId = zdef().id) {
+    if (!P.kayipEsyalar) P.kayipEsyalar = {};
+    if (P.kayipEsyalar[zoneId]) return false;
+    P.kayipEsyalar[zoneId] = id || true;
+    emit('lostItem', { id, zone: zoneId });
+    story('lostItem', { id, zone: zoneId });
+    return true;
+  }
+  // Test kancaları (QA): bir düşman doğur, Feza'yı bir yere koy
+  function spawnEnemy(type, x, z, o = {}) {
+    if (!L) return null;
+    const e = makeEnemy({ type, x, z, elite: !!o.elite, pack: o.boss ? 'boss' : 'qa', face: 0 });
+    if (o.boss) { boss = GAME.boss = e; }
+    return e;
+  }
+  function teleport(x, z) { placeHero(x, z, P.face); P.checkpoint = { x, z }; C.hasT = false; C.drag = false; return true; }
+
   const GAME = {
+    revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API,
+    get teamCharge() { const v = typeof HALA !== 'undefined' && HALA ? HALA.charge : 0; return typeof v === 'number' ? v : 0; },
     P, H: null, enemies, L: null, state: 'title', paused: false, skills: [], boss: null, time: 0,
     get difficulty() { return hard ? 'hard' : 'normal'; }, setDifficulty,
     merchantInfo, merchantNear, merchantWard, visitMerchant, buyMerchant,

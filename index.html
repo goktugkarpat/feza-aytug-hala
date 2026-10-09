@@ -6,12 +6,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Feza ve Bilbo">
-<meta name="theme-color" content="#1a1030">
+<meta name="apple-mobile-web-app-title" content="Dev Ev Macerası">
+<meta name="theme-color" content="#f6a48c">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="icons/icon-192.png">
-<title>Feza ve Bilbo Huysuzlara Karşı</title>
+<title>Feza, Bilbo ve Aytuğ Hala: Dev Ev Macerası</title>
 <script>
 // Update old cached scripts before accepting the first play tap.
 (async function () {
@@ -50,10 +50,10 @@
 })();
 </script>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #120b22; touch-action: none; overscroll-behavior: none; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #f3c9b0; touch-action: none; overscroll-behavior: none; }
   canvas#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   #loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-    background: radial-gradient(circle at 50% 45%, #3a2470, #120b22); color: #fff; font: 800 26px "Avenir Next", system-ui, sans-serif; z-index: 50; }
+    background: radial-gradient(circle at 50% 45%, #fbe3cf, #e9967f); color: #fff; font: 800 26px "Avenir Next", system-ui, sans-serif; z-index: 50; }
   #loading .ld { width: 64px; height: 64px; border-radius: 50%; border: 8px solid #ffffff33; border-top-color: #ffd66b; animation: ldspin 0.9s linear infinite; }
   html[data-updating] #loading { display: flex !important; }
   @keyframes ldspin { to { transform: rotate(360deg); } }
@@ -66,7 +66,6 @@
 <script src="vendor/three.js"></script>
 <script src="src/00_i18n.js"></script>
 <script src="sesler.js"></script>
-<script src="sesler-en.js"></script>
 <script src="bilbo-ses.js"></script>
 <script src="src/00_core.js"></script>
 <script src="src/01_textures.js"></script>
@@ -75,10 +74,20 @@
 <script src="src/04_feza.js"></script>
 <script src="src/04_bilbo.js"></script>
 <script src="src/04_bilbo_follow.js"></script>
+<script src="src/04_hala.js"></script>
 <script src="src/05_enemies.js"></script>
+<script src="src/05a_huysuz_kayit.js"></script>
+<script src="src/05h_huysuzlar.js"></script>
+<script src="src/05b_bosslar.js"></script>
+<script src="src/06a_bolum_kayit.js"></script>
+<script src="src/06z_oturma.js"></script>
+<script src="src/06z_mutfak.js"></script>
+<script src="src/06z_buzdolabi.js"></script>
+<script src="src/06z_pasta.js"></script>
 <script src="src/06_level.js"></script>
 <script src="src/07_game.js"></script>
 <script src="src/08_skills.js"></script>
+<script src="src/10_story.js"></script>
 <script src="src/09_ui.js"></script>
 </body>
 </html>
