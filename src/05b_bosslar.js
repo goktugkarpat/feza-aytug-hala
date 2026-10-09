@@ -171,7 +171,7 @@
   }
 
   // ════════════════ 2. Düdüklü Tencere ════════════════
-  const TEN = { steel: '#c9d2df', steelL: '#f4f7fb', steelD: '#7d8aa0', enamel: '#f2554e', enamelL: '#ff8c78', enamelD: '#b8323a', band: '#ffffff', handle: '#2f3240', knob: '#ffcf3f', valve: '#ffd23f' };
+  const TEN = { steel: '#aab5c6', steelL: '#e4eaf2', steelD: '#66738a', enamel: '#f2554e', enamelL: '#ff8c78', enamelD: '#b8323a', band: '#ffffff', handle: '#2f3240', knob: '#ffcf3f', valve: '#ffd23f' };
   const POT_P = [[0, 0.12], [0.95, 0.12], [1.18, 0.2], [1.27, 0.38], [1.29, 0.8], [1.29, 1.4], [1.27, 1.78], [1.22, 1.86], [1.12, 1.88], [0, 1.88]];
   const LID_P = [[0, 1.86], [1.3, 1.86], [1.34, 1.9], [1.28, 1.97], [1.0, 2.07], [0.5, 2.14], [0, 2.16]];
   function buildTencere(r) {
@@ -188,7 +188,7 @@
     r.fx(0, 0.8);
     for (let i = 0; i < 26; i++) {   // puantiye (yüzün olduğu ön kısım boş)
       const a = i * 2.39996 + 0.4, y = 0.62 + ((i * 0.618) % 1) * 1.05, aa = Math.atan2(Math.sin(a), Math.cos(a));
-      if (Math.abs(aa) < 0.95 && y > 0.55 && y < 1.75) continue;
+      if (Math.abs(aa) < 1.3) continue;
       const rr = profR('tenPot', POT_P)(y) + 0.005;
       r.add(G.sphere(12, 8), '#fff6f0', [Math.sin(a) * rr, y, Math.cos(a) * rr], qz(Math.sin(a), 0, Math.cos(a)), [0.11, 0.11, 0.025]);
     }
@@ -298,14 +298,14 @@
     for (let i = 0; i < 12; i++) {
       const a = (i + 0.5) / 12 * PI * 2 + seed, rr = R * 0.98;
       r.add(G.sphere(14, 10), colA, [c[0] + Math.sin(a) * rr, c[1] - R * 0.42, c[2] + Math.cos(a) * rr], null, [R * 0.2, R * 0.14, R * 0.2]);
-      if (i % 3 === seed % 3) r.add(G.capsule(1, 8), colA, [c[0] + Math.sin(a) * rr * 0.96, c[1] - R * 0.62, c[2] + Math.cos(a) * rr * 0.96], null, [R * 0.07, R * 0.16, R * 0.07]);
+      if (i % 3 === seed % 3) r.add(G.sphere(10, 8), colA, [c[0] + Math.sin(a) * rr * 0.96, c[1] - R * 0.62, c[2] + Math.cos(a) * rr * 0.96], null, [R * 0.07, R * 0.16, R * 0.07]);
     }
   }
   function sprinkles(r, c, R, n, seed) {
     const cs = ['#ffe14a', '#5fd3ff', '#ff6fa8', '#ffffff', '#c58bff', '#7ce07a'];
     for (let i = 0; i < n; i++) {
       const u = 0.25 + 0.7 * ((i * 0.618 + seed) % 1), a = i * 2.39996 + seed, sn = Math.sqrt(1 - u * u);
-      r.add(G.capsule(1, 6), cs[i % cs.length], [c[0] + Math.sin(a) * sn * R * 1.0, c[1] + u * R * 0.92, c[2] + Math.cos(a) * sn * R * 1.0], [i * 1.3, a, i * 0.7], [0.03, 0.06, 0.03]);
+      r.add(G.sphere(6, 4), cs[i % cs.length], [c[0] + Math.sin(a) * sn * R * 1.0, c[1] + u * R * 0.92, c[2] + Math.cos(a) * sn * R * 1.0], [i * 1.3, a, i * 0.7], [0.03, 0.08, 0.03]);
     }
   }
   function buildDondurma(r) {
@@ -323,13 +323,14 @@
     gloss(r, [-0.55, 2.05, 0.75], [-0.45, 0.5, 0.6], 0.2, 0.08, 1.15, 0.5);
     // erime damlaları (st.melt ile uzar)
     r.on('drip');
-    for (let i = 0; i < 6; i++) { const a = (i / 6 - 0.5) * 2.6, rr = 1.2; r.add(G.capsule(1, 8), DON.mint, [Math.sin(a) * rr, 0.98, Math.cos(a) * rr], null, [0.09, 0.18, 0.09]); }
+    for (let i = 0; i < 6; i++) { const a = (i / 6 - 0.5) * 2.6, rr = 1.2; r.add(G.sphere(10, 8), DON.mint, [Math.sin(a) * rr, 0.98, Math.cos(a) * rr], null, [0.09, 0.18, 0.09]); }
     // 2. top (vanilya) + çikolata sosu şeritleri
     r.on('s2').fx(0, 0.75);
     scoop(r, [0, 2.42, -0.05], 0.92, DON.van, DON.vanD, 2);
     r.fx(0, 1);
-    for (let i = 0; i < 7; i++) { const a = (i / 7) * PI * 2 + 0.3; r.add(G.capsule(1, 8), DON.choc, [Math.sin(a) * 0.88, 2.55 - (i % 3) * 0.1, -0.05 + Math.cos(a) * 0.88], [Math.cos(a) * 0.3, 0, -Math.sin(a) * 0.3], [0.07, 0.16 + (i % 3) * 0.07, 0.07]); }
-    r.add(G.sphere(28, 14), DON.choc, [0, 3.0, -0.05], null, [0.62, 0.12, 0.62]);
+    for (let i = 0; i < 13; i++) { const a = (i / 13) * PI * 2 + 0.3, l = [0.1, 0.2, 0.14, 0.26][i % 4]; r.add(G.sphere(10, 8), '#ff6f9a', [Math.sin(a) * 0.86, 2.72 - l * 0.6, -0.05 + Math.cos(a) * 0.86], [Math.cos(a) * 0.25, 0, -Math.sin(a) * 0.25], [0.07, l * 1.3, 0.07]); }
+    r.add(G.sphere(28, 14), '#ff6f9a', [0, 3.0, -0.05], null, [0.66, 0.16, 0.66]);
+    sprinkles(r, [0, 2.42, -0.05], 0.92, 10, 0.45);
     // 3. top (çilek) — yuvarlanıp gidebilir (st.scoopOff)
     r.on('s3').fx(0, 0.75);
     scoop(r, [0, 3.25, -0.05], 0.66, DON.straw, DON.strawD, 3);
@@ -357,8 +358,8 @@
     r.fx(0.5, 1).add(heartGeo(), hdr('#ff5aa8', 1.3), [-1.85, 2.18, 0.62], null, 0.17);
     r.on('armR').mark('muzzle', [-1.82, 1.4, 0.6]);
     r.fx(0, 0);
-    face(r, [0, 1.42, 0], 1.25, { bone: 'body', tilt: 0.12, ex: 0.42, ey: 0.15, er: 0.27, iris: '#2a5c86', skin: DON.mint, browCol: '#2a5245',
-      browY: 1.45, mouthY: -0.36, mouthW: 0.33, heartY: 1.0, heartX: 1.1, heartS: 0.28, mouthPivot: true, blushCol: '#ff8fb4' });
+    face(r, [0, 1.42, 0], 1.25, { bone: 'body', tilt: 0.1, ex: 0.42, ey: 0.3, er: 0.28, iris: '#2a5c86', skin: DON.mint, browCol: '#2a5245',
+      browY: 1.4, mouthY: -0.2, mouthW: 0.34, heartY: 1.0, heartX: 1.1, heartS: 0.28, mouthPivot: true, blushCol: '#ff8fb4' });
     return { height: 3.5, glowC: col('#c8f2ff'), dieHop: 0.1, mat: { rough: 0.45, sss: col('#ffe6f0').multiplyScalar(0.05), rim: '#f2fcff', rimK: 0.3, rimP: 2.3, wob: 0.012, wobF: 1.4, wobS: 2.5 }, portrait: { cx: 0, cy: 2.3, cz: 0, rad: 2.0, dy: 0.5 } };
   }
   function animDondurma(m, dt, st, s) {
@@ -433,7 +434,7 @@
     // alt kat: pembe krema, kenarda damlalar, üst kenarda krema süsleri
     r.fx(0, 0.6).add(lathe('pasT1', tierP(1.9, 0.12, 0.95), 56, 3), vgrad(0.1, 1.07, [[0, PAS.chocD], [0.55, PAS.choc], [1, PAS.chocL]]));
     for (let i = 0; i < 16; i++) { const a = i / 16 * PI * 2; r.add(G.sphere(12, 8), PAS.cream, [Math.sin(a) * 1.82, 1.08, Math.cos(a) * 1.82], null, [0.2, 0.15, 0.2]); r.add(G.cone(10), PAS.cream, [Math.sin(a) * 1.82, 1.24, Math.cos(a) * 1.82], [0, a, 0], [0.1, 0.16, 0.1]); }
-    for (let i = 0; i < 18; i++) { const a = (i + 0.5) / 18 * PI * 2; r.add(G.capsule(1, 8), PAS.cream, [Math.sin(a) * 1.9, 0.9 - (i % 3) * 0.06, Math.cos(a) * 1.9], null, [0.08, 0.12 + (i % 3) * 0.05, 0.06]); }
+    for (let i = 0; i < 18; i++) { const a = (i + 0.5) / 18 * PI * 2; r.add(G.sphere(10, 8), PAS.cream, [Math.sin(a) * 1.9, 0.9 - (i % 3) * 0.06, Math.cos(a) * 1.9], null, [0.08, 0.17 + (i % 3) * 0.06, 0.06]); }
     // 4 malzeme yuvası (boş hâli: koyu halka + soluk iç) — dolunca slotN kemiğindeki parlak simge büyür
     for (let i = 0; i < 4; i++) {
       const x = (i - 1.5) * 0.78, z = Math.sqrt(1.92 * 1.92 - x * x), a = Math.atan2(x, z);
@@ -449,7 +450,7 @@
     }
     // orta kat: krema beyazı + pembe damlalar + çilekler (yüz burada)
     r.on('mid').fx(0, 0.5).add(lathe('pasT2', tierP(1.45, 1.05, 0.95), 56, 3), vgrad(1.05, 2.0, [[0, PAS.pinkD], [0.5, PAS.pink], [1, PAS.pinkL]]));
-    for (let i = 0; i < 14; i++) { const a = (i + 0.3) / 14 * PI * 2; r.fx(0, 0.8).add(G.capsule(1, 8), PAS.cream, [Math.sin(a) * 1.44, 1.84 - (i % 3) * 0.08, Math.cos(a) * 1.44], null, [0.08, 0.14 + (i % 3) * 0.06, 0.06]); }
+    for (let i = 0; i < 14; i++) { const a = (i + 0.3) / 14 * PI * 2; r.fx(0, 0.8).add(G.sphere(10, 8), PAS.cream, [Math.sin(a) * 1.44, 1.84 - (i % 3) * 0.08, Math.cos(a) * 1.44], null, [0.08, 0.2 + (i % 3) * 0.07, 0.06]); }
     r.fx(0, 0.8).add(G.torus(PI * 2, 0.07, 56), PAS.cream, [0, 1.98, 0], [PI / 2, 0, 0], [1.38, 1.38, 1.5]);
     for (let i = 0; i < 6; i++) { const a = (i + 0.5) / 6 * PI * 2 + PI; strawberry(r, [Math.sin(a) * 1.25, 1.98, Math.cos(a) * 1.25], 0.4, 0.2); }
     // kollar: krema kolları + kiraz eller
@@ -462,7 +463,7 @@
     // üst kat: çilek sosu kaplı, kenarda krema
     r.on('top').fx(0, 0.9).add(lathe('pasT3', tierP(1.0, 1.95, 0.8), 48, 3), vgrad(1.95, 2.75, [[0, PAS.creamD], [0.6, PAS.cream], [1, '#ffffff']]));
     for (let i = 0; i < 12; i++) { const a = i / 12 * PI * 2; r.fx(0, 0.6).add(G.sphere(12, 8), PAS.cream, [Math.sin(a) * 0.92, 2.77, Math.cos(a) * 0.92], null, [0.14, 0.12, 0.14]); }
-    for (let i = 0; i < 10; i++) { const a = (i + 0.5) / 10 * PI * 2; r.fx(0, 1).add(G.capsule(1, 8), PAS.red, [Math.sin(a) * 1.0, 2.55 - (i % 2) * 0.08, Math.cos(a) * 1.0], null, [0.07, 0.13 + (i % 2) * 0.06, 0.05]); }
+    for (let i = 0; i < 10; i++) { const a = (i + 0.5) / 10 * PI * 2; r.fx(0, 1).add(G.sphere(10, 8), PAS.red, [Math.sin(a) * 1.0, 2.55 - (i % 2) * 0.08, Math.cos(a) * 1.0], null, [0.07, 0.18 + (i % 2) * 0.08, 0.05]); }
     // mum şapka: 5 çizgili mum (fitilli), ortada büyük çilek
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * PI * 2 + 0.3, x = Math.sin(a) * 0.55, z = Math.cos(a) * 0.55;
@@ -476,8 +477,8 @@
     strawberry(r.fx(0, 0), [0, 2.78, 0], 0.65, 0);
     r.mark('muzzle', [0, 3.0, 0.5]);
     r.fx(0, 0);
-    face(r, [0, 1.5, 0], 1.47, { bone: 'mid', tilt: 0.05, ex: 0.5, ey: 0.1, er: 0.32, iris: '#6a3a2a', skin: PAS.pink, browCol: '#5a2a2a', mouthIn: '#6a1a34',
-      browY: 1.4, mouthY: -0.36, mouthW: 0.36, heartY: 0.7, heartX: 1.1, heartS: 0.3, mouthPivot: true, blushCol: '#ff7fa8' });
+    face(r, [0, 1.5, 0], 1.47, { bone: 'mid', tilt: 0.05, ex: 0.5, ey: 0.24, er: 0.3, iris: '#6a3a2a', skin: PAS.pink, browCol: '#5a2a2a', mouthIn: '#6a1a34',
+      browY: 1.25, mouthY: -0.2, mouthW: 0.36, heartY: 0.7, heartX: 1.1, heartS: 0.3, mouthPivot: true, blushCol: '#ff7fa8' });
     return { height: 3.6, glowC: col('#ffd6e8'), dieHop: 0.08, hide: ['flames', 'slot1', 'slot2', 'slot3'],
       mat: { rough: 0.5, sss: col('#fff0e8').multiplyScalar(0.03), rim: '#fff4fa', rimK: 0.16, rimP: 2.6, wob: 0.01, wobF: 1.2, wobS: 2.6 }, portrait: { cx: 0, cy: 2.0, cz: 0, rad: 2.2, dy: 0.5 } };
   }
@@ -557,10 +558,10 @@
   }
 
   // ════════════════ Kayıt ════════════════
-  E.register('uykucuSupurge', buildSupurge, animSupurge, 0.8);
-  E.register('dudukluTencere', buildTencere, animTencere, 0.8);
-  E.register('dondurmaKrali', buildDondurma, animDondurma, 0.75);
-  E.register('kocaPasta', buildPasta, animPasta, 0.72);
+  E.register('uykucuSupurge', buildSupurge, animSupurge, 0.7);
+  E.register('dudukluTencere', buildTencere, animTencere, 0.72);
+  E.register('dondurmaKrali', buildDondurma, animDondurma, 0.62);
+  E.register('kocaPasta', buildPasta, animPasta, 0.6);
   E.register('kurabiyeAsker', buildKurabiye, animKurabiye, 0.55);
   const mk = id => o => E.make(id, o);
   const own = { own: true };

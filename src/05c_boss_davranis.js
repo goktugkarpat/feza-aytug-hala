@@ -49,10 +49,14 @@ const BOSSDAV = (() => {
         add(sph, mat('krema_c', { color: '#ff4f7a', roughness: 0.25 }), [0, 0.56, 0], 0.08);
         break;
       }
-      case 'top': {   // dondurma kralının yuvarlanan topu (çilekli, renkli şekerli)
-        add(geo('ico3', () => new THREE.IcosahedronGeometry(1, 4)), mat('top', { color: '#ffb3cf', roughness: 0.55, emissive: '#ff8ab4', emissiveIntensity: 0.08 }), null, 0.75);
-        const cs = ['#ffe14a', '#5fd3ff', '#7ce07a', '#ffffff', '#c58bff'];
-        for (let i = 0; i < 26; i++) { const u = rnd(-1, 1), a = rnd(0, TAU2), s = Math.sqrt(1 - u * u); add(geo('spr', () => new THREE.CapsuleGeometry(0.02, 0.07, 2, 6)), mat('spr' + (i % 5), { color: cs[i % 5], roughness: 0.4 }), [s * Math.cos(a) * 0.76, u * 0.76, s * Math.sin(a) * 0.76], 1, [rnd(0, 3), rnd(0, 3), 0]); }
+      case 'top': {   // dondurma kralının yuvarlanan topu (çilekli, renkli şekerli) — tek birleşik örgü (tek çizim)
+        const g2 = geo('topK', () => {
+          const k = new Kit(), cs = ['#ffe14a', '#5fd3ff', '#7ce07a', '#ffffff', '#c58bff'];
+          k.add(new THREE.IcosahedronGeometry(1, 4), '#ffb3cf', null, null, 0.75);
+          for (let i = 0; i < 30; i++) { const u = (i / 30) * 2 - 1 + 0.03, a = i * 2.39996, s = Math.sqrt(Math.max(0, 1 - u * u)); k.add(G.sphere(6, 4), cs[i % 5], [s * Math.cos(a) * 0.75, u * 0.75, s * Math.sin(a) * 0.75], [i, a, 0], [0.025, 0.065, 0.025]); }
+          return k.build();
+        });
+        add(g2, mat('topK', { vertexColors: true, roughness: 0.55, emissive: '#ff6a9a', emissiveIntensity: 0.06 }), null, 1);
         break;
       }
       case 'buhar': case 'toz': {   // yumuşak bulut (buhar: beyaz-mavi, toz: bej-lila)
@@ -106,7 +110,13 @@ const BOSSDAV = (() => {
     scene.add(o); return o;
   }
   function putProp(o) { if (!o) return; o.userData.used = false; o.visible = false; if (o.parent) o.parent.remove(o); }
-  function warmProps() { for (const k of ['mercimek', 'nohut', 'cilek', 'kartopu', 'krema', 'top', 'buhar', 'toz', 'dalga', 'buz']) { const o = getProp(k); putProp(o); } }
+  // Isınma: her eşya bir kez yerin altında görünür çizilir (malzeme gölgelendiricisi ilk saldırıda takılmadan derlenmiş olur)
+  const WARM = [];
+  function warmProps() {
+    for (const k of ['mercimek', 'nohut', 'cilek', 'kartopu', 'krema', 'top', 'buhar', 'toz', 'dalga', 'buz', 'un', 'yumurta', 'cilekOdul', 'kremaKase']) {
+      const o = getProp(k); o.position.set(0, -60, 0); o.frustumCulled = false; o.traverse(c => { c.frustumCulled = false; }); WARM.push(o);
+    }
+  }
 
   // ════════ Etkin hamle nesneleri (BOSSDAV.update yürütür) ════════
   const W = { drops: [], rollers: [], sweeps: [], clouds: [], strips: [], fests: [], boss: null };
@@ -641,8 +651,10 @@ const BOSSDAV = (() => {
     return amount;
   }
 
+  let warmN = 0;
   function update(dt) {
     if (!A) return;
+    if (WARM.length && ++warmN > 3) { for (const o of WARM) { o.traverse(c => { c.frustumCulled = true; }); putProp(o); } WARM.length = 0; }
     stepDrops(dt); stepRollers(dt); stepSweeps(dt); stepClouds(dt); stepStrips(dt); stepFests(dt);
     if (W.marks && W.marks.length > 40) W.marks.splice(0, W.marks.length - 40);
   }
