@@ -2392,6 +2392,7 @@ const GAME = (() => {
   function encounterStep(b, dt) {
     if (!b.encounter) startEncounter(b);
     const q = b.encounter;
+    if (b.kit.own) return false;   // (Dev Ev bossları: kendi hamleleri BOSSDAV'da)
     if (isT(b.type, 'ejderha')) {
       q.eggT -= dt;
       if (q.eggT <= 0) { q.eggT += ENCOUNTER.eggEvery; layEggs(b, 1); }
@@ -4443,6 +4444,7 @@ const GAME = (() => {
     // scripted 5 % hit. Check the phase too: the bonus state is cleared one update after a stun finishes.
     if (!hard && !o.force && o.kind !== 'heart' && Q && Q.state === 'stun' && Q.stunPh && e.ph === Q.stunPh) amount *= DIFF.normal.bonusHit;
     amount = Math.round(amount || 0);
+    if (e.boss && e.kit && e.kit.own && typeof BOSSDAV !== 'undefined' && BOSSDAV.hit) { try { amount = BOSSDAV.hit(e, amount, o); } catch (err) { warnOnce('BOSSDAV.hit', err); } }
     if (amount > 0) {
       // A lightsaber hit glows in its colour. A boss is hit all the time up close: its flash is softer, shorter and warm
       // (a full white flash on every swing turned the brown mole / the turtle's shell grey-white for a third of the fight).
@@ -5066,6 +5068,7 @@ const GAME = (() => {
       Math.abs(angDiff(C.swingFace !== null ? C.swingFace : P.face, Math.atan2(mx, mz))) > T.fleeArc;
     if (C.swing && !wandFlee) want *= C.swing.magic ? 0.7 : 0.22;
     if (P.spin > 0) want *= 0.85;
+    if (P.slowT > 0) { P.slowT -= dt; want *= P.slowK || 0.6; }   // (Dev Ev: düdüklü tencerenin buhar bulutu yavaşlatır, BOSSDAV)
     if (want > 0.01) { C.mdx = mx; C.mdz = mz; if (face === null && !C.swing) face = Math.atan2(mx, mz); }
     C.vel = damp(C.vel, want, want > C.vel ? 12 : 18, dt);
     if (C.vel > 0.01) {
@@ -6631,6 +6634,7 @@ const GAME = (() => {
     }
     updateProjectiles(dt);
     updateMortars(dt);
+    if (typeof BOSSDAV !== 'undefined' && BOSSDAV && BOSSDAV.update) { try { BOSSDAV.update(dt); } catch (err) { warnOnce('BOSSDAV.update', err); } }   // (Dev Ev boss hamleleri + kutlama)
     updateCoins(dt);
     updateLoot(dt);
     updateCrystal(dt);
@@ -6705,6 +6709,15 @@ const GAME = (() => {
     delete defCache[id];
   }
   if (typeof HUYSUZ !== 'undefined' && HUYSUZ && HUYSUZ.each) HUYSUZ.each((id, d) => { try { aliasType(id, d); } catch (err) { warnOnce('alias ' + id, err); } });
+  // Dev Ev bossları kendi hamle düzenleriyle (src/05c_boss_davranis.js, BOSSDAV; bossKit.own: eski RAID hamleleri onlara uğramaz)
+  if (typeof BOSSDAV !== 'undefined' && BOSSDAV && BOSSDAV.install) {
+    try {
+      BOSSDAV.install({ P, T, get gt() { return gt; }, get hard() { return hard; }, get L() { return L; }, enemies, bossRoom, inRoom, bossSpot, approachSpot,
+        bossWalk, bossPhase, bossEnd, bossIdle, bossRoar, bossSummon, pickPhase, bossRing, hurtPlayer, moveXZ, circleFree, isFloor, los, burst, sfx, say,
+        hasLine, ftext, shake, fx, remove, removeObj, muzzle, summonAdds, damage, emit, on, telegraphLine, laneLen, emitP, later, heal });
+      for (const id of BOSSDAV.types()) BOSS_AI[id] = BOSSDAV.step;
+    } catch (err) { warnOnce('BOSSDAV', err); }
+  }
 
   function hala(fn, a, b, c) {
     if (typeof HALA === 'undefined' || !HALA || typeof HALA[fn] !== 'function') return undefined;
