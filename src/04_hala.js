@@ -1475,7 +1475,6 @@ const HALA = (() => {
     if (!fight && S.cd.love <= 0 && fmoved > 0.01) { S.cd.love = 150 + Math.random() * 120; if (Math.random() < 0.5) say('hala_yaninda', 1); }
   }
   function startThrow(e, ctx) {
-    faceTo(e.x, e.z, 1, 1e3);
     S.cd.throw = (e.boss ? 6.5 : 4.2) + Math.random() * 2.5;
     const a = startAct('throw', { dur: 1.05, e, thrown: false });
     if (S.held) S.held.visible = true;
@@ -1753,7 +1752,9 @@ const HALA = (() => {
   function teamMove(o) {
     if (!teamReady() || !S.ctx) return false;
     api.charge = 0;
-    const P = S.ctx.P, s = S.x < P.pos.x ? -1 : 1;
+    const P = S.ctx.P, A = S.ctx.api;
+    let s = S.x < P.pos.x ? -1 : 1;
+    if (!free(A, P.pos.x + 0.98 * s, P.pos.z) && free(A, P.pos.x - 0.98 * s, P.pos.z)) s = -s;   // duvar tarafına değil
     startAct('team', { s, air: 0.72, blast: o && o.blast, look: false });
     sayVar('takim', 3);
     S.ctx.api.shield(1.6);
