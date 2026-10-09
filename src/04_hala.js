@@ -907,7 +907,7 @@ const HALA = (() => {
   const PIES = [];
   function throwPie(x0, y0, z0, e) {
     let p = PIES.find(q => !q.on);
-    if (!p) { if (PIES.length >= 4) return; const m = new THREE.Mesh(pieGeo(), pieMat()); m.castShadow = true; scene.add(m); p = { m }; PIES.push(p); }
+    if (!p) { if (PIES.length >= 4) return; const m = new THREE.Mesh(pieGeo(), pieMat()); m.castShadow = true; m.scale.setScalar(1.6); scene.add(m); p = { m }; PIES.push(p); }
     if (!p.m.parent) scene.add(p.m);
     const tx = e.x, tz = e.z, d = Math.hypot(tx - x0, tz - z0);
     Object.assign(p, { on: true, t: 0, dur: clamp(0.45 + d * 0.055, 0.5, 0.95), x0, y0, z0, x1: tx, z1: tz, y1: Math.min(0.9, (e.height || 1) * 0.6), h: 1.1 + d * 0.12, e, spin: frand(-12, 12) });
@@ -919,6 +919,8 @@ const HALA = (() => {
       p.t += dt; const u = Math.min(1, p.t / p.dur);
       p.m.position.set(lerp(p.x0, p.x1, u), lerp(p.y0, p.y1, u) + p.h * 4 * u * (1 - u), lerp(p.z0, p.z1, u));
       p.m.rotation.set(p.t * p.spin * 0.6, p.t * 3, p.t * p.spin);
+      p.tr = (p.tr || 0) - dt;
+      if (p.tr <= 0 && S.ctx && S.ctx.api) { p.tr = 0.06; S.ctx.api.burst('sparkle', p.m.position.x, p.m.position.y, p.m.position.z, { color: '#ffc2dc', count: 2 }); }
       if (u >= 1) { p.on = false; p.m.visible = false; pieSplat(p); }
     }
   }
@@ -1706,7 +1708,7 @@ const HALA = (() => {
       else if (k === 'team') { api.charge = 1; teamMove({ blast: S.ctx.api && GAME.teamBlast }); }
       else if (k === 'point') startPoint(o.x ?? S.x + 5, o.z ?? S.z - 3, null);
       else if (k === 'shield') startShield(S.ctx);
-      else if (k === 'throw') { const e = (S.ctx.enemies || []).find(e => e && !e.dead); if (e) startThrow(e, S.ctx); }
+      else if (k === 'throw') { let e = null, bd = 1e9; for (const q of S.ctx.enemies || []) { const d = q && !q.dead ? Math.hypot(q.x - S.x, q.z - S.z) : 1e9; if (d < bd) { bd = d; e = q; } } if (e) startThrow(e, S.ctx); }
       else if (k === 'boost') boost(o.x, o.z, o);
       else startAct(k, Object.assign({ dur: 3 }, o));
       return true;
@@ -1717,5 +1719,5 @@ const HALA = (() => {
 
   Object.defineProperty(api, 'busy', { get: () => (S.act ? S.act.k : null), enumerable: true });   // şu anki eylem (yoksa null)
   return Object.assign(api, { create, update, onFezaHurt, onFezaLow, onFezaDown, onCheer, teamReady, teamMove, pointTo, say, boost, dance, cheer, portrait,
-    _S: S, _M: M, _qa });
+    _S: S, _M: M, _qa, _pies: PIES });
 })();
