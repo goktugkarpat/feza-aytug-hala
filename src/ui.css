@@ -1074,3 +1074,6 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .his-rain i.c { width: calc(var(--k) * 18px); height: calc(var(--k) * 18px); border-radius: 50%; }
 .his-rain.on i { animation-name: hisRain; animation-timing-function: cubic-bezier(.3, .2, .7, 1); animation-fill-mode: both; }
 @keyframes hisRain { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 85% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x), 112vh) rotate(var(--r)); } }
+/* Büyük vuruş düğmesi: takılı ev eşyasının resmi */
+.u-atk .u-atkimg { position: absolute; inset: 9%; width: 82%; height: 82%; object-fit: contain; pointer-events: none; filter: drop-shadow(0 calc(var(--k) * 4px) calc(var(--k) * 3px) #0006); transform: rotate(-8deg); }
+.u-atk.off .u-atkimg { filter: grayscale(0.6) brightness(0.8); }

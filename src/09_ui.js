@@ -1596,7 +1596,7 @@ const UI = (() => {
   function bladeTick(P) {
     const wizard = P.heroClass === 'wizard', hybrid = P.heroClass === 'hybrid';
     if (last.heroClass !== P.heroClass) {
-      last.heroClass = P.heroClass; D.atk.innerHTML = FEZA_LANG.html(wizard ? '<span class="u-wandico">🪄</span>' : hybrid ? SVG.sword + '<span class="u-offhandico">🪄</span>' : SVG.sword);
+      last.heroClass = P.heroClass; last.atkImg = null; D.atk.innerHTML = FEZA_LANG.html(wizard ? '<span class="u-wandico">🪄</span>' : hybrid ? SVG.sword + '<span class="u-offhandico">🪄</span>' : SVG.sword);
       D.atkBlade = D.atk.querySelector('.u-blade');
       D.atk.setAttribute('aria-label', FEZA_LANG.t(wizard ? 'Büyü at' : hybrid ? 'Yakında kılıçla vur, uzakta büyü at' : 'Kılıçla vur'));
     }
@@ -1607,7 +1607,12 @@ const UI = (() => {
     if (col !== last.blade) { last.blade = col; D.atk.style.setProperty('--blade', col); }
     const uid = w ? (w.uid != null ? w.uid : w) : null, off = !!P.dead;
     if (off !== last.bladeOff) { last.bladeOff = off; D.atk.classList.toggle('off', off); if (!off && last.bladeUid !== undefined) igniteIcon(); }
-    if (uid !== last.bladeUid) { const first = last.bladeUid === undefined; last.bladeUid = uid; if (!first && !off) igniteIcon(); }
+    if (uid !== last.bladeUid) { const first = last.bladeUid === undefined; last.bladeUid = uid; last.atkImg = null; if (!first && !off) igniteIcon(); }
+    // Dev Ev: büyük vuruş düğmesinde takılı ev eşyasının resmi (kaşık, oklava, spatula, çatal…; ITEMS.thumb hazır olana dek eski simge)
+    if (w && last.atkImg !== uid && I && typeof I.thumb === 'function' && S.frame % 15 === 0) {
+      const url = safe('ITEMS.thumb', () => I.thumb(w));
+      if (url) { last.atkImg = uid; D.atk.innerHTML = `<img class="u-atkimg" src="${url}" alt="">` + (hybrid ? '<span class="u-offhandico">🪄</span>' : ''); D.atkBlade = null; last.heroClass = P.heroClass; }
+    }
   }
   function igniteIcon() {
     const b = D.atkBlade;
