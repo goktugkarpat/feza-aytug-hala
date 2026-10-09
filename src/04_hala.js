@@ -1358,6 +1358,7 @@ const HALA = (() => {
     // çok uzak ya da sıkıştı: Feza'nın yanına ışınlan (kalpli parıltıyla)
     if (dF > 15 || (S.stuck > 1.6 && dF > 2.5)) teleportNear(A, P, S.side * 1.15, -0.65);
     piesStep(dt);
+    S.mode = S.act ? S.act.k : 'follow';
     animate(dt);
     S.root.position.set(S.x, S.y, S.z); S.root.rotation.y = S.face;
   }
@@ -1573,6 +1574,11 @@ const HALA = (() => {
         S.vel = damp(S.vel, 0, 8, dt);
         if (a.t < 0.3) faceTo(S.x, S.z + 5, dt, 6);
         if (Math.floor(a.t * 1.3) !== Math.floor((a.t - dt) * 1.3)) A.burst('notes', S.x, 2.1, S.z, { count: 2 });
+        // yanında duran Feza da kollarını sallayarak katılır
+        if (ctx.H && Math.hypot(P.pos.x - S.x, P.pos.z - S.z) < 3.5 && Math.hypot(S.fvx, S.fvz) < 0.3) {
+          const w = bump(a.t / a.dur, 0, 0.1, 0.9, 1), sw = Math.sin(a.t * 5.2);
+          fezaArms(ctx.H, w, -2.5 + 0.25 * sw, 0, 0.45 + 0.25 * sw, -0.4 - 0.3 * Math.max(0, sw), 0);
+        }
         if (a.t >= a.dur || (ctx.state === 'play' && Math.hypot(P.pos.x - S.x, P.pos.z - S.z) > 7)) endAct();
         break;
       }
