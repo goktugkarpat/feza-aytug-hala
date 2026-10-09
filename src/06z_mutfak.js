@@ -175,7 +175,7 @@ const MUTFAK = (() => {
       if (!a) return; const rm = R(a.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r * 0.8, hint: false, line, prio: 1, use() {} });
     });
     if (a1) { const rm = R(a1.rooms[1] ?? a1.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r, hint: false, line: 'mut_tezgah_gir', prio: 1, use() {} }); }
-    K.edge(L, api, (x, z) => (inRect(stoveQ, x, z) ? 0x8a8e98 : inRect(cupQ, x, z) ? 0xe2c9a2 : inRect(sinkQ, x, z) ? 0xb8c2cc : 0xe6d6bc), 0.1);
+    K.edge(L, api, (x, z) => (inRect(stoveQ, x, z) ? 0xc9bfa8 : inRect(cupQ, x, z) ? 0xe2c9a2 : inRect(sinkQ, x, z) ? 0xb8c2cc : 0xe6d6bc), 0.1);
   }
 
   const sinkQ0 = L => (L.areas && L.areas[1] ? K.bbox(L, L.areas[1].rooms, 5) : null), cupQ0 = L => (L.areas && L.areas[2] ? K.bbox(L, L.areas[2].rooms, 4) : null);
@@ -238,7 +238,7 @@ const MUTFAK = (() => {
       T.add({ x: lane.x0, z: lane.z0, r: 1.5, hint: { y: 1.8 }, line: 'mut_tereyag_ipucu', near: 8, cd: 2, repeat: true,
         use: (TT) => {
           TT.ride({ pts: [[lane.x0, lane.z0], [lane.x1, lane.z1]], speed: 9, y: u => 0.16 + Math.sin(u * Math.PI) * 0.25,
-            tick: (u, x, z) => { if (Math.random() < 0.5) K.burst('sparkle', x, 0.3, z, { color: '#ffe27a' }); },
+            tick: (u, x, z, dt) => { if (Math.random() < dt * 12) K.burst('sparkle', x, 0.3, z, { color: '#ffe27a' }); },
             end: () => { K.burst('confetti', lane.x1, 1, lane.z1); K.sugar(lane.x1, lane.z1, 6, 4); } });
           K.sfx('whoosh', { x: lane.x0, z: lane.z0 }); K.say('mut_tereyag'); K.sticker('mutfak_tereyag');
         } });
@@ -251,7 +251,7 @@ const MUTFAK = (() => {
         use: (TT) => {
           const tx = fs.inX - Math.sin(fs.a) * 4, tz = fs.inZ - Math.cos(fs.a) * 4;
           TT.ride({ pts: [[fs.x, fs.z], [tx, tz]], speed: 6.5, y: u => 2.3 * (1 - u) * (1 - u) + Math.sin(u * Math.PI) * 0.4,
-            tick: (u, x, z) => { if (Math.random() < 0.6) K.burst('smoke', x, 0.4, z, { color: '#ffffff' }); },
+            tick: (u, x, z, dt) => { if (Math.random() < dt * 5) K.burst('smoke', x, 0.4, z, { color: '#ffffff' }); },
             end: () => { K.burst('smoke', tx, 0.5, tz, { color: '#ffffff' }); K.sfx('whoosh', { x: tx, z: tz, pitch: 0.8 }); K.sugar(tx, tz, 6, 4); } });
           K.sfx('whoosh', { x: fs.x, z: fs.z, pitch: 1.2 }); K.say('mut_un'); K.sticker('mutfak_un');
         } });
@@ -294,7 +294,7 @@ const MUTFAK = (() => {
     api.box(sx, 0.35, sz - HD - 0.4, HW * 2 + 1.6, 0.7, 0.8, steel); api.box(sx, 0.22, sz + HD + 0.4, HW * 2 + 1.6, 0.44, 0.8, steel);
     for (const s of [-1, 1]) api.box(sx + s * (HW + 0.4), 0.35, sz, 0.8, 0.7, HD * 2, steel);
     const wg = new THREE.PlaneGeometry(HW * 2, HD * 2, 36, 22); wg.rotateX(-Math.PI / 2); api.dispose(wg);
-    const wm = new THREE.MeshStandardMaterial({ color: 0x8fd0ee, roughness: 0.06, metalness: 0.1, transparent: true, opacity: 0.86 }); api.dispose(wm);
+    const wm = new THREE.MeshStandardMaterial({ color: 0x5fb6e4, roughness: 0.04, metalness: 0.15, transparent: true, opacity: 0.82 }); api.dispose(wm);
     wm.onBeforeCompile = sh => { sh.uniforms.uT = TIME.u; sh.vertexShader = 'uniform float uT;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.y += sin(position.x * 0.9 + uT * 1.6) * 0.05 + sin(position.z * 1.3 - uT * 1.2) * 0.04;')
       .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nobjectNormal = normalize(vec3(-cos(position.x * 0.9 + uT * 1.6) * 0.045, 1.0, -cos(position.z * 1.3 - uT * 1.2) * 0.052));'); };
     wm.customProgramCacheKey = () => 'mk-water';

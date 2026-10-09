@@ -283,7 +283,7 @@ const OTURMA = (() => {
     if (!rooms.length) return;
     const north = rooms.slice().sort((p, q) => L.rooms[p].z - L.rooms[q].z)[0], rm = L.rooms[north];
     // TV ünitesi: alçak siyah dolap (bölmelerinde kitaplar, video kasetleri), üstünde dev TV
-    const W = 15, D = 4.2, H = 2.6;
+    const W = 15, D = 4.2, H = 2.2;
     const p = K.northOf(L, rm.x, rm.z - rm.r - D / 2 - 0.3, W / 2, D / 2, 0.4, 16);
     let tv = null;
     if (p) {
@@ -317,6 +317,14 @@ const OTURMA = (() => {
       const pw = K.mesh(api, powerGeo(), q.x + Math.sin(0.15) * -0.95, 0.46, q.z - Math.cos(0.15) * 0.95, 0.35, false);
       api.solid(q.x, q.z + 0.8, 0.7); api.solid(q.x, q.z - 0.8, 0.7);
       const lt = { x: cx, y: 3.5, z: fz + 4, col: new THREE.Color(0xffffff), int: 0, dist: 18, fl: 0, ph: 0 }; api.B.lights.push(lt);
+      // TV açıkken önündeki parkeye renkli ışık havuzu (yukarıdan bakınca da görünsün)
+      const gc = document.createElement('canvas'); gc.width = gc.height = 128; const gx = gc.getContext('2d'), gr = gx.createRadialGradient(64, 64, 4, 64, 64, 64);
+      gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); gx.fillStyle = gr; gx.fillRect(0, 0, 128, 128);
+      const gt = new THREE.CanvasTexture(gc); api.dispose(gt);
+      const gm = new THREE.MeshBasicMaterial({ map: gt, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0, fog: false }); api.dispose(gm);
+      const pool = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), gm); pool.rotation.x = -Math.PI / 2; pool.scale.set(18, 11, 1); pool.position.set(cx, 0.08, fz + 4.2); pool.renderOrder = 3; api.add(pool); api.dispose(pool.geometry);
+      // kitap basamakları: dolabın yanından üstüne çıkan dev kitap merdiveni
+      for (let st = 0; st < 4; st++) { const bx = cx + W / 2 + 1.4 + st * 0.15, bz = cz + D / 2 + 1.6 - st * 1.0, th = 0.55; for (let l = 0; l <= st; l++) { if (K.isF(L, bx, bz)) break; api.put(bookGeo(st + l * 3), bx, l * th + th / 2, bz, th, 3.2, 2.2, null, Math.PI / 2 + (l % 2 ? 0.06 : -0.04), 0, Math.PI / 2); } }
       let on = 0, press = 0;
       T.add({ x: q.x, z: q.z, r: 2.3, hint: { y: 1.6 }, line: 'oda_kumanda_ipucu', near: 8, cd: 4, repeat: true,
         can: () => on <= 0,
@@ -327,11 +335,12 @@ const OTURMA = (() => {
           if (on > 0) {
             on -= dt; tv.tick(dt);
             lt.int = 5.5 * Math.min(1, on, (14 - on) * 2); lt.col.setHSL((t * 0.15) % 1, 0.75, 0.6);
+            gm.opacity = 0.55 * Math.min(1, on, (14 - on) * 2); gm.color.setHSL((t * 0.15) % 1, 0.8, 0.55);
             if (Math.floor(on * 2) !== Math.floor((on + dt) * 2)) {   // çizgi film ekrandan taşıyor: yıldız, kalp, konfeti
               const a = Math.random() * TAU, d = 2 + Math.random() * 5;
               K.burst(Math.random() < 0.5 ? 'star' : 'confetti', hx + Math.sin(a) * d, 2.5 + Math.random() * 2, hz + Math.cos(a) * d * 0.6);
             }
-            if (on <= 0) { tv.on(false); lt.int = 0; K.say('oda_tv_kapa', 1); }
+            if (on <= 0) { tv.on(false); lt.int = 0; gm.opacity = 0; K.say('oda_tv_kapa', 1); }
           }
         } });
     }
@@ -495,6 +504,20 @@ const OTURMA = (() => {
       (x, z, y) => api.put(dustGeo(), x, 0.05, z, 1.1, 1.1, 1.1, null, y),
     ];
     K.fill(L, rnd, all, (x, z, maxH, fd, k) => { if (maxH > 0.9 || k % 6 === 3) lost[k % lost.length](x, z, rnd() * TAU); else api.put(crayonGeo(k), x, 0.26, z, 1, 1, 1, null, rnd() * TAU); }, { skip: occ, step: 2.5, margin: 6 });
+    // koltuğun altında sıcak ışıkta süzülen toz zerrecikleri (ışıl ışıl, yavaş)
+    {
+      const n = 60, g = new THREE.SphereGeometry(1, 6, 4); api.dispose(g);
+      const mm = new THREE.MeshBasicMaterial({ color: 0xffe2b0, transparent: true, opacity: 0.75, depthWrite: false, fog: false }); api.dispose(mm);
+      const im = new THREE.InstancedMesh(g, mm, n); im.frustumCulled = false; api.add(im);
+      const ps = [], m4 = new THREE.Matrix4(), v = new THREE.Vector3(), q = new THREE.Quaternion(), sc = new THREE.Vector3();
+      for (let i = 0; i < n; i++) { const r0 = L.rooms[all[i % all.length]], a = rnd() * TAU, d = Math.sqrt(rnd()) * r0.r; ps.push({ x: r0.x + Math.sin(a) * d, y: 0.4 + rnd() * 3.2, z: r0.z + Math.cos(a) * d, ph: rnd() * 10, s: 0.03 + rnd() * 0.05 }); }
+      api.anim((dt, hx, hz) => {
+        if (Math.abs(hx - (sofa.x0 + sofa.x1) / 2) > (sofa.x1 - sofa.x0) / 2 + 20 || Math.abs(hz - (sofa.z0 + sofa.z1) / 2) > (sofa.z1 - sofa.z0) / 2 + 20) { im.visible = false; return; }
+        im.visible = true; const t = TIME.t;
+        for (let i = 0; i < n; i++) { const p = ps[i]; v.set(p.x + Math.sin(t * 0.3 + p.ph) * 0.8, p.y + Math.sin(t * 0.5 + p.ph * 2) * 0.4, p.z + Math.cos(t * 0.25 + p.ph) * 0.6); const k = p.s * (0.7 + 0.3 * Math.sin(t * 2 + p.ph)); sc.set(k, k, k); m4.compose(v, q, sc); im.setMatrixAt(i, m4); }
+        im.instanceMatrix.needsUpdate = true;
+      });
+    }
     // vazo (koltuğun yanında) + uçuşan yapraklar
     const vr = L.rooms[rooms[0]], vp = K.northOf(L, vr.x + vr.r * 0.4, vr.z - vr.r - 2.4, 2, 2, 0.5, 10);
     if (vp) {

@@ -105,11 +105,11 @@ const ODAKIT = (() => {
       out[0] = 0xf4 * s; out[1] = 0xea * s; out[2] = 0xda * s;
     });
   }
-  // Ocak üstü: koyu antrasit emaye, ince parıltı, 6 m
+  // Ocak üstü: retro krem emaye (benekli, parlak), 6 m
   function stove() {
     return makeTex('stove', 512, (u, v, out) => {
-      const h = hash(Math.floor(u * 512), Math.floor(v * 512)), s = 0.9 + 0.1 * Math.sin(u * TAU * 2 + Math.sin(v * TAU) * 2) + (h > 0.995 ? 0.6 : 0);
-      out[0] = 0x58 * s; out[1] = 0x5c * s; out[2] = 0x66 * s;
+      const h = hash(Math.floor(u * 512), Math.floor(v * 512)), s = 0.96 + 0.04 * Math.sin(u * TAU * 2 + Math.sin(v * TAU) * 2) - (h > 0.993 ? 0.12 : 0);
+      out[0] = 0xf1 * s; out[1] = 0xe9 * s; out[2] = 0xd6 * s;
     });
   }
   // Kesme tahtası: sıcak kayın, enine şeritler + bıçak çizikleri, 6 m
