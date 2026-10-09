@@ -140,8 +140,8 @@
       }
       case 'nap': {   // horlama: öne eğilir, gözler kapalı, şapka gözüne düşer, gövde horlar gibi şişip iner
         const k = smooth01(s.pT / 0.5), sn = Math.sin(s.pT * 2.4);
-        s.eyeK = lerp(s.eyeK, 0.08, k); rx += 0.12 * k; sy *= 1 + 0.05 * sn * k; sxz *= 1 - 0.02 * sn * k; capR += 0.35 * k; tipR += 0.2 * k + 0.08 * sn;
-        hY += 0.25 * k; wX += 0.3 * k; s.mouthO = Math.max(0, sn) * 0.5 * k; y -= 0.05 * k;
+        s.eyeK = lerp(s.eyeK, 0.03, k); rx += 0.12 * k; sy *= 1 + 0.05 * sn * k; sxz *= 1 - 0.02 * sn * k; capR += 0.35 * k; tipR += 0.2 * k + 0.08 * sn;
+        hY += 0.15 * k; wX += 0.1 * k; nX -= 0.1 * k; s.mouthO = Math.max(0, sn) * 0.5 * k; y -= 0.05 * k;
         break;
       }
       case 'summon': {   // toz tavşanlarını çağırır: kalkar-iner, şapka sallanır
@@ -188,7 +188,7 @@
     r.fx(0, 0.8);
     for (let i = 0; i < 26; i++) {   // puantiye (yüzün olduğu ön kısım boş)
       const a = i * 2.39996 + 0.4, y = 0.62 + ((i * 0.618) % 1) * 1.05, aa = Math.atan2(Math.sin(a), Math.cos(a));
-      if (Math.abs(aa) < 1.3) continue;
+      if (Math.abs(aa) < 1.8) continue;
       const rr = profR('tenPot', POT_P)(y) + 0.005;
       r.add(G.sphere(12, 8), '#fff6f0', [Math.sin(a) * rr, y, Math.cos(a) * rr], qz(Math.sin(a), 0, Math.cos(a)), [0.11, 0.11, 0.025]);
     }
@@ -208,7 +208,8 @@
     }
     // kapak: hafif kubbe, kenar halkası, arkaya uzanan sap, kırmızı emniyet düğmesi
     r.on('lid').fx(0, 1);
-    r.add(lathe('tenLid', LID_P, 56, 4), vgrad(1.85, 2.16, [[0, TEN.steelD], [1, TEN.steelL]]));
+    r.add(lathe('tenLid', LID_P, 56, 4), vgrad(1.85, 2.16, [[0, TEN.steelD], [0.6, TEN.steel], [1, mixc(TEN.steel, TEN.steelL, 0.4)]]));
+    r.fx(0, 0.4).add(G.torus(PI * 2, 0.08, 40), '#3a3f52', [0, 2.13, 0], [PI / 2, 0, 0], [0.42, 0.42, 0.6]);
     r.add(G.torus(PI * 2, 0.06, 56), TEN.steelD, [0, 1.9, 0], [PI / 2, 0, 0], [1.33, 1.33, 0.8]);
     r.fx(0, 0.6).add(G.capsule(1, 12), TEN.handle, [0, 2.06, -1.35], [PI / 2 - 0.1, 0, 0], [0.12, 0.65, 0.1]);
     r.add(G.sphere(14, 10), TEN.knob, [0, 2.12, -2.0], null, 0.15);
