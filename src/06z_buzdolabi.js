@@ -645,6 +645,19 @@ const ODAB = (() => {
     }
     // zemine serpiştirilmiş kırağı kristalleri ve minik buz parçaları
     for (const f of O.floorSpots(L, api, 50, { avoid })) frost(B, f.x, f.z, rnd);
+    // ── Cam raf bölmeleri: Raf Buzulları odalarının kuzeyinde, şişelerin arkasında dikey cam paneller ──
+    for (const ri of ((L.areas || [])[0] || { rooms: [] }).rooms) {
+      const rm = L.rooms[ri]; if (!rm || rm.kind === 'side') continue;
+      const e = O.edge(api, rm, 0, -1), x = e.x, z = e.z - 4.6, w = 7;
+      let ok = true;
+      for (let q = -3; q <= 3 && ok; q++) for (const dz of [-0.6, 0, 0.6]) if (api.isFloor(x + q * w / 6, z + dz)) { ok = false; break; }
+      if (!ok) continue;
+      B.add('glass', G.box(), C(0xe4f6ff), [x, 3.2, z], null, [w, 6.4, 0.16]);
+      B.add('gloss', G.rbox(2), C(0xffffff), [x, 6.45, z], null, [w + 0.3, 0.3, 0.4]);
+      for (const sd of [-1, 1]) B.add('gloss', G.rbox(2), C(0xf2f6fa), [x + sd * (w / 2 + 0.1), 3.2, z], null, [0.3, 6.5, 0.4]);
+      B.add('glow', G.box(), C(0xffffff, 1.2), [x - w * 0.3, 3.4, z + 0.09], [0, 0, 0.35], [0.12, 5.2, 0.01]);
+      B.add('glow', G.box(), C(0xffffff, 1.0), [x - w * 0.22, 3.2, z + 0.09], [0, 0, 0.35], [0.05, 4.4, 0.01]);
+    }
     // ── Geçitler: buz kemerleri ──
     (L.areas || []).forEach((a, k) => { if (k && a.gate) (a.boss ? freezerDoor : iceArch)(B, api, L, k); });
     // ── Buz pistleri ──
@@ -696,6 +709,7 @@ const ODAB = (() => {
     B.add('candy', G.cyl(1, 1, 16), cap, [x, Hh * 1.02, z], null, [r * 0.5, Hh * 0.05, r * 0.5]);
     B.add('candy', G.torus(TAU, 0.3, 16), cap, [x, Hh * 0.995, z], [PI / 2, 0, 0], [r * 0.48, r * 0.48, r * 0.48]);
     B.add('gloss', G.cyl(1, 1, 18, true), C(0xffffff), [x, Hh * 0.38, z], null, [r * 1.02, Hh * 0.22, r * 1.02]);
+    for (const [a, w, hk] of [[-0.75, 0.09, 0.62], [-0.45, 0.04, 0.4]]) B.add('glow', G.box(), C(0xffffff, 1.25), [x + Math.sin(a) * r * 1.01, Hh * 0.5, z + Math.cos(a) * r * 1.01], [0, a, 0], [w * s * 2, Hh * hk, 0.02]);
     for (let k = 0; k < 5; k++) {   // inek benekleri
       const a = k * 1.3 + rnd(), yy = Hh * (0.31 + (k % 3) * 0.05);
       B.add('gloss', G.sphere(8, 6), C(0x2a2a30), [x + Math.sin(a) * r * 1.03, yy, z + Math.cos(a) * r * 1.03], [0, a, 0], [0.22 * s, 0.16 * s, 0.05 * s]);
@@ -711,6 +725,9 @@ const ODAB = (() => {
     B.add('gold', G.cyl(1, 1, 18), C(0xe8eef6), [x, h + 0.03, z], [0.08, 0, 0.06], [r * 1.0, 0.04, r * 1.0]);
     B.add('gold', G.box(), C(0xdfe8f2), [x + r * 0.7, h + 0.25, z + r * 0.45], [0.2, 0.6, -0.9], [0.5 * s, 0.03, 0.4 * s]);
     if (rnd() < 0.6) strawberry(B, x - r * 0.2, h + 0.3 * s, z, 0.42 * s, rnd);
+    { const hc = C(0xff6f9a), zf = z + r * 0.93, yy = h * 0.56;   // etiketteki kalp
+      for (const sd of [-1, 1]) B.add('candy', G.sphere(8, 6), hc, [x + sd * 0.11 * s, yy + 0.06 * s, zf], null, [0.14 * s, 0.14 * s, 0.05 * s]);
+      B.add('candy', G.cone(4), hc, [x, yy - 0.1 * s, zf], [PI, PI / 4, 0], [0.19 * s, 0.22 * s, 0.07 * s]); }
   }
   function strawberry(B, x, y, z, s, rnd) {
     B.add('candy', G.sphere(12, 9), C(0xff3b5c), [x, y, z], [PI, 0, 0], [s * 0.85, s, s * 0.85]);
@@ -759,6 +776,9 @@ const ODAB = (() => {
     B.add('gloss', G.rbox(2), C(0xffffff), [x, 2.9 * s, z], [0, 0, 0.08], [2.2 * s, 0.35 * s, 0.85 * s]);
     for (let k = 0; k < 5; k++) B.add('candy', G.sphere(8, 6), C(0x8ad86a), [x - 0.6 * s + k * 0.3 * s, 1.4 * s + (k % 2) * 0.25 * s, z + 0.48 * s], null, [0.18 * s, 0.18 * s, 0.1 * s]);
     B.add('snow', G.sphere(10, 7), C(0xf4fbff), [x, 3.15 * s, z], null, [1.1 * s, 0.25 * s, 0.5 * s]);
+    B.add('gloss', G.cyl(1, 1, 18), C(0xffffff), [x, 2.05 * s, z + 0.46 * s], [PI / 2, 0, 0], [0.75 * s, 0.04, 0.55 * s]);
+    B.add('candy', G.sphere(10, 7), C(0x5cb84a), [x, 2.05 * s, z + 0.5 * s], [0, 0, 0.3], [0.55 * s, 0.17 * s, 0.08 * s]);
+    for (let k = 0; k < 3; k++) B.add('candy', G.sphere(8, 6), C(0x9ae07a), [x - 0.25 * s + k * 0.25 * s, 2.05 * s + (k - 1) * 0.075 * s, z + 0.56 * s], null, [0.1 * s, 0.1 * s, 0.05 * s]);
   }
   function snowMound(B, x, z, s, rnd) {
     B.add('snow', G.sphere(11, 8), C(0xffffff), [x, 0.05, z], null, [1.2 * s, 0.6 * s, 1.0 * s]);

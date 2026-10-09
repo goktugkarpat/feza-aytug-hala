@@ -196,6 +196,18 @@
     if (D.pads.length) R.zones.push({ x: D.pads[0].x, z: D.pads[0].z, r: 6.5, enter: () => O.say('odp_bulut') });
     for (const g of D.gold) O.goldSugar(api, R, g.x, g.y, g.z, { sticker: g.sticker, r: g.high ? 1.5 : 1.1, dy: g.high ? 1.2 : 1.4 });
     if (D.fall) chocoFall(B, api, R, D.fall);
+    // krema dalgaları: Krema Nehri odalarının kamera tarafındaki kremada süzülen pembe-beyaz kıvrımlar (tek mesh, yavaşça dalgalanır)
+    {
+      const wk = new Kit(), A0 = (L.areas || [])[0];
+      const rset = new Set(A0 ? A0.rooms : []);
+      for (const c of O.edgeSpots(L, api, { dmin: 2.6, dmax: 3.0, space: 3.4, avoid })) {
+        if (!rset.has(c.room) || c.side === 'north') continue;
+        const yaw = Math.atan2(c.nx, c.nz) + PI / 2, col = rnd() < 0.5 ? 0xffffff : 0xffc8dc;
+        wk.add(G.torus(PI, 0.32, 12), C(col), [c.x, 0.05, c.z], [0, yaw, 0], [0.7, 0.42, 0.55]);
+        wk.add(G.sphere(8, 6), C(0xffffff), [c.x + Math.cos(yaw) * 0.7, 0.12, c.z - Math.sin(yaw) * 0.7], null, [0.18, 0.16, 0.18]);
+      }
+      if (wk.parts.length) { const wm = O.solo(wk, 'cream', api); wm.castShadow = false; let t = 0; api.anim(dt => { t += dt; wm.position.y = Math.sin(t * 1.3) * 0.06; wm.position.x = Math.sin(t * 0.7) * 0.12; }); }
+    }
     floatingClouds(api, L, rnd);
     // ── Arena: dev pasta ──
     if (D.arena) cakeArena(B, api, R, L, D.arena, rnd);
@@ -229,7 +241,7 @@
   }
   function cupcake(B, api, x, z, s, rnd) {
     const wr = C(PASTEL[(rnd() * PASTEL.length) | 0]), fr = C(CANDY[(rnd() * CANDY.length) | 0]).lerp(C(0xffffff), 0.45);
-    B.add('gloss', G.cyl(1.15, 0.85, 16), (xx, yy, zz) => (Math.sin(Math.atan2(xx - x, zz - z) * 10) > 0 ? wr : C(0xffffff).lerp(wr, 0.6)), [x, 0.75 * s, z], null, [1.3 * s, 1.5 * s, 1.3 * s]);
+    B.add('gloss', G.cyl(1.15, 0.85, 40), (xx, yy, zz) => (Math.sin(Math.atan2(xx - x, zz - z) * 10) > 0 ? wr : C(0xffffff).lerp(wr, 0.6)), [x, 0.75 * s, z], null, [1.3 * s, 1.5 * s, 1.3 * s]);
     for (let i = 0; i < 3; i++) B.add('cream', G.sphere(14, 10), fr, [x, (1.7 + i * 0.55) * s, z], null, [(1.45 - i * 0.38) * s, 0.6 * s, (1.45 - i * 0.38) * s]);
     B.add('candy', G.sphere(11, 8), C(0xe8203a), [x, 3.2 * s, z], null, [0.32 * s, 0.32 * s, 0.32 * s]);
     for (let i = 0; i < 10; i++) { const a = i * 2.4, r = (0.5 + (i % 3) * 0.3) * s; B.add('glow', G.cyl(1, 1, 5), C(CANDY[i % CANDY.length], 1.15), [x + Math.sin(a) * r, (2.05 + (i % 4) * 0.25) * s, z + Math.cos(a) * r], [i, 0, i * 0.6], [0.05, 0.3, 0.05]); }
@@ -273,7 +285,7 @@
       const xx = x + (i ? 0.7 * s : 0), zz = z + (i ? 0.3 * s : 0), k = i ? 0.65 : 1, c = [0xff8ab8, 0xffc04a, 0x8ad0ff][(rnd() * 3) | 0];
       B.add('cream', G.cyl(0.8, 1, 12), C(0xfffaf2), [xx, 0.45 * s * k, zz], null, [0.22 * s * k, 0.9 * s * k, 0.22 * s * k]);
       B.add('candy', G.sphere(12, 8), C(c), [xx, 0.95 * s * k, zz], null, [0.62 * s * k, 0.38 * s * k, 0.62 * s * k]);
-      for (let j = 0; j < 5; j++) { const a = j * TAU / 5 + 0.3; B.add('cream', G.sphere(6, 4), C(0xffffff), [xx + Math.sin(a) * 0.38 * s * k, (1.08 - 0.02) * s * k, zz + Math.cos(a) * 0.38 * s * k], null, [0.09 * s, 0.05 * s, 0.09 * s]); }
+      for (let j = 0; j < 6; j++) { const a = j * TAU / 6 + 0.3, rr = j ? 0.42 : 0; B.add('cream', G.sphere(7, 5), C(0xffffff), [xx + Math.sin(a) * rr * s * k, (j ? 1.21 : 1.32) * s * k, zz + Math.cos(a) * rr * s * k], null, [0.1 * s * k, 0.06 * s * k, 0.1 * s * k]); }
     }
   }
   function gumdrops(B, x, z, s, rnd) {
@@ -785,7 +797,7 @@
     final: true, malzeme: 'krema', kayipEsya: null,
     isik: { fog: [0xffd6e6, 42, 104], hemiSky: 0xfff4fa, hemiGround: 0xe0a0bc, hemi: 0.58, sunColor: 0xfff0dc, sun: 1.95, sunOffset: [-12, 26, 14],
       env: [0xffe0f0, 0xfff0e4, 0xd8a8c0, 0.6], bloom: 0.36, exposure: 0.98, sat: 1.14, vig: 0.22, fezaLight: 0, moss: [0xffe0ec, 0], rim: [0xfff0f6, 0.12] },
-    zemin: { tA: 0xfff0f5, tB: 0xf2c48e, tC: 0xffffff, out: 0xf4b8cc, outAmt: 0.45, macro: 0xfff6fa },
+    zemin: { tA: 0xfff0f5, tB: 0xffe4c0, tC: 0xffffff, out: 0xf4b8cc, outAmt: 0.45, macro: 0xfff6fa },
     minimap: { zemin: '#f6c8d8' },
     harita: { ad: 'Pasta Krallığı', detay: 'Krema nehirleri, çilek ormanı, şeker dağı', renk: '#f4a8c4', x: 76, y: 70, simge: '🎂' },
     yerlesim, kur,
