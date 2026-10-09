@@ -2207,7 +2207,7 @@ const { FEZA, ITEMS } = (function () {
         k.add(G.cyl(1, 1, 32, true), CD, [0, 0.085, 0], 0, [0.318, 0.06, 0.328]);
         k.add(G.cyl(1, 1, 32, true), TAPE, [0, 0.24, 0], [0, 0, 0], [0.25, 0.025, 0.26]);
         k.add(G.rbox(1), CD, [0, 0.03, 0.315], [-0.15, 0, 0], [0.035, 0.12, 0.018]);
-        for (let i = 0; i < 5; i++) k.add(G.cone(8), i & 1 ? 0xff5a4a : 0xe8323c, [(i - 2) * 0.03, 0.44 + 0.03 * (2 - Math.abs(i - 2)), -0.04 - Math.abs(i - 2) * 0.012], [-0.5, 0, (i - 2) * 0.3], [0.04, 0.2, 0.02]);
+        for (let i = 0; i < 5; i++) k.add(G.sphere(12), i & 1 ? 0xff6a5a : 0xe8323c, [(i - 2) * 0.035, 0.43 + 0.025 * (2 - Math.abs(i - 2)), -0.05 - Math.abs(i - 2) * 0.015], [-0.6, 0, (i - 2) * 0.32], [0.03, 0.11, 0.012]);
       });
       out.hat = new THREE.Mesh(helm, mat('kostHelm', () => rimify(vcMat({ roughness: 0.92, side: THREE.DoubleSide }), 0xffe6c0, 0.12)));
       out.hat.position.set(0, 0.0, -0.005);
@@ -2623,7 +2623,7 @@ const { FEZA, ITEMS } = (function () {
         GAME.on('boss', () => H.express('kararli', 2.2));
         for (const ev of ['item', 'lostItem', 'ingredient', 'goldSugar']) GAME.on(ev, () => H.express('saskin', 0.9, 'sevinc'));
         GAME.on('levelup', () => H.wink());
-        GAME.on('costume', d => { H.express('sevinc', 1.2); hsay('kostum_' + ((d && d.id) || 'gunluk')); });
+        GAME.on('costume', d => { H.express('sevinc', 1.2); hsay('kostum_' + ((d && d.id) || 'gunluk'), { interrupt: true }); });
       }
       if (S.exprT <= 0 && S.exprNext) { const n = S.exprNext; S.exprNext = null; H.express(n, 1.1); }
       // ara sıra (boştayken) göz kırpar
@@ -2706,7 +2706,7 @@ const { FEZA, ITEMS } = (function () {
     function setTwins(obj, on) { obj.traverse(o => { if (o.userData.xrayTwin) o.visible = on; }); }
     // kostümün başlığı / sırtı eşya şapkasını / pelerinini gizler (iki katman çakışmaz); saç, takılı olan başlığın içine toplanır
     const hairHat = () => KOST.hatE || S.eq.hat;
-    const hsay = k => { try { const a = GAME.halaApi; if (a && a.hasLine && a.hasLine(k)) a.say(k, 2); } catch (e) { /* isteğe bağlı */ } };
+    const hsay = (k, o) => { try { const a = GAME.halaApi; if (a && a.hasLine && a.hasLine(k)) a.say(k, 2, o); } catch (e) { /* isteğe bağlı */ } };
     function kostVis() {
       const d = KOST.id ? COSTUMES[KOST.id] : null;
       hatSlot.visible = !(d && d.hat); capeSlot.visible = !(d && d.cape);
