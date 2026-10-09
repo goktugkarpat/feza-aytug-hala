@@ -1618,7 +1618,7 @@ const UI = (() => {
     const g = M.GAME, s = g && g.skills && g.skills[i], v = D.sk[i];
     if (!s || !v) return;
     const def = s.def || {};
-    v.ico.textContent = FEZA_LANG.t(def.icon || '✨');
+    if (def.svg) v.ico.innerHTML = def.svg; else v.ico.textContent = FEZA_LANG.t(def.icon || '✨');   // Dev Ev: resimli simge (08_skills)
     v.b.setAttribute('aria-label', FEZA_LANG.t(def.ad || def.name || ('Yetenek ' + (i + 1))));
     v.b.style.setProperty('--c', def.color || '#ffd23f');
     v.b.style.setProperty('--cd', shade(def.color || '#ffd23f', -0.45));

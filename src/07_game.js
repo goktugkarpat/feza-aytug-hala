@@ -4434,6 +4434,7 @@ const GAME = (() => {
   const BOSS_AI = { kopukusta: dreamBossStep, aytavsan: dreamBossStep, kraljole: kraljoleStep, kefirdev: kefirdevStep, kostebekusta: kostebekustaStep, lavkaplumbaga: lavkaplumbagaStep, sovalye: sovalyeStep, ejderha: dragonStep };
 
   // ── Damage ──
+  const HIT = { e: null, amount: 0, kind: '', crit: false, x: 0, y: 0, z: 0, boss: false, elite: false, kill: false };
   function damage(e, amount, o = {}) {
     if (!e || e.dead) return false;
     if (hidden(e) && !o.force) return false;   // a köstebek underground: nothing reaches it
@@ -4455,6 +4456,9 @@ const GAME = (() => {
       }
       if (!e.aggro) setAggro(e);
       if (e.boss) { emit('bossHp', { frac: Math.max(0, e.hp / e.maxHp) }); bossThresholds(e); }
+      // Dev Ev (08j_his): vuruş hissi — tek, yeniden kullanılan olay nesnesi
+      HIT.e = e; HIT.amount = amount; HIT.kind = o.kind || ''; HIT.crit = !!o.crit; HIT.x = x; HIT.z = z; HIT.y = e.y + e.height * 0.6;
+      HIT.boss = !!e.boss; HIT.elite = !!e.elite; HIT.kill = e.hp <= 0; emit('hit', HIT);
     }
     if (o.kb && o.fromX !== undefined && !e.boss && !(e.bur > 0)) {   // (a köstebek half in the ground is not knocked away)
       const mass = isT(e.type, 'golem') ? 0.3 : e.elite || HEAVY[e.type] ? 0.5 : 1;   // (the cheese wedge is heavy too)
@@ -6785,7 +6789,7 @@ const GAME = (() => {
     return true;
   }
   // ── Koleksiyon ve merkez (masa) durumları ──
-  const KOL_OBJ = ['malzemeler', 'kayipEsyalar', 'bossNese', 'cikartmalar', 'kostumler', 'miniOyunlar'];
+  const KOL_OBJ = ['malzemeler', 'kayipEsyalar', 'bossNese', 'cikartmalar', 'kostumler', 'miniOyunlar', 'yetenek'];   // yetenek: {kademe:{id:1..3}, yildiz} (08j_his)
   function resetKoleksiyon() {
     for (const k of KOL_OBJ) P[k] = {};
     P.kostum = null; P.bilboAksesuar = { sahip: {}, takili: null }; P.pastaSusleri = []; P.altinSeker = 0; P.gununSurprizi = null; P.area = -1;
@@ -6893,6 +6897,7 @@ const GAME = (() => {
     loadZone, update, titleUpdate, input, equipSlot, equip: item => equip(item), unequip, drinkPotion, addItem, cast,
     on, emit, enemiesNear, nearestEnemy, damage, spawnProjectile, hitBreakables, heroDamageNow, hurtPlayer, heal,
     xpFor, projectiles, loot, coins, wordOK,
+    hitStop: s => { hitstop = Math.max(hitstop, Math.min(0.12, s || 0)); },   // Dev Ev (08j_his): kısa duraklama
     bonusSpot,   // (Round 6) {x, z} the boss camera should keep on screen too (the crown, bubble, hole, rock, carrot, heart), else null
   };
   return GAME;

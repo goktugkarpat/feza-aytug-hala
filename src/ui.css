@@ -906,3 +906,164 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 @keyframes uTeamGlow { to { box-shadow: 0 calc(var(--k) * 6px) 0 #8a2e4a, 0 0 0 calc(var(--k) * 3px) #fff, 0 0 calc(var(--k) * 28px) #ff8fb0; } }
 #ui .u-dream-island.locked { filter: grayscale(.7) brightness(.8); }
 #ui .u-dream-island.locked::after { content: '🔒'; position: absolute; top: 4%; right: 8%; font-size: 30px; }
+
+/* ── Oyun hissi + HUD ekleri (src/08j_his.js; önek his-) ── */
+/* Şeker sayacı: altın para yerine ambalajlı pembe şeker */
+.u-coin { background: radial-gradient(circle at 36% 30%, #ffe0f0 0 12%, #ff6fb1 46%, #d22d7c 100%) !important;
+  box-shadow: 0 0 0 calc(var(--k) * 2.5px) #fff, 0 calc(var(--k) * 3px) 0 calc(var(--k) * 2px) #8e1d55 !important; overflow: visible; }
+.u-coin::after { content: "" !important; inset: 18% !important; border-radius: 50%; background:
+  conic-gradient(from 20deg, #fff0 0 40deg, #fffc 40deg 80deg, #fff0 80deg 160deg, #fffc 160deg 200deg, #fff0 200deg 280deg, #fffc 280deg 320deg, #fff0 320deg); }
+.u-coin::before { content: ""; position: absolute; top: 22%; bottom: 22%; left: -46%; right: -46%; z-index: -1;
+  background: linear-gradient(90deg, #7fd8ff 0 22%, transparent 22% 78%, #7fd8ff 78%);
+  clip-path: polygon(0 0, 24% 50%, 0 100%, 0 0, 100% 0, 76% 50%, 100% 100%, 100% 0); }
+.u-gold { transform-origin: 20% 50%; }
+.u-gold.his-bump .u-coin { animation: hisCoin 0.32s cubic-bezier(.2, 1.8, .4, 1); }
+.u-gold.his-bump .u-gn { animation: hisNum 0.32s cubic-bezier(.2, 1.8, .4, 1); }
+@keyframes hisCoin { 40% { transform: scale(1.45) rotate(-14deg); } }
+@keyframes hisNum { 40% { transform: scale(1.22) translateY(calc(var(--k) * -3px)); } }
+
+/* Aytuğ Hala yüzü + yıldız şeker düğmesi (Feza portresinin altında) */
+.his-col { position: absolute; left: calc(var(--k) * 2px); top: calc(var(--k) * 134px); display: flex; align-items: center; gap: calc(var(--k) * 12px); }
+.his-hala { position: relative; flex: none; width: calc(var(--k) * 86px); height: calc(var(--k) * 86px); border-radius: 50%;
+  box-shadow: 0 0 0 calc(var(--k) * 3px) #fff, 0 0 0 calc(var(--k) * 6px) #ff7563, 0 calc(var(--k) * 6px) calc(var(--k) * 12px) rgba(40, 10, 30, 0.45); background: #ffe6cf; }
+.his-hala svg { display: block; width: 100%; height: 100%; border-radius: 50%; }
+.his-hala.talk { animation: hisTalk 0.42s ease-in-out infinite alternate; }
+@keyframes hisTalk { from { transform: rotate(-2.5deg) translateY(0); } to { transform: rotate(2.5deg) translateY(calc(var(--k) * -2px)); } }
+.his-talk { position: absolute; right: calc(var(--k) * -6px); top: calc(var(--k) * -16px); display: flex; gap: calc(var(--k) * 3px); align-items: center;
+  padding: calc(var(--k) * 6px) calc(var(--k) * 8px); border-radius: 99px; background: #fff; box-shadow: 0 calc(var(--k) * 2px) 0 #e5b9a6;
+  opacity: 0; transform: scale(0.4); transform-origin: 0 100%; transition: opacity 0.18s, transform 0.25s cubic-bezier(.2, 1.6, .4, 1); }
+.his-talk i { width: calc(var(--k) * 6px); height: calc(var(--k) * 6px); border-radius: 50%; background: #ff6f61; animation: hisDot 0.9s ease-in-out infinite; }
+.his-talk i:nth-child(2) { animation-delay: 0.15s; } .his-talk i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes hisDot { 50% { transform: translateY(calc(var(--k) * -4px)); opacity: 0.55; } }
+.his-hala.talk .his-talk { opacity: 1; transform: scale(1); }
+.his-starbtn { position: relative; flex: none; width: var(--rb); height: var(--rb); border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, #b98cff, #7b3fe0 62%, #4d1fa3); box-shadow: 0 calc(var(--k) * 5px) 0 #33106e, 0 0 0 calc(var(--k) * 3px) #ffe48a, inset 0 calc(var(--k) * 4px) calc(var(--k) * 8px) #fff8;
+  transition: transform 0.1s; }
+.his-starbtn::before { content: ""; position: absolute; left: 18%; right: 18%; top: 7%; height: 36%; border-radius: 50%; background: linear-gradient(#fff9, #fff0); pointer-events: none; }
+.his-starbtn svg { position: absolute; left: 12%; top: 9%; width: 76%; height: 76%; filter: drop-shadow(0 calc(var(--k) * 2px) 0 #33106e); }
+.his-starn { position: absolute; left: 50%; bottom: calc(var(--k) * -12px); transform: translateX(-50%); min-width: calc(var(--k) * 36px); padding: 0 calc(var(--k) * 7px);
+  height: calc(var(--k) * 28px); border-radius: 99px; background: #fff; color: #5b23b8; font-weight: 900; font-size: calc(var(--k) * 21px); line-height: calc(var(--k) * 28px);
+  text-align: center; box-shadow: 0 calc(var(--k) * 2px) 0 #33106e; }
+.his-plus { position: absolute; right: calc(var(--k) * -8px); top: calc(var(--k) * -8px); width: calc(var(--k) * 32px); height: calc(var(--k) * 32px); border-radius: 50%;
+  background: radial-gradient(circle at 40% 30%, #a6ff9a, #2fc24a); color: #fff; font-weight: 900; font-size: calc(var(--k) * 28px); line-height: calc(var(--k) * 30px); text-align: center;
+  box-shadow: 0 0 0 calc(var(--k) * 2.5px) #fff, 0 calc(var(--k) * 2px) 0 calc(var(--k) * 2px) #136a28; text-shadow: 0 calc(var(--k) * 2px) 0 #136a28; display: none; }
+.his-starbtn.ready { animation: hisReady 1.1s ease-in-out infinite; }
+.his-starbtn.ready .his-plus { display: block; animation: hisPlus 0.55s ease-in-out infinite alternate; }
+@keyframes hisReady { 0%, 100% { transform: scale(1) rotate(0); box-shadow: 0 calc(var(--k) * 5px) 0 #33106e, 0 0 0 calc(var(--k) * 3px) #ffe48a, 0 0 0 #ffd23f00; }
+  50% { transform: scale(1.08) rotate(-4deg); box-shadow: 0 calc(var(--k) * 5px) 0 #33106e, 0 0 0 calc(var(--k) * 3px) #fff, 0 0 calc(var(--k) * 26px) #ffd23f; } }
+@keyframes hisPlus { to { transform: scale(1.18); } }
+.his-starbtn.bump { animation: hisBumpBtn 0.35s cubic-bezier(.2, 1.8, .4, 1); }
+@keyframes hisBumpBtn { 40% { transform: scale(1.22); } }
+.his-hide { display: none !important; }
+
+/* Pasta malzemesi yuvaları: un, yumurta, çilek, krema */
+.his-malz { display: flex; gap: calc(var(--k) * 7px); }
+.his-m { position: relative; width: calc(var(--k) * 46px); height: calc(var(--k) * 46px); border-radius: 50%; padding: calc(var(--k) * 5px);
+  background: radial-gradient(circle at 50% 35%, #ffffff55, #2a154622); box-shadow: inset 0 0 0 calc(var(--k) * 2.5px) #ffffff88, 0 calc(var(--k) * 2px) calc(var(--k) * 5px) #2a154633; }
+.his-m svg { display: block; width: 100%; height: 100%; filter: grayscale(1) brightness(1.25) opacity(0.45); transition: filter 0.4s; }
+.his-m.has { background: radial-gradient(circle at 50% 35%, #fffbe6, #ffd76a 70%, #e2a21c); box-shadow: 0 0 0 calc(var(--k) * 2.5px) #fff, 0 calc(var(--k) * 3px) 0 calc(var(--k) * 2px) #a86a00; }
+.his-m.has svg { filter: drop-shadow(0 calc(var(--k) * 1.5px) 0 #0003); }
+.his-m.got { animation: hisGot 1.2s cubic-bezier(.2, 1.5, .4, 1); }
+@keyframes hisGot { 0% { transform: scale(0.3) rotate(-30deg); } 30% { transform: scale(1.7) rotate(12deg); } 55% { transform: scale(0.92) rotate(-4deg); } 100% { transform: scale(1); } }
+.his-mshine { position: absolute; inset: calc(var(--k) * -10px); border-radius: 50%; pointer-events: none; opacity: 0;
+  background: conic-gradient(from 0deg, #fff0, #fff9 8%, #fff0 16%, #fff0 25%, #fff9 33%, #fff0 41%, #fff0 50%, #fff9 58%, #fff0 66%, #fff0 75%, #fff9 83%, #fff0 91%); }
+.his-m.got .his-mshine { animation: hisShine 1.2s ease-out; }
+@keyframes hisShine { 0% { opacity: 1; transform: rotate(0) scale(0.6); } 100% { opacity: 0; transform: rotate(160deg) scale(1.5); } }
+
+/* Kombo sayacı: büyük, sevimli, renk değiştiren rakamlar */
+.his-combo { --h: 40; position: absolute; right: calc(var(--padR) + var(--k) * 40px); top: 31%; pointer-events: none; display: flex; align-items: center; justify-content: center;
+  width: calc(var(--k) * 170px); height: calc(var(--k) * 150px); opacity: 0; transform: scale(0.4); transition: opacity 0.35s, transform 0.35s; }
+.his-combo.on { opacity: 1; transform: scale(1); transition: opacity 0.12s, transform 0.2s cubic-bezier(.2, 1.6, .4, 1); }
+.his-cstar { position: absolute; inset: 0; background: radial-gradient(circle, hsl(var(--h) 100% 75% / 0.85) 0 30%, hsl(var(--h) 100% 70% / 0) 62%);
+  clip-path: polygon(50% 0, 61% 33%, 96% 35%, 68% 56%, 79% 92%, 50% 71%, 21% 92%, 32% 56%, 4% 35%, 39% 33%); animation: hisSpin 6s linear infinite; }
+@keyframes hisSpin { to { transform: rotate(360deg); } }
+.his-cn { position: relative; font-weight: 900; font-size: calc(var(--k) * 76px); line-height: 1; --ol: #3b1060; --t1: #fff; --t2: hsl(var(--h) 100% 66%); }
+.his-combo.hit .his-cn { animation: hisCHit 0.28s cubic-bezier(.2, 1.8, .4, 1); }
+@keyframes hisCHit { 35% { transform: scale(1.3) rotate(-6deg); } }
+.his-combo.big .his-cn { animation: hisCBig 0.75s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes hisCBig { 0% { transform: scale(0.6); } 30% { transform: scale(1.9) rotate(10deg); } 60% { transform: scale(1.25) rotate(-4deg); } 100% { transform: scale(1); } }
+
+/* Seviye kutlaması (ortada, dokunmayı engellemez) */
+.his-lvl, .his-card { position: absolute; left: 50%; top: 42%; width: calc(var(--k) * 300px); height: calc(var(--k) * 300px); margin: calc(var(--k) * -150px) 0 0 calc(var(--k) * -150px);
+  pointer-events: none; opacity: 0; transform: scale(0.2); display: flex; align-items: center; justify-content: center; }
+.his-lvl.on { animation: hisLvl 2.1s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes hisLvl { 0% { opacity: 0; transform: scale(0.2) rotate(-20deg); } 18% { opacity: 1; transform: scale(1.15) rotate(4deg); } 28% { transform: scale(1) rotate(0); }
+  82% { opacity: 1; transform: scale(1) translateY(0); } 100% { opacity: 0; transform: scale(0.35) translate(-120%, -150%); } }
+.his-rays { position: absolute; inset: -18%; border-radius: 50%; background: repeating-conic-gradient(#fff6b8aa 0 9deg, #fff6b800 9deg 22.5deg);
+  -webkit-mask: radial-gradient(circle, #000 20%, #0000 68%); mask: radial-gradient(circle, #000 20%, #0000 68%); animation: hisSpin 7s linear infinite; }
+.his-lstar { position: relative; width: 74%; height: 74%; animation: hisWob 0.9s ease-in-out infinite alternate; }
+.his-lstar svg { width: 100%; height: 100%; filter: drop-shadow(0 calc(var(--k) * 6px) 0 #b25e00) drop-shadow(0 0 calc(var(--k) * 20px) #fff5b0); }
+.his-ln { position: absolute; left: 50%; top: 54%; transform: translate(-50%, -50%); font-weight: 900; font-size: calc(var(--k) * 92px); line-height: 1; --ol: #7a3400; --t1: #fff; --t2: #ffe27a; }
+.his-lstar svg circle, .his-lstar svg path:nth-last-child(1) { opacity: 0; }   /* rakam yüzün yerinde */
+@keyframes hisWob { from { transform: rotate(-5deg) scale(0.98); } to { transform: rotate(5deg) scale(1.03); } }
+/* Yeni yetenek kartı: büyük resimli simge, düğmesine uçar */
+.his-card { --c: #ffd23f; }
+.his-card.on { animation: hisCard 3.2s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes hisCard { 0% { opacity: 0; transform: scale(0.2) rotate(20deg); } 14% { opacity: 1; transform: scale(1.12) rotate(-3deg); } 24% { transform: scale(1); }
+  80% { opacity: 1; transform: scale(1) translate(0, 0); } 100% { opacity: 0; transform: scale(0.3) translate(110%, 120%); } }
+.his-cico { position: relative; width: 66%; height: 66%; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 30%, #fff, var(--c) 70%); box-shadow: 0 0 0 calc(var(--k) * 6px) #fff, 0 calc(var(--k) * 10px) 0 calc(var(--k) * 6px) #0003, 0 0 calc(var(--k) * 40px) var(--c); }
+.his-cico svg { width: 86%; height: 86%; }
+.his-cico .his-emo { font-size: calc(var(--k) * 110px); line-height: 1; }
+.his-cstars { position: absolute; bottom: 6%; left: 0; right: 0; display: flex; justify-content: center; gap: calc(var(--k) * 6px); font-size: calc(var(--k) * 34px); }
+.his-cstars i, .his-uppips i { font-style: normal; color: #ffffff66; -webkit-text-stroke: calc(var(--k) * 1.5px) #6a3a8a; }
+.his-cstars i.on, .his-uppips i.on { color: #ffd23f; -webkit-text-stroke: calc(var(--k) * 1.5px) #a05a00; text-shadow: 0 0 calc(var(--k) * 10px) #fff6a0; }
+
+/* Uçan şekerler / yıldızlar (HUD sayaçlarına) */
+.his-flyroot { position: absolute; inset: 0; pointer-events: none; }
+.his-fly { position: absolute; left: 0; top: 0; width: calc(var(--k) * 34px); height: calc(var(--k) * 34px); opacity: 0; will-change: transform; filter: drop-shadow(0 calc(var(--k) * 2px) calc(var(--k) * 3px) #0005); }
+.his-fly.star { width: calc(var(--k) * 46px); height: calc(var(--k) * 46px); }
+.his-fly svg { width: 100%; height: 100%; display: block; }
+
+/* Yetenek kademe yıldızları (yetenek düğmelerinin altında) */
+.his-pips { position: absolute; left: 50%; bottom: calc(var(--k) * -9px); transform: translateX(-50%); display: flex; gap: calc(var(--k) * 2px); z-index: 6; pointer-events: none;
+  padding: calc(var(--k) * 2px) calc(var(--k) * 5px); border-radius: 99px; background: #2a1546cc; }
+.his-pips i { width: calc(var(--k) * 13px); height: calc(var(--k) * 13px); background: #ffffff44;
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+.his-pips i.on { background: #ffd23f; }
+.u-skill.his-tierup { animation: hisTier 0.9s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes hisTier { 30% { transform: translate(-50%, -50%) scale(1.3) rotate(-10deg); } 60% { transform: translate(-50%, -50%) scale(0.95) rotate(4deg); } }
+.u-skill .u-ico svg { width: 78%; height: 78%; display: block; filter: drop-shadow(0 calc(var(--k) * 2px) 0 #0003); }
+
+/* Takım Hamlesi hazırken: parlar VE titrer */
+.u-team.ready .u-ico { animation: hisShakeIco 0.6s ease-in-out infinite; }
+@keyframes hisShakeIco { 0%, 100% { transform: rotate(0) scale(1); } 20% { transform: rotate(-14deg) scale(1.12); } 40% { transform: rotate(12deg) scale(1.15); } 60% { transform: rotate(-8deg) scale(1.08); } 80% { transform: rotate(5deg) scale(1.04); } }
+
+/* Yetenekler paneli (yıldız şekerle güçlendir) */
+.his-up { position: absolute; inset: 0; z-index: 70; display: none; align-items: center; justify-content: center; pointer-events: auto; touch-action: none;
+  background: radial-gradient(circle at 50% 40%, #3b1d6acc, #140829ee); }
+.his-up.on { display: flex; animation: hisFade 0.25s ease-out; }
+@keyframes hisFade { from { opacity: 0; } }
+.his-upbox { position: relative; display: flex; flex-direction: column; align-items: center; gap: calc(var(--k) * 18px); padding: calc(var(--k) * 26px) calc(var(--k) * 30px) calc(var(--k) * 34px);
+  border-radius: calc(var(--k) * 44px); background: linear-gradient(180deg, #fff9ef, #ffe7c6); box-shadow: 0 0 0 calc(var(--k) * 6px) #ffd166, 0 calc(var(--k) * 14px) 0 calc(var(--k) * 6px) #b0742a, 0 calc(var(--k) * 30px) calc(var(--k) * 60px) #0008;
+  animation: hisPopIn 0.45s cubic-bezier(.2, 1.6, .4, 1); max-width: 96vw; }
+@keyframes hisPopIn { from { transform: scale(0.5); } }
+.his-uphead { display: flex; align-items: center; gap: calc(var(--k) * 10px); height: calc(var(--k) * 70px); padding: 0 calc(var(--k) * 26px) 0 calc(var(--k) * 12px); border-radius: 99px;
+  background: linear-gradient(180deg, #9d6bff, #6a2fd6); box-shadow: 0 calc(var(--k) * 5px) 0 #3d1590; }
+.his-uphead svg { width: calc(var(--k) * 58px); height: calc(var(--k) * 58px); }
+.his-upn { font-weight: 900; font-size: calc(var(--k) * 46px); color: #fff; text-shadow: 0 calc(var(--k) * 3px) 0 #3d1590; }
+.his-upclose { position: absolute !important; right: calc(var(--k) * -26px); top: calc(var(--k) * -26px); width: var(--rb); height: var(--rb); border-radius: 50%;
+  background: radial-gradient(circle at 50% 30%, #ff9a8a, #e5413a 65%, #b0241e); box-shadow: 0 0 0 calc(var(--k) * 4px) #fff, 0 calc(var(--k) * 6px) 0 calc(var(--k) * 3px) #7a1410; }
+.his-upclose svg { width: 52%; height: 52%; }
+.his-uprow { display: flex; gap: calc(var(--k) * 22px); }
+.his-upcard { --c: #ffd23f; position: relative; width: calc(var(--k) * 200px); display: flex; flex-direction: column; align-items: center; gap: calc(var(--k) * 10px);
+  padding: calc(var(--k) * 16px) calc(var(--k) * 12px) calc(var(--k) * 18px); border-radius: calc(var(--k) * 32px); background: #fff; box-shadow: 0 calc(var(--k) * 6px) 0 #e4c79c; }
+.his-upcard.boom { animation: hisBoom 0.7s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes hisBoom { 25% { transform: scale(1.14) rotate(-3deg); } 50% { transform: scale(0.97) rotate(1deg); } }
+.his-upico { width: calc(var(--k) * 150px); height: calc(var(--k) * 150px); border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 30%, #fff, var(--c) 72%); box-shadow: 0 0 0 calc(var(--k) * 4px) #fff, 0 calc(var(--k) * 5px) 0 calc(var(--k) * 4px) #0002; }
+.his-upico svg { width: 84%; height: 84%; }
+.his-upico .his-emo, .his-upico .his-lock { font-size: calc(var(--k) * 74px); }
+.his-upcard.lock .his-upico { filter: grayscale(1) opacity(0.55); }
+.his-uppips { display: flex; gap: calc(var(--k) * 4px); font-size: calc(var(--k) * 40px); line-height: 1; }
+.his-upbtn { position: relative; display: flex; align-items: center; gap: calc(var(--k) * 8px); min-width: calc(var(--k) * 150px); height: max(76px, calc(var(--k) * 80px)); padding: 0 calc(var(--k) * 16px);
+  border-radius: 99px; background: linear-gradient(180deg, #d9d2e6, #a99cbf); box-shadow: 0 calc(var(--k) * 5px) 0 #6d6280; justify-content: center; }
+.his-upbtn.ok { background: linear-gradient(180deg, #a6ff9a, #37c44d 60%, #1d8f37); box-shadow: 0 calc(var(--k) * 6px) 0 #136a28, 0 0 calc(var(--k) * 18px) #9dff8a; animation: hisReady 1.1s ease-in-out infinite; }
+.his-upbtn.no { animation: hisNo 0.4s; }
+@keyframes hisNo { 20%, 60% { transform: translateX(calc(var(--k) * -8px)); } 40%, 80% { transform: translateX(calc(var(--k) * 8px)); } }
+.his-upplus { font-weight: 900; font-size: calc(var(--k) * 52px); line-height: 1; text-shadow: 0 calc(var(--k) * 3px) 0 #0004; }
+.his-upcost { display: flex; flex-wrap: wrap; max-width: calc(var(--k) * 90px); gap: calc(var(--k) * 2px); }
+.his-upcost i { width: calc(var(--k) * 22px); height: calc(var(--k) * 22px); background: #ffffff55;
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+.his-upcost i.on { background: #ffd23f; }
+.his-upmax { height: max(76px, calc(var(--k) * 80px)); display: flex; align-items: center; font-size: calc(var(--k) * 60px); color: #ffd23f; text-shadow: 0 0 calc(var(--k) * 14px) #ffef9a, 0 calc(var(--k) * 3px) 0 #b06a00; animation: hisWob 0.9s ease-in-out infinite alternate; }
