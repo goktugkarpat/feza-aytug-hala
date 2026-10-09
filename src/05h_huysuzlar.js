@@ -328,7 +328,7 @@
   // ── Haylaz Kaşık: tahta kaşık; tek ayağında yay gibi sıçrar, geriye eğilip kepçe başıyla "tonk" diye vurur ──
   function buildKasik(r, o) {
     const E = o.elite, gold = o.rare;
-    const wA = col(gold ? '#ffd24a' : E ? '#d58a4a' : '#e2ad72'), wB = col(gold ? '#d99a1e' : E ? '#a8622e' : '#c38a52'), out = new THREE.Color();
+    const wA = col(gold ? '#ffd24a' : E ? '#c98a56' : '#e8be8a'), wB = col(gold ? '#d99a1e' : E ? '#9a5e34' : '#b9824e'), out = new THREE.Color();
     const wood = (x, y, z) => out.copy(wA).lerp(wB, 0.5 + 0.5 * Math.sin(x * 26 + y * 9 + 3 * K.fbm3(x * 6, y * 3, z * 6)));   // tahta damarı
     r.bone('leg', 'root', [0, 0.08, 0]);
     r.bone('body', 'leg', [0, 0.45, 0]);
@@ -343,12 +343,14 @@
     r.on('body').fx(0, gl);
     r.seg([0, 0.44, 0], [0, 0.66, 0], 0.05, wood, 0.055, 14);
     r.add(G.sphere(16, 10), wood, [0, 0.66, 0], null, [0.06, 0.05, 0.05]);
-    r.add(G.sphere(32, 24), wood, [0, 0.9, 0], null, [0.23, 0.28, 0.105]);
-    r.fx(0, gl * 0.6).add(G.sphere(24, 16), mixc(wB, '#5a3216', gold ? 0.1 : 0.35), [0, 0.9, -0.03], null, [0.2, 0.25, 0.085]);   // arkadaki çukur (gölge)
+    r.add(G.sphere(32, 24), wood, [0, 0.9, -0.03], null, [0.23, 0.29, 0.1]);
+    // ön yüz: sığ kepçe çukuru (açık renk iç yüzey + çevresinde kalın yuvarlak kenar)
+    r.fx(0, gl * 0.8).add(G.sphere(32, 20), (x, y, z) => out.copy(wood(x, y, z)).lerp(col(gold ? '#fff0a0' : '#f6d6a8'), 0.45), [0, 0.9, 0.035], null, [0.2, 0.26, 0.035]);
+    r.fx(0, gl).add(G.torus(TAU, 0.16, 40), wood, [0, 0.9, 0.04], null, [0.205, 0.265, 0.12]);
     r.fx(0, 0);
     // sapın üstünde yakılmış minik kalp
     r.fx(0, 0.2).add(K.heartGeo(), gold ? '#c06a10' : '#7a4220', [0, 0.53, 0.05], null, [0.045, 0.045, 0.02]).fx(0, 0);
-    K.face(r, [0, 0.9, -0.3], 0.405, yuz({ bone: 'body', tilt: 0.05, ex: 0.085, ey: 0.03, er: 0.07, iris: '#3a2412', skin: wA, browCol: '#5a3214', browY: 1.35,
+    K.face(r, [0, 0.9, -0.62], 0.69, yuz({ bone: 'body', tilt: 0.0, ex: 0.08, ey: 0.03, er: 0.066, inset: 0.01, iris: '#3a2412', skin: wA, browCol: '#5a3214', browY: 1.35,
       mouthY: -0.1, mouthW: 0.08, noHearts: true }));
     hearts(r, [[0.29, 1.1, 0.12, 0.08], [-0.27, 1.16, 0.12, 0.065]]);
     for (const sd of [-1, 1]) {
@@ -387,10 +389,10 @@
 
   // ── Köpük Balonu: deterjan köpüğü; havada süzülür, şişip köpük atar (sedef renkli baloncuk kümesi) ──
   function pearl(c0) {
-    const base = col(c0), out = new THREE.Color(), tA = col('#ffb8e0'), tB = col('#a8e8ff'), tC = col('#fff1a8');
+    const base = col(c0), out = new THREE.Color(), tA = col('#ff9ad2'), tB = col('#7fd6ff'), tC = col('#ffe680');
     return (x, y, z) => {
       const a = Math.sin(x * 9 + y * 6) * 0.5 + 0.5, b = Math.sin(z * 8 - y * 7 + 1.3) * 0.5 + 0.5;
-      return out.copy(base).lerp(tA, 0.22 * a).lerp(tB, 0.24 * b).lerp(tC, 0.12 * (1 - a) * b);
+      return out.copy(base).lerp(tA, 0.4 * a).lerp(tB, 0.42 * b).lerp(tC, 0.2 * (1 - a) * b);
     };
   }
   const KB = [[0.25, 0.46, -0.06, 0.13, 'b0'], [-0.27, 0.5, -0.04, 0.12, 'b1'], [0.16, 0.74, -0.08, 0.1, 'b0'], [-0.12, 0.79, -0.1, 0.09, 'b1'],
@@ -399,7 +401,7 @@
     r.bone('body', 'root', [0, 0.5, 0]);
     r.bone('b0', 'body', [0.2, 0.6, -0.08]); r.bone('b1', 'body', [-0.2, 0.62, -0.06]); r.bone('b2', 'body', [0, 0.25, -0.05]);
     r.bone('armL', 'body', [0.3, 0.45, 0.08]); r.bone('armR', 'body', [-0.3, 0.45, 0.08]);
-    const P = pearl('#f4f8ff');
+    const P = pearl('#dfe8ff');
     r.on('body').fx(0, 1, 0, 1).add(G.sphere(30, 22), P, [0, 0.5, 0], null, [0.29, 0.28, 0.27]);
     // parlak yansımalar (pencere ışığı gibi)
     r.fx(1, 0, 0, 1).add(G.sphere(12, 8), hdr('#ffffff', 1.5), [-0.13, 0.66, 0.17], [0.4, -0.5, 0.5], [0.06, 0.03, 0.01]);
@@ -417,7 +419,7 @@
     K.face(r, [0, 0.5, 0], 0.285, yuz({ bone: 'body', tilt: 0.2, ex: 0.1, ey: 0.03, er: 0.088, iris: '#2e7fc8', skin: col('#f4f8ff'), browCol: '#6a7fb0', browY: 1.36,
       mouthY: -0.1, mouthW: 0.085, heartY: 0.95, heartX: 1.15, blushCol: '#ff9cc8' }));
     r.on('body').mark('muzzle', [0, 0.42, 0.3]);
-    return { height: 0.9, glowC: col('#9ad8ff'), mat: { rough: 0.12, sss: col('#e8f4ff').multiplyScalar(0.08), rim: '#ffffff', rimK: 0.55, rimP: 1.8, wob: 0.012, wobF: 4, wobS: 4 } };
+    return { height: 0.9, glowC: col('#9ad8ff'), mat: { rough: 0.1, sss: col('#e8f4ff').multiplyScalar(0.04), rim: '#c8a8ff', rimK: 0.5, rimP: 1.6, wob: 0.012, wobF: 4, wobS: 4 } };
   }
   function animKopuk(m, dt, st, s) {
     const B = m.B;
@@ -501,9 +503,9 @@
     const E = o.elite;
     r.bone('body', 'root', [0, 0.27, 0]);
     r.bone('armL', 'body', [0.27, 0.27, 0.02]); r.bone('armR', 'body', [-0.27, 0.27, 0.02]);
-    const ice = K.vgrad(0.02, 0.54, [[0, '#7cc6f0'], [0.45, '#b4e4ff'], [1, '#e8f8ff']]), out = new THREE.Color();
+    const ice = K.vgrad(0.02, 0.54, [[0, '#4aa6e4'], [0.45, '#8fd0fa'], [1, '#cdeeff']]), out = new THREE.Color();
     r.on('body').fx(0, 1);
-    r.add(sbox(0.54, 0.5, 0.5, 0.11, 4), (x, y, z) => out.copy(ice(x, y, z)).lerp(col('#ffffff'), 0.35 * sm((Math.max(Math.abs(x) / 0.27, Math.abs(z) / 0.25, Math.abs(y - 0.27) / 0.25) - 0.82) / 0.18)), [0, 0.27, 0]);
+    r.add(sbox(0.54, 0.5, 0.5, 0.11, 4), (x, y, z) => out.copy(ice(x, y, z)).lerp(col('#eaf8ff'), 0.25 * sm((Math.max(Math.abs(x) / 0.27, Math.abs(z) / 0.25, Math.abs(y - 0.27) / 0.25) - 0.82) / 0.18)), [0, 0.27, 0]);
     // donmuş kabarcıklar + çatlak çizgisi (içeride gibi)
     r.fx(0.5, 1);
     for (const b of [[0.16, 0.42, 0.2, 0.025], [-0.18, 0.12, 0.2, 0.02], [0.2, 0.1, 0.18, 0.016], [-0.12, 0.45, -0.2, 0.02]]) r.add(G.sphere(10, 8), '#ffffff', [b[0], b[1], b[2]], null, b[3]);
@@ -555,7 +557,7 @@
     const wob = (x, y) => sm((y - 0.05) / 0.5);
     r.on('body').fx(0, 1, 0, wob);
     r.add(G.sphere(28, 20), jc, [0, 0.34, 0], null, [0.22, 0.25, 0.19]);
-    r.fx(0.15, 1, 0, wob).add(G.sphere(20, 14), mixc(light, '#ffffff', 0.2), [0, 0.32, 0.1], null, [0.13, 0.15, 0.1]);   // açık karın
+    r.fx(0, 1, 0, wob).add(G.sphere(20, 14), rb ? col('#fff4c0') : mixc(base, light, 0.45), [0, 0.32, 0.075], null, [0.15, 0.17, 0.12]);   // açık karın
     r.on('head').fx(0, 1, 0, 1).add(G.sphere(30, 22), jc, [0, 0.68, 0], null, [0.215, 0.195, 0.19]);
     r.add(G.sphere(18, 12), mixc(light, base, 0.4), [0, 0.63, 0.15], null, [0.09, 0.065, 0.06]);   // ağız çevresi
     for (const sd of [-1, 1]) {
@@ -637,7 +639,7 @@
   // ════════════════ PASTA KRALLIĞI ════════════════
   // ── Şekerleme: nane şekeri desenli, kâğıt şapkalı minik asker; ambalajının uçları kolları, elinde lolipop ──
   function buildSeker(r, o) {
-    const red = col('#ff4a6a'), wht = col('#fff8f4'), out = new THREE.Color();
+    const red = col('#f0203f'), wht = col('#fffaf6'), out = new THREE.Color();
     r.bone('hips', 'root', [0, 0.2, 0]);
     r.bone('body', 'hips', [0, 0.28, 0]);
     r.bone('armL', 'body', [0.27, 0.52, 0]); r.bone('armR', 'body', [-0.27, 0.52, 0]);
@@ -654,7 +656,7 @@
     r.on('body').fx(0, 1);
     const swirl = (x, y, z) => {
       const a = Math.atan2(x, z), fz = sm((z / 0.26 - 0.55) / 0.2) * sm((0.17 - Math.abs(y - 0.56)) / 0.08);
-      const st2 = Math.sin(a * 6 + (y - 0.52) * 9) > 0.15 ? red : wht;
+      const st2 = Math.sin(a * 6 + (y - 0.52) * 9) > -0.15 ? red : wht;
       return out.copy(st2).lerp(wht, fz);
     };
     r.add(G.sphere(32, 24), swirl, [0, 0.52, 0], null, [0.27, 0.26, 0.25]);
@@ -725,9 +727,9 @@
     r.fx(0, gold ? 2 : 0.6);
     for (let i = 0; i < 46; i++) {
       const y = 0.08 + 0.48 * ((i * 0.618) % 1), a = i * 2.39996, aw = ((a + PI) % TAU) - PI;
-      if (Math.abs(aw) < 0.95 && y > 0.18 && y < 0.5) continue;
+      if (Math.abs(aw) < 0.95 && y > 0.22 && y < 0.58) continue;
       const [p, n] = K.onLathe(BERRY_P, y, a, -0.002);
-      r.add(G.sphere(8, 6), gold ? '#fff8d0' : '#ffe27a', [p[0], p[1] + 0.08, p[2]], K.qz(...n, a), [0.014, 0.022, 0.01]);
+      r.add(G.sphere(8, 6), gold ? '#fff8d0' : '#ffe27a', [p[0], p[1] + 0.08, p[2]], K.qz(...n, a), [0.02, 0.03, 0.012]);
     }
     r.fx(1, 0).add(G.sphere(12, 8), hdr('#ffffff', 1.4), [-0.16, 0.58, 0.19], [0.4, -0.5, 0.5], [0.06, 0.022, 0.01]).fx(0, 0);
     // yaprak şapka + sap
@@ -736,7 +738,7 @@
     r.seg([0, 0.66, 0], [0.02, 0.76, -0.01], 0.022, '#3a9a46', 0.016, 8);
     r.add(G.sphere(8, 6), '#3a9a46', [0.02, 0.765, -0.01], null, 0.018);
     r.fx(0, 0);
-    K.face(r, [0, 0.38, 0], 0.3, yuz({ bone: 'body', tilt: 0.16, ex: 0.1, ey: 0.03, er: 0.085, iris: '#3a1a10', skin: red, browCol: '#6a0a20', browY: 1.36,
+    K.face(r, [0, 0.46, 0], 0.31, yuz({ bone: 'body', tilt: 0.16, ex: 0.1, ey: 0.0, er: 0.085, iris: '#3a1a10', skin: red, browCol: '#6a0a20', browY: 1.36,
       mouthY: -0.1, mouthW: 0.08, heartY: 1.2, heartX: 1.25, blushCol: '#ffb0c8' }));
     for (const sd of [-1, 1]) {
       r.on(sd > 0 ? 'armL' : 'armR').fx(0, 0.5);
