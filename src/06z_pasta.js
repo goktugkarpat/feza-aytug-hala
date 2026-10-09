@@ -173,7 +173,8 @@
     D.houses.forEach(h => avoid.push({ x: h.x, z: h.z, r: 3.4 }));
     if (D.fall) avoid.push({ x: D.fall.x, z: D.fall.z, r: 4.5 });
     if (L.crystalSpot) avoid.push({ x: L.crystalSpot.x, z: L.crystalSpot.z, r: 4 });
-    for (const c of O.edgeSpots(L, api, { avoid, space: 3.2 })) {
+    const edgeList = O.edgeSpots(L, api, { avoid, space: 3.2 });
+    for (const c of edgeList) {
       const ar = areaOf(c.room), rmk = L.rooms[c.room];
       if (rmk && rmk.kind === 'boss') continue;
       const low = c.side === 'south', mid = c.side === 'side', bx = c.x - c.nx * 0.3, bz = c.z - c.nz * 0.3;
@@ -209,6 +210,10 @@
       if (wk.parts.length) { const wm = O.solo(wk, 'cream', api); wm.castShadow = false; let t = 0; api.anim(dt => { t += dt; wm.position.y = Math.sin(t * 1.3) * 0.06; wm.position.x = Math.sin(t * 0.7) * 0.12; }); }
     }
     floatingClouds(api, L, rnd);
+    // peri ışıkları: şeker kamışı direkler arasında rengârenk ampuller (ışıl ışıl)
+    O.fairyLights(B, api, L, { avoid: avoid.concat(edgeList.map(c => ({ x: c.x, z: c.z, r: 1.5 }))), colors: CANDY, k: 2.2, light: 0xffd8ec, wire: 0xffffff, space: 3.8,
+      rooms: new Set(L.rooms.map((r, i) => (r.kind === 'boss' ? -1 : i))),
+      post: (B2, x, z, h) => { B2.add('candy', cylH(), stripes(x, z, C(0xff3b5c), C(0xffffff), 2, 6), [x, h / 2, z], null, [0.13, h, 0.13]); B2.add('candy', G.sphere(10, 7), C(0xffd24a), [x, h + 0.1, z], null, [0.2, 0.2, 0.2]); } });
     // ── Arena: dev pasta ──
     if (D.arena) cakeArena(B, api, R, L, D.arena, rnd);
     // ── alan ipuçları (ilk odalarına girince) ──

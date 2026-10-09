@@ -337,6 +337,30 @@ const ODAB = (() => {
     });
     return pts;
   }
+  // Peri ışıkları: kuzey kıyıdaki direkler arasında sarkan ipler, üstünde renkli parlayan ampuller (ışıl ışıl)
+  function fairyLights(B, api, L, o = {}) {
+    const spots = edgeSpots(L, api, { dmin: 1.6, dmax: 3.0, space: o.space || 4.2, avoid: o.avoid }).filter(c => c.side === 'north' && (!o.rooms || o.rooms.has(c.room)));
+    const used = new Set(), cols = (o.colors || [0xffe8a0]).map(h => C(h, o.k || 2.2)), H0 = o.h || 3.0;
+    spots.sort((a, b) => a.x - b.x);
+    let n = 0;
+    for (let i = 0; i < spots.length; i++) for (let j = i + 1; j < spots.length; j++) {
+      const a = spots[i], b = spots[j], d = hyp(a.x - b.x, a.z - b.z);
+      if (d < 3 || d > 7 || used.has(j + ':in')) continue;
+      used.add(j + ':in');
+      for (const p of [a, b]) if (!used.has(p)) { used.add(p); if (o.post) o.post(B, p.x, p.z, H0); }
+      const N = Math.max(6, Math.round(d * 2.2));
+      let px = a.x, py = H0, pz = a.z;
+      for (let s = 1; s <= N; s++) {
+        const u = s / N, x = lerp(a.x, b.x, u), z = lerp(a.z, b.z, u), y = H0 - Math.sin(u * PI) * d * 0.12;
+        B.seg('matte', [px, py, pz], [x, y, z], 0.018, C(o.wire || 0x5a4a52), 0.018, 4);
+        if (s < N) { B.add('glow', G.sphere(7, 5), cols[(s + n) % cols.length], [x, y - 0.12, z], null, [0.09, 0.12, 0.09]); }
+        px = x; py = y; pz = z;
+      }
+      if (n % 2 === 0) api.light((a.x + b.x) / 2, H0 - 0.5, (a.z + b.z) / 2, o.light || 0xffe0b0, 1.1, 6, 0.06);
+      n++; break;
+    }
+    return n;
+  }
   // ── Yerleşim yardımcıları ──
   // oda kenarı: merkezden (dx,dz) yönünde zeminin bittiği yer
   function edge(api, rm, dx, dz, max = 20) {
@@ -457,7 +481,7 @@ const ODAB = (() => {
     while (b < 7 && api.isFloor(x - px * b, z - pz * b)) b += 0.25;
     return { a, b };
   }
-  return { riding, get lift() { return riding() ? ACTIVE.lift || 0 : 0; }, mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, clearSpawns, gateDir, corridorHalf, flakeTexture };
+  return { riding, get lift() { return riding() ? ACTIVE.lift || 0 : 0; }, mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, fairyLights, clearSpawns, gateDir, corridorHalf, flakeTexture };
 })();
 
 /* ════════════════════════════ Buzdolabı ════════════════════════════ */
@@ -635,7 +659,8 @@ const ODAB = (() => {
     if (L.exit) avoid.push({ x: L.exit.x, z: L.exit.z, r: 5 });
     if (D.ball) avoid.push({ x: D.ball.ix, z: D.ball.iz, r: 3.2 });
     if (D.slide) avoid.push({ x: D.slide.tx, z: D.slide.tz, r: 3 });
-    for (const c of O.edgeSpots(L, api, { avoid, space: 3.3 })) {
+    const edgeList = O.edgeSpots(L, api, { avoid, space: 3.3 });
+    for (const c of edgeList) {
       const ar = areaOf(c.room), rmk = L.rooms[c.room];
       if (rmk && rmk.kind === 'boss') continue;
       const low = c.side === 'south', mid = c.side === 'side';
@@ -693,6 +718,10 @@ const ODAB = (() => {
     if (D.lamp) lightSwitch(B, api, R, D.lamp); else fridgeLamp(B, api, L.rooms[0]);
     if (D.chimes && D.chimes.length) chimes(B, api, R, D.chimes);
     O.mist(api, L, { color: 0xeef8ff, n: 16, opacity: 0.2 });
+    // peri ışıkları: sıcak beyaz + buz mavisi ampuller, buz direkler
+    O.fairyLights(B, api, L, { avoid: avoid.concat(edgeList.map(c => ({ x: c.x, z: c.z, r: 1.5 }))), colors: [0xfff0c8, 0xbfe6ff, 0xffd8e8], k: 2.4, light: 0xfff0d8, wire: 0x8aa8c0,
+      rooms: new Set(L.rooms.map((r, i) => (r.kind === 'boss' ? -1 : i))),
+      post: (B2, x, z, h) => { B2.add('ice', G.cyl(0.8, 1, 10), C(0xd4f0ff), [x, h / 2, z], null, [0.14, h, 0.14]); B2.add('snow', G.sphere(8, 6), C(0xffffff), [x, h + 0.06, z], null, [0.24, 0.14, 0.24]); B2.add('glow', G.sphere(7, 5), C(0xdff6ff, 2), [x, h + 0.22, z], null, [0.09, 0.09, 0.09]); } });
     // ── Kar tanesi parıltıları ──
     O.sparkles(api, { n: 170, kind: 'flake', colors: [0xe8f6ff, 0xffffff, 0xcfeaff, 0xfff2d8], k: 1.5, size: 0.3, fall: 0.3 });
     B.done();
