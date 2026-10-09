@@ -31,7 +31,7 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     return t < 1 ? 1 : t > 3 ? 3 : t;
   }
   const upgradeCost = t => (t <= 1 ? 3 : 6);
-  const CREAM_COLS = ['#fffaf0', '#ffd3e6', '#fff3c9', '#d8f6ea', '#ffe1f0'];
+  const CREAM_COLS = ['#fff4e2', '#ffbcd8', '#ffe9a8', '#c4f0de', '#ffd0e6'];
   const uT = { value: 0 };                        // shared time uniform of this file's shaders
   const V1 = new THREE.Vector3(), V2 = new THREE.Vector3();
 
@@ -197,7 +197,7 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
       p.setXYZ(i, rx + Math.sin(h * 5) * tw * 0.4, h * 1.7, rz);
     }
     g.computeVertexNormals();
-    g.rotateX(-Math.PI / 2); g.translate(0, 0, 0.6);
+    g.translate(0, -0.55, 0);   // dik duran krema (tepesinde kiraz), ortası y=0
     g.userData.keep = true;
     return g;
   }
@@ -265,9 +265,20 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     }
     // Krema Fışkırtma: krema topları (beze biçimli, sarmal tepeli), havuzda 12 tane
     CREAM.geo = creamGeo();
+    const cherryGeo = new THREE.SphereGeometry(0.2, 16, 12), sprGeo = new THREE.CapsuleGeometry(0.035, 0.13, 3, 6);
+    cherryGeo.userData.keep = sprGeo.userData.keep = true;
+    const cherryMat = new THREE.MeshStandardMaterial({ color: '#e8233f', roughness: 0.18, emissive: '#7a0010', emissiveIntensity: 0.25 });
+    const sprMats = ['#ff5fa8', '#4fc3ff', '#ffd23f', '#72e06a', '#a47bff'].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.4 }));
     for (let i = 0; i < 12; i++) {
-      const m = new THREE.MeshStandardMaterial({ color: CREAM_COLS[i % CREAM_COLS.length], roughness: 0.32, metalness: 0, emissive: '#ffe9f2', emissiveIntensity: 0.18 });
-      const mesh = new THREE.Mesh(CREAM.geo, m); mesh.frustumCulled = false;
+      const m = new THREE.MeshStandardMaterial({ color: CREAM_COLS[i % CREAM_COLS.length], roughness: 0.42, metalness: 0 });
+      const mesh = new THREE.Group(), body = new THREE.Mesh(CREAM.geo, m), ch = new THREE.Mesh(cherryGeo, cherryMat);
+      ch.position.set(0.04, 1.18, 0); mesh.add(body, ch);
+      for (let k = 0; k < 6; k++) {   // renkli şeker serpintisi
+        const s = new THREE.Mesh(sprGeo, sprMats[(i + k) % 5]), an = k * 1.05 + i, hh = 0.05 + (k % 3) * 0.28;
+        const rr = 0.92 * (hh < 0.2 ? 1 : 1 - (hh - 0.2) * 0.75);
+        s.position.set(Math.cos(an) * rr, hh - 0.1, Math.sin(an) * rr); s.rotation.set(an, k, 1.2); mesh.add(s);
+      }
+      mesh.traverse(o => { o.frustumCulled = false; });
       const it = { mesh, free: true };
       mesh.userData.dispose = () => { it.free = true; };
       CREAM.pool.push(it);
@@ -485,7 +496,7 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
       const a = tg ? Math.atan2(tg.x - x0, tg.z - z0) : base + i * fan, dx = Math.sin(a), dz = Math.cos(a);
       const it = CREAM.pool.find(q => q.free);
       let obj = null;
-      if (it) { it.free = false; obj = it.mesh; obj.scale.setScalar(0.4 + 0.05 * t); obj.rotation.set(0, a, 0); }
+      if (it) { it.free = false; obj = it.mesh; obj.scale.setScalar(0.34 + 0.04 * t); obj.rotation.set(0, a, 0); }
       const sp = 13.5 + Math.abs(i) * 0.6;
       g.spawnProjectile({ x: x0, y: 0.85, z: z0, vx: dx * sp, vz: dz * sp, r: 0.55, dmg, owner: 'feza', kind: 'cream', life: 0.85, pierce: t + 1, obj,
         color: '#fff3e6', kb: 0.55, stun: t >= 3 ? 0.6 : 0, onHit: creamHit });
