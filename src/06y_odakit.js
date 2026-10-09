@@ -550,7 +550,34 @@ const ODAKIT = (() => {
       }
     }
   }
-  const K_ = { tex, carpetColor, fill, outRect, scatter, gatePosts, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
+  // Oda içi mini oyun istasyonu (yerlesim'de): tercih listesinden kayıtlı ilk mini oyun; UI içine girince başlatır
+  function miniStation(L, api, rm, prefer) {
+    if (typeof MINIGAME === 'undefined' || !MINIGAME.list) return null;
+    const ids = MINIGAME.list(), id = prefer.find(p => ids.includes(p)) || ids[0];
+    if (!id) return null;
+    for (let t = 0; t < 40; t++) {
+      const a = api.rnd() * TAU, d = rm.r * (0.5 + api.rnd() * 0.25), x = rm.x + Math.sin(a) * d, z = rm.z + Math.cos(a) * d;
+      if (!api.circleFree(x, z, 1.8) || L.chests.some(c => Math.hypot(c.x - x, c.z - z) < 4) || (L.checkpoints || []).some(c => Math.hypot(c.x - x, c.z - z) < 4)) continue;
+      if ((L.path || []).some(p => Math.hypot(p.x - x, p.z - z) < 2.2)) continue;
+      const st = { id: 'mini_' + id, kind: 'mini', mini: id, x, z, r: 1.3 };
+      (L.stations = L.stations || []).push(st); return st;
+    }
+    return null;
+  }
+  // mini oyun hediye kutusu (görsel): kurdeleli kutu + parlayan halka
+  function miniBox(api, T, st, line) {
+    const k = new Kit(), b = G.rbox(2);
+    k.add(b, 0xf48fb1, [0, 0.75, 0], null, [1.5, 1.5, 1.5]); k.add(b, 0xf6a8c4, [0, 1.6, 0], null, [1.7, 0.35, 1.7]);
+    k.add(G.box(), 0xffe066, [0, 0.95, 0], null, [0.3, 1.95, 1.72]); k.add(G.box(), 0xffe066, [0, 0.95, 0], null, [1.72, 1.95, 0.3]);
+    for (const sd of [-1, 1]) k.add(G.torus(TAU, 0.22, 16), 0xffd23a, [sd * 0.38, 2.05, 0], [0, 0, sd * 0.5], [0.4, 0.3, 0.4]);
+    k.add(G.sphere(10, 8), 0xffc21a, [0, 1.98, 0], null, 0.2);
+    const m = mesh(api, k.build(), st.x, 0, st.z - 1.6, 0.45);
+    api.put(G.torus(TAU, 0.08, 40), st.x, 0.05, st.z, st.r, st.r, 1, 0xffd23a, 0, Math.PI / 2);
+    api.light(st.x, 2, st.z, 0xffc0e0, 1.6, 6); api.solid(st.x, st.z - 1.6, 0.95);
+    T.add({ x: st.x, z: st.z, r: 0, near: 7, hint: { y: 2.8 }, line, prio: 1, use() {}, tick: (dt, t) => { m.rotation.y = Math.sin(t * 1.5) * 0.12; m.position.y = Math.abs(Math.sin(t * 3)) * 0.12; } });
+    return m;
+  }
+  const K_ = { tex, carpetColor, fill, outRect, scatter, gatePosts, miniStation, miniBox, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
     say, sfx, burst, ring, sugar, playing, heroY, sticker, toys, hash, sm, keepG, GEOC, last: null };
   return K_;
 })();

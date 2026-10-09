@@ -155,6 +155,7 @@ const MUTFAK = (() => {
       L.kayipEsya = { id: 'anahtar', x: p ? p.x : rm.x, z: p ? p.z : rm.z };
     }
     K.extraChests(L, api);
+    if (A[1]) { const ms = mainOf(L, A[1]), rm = L.rooms[ms[ms.length - 1]]; L._mkMini = K.miniStation(L, api, rm, ['tencereKapak', 'tencereKapaklari', 'kapakMuzik', 'sekerYakala']); }
   }
 
   // ── görsel kurulum ──
@@ -175,6 +176,7 @@ const MUTFAK = (() => {
       if (!a) return; const rm = R(a.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r * 0.8, hint: false, line, prio: 1, use() {} });
     });
     if (a1) { const rm = R(a1.rooms[1] ?? a1.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r, hint: false, line: 'mut_tezgah_gir', prio: 1, use() {} }); }
+    if (L._mkMini) K.miniBox(api, T, L._mkMini, 'mut_mini_ipucu');
     K.edge(L, api, (x, z) => (inRect(stoveQ, x, z) ? 0x7fb8a6 : inRect(cupQ, x, z) ? 0xb9cdb0 : inRect(sinkQ, x, z) ? 0x8f9aa8 : 0xe6c89a), 0.1);
   }
 

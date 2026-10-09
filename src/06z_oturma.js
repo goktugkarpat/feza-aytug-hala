@@ -188,6 +188,8 @@ const OTURMA = (() => {
       const p = api.randomFloorNear(rm.x, rm.z - rm.r * 0.25, 0, rm.r * 0.45);
       L.kayipEsya = { id: 'gozluk', x: p ? p.x : rm.x, z: p ? p.z : rm.z };
     }
+    // mini oyun hediye kutusu: Halı Ormanı'nın ikinci odasında
+    if (A[0]) { const rm = L.rooms[A[0].rooms[A[0].rooms.length - 1]]; L._otMini = K.miniStation(L, api, rm, ['balonPatlat', 'sekerYagmuru', 'sekerYakala']); }
     // fazladan hazine sandıkları (her alanın ilk odasında, yolun kenarında)
     for (const a of A.slice(0, 3)) {
       const rm = L.rooms[a.rooms[0]];
@@ -285,6 +287,7 @@ const OTURMA = (() => {
     [[a1, 'oda_hali_gir'], [a2, 'oda_kitap_gir'], [a3, 'oda_koltuk_gir'], [ar, 'oda_arena_gir']].forEach(([a, line], k) => {
       if (!a || !k) return; const rm = R(a.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r * 0.8, hint: false, line, prio: 1, use() {} });
     });
+    if (L._otMini) K.miniBox(api, T, L._otMini, 'oda_mini_ipucu');
     // kuzey duvarı (gri-mavi) + süpürgelik + priz, arenanın arkasında; çıkış kapısı
     duvar(L, api);
     // yürünür kenar: halıda krem, parkede açık meşe

@@ -25,6 +25,7 @@ Object.assign(AUD.LINES, {
   oda_gozluk_ipucu: 'Bilbo bir şey kokluyor. Yanına gidelim mi?',
   oda_gozluk: 'Benim gözlüğüm! Bilbo buldu, aferin Bilbo!',
   oda_yaprak: 'Bak, çiçeklerden pembe yapraklar uçuyor!',
+  oda_mini_ipucu: 'Bu hediye kutusunda bir oyun var! Halkanın içine gir!',
   oda_arena_gir: 'Halının ortasına geldik. Sessiz olalım, biri uyuyor sanki.',
   // Mutfak · Tezgâh Tepeleri
   mut_tezgah_gir: 'Mutfak tezgâhı! Ekmek kırıntıları kaya gibi kocaman!',
@@ -52,5 +53,6 @@ Object.assign(AUD.LINES, {
   mut_makarna: 'Makarna köprüsünden geçelim, çıtır çıtır!',
   mut_anahtar_ipucu: 'Bilbo bir şey kokluyor. Ne buldu acaba?',
   mut_anahtar: 'Anahtarım! Bilbo buldu, ne akıllı köpek!',
+  mut_mini_ipucu: 'Hediye kutusunda bir oyun saklı! Halkaya gir bakalım!',
   mut_arena_gir: 'Ocağın üstü. Merak etme, ocak kapalı.',
 });

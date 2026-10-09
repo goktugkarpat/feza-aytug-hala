@@ -129,6 +129,21 @@ Bölüm içine de istasyon konabilir (yerlesim'de `L.stations`). `CAKE.build(api
 katmanı, #ui içinde; bitince silinir), t, score, from: 'hub'|'zone', data }`. `MINIGAME.start(id, {from, onEnd})`, `.finish()`, `.list()`, `.active`,
 `.current`. GAME.update her kare `MINIGAME.update(dt)`; holdsWorld iken dünya durur. Sonuç `GAME.miniResult` ile kayda girer. Yer tutucu: `sekerYakala`.
 
+### Odalar A: Oturma Odası + Mutfak (src/06y_odakit.js, 06z_oturma.js, 06z_mutfak.js, 02l_odalarA.js)
+`ODAKIT` ortak araç (06z_oturma'dan ÖNCE yüklenir): kendi zemini (`floor`: 3 doku + yürünür alan aydınlık/dışı gölgeli + loşluk),
+`slab` (halı, kesme tahtası, ocak), `tufts` (sallanan halı ilmekleri, 14 m parçalı InstancedMesh), `toys(api)` oyuncak çerçevesi
+(yaklaşınca tetik, ipucu yıldızı, ilk yaklaşmada Aytuğ Hala'nın ipucu cümlesi + `HALA.pointTo`, `ride` Feza'yı yol boyunca taşır,
+`boost` geçici hız), `treasure`, `lost` (Aytuğ Hala'nın kayıp eşyası), `fill`/`scatter` (dev nesne/süs serpme), `miniStation`.
+- `L.kayipEsya = { id, x, z }` (yerlesim): kayıp eşyanın yeri. Feza yaklaşınca tümsek kazılır → `GAME.foundLostItem(id, bölüm)`.
+  Bilbo ajanı için kanca: varsa `GAME.bilboDig(x, z, id)` çağrılır (Bilbo koşup kazsın). Bilbo yarışı: varsa `GAME.bilboRide({ dur, x, z })`
+  (yoksa yer tutucu: 14 s hızlı koşu + toz yumağı toplama).
+- `GAME.dropSugar(x, z, gold, n)` (07_game, küçük ek): oyuncaklar/hazineler şeker saçar.
+- Çıkartmalar (gizli): `oturma_hazine, oturma_tv, oturma_domino, oturma_kaset, oturma_bilbo, mutfak_hazine, mutfak_sunger, mutfak_tereyag,
+  mutfak_un, mutfak_musluk, mutfak_tekne, mutfak_kapak, mutfak_baharat, mutfak_kavanoz`. Altın şeker: oturma son gizli hazine + Bilbo
+  yarışında 10/10, mutfak baharat sırrı.
+- Oda içi mini oyun istasyonu (`kind:'mini'`): oturma 1. alan (tercih: balonPatlat › sekerYagmuru › sekerYakala), mutfak 2. alan
+  (tencereKapak › tencereKapaklari › kapakMuzik › sekerYakala).
+
 ### QA
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
 cheerAll(), hurt(n), down(), info() }`. Python: `scratchpad/qa/hala_qa.py` (sınıf `Hala`, kullanım dosyanın başında), duman testi `hala_smoke.py`.
