@@ -925,8 +925,12 @@ const STORY = (() => {
     for (let i = FLY.length - 1; i >= 0; i--) {
       const o = FLY[i]; o.t += dt;
       const g = o.g, u = o.t;
-      const rise = easeOut(u / 0.9), out = u > o.hold ? ease((u - o.hold) / 1.0) : 0;
-      g.position.set(o.x, o.y0 + rise * o.h + out * 6, o.z);
+      const rise = easeOut(u / 0.9), out = u > o.hold ? ease((u - o.hold) / (o.to ? 1.3 : 1.0)) : 0;
+      if (o.to) {   // pastaya doğru yay çizerek uç
+        const y0 = o.y0 + rise * o.h;
+        g.position.set(o.x + (o.to.x - o.x) * out, y0 + (o.to.y - y0) * out + Math.sin(out * Math.PI) * 2.2, o.z + (o.to.z - o.z) * out);
+        if (out >= 1 && !o.hit) { o.hit = true; burst('sparkle', o.to.x, o.to.y, o.to.z, { count: 26 }); burst('hearts', o.to.x, o.to.y + 0.5, o.to.z, { count: 8 }); sfx('levelup', { vol: 0.5 }); }
+      } else g.position.set(o.x, o.y0 + rise * o.h + out * 6, o.z);
       g.rotation.y += dt * (3 + out * 10);
       const s = (0.3 + 0.7 * easeOut(u / 0.5)) * (1 - out * 0.85) * o.s;
       g.scale.setScalar(s);
@@ -939,7 +943,7 @@ const STORY = (() => {
     if (typeof scene === 'undefined') return;
     const g = trophy(kind);
     scene.add(g);
-    FLY.push({ g, t: 0, x, z, y0: y, h: o.h ?? 1.6, hold: o.hold ?? 2.6, s: o.s ?? 1 });
+    FLY.push({ g, t: 0, x, z, y0: y, h: o.h ?? 1.6, hold: o.hold ?? 2.6, s: o.s ?? 1, to: o.to || null });
     burst('sparkle', x, y + 1, z, { count: 18 });
   }
   function dance(dur) {   // Hala + Feza + Bilbo sevinç dansı (oyun modelleri; Hala'nın kendi kancası varsa onu kullanır)
@@ -1187,17 +1191,24 @@ const STORY = (() => {
     seen.zone = { masa: true }; seen.area = {}; seen.introAt = performance.now(); pendingPasta = false; pastaShown = false; STORY.endingDone = false;
     const a = line('masa_ilk', 'Burası benim mutfak masam. Pastamız da burada bekliyor!', 3);
     const b = line('masa_ilk2', null, 2);
+    seen.cakeIds = malzemeIds();
+    const g = G_(), L = g && g.L, cs = L && L.cakeSpot;
+    if (cs) later(0.9, () => { if (G_().L === L) moment(Math.max(3.5, a + 0.4), { x: cs.x, z: cs.z, R: 10, H: 5.2 }); });
     return Math.max(a, b);
   }
+  function malzemeIds() { const g = G_(); const m = g && g.P && g.P.malzemeler; return m ? Object.keys(m).filter(k => m[k]) : []; }
   function malzemeCount() { const g = G_(); const m = g && g.P && g.P.malzemeler; return m ? Object.keys(m).filter(k => m[k]).length : 0; }
   function zone(o) {
     restoreXray();   // başlıktan (Devam Et / harita) oyuna geçiş
+    if (!seen.cakeIds) seen.cakeIds = malzemeIds();   // kayıttan devam: zaten pastadaki malzemeler yeniden uçmasın
     const id = o && o.id; if (!id) return;
     if (id === 'masa') {
       // yeni oyunda 07 önce zone() sonra intro() çağırır: bir an bekle, intro geldiyse masa_ilk zaten anlatılıyor
       later(0.15, () => {
         if (performance.now() - seen.introAt < 1500) return;
-        if (!pastaShown && malzemeCount() >= 3) { pastaShown = true; pastaScene(); return; }
+        const fresh = deliverIngredients();
+        if (!pastaShown && malzemeCount() >= 3) { pastaShown = true; later(fresh ? 3.2 : 0, pastaScene); return; }
+        if (fresh) { line('masa_donus1', 'Masaya döndük! Bak, pastamız büyüyor.', 3); seen.zone.masa = true; return; }
         if (seen.zone.masa) line(pick(['masa_donus1', 'masa_donus2', 'masa_donus3']), 'Masaya döndük!', 2);
         seen.zone.masa = true;
       });
@@ -1207,6 +1218,20 @@ const STORY = (() => {
     const Z = typeof ZONES !== 'undefined' && o && Number.isInteger(o.index) ? ZONES[o.index] : null, own = !!(Z && Z.line);
     if (!seen.zone[id]) { seen.zone[id] = 1; if (!own) line('oda_' + id, null, 3); line('gorev_' + id, null, 2); }
     else line('gorev_' + id, null, 2);
+  }
+  // masaya yeni gelen malzemeler (odalarda bulunanlar) havada dönüp pastaya uçar
+  function deliverIngredients() {
+    const g = G_(), L = g && g.L, cs = L && L.cakeSpot, P = g && g.P;
+    const ids = malzemeIds(), had = seen.cakeIds || [], fresh = ids.filter(id => had.indexOf(id) < 0);
+    seen.cakeIds = ids;
+    if (!fresh.length || !cs || !P) return 0;
+    fresh.forEach((id, i) => later(0.9 + i * 0.7, () => {
+      if (G_().L !== L) return;
+      spawnTrophy(id, P.pos.x + 0.4 * (i - (fresh.length - 1) / 2), 1.0, P.pos.z + 0.6, { h: 1.2, hold: 1.4, s: 1.0, to: { x: cs.x, y: 3.2, z: cs.z } });
+    }));
+    later(1.6, () => { if (G_().L === L) moment(3.6 + fresh.length * 0.7, { x: cs.x, z: cs.z, R: 9, H: 4.6 }); });
+    if (g.storyCheer) later(2.4, () => g.storyCheer(2, true));
+    return fresh.length;
   }
   function pastaScene() {   // Pasta Krallığı açıldı: masadaki pembe kapıya kamera gider, kıvılcımlar
     const g = G_(), L = g && g.L;
