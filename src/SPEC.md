@@ -102,8 +102,11 @@ Aytuğ Hala'nın ek API'si (karakter ajanı, src/04_hala.js; sesli cümleleri `s
   fırlatır (Feza havadayken dokunulmaz). Hedefsiz `HALA.boost()` = havaya atıp tutar. `o = { h: tepe yüksekliği m (vars. 2 + 0,12·mesafe),
   dur: uçuş s, onLand(), sessiz: true (cümle söyleme) }`. Başladıysa true. Bölüm tasarımcısı yüksek yer/karşı kıyı için istasyondan çağırır,
   ör. `GAME.on('station', s => { if (s.id === 'raf_ust') HALA.boost(s.hx, s.hz); })`. Dünya düz (y = 0); inilecek yer yürünür olmalı.
-- `HALA.dance(s = 5.5)` (bölüm sonu/hikâye dansı), `HALA.cheer(s)` (alkışlı sevinç zıplaması), `HALA.busy` (şu anki eylem adı ya da null:
-  'throw' | 'hug' | 'lift' | 'point' | 'clap' | 'cheer' | 'shield' | 'team' | 'boost' | 'dance').
+- `HALA.dance(s = 5.5)` (bölüm sonu/hikâye dansı; yakındaki Feza da kollarını sallar), `HALA.cheer(s)` (sevinç zıplaması),
+  `HALA.wave(x?, z?, s)` (o yöne el sallar), `HALA.goTo(x, z, { face, hold: s (vars. 30), speed, then() })` (hikâye için bir yere yürüyüp
+  bekler; `HALA.release()` takibe döndürür), `HALA.expr('mutlu' | 'saskin' | 'sevgi' | 'merak' | 'uzgun', s)` (yüz ifadesi),
+  `HALA.busy` (şu anki eylem adı ya da null: 'throw' | 'hug' | 'lift' | 'point' | 'clap' | 'cheer' | 'shield' | 'team' | 'boost' | 'dance' |
+  'pet' (Bilbo'yu sever) | 'wave' | 'goto').
 - `HALA.portrait()` → `{ smile, talk, blink }` (256² yuvarlak rozet dataURL'leri; ilk çağrı ~0,5 s sürer — yükleme ekranında çağır,
   sonra önbellekten). Arayüz "sol üstte Hala'nın yüzü konuşurken ağzı oynar" için `AUD.current` varken smile ↔ talk değiştirebilir.
 - Kendiliğinden yaptıkları: Feza'nın yanında/hafif arkasında takip (yolunu kesmez, takılırsa kalpli parıltıyla yanına ışınlanır); savaşta

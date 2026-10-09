@@ -1063,6 +1063,14 @@ const HALA = (() => {
     M.fidW = damp(M.fidW, fidTarget, fidTarget ? 5 : 9, dt);
     if (M.fidW > 0.01 && M.fid >= 0) fidget(P, FIDGETS[M.fid], M.fidU, M.fidW * bump(M.fidU, 0, 0.15, 0.85, 1));
     face.grin = Math.max(face.grin, 0.15);
+    if (S.expr && S.t < S.expr.until) {   // hikâye ifadesi (HALA.expr)
+      const n = S.expr.name, w = Math.min(1, (S.expr.until - S.t) / 0.25, (S.t - S.expr.from) / 0.2);
+      if (n === 'mutlu') { face.happy = w; face.grin = w; face.blush = w; }
+      else if (n === 'saskin') { face.o = w; face.browR = w; face.squint = 0; face.grin = 0; }
+      else if (n === 'sevgi') { face.calm = w; face.grin = 0.5 * w; face.blush = w; }
+      else if (n === 'merak') { face.browR = 0.7 * w; face.browW = 0.3 * w; face.look = w; face.lookX = 0.6; face.lookY = 0.3; }
+      else if (n === 'uzgun') { face.browW = w; face.grin = 0; face.squint = 0.2 * w; }
+    }
     // eylem pozları
     AIM.L[2] = AIM.R[2] = 0;
     if (act) actPose(act, P, Q, t, dt);
@@ -1242,6 +1250,13 @@ const HALA = (() => {
         face.grin = 1; face.happy = a.ph === 2 ? 0.7 : 0; face.browR = 0.8;
         break;
       }
+      case 'wave': {
+        const w = bump(u, 0, 0.12, 0.85, 1);
+        mixK(P, POSE.wave, w); P[C.fR] += 0.45 * Math.sin(a.t * 11) * w; P[C.aRY] = 0.3 * Math.sin(a.t * 11) * w;
+        face.grin = w; face.happy = 0.6 * w; face.browR = 0.6 * w;
+        break;
+      }
+      case 'goto': break;
       case 'pet': {
         const w = a.ph === 1 ? bump(a.phT / 2.4, 0, 0.15, 0.85, 1) : 0;
         if (w > 0) { mixK(P, POSE.pet, w); if (a.head) { AIM.R.target = a.head; AIM.R[2] = w; } }
@@ -1388,7 +1403,7 @@ const HALA = (() => {
       }
     }
     // çok uzak ya da sıkıştı: Feza'nın yanına ışınlan (kalpli parıltıyla)
-    if (dF > 15 || (S.stuck > 1.6 && dF > 2.5)) teleportNear(A, P, S.side * 1.15, -0.65);
+    if (!(S.act && S.act.k === 'goto') && (dF > 15 || (S.stuck > 1.6 && dF > 2.5))) teleportNear(A, P, S.side * 1.15, -0.65);
     piesStep(dt);
     S.mode = S.act ? S.act.k : 'follow';
     animate(dt);
@@ -1620,6 +1635,18 @@ const HALA = (() => {
         } else if (a.phT > 0.8) endAct();
         break;
       }
+      case 'wave': {
+        S.vel = damp(S.vel, 0, 8, dt);
+        if (a.tx !== undefined) faceTo(a.tx, a.tz, dt, 6);
+        if (a.t >= a.dur) endAct();
+        break;
+      }
+      case 'goto': {   // hikâye/bölüm: belli bir yere yürü, orada dur (süre bitince ya da HALA.release() ile takibe döner)
+        const d = moveTo(A, a.x, a.z, a.speed || 4, dt, 0.12);
+        if (d < 0.2) { if (a.face !== undefined) S.face = dampAngle(S.face, a.face, 6, dt); if (!a.arrived) { a.arrived = true; if (a.then) { try { a.then(); } catch (e) { /* yut */ } } } }
+        if (a.t > (a.hold ?? 30)) endAct();
+        break;
+      }
       case 'pet': {
         // Bilbo'nun başını okşa
         const Bi = ctx.Bilbo && ctx.Bilbo.root; if (!Bi) { endAct(); break; }
@@ -1653,7 +1680,7 @@ const HALA = (() => {
       }
       default: endAct();
     }
-    if (S.act === a && a.k !== 'team' && a.k !== 'boost' && a.k !== 'shield' && Math.hypot(P.pos.x - S.x, P.pos.z - S.z) > 16) endAct();
+    if (S.act === a && a.k !== 'team' && a.k !== 'boost' && a.k !== 'shield' && a.k !== 'goto' && Math.hypot(P.pos.x - S.x, P.pos.z - S.z) > 16) endAct();
   }
   S.timers = [];
 
@@ -1729,6 +1756,11 @@ const HALA = (() => {
     return true;
   }
   function dance(dur = 5.5) { if (!S.ctx) return false; startAct('dance', { dur }); return true; }
+  // Hikâye/bölüm yardımcıları: el salla, bir yere git (ve orada bekle), takibe dön, yüz ifadesi
+  function wave(x, z, dur = 1.8) { if (!S.ctx) return false; startAct('wave', { dur, tx: x, tz: z }); return true; }
+  function goTo(x, z, o = {}) { if (!S.ctx) return false; startAct('goto', { x, z, face: o.face, hold: o.hold, speed: o.speed, then: o.then, look: !!o.look }); return true; }
+  function release() { if (S.act && S.act.k === 'goto') endAct(); }
+  function expr(name, dur = 2) { S.expr = { name, from: S.t, until: S.t + dur }; return true; }
   function cheer(dur = 1.6) { if (!S.ctx) return false; startAct('cheer', { dur }); return true; }
 
   // ── Arayüz için yüz resmi (konuşma balonu / sol üst köşe): { smile, talk, blink } dataURL (256², yuvarlak rozet) ──
@@ -1802,5 +1834,6 @@ const HALA = (() => {
 
   Object.defineProperty(api, 'busy', { get: () => (S.act ? S.act.k : null), enumerable: true });   // şu anki eylem (yoksa null)
   return Object.assign(api, { create, update, onFezaHurt, onFezaLow, onFezaDown, onCheer, teamReady, teamMove, pointTo, say, boost, dance, cheer, portrait,
+    wave, goTo, release, expr,
     _S: S, _M: M, _qa, _pies: PIES });
 })();
