@@ -286,7 +286,7 @@ const BOSSDAV = (() => {
     let S = b.dv;
     if (!S || S.enc !== b.encounter) {   // yeni karşılaşma (ya da uyuyup uyandı): eski hamle nesneleri temizlenir
       if (S) clearAll();
-      S = b.dv = { enc: b.encounter, n: 0, napCd: 0, stage: (S && S.stage) || 1, half: S ? S.half : false, lineN: 0, tired: false, tiredT: 0 };
+      S = b.dv = { enc: b.encounter, n: 0, napCd: 0, stage: (S && S.stage) || 1, half: S ? S.half : false, lineN: 0, tired: false, tiredT: 0, hints: (S && S.hints) || {} };
       b.st.lid = null; b.st.scoopOff = 0;
       // Dövüş süresi: 07'nin boss canı (seviyeye göre, tüm bosslar aynı) × hpK — çocuk-bot ölçümü: düz can ile 15–22 s sürüyordu,
       // hedef ~35–50 s (pasta, 3 aşama + Takım Hamlesi ile ~60–80 s). Bir kez (uyuyup uyanınca tekrar değil).
@@ -600,6 +600,8 @@ const BOSSDAV = (() => {
     },
   };
 
+  const HINT = { suck: 'ipucu_vakum', blow: 'ipucu_toz', cable: 'ipucu_kablo', lid: 'ipucu_kapak', steam: 'ipucu_buhar', rain: 'ipucu_mercimek',
+    snow: 'ipucu_kartopu', slide: 'ipucu_kaydirak', scoop: 'ipucu_top', squirt: 'ipucu_krema', strawrain: 'ipucu_cilek', jump: 'ipucu_zipla' };
   const DEFS = { uykucuSupurge: SUP, dudukluTencere: TEN, dondurmaKrali: DON, kocaPasta: PAS };
   const types = () => Object.keys(DEFS);
 
@@ -608,7 +610,14 @@ const BOSSDAV = (() => {
     const S = state(b), st = b.st;
     S.napCd = Math.max(0, S.napCd - dt * (b.ph === 'idle' ? 0.25 : 0));
     st.air = b.ph === 'jump' ? st.air : 0;
-    if (b.type === 'dondurmaKrali') st.melt = clamp01((0.55 - b.hp / b.maxHp) / 0.5);
+    if (b.type === 'dondurmaKrali') {   // erime: canı azaldıkça damlar, terler (komik)
+      st.melt = clamp01((0.55 - b.hp / b.maxHp) / 0.5);
+      if (st.melt > 0.15 && (S.meltT = (S.meltT || 0) - dt) <= 0) { S.meltT = 0.35 / st.melt; const a = rnd(0, TAU2); A.burst('milk', b.x + Math.sin(a) * b.r * 0.8, b.height * rnd(0.3, 0.6), b.z + Math.cos(a) * b.r * 0.8, { count: 2, scale: 0.6 }); }
+      if (st.melt > 0.4 && !S.meltSaid) { S.meltSaid = true; A.ftext(b.x, b.height + 0.4, b.z, 'Eriyorum!', 'word'); }
+    }
+    if (b.type === 'dudukluTencere' && b.ph === 'idle' && (S.fisT = (S.fisT ?? rnd(1, 2)) - dt) <= 0) {   // boşta da fıs fıs
+      S.fisT = rnd(1.4, 2.6); const m = A.muzzle(b); A.burst('steam', m.x, m.y + 0.1, m.z, { count: 4 }); A.sfx('fizz', { x: b.x, z: b.z, vol: 0.3, pitch: rnd(1.2, 1.5) });
+    }
     if (b.type === 'kocaPasta') { st.stage = S.stage; if (st.slots === undefined || st.slots < S.stage) st.slots = S.stage; }
     if (b.type === 'kocaPasta' && S.pending && S.pending !== S.stage && b.ph !== 'shock') {   // aşama geçişi (yarıda kalan hamle biter)
       clearMovesOf(b); b.y = 0; st.air = 0; A.bossPhase(b, 'shock', 2.6); return;
@@ -625,8 +634,12 @@ const BOSSDAV = (() => {
         break;
       default: {
         const fn = D.moves[b.ph];
+        if (fn && HINT[b.ph] && !S.hints[b.ph]) { S.hints[b.ph] = true; say(HINT[b.ph], 1); }   // (ilk kez: Aytuğ Hala ne yapılacağını söyler)
         if (fn) fn(b, S, dt, d, ux, uz);
-        else if (b.stT >= b.phD) A.bossEnd(b, 0.6, 1);   // (Bilbo'nun koruma havlaması gibi dışarıdan gelen kısa sersemleme: süresi bitince devam)
+        else {   // (Bilbo'nun koruma havlaması gibi dışarıdan gelen kısa sersemleme: başında yıldızlar döner, süresi bitince devam)
+          if ((S.dzT = (S.dzT || 0) - dt) <= 0) { S.dzT = 0.4; A.burst('star', b.x, b.height + 0.2, b.z, { count: 3, color: '#fff3a0' }); }
+          if (b.stT >= b.phD) A.bossEnd(b, 0.6, 1);
+        }
       }
     }
   }

@@ -569,7 +569,7 @@
   reg('uykucuSupurge', { ad: 'Uykucu Süpürge', base: 'kraljole', model: mk('uykucuSupurge'),
     stats: { r: 1.6, height: 2.8, speed: 1.7, aggro: 13, slamR: 2.6, phases: ['idle', 'move', 'roar', 'summon', 'suck', 'blow', 'cable', 'nap'] },
     lines: { giris: 'uykucuSupurge_giris', bitti: 'uykucuSupurge_bitti' },
-    bossKit: Object.assign({ add: 'tozTavsani', at: [0.5], n: [2], col: '#b9c7ff', roar: 0.8 }, own) });
+    bossKit: Object.assign({ add: 'tozTavsani', at: [0.5], n: [2], col: '#b9c7ff', roar: 0.75, roarSfx: 'sigh' }, own) });
   reg('dudukluTencere', { ad: 'Düdüklü Tencere', base: 'kefirdev', model: mk('dudukluTencere'),
     stats: { r: 1.45, height: 2.6, speed: 1.8, aggro: 13, phases: ['idle', 'move', 'roar', 'summon', 'lid', 'steam', 'rain'] },
     lines: { giris: 'dudukluTencere_giris', bitti: 'dudukluTencere_bitti' },
@@ -581,7 +581,7 @@
   reg('kocaPasta', { ad: 'Koca Huysuz Pasta', base: 'sovalye', model: mk('kocaPasta'),
     stats: { r: 2.05, height: 3.6, speed: 1.6, aggro: 14, phases: ['idle', 'move', 'roar', 'squirt', 'taunt', 'cookies', 'strawrain', 'sweep', 'jump', 'shock', 'tired'] },
     lines: { giris: 'kocaPasta_giris', bitti: 'kocaPasta_bitti' },
-    bossKit: Object.assign({ add: 'kurabiyeAsker', at: [], n: [], col: '#ffb8d0', roar: 1.0, roarSfx: 'roar', horn: false, roam: false, word: null, summonAt: 0.47, addHp: 0.6, addDmg: 0.6 }, own) });
+    bossKit: Object.assign({ add: 'kurabiyeAsker', at: [], n: [], col: '#ffb8d0', roar: 1.25, roarSfx: 'roar', horn: false, roam: false, word: null, summonAt: 0.47, addHp: 0.6, addDmg: 0.6 }, own) });
   HUYSUZ.type('kurabiyeAsker', { ad: 'Kurabiye Asker', base: 'nobetci', saldiri: 'yakin', model: mk('kurabiyeAsker'), stats: { r: 0.5, height: 1.5, speed: 2.4 } });
   HUYSUZ.zone('oturma', { boss: 'uykucuSupurge' });
   HUYSUZ.zone('mutfak', { boss: 'dudukluTencere' });

@@ -1,5 +1,6 @@
 /* ── Boss cümleleri (Aytuğ Hala anlatır; tr-TR-EmelNeural, gen_voice.py tüm src/02l_*.js dosyalarını okur) ──
-   giris: boss Feza'yı görünce · yarim: canı yarıya inince · bitti: neşelenince · diğerleri hamle ipuçları (src/05c_boss_davranis.js). */
+   giris: boss Feza'yı görünce · yarim: canı yarıya inince · bitti: neşelenince · diğerleri hamle ipuçları (src/05c_boss_davranis.js);
+   ipucu_*: bir hamle dövüşte ilk kez görülünce bir kez söylenir. */
 Object.assign(AUD.LINES, {
   uykucuSupurge_giris: 'Bak bak, Uykucu Süpürge uyandı! Hortumundan uzak dur!',
   uykucuSupurge_yarim: 'Süpürge esniyor! Uyuyunca hemen vur!',
@@ -19,4 +20,16 @@ Object.assign(AUD.LINES, {
   pasta_kurabiye: 'Kurabiye askerler geldi, onlar da oyun istiyor!',
   pasta_dalga: 'Krema dönüyor! Önünden kaç!',
   pasta_takim: 'Hadi Feza, Takım Hamlesi! Parlayan düğmeye bas!',
+  ipucu_vakum: 'Hortum çekiyor! Ters yöne koş!',
+  ipucu_toz: 'Mor halkalardan çık, toz bulutu geliyor!',
+  ipucu_kablo: 'Kablo dalgası! Sarı halkalardan uzak dur!',
+  ipucu_kapak: 'Kapak uçuyor! Turuncu halkadan kaç!',
+  ipucu_buhar: 'Buhar bulutu yavaşlatır, etrafından dolaş!',
+  ipucu_mercimek: 'Mercimek yağıyor! Küçük halkalardan çık!',
+  ipucu_kartopu: 'Kar topu geliyor! Mavi halkadan kaç!',
+  ipucu_kaydirak: 'Kral kayacak! Mavi yoldan kenara çekil!',
+  ipucu_top: 'Top yuvarlanıyor! Pembe yoldan çekil!',
+  ipucu_krema: 'Krema halkaları! Halkaların arasında dur!',
+  ipucu_cilek: 'Çilek yağmuru! Pembe halkalardan çık!',
+  ipucu_zipla: 'Pasta zıplayacak! Pembe halkadan uzaklaş!',
 });
