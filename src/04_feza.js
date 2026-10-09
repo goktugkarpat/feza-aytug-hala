@@ -2612,7 +2612,7 @@ const { FEZA, ITEMS } = (function () {
         GAME.on('boss', () => H.express('kararli', 2.2));
         for (const ev of ['item', 'lostItem', 'ingredient', 'goldSugar']) GAME.on(ev, () => H.express('saskin', 0.9, 'sevinc'));
         GAME.on('levelup', () => H.wink());
-        GAME.on('costume', () => { H.express('sevinc', 1.2); });
+        GAME.on('costume', d => { H.express('sevinc', 1.2); hsay('kostum_' + ((d && d.id) || 'gunluk')); });
       }
       if (S.exprT <= 0 && S.exprNext) { const n = S.exprNext; S.exprNext = null; H.express(n, 1.1); }
       // ara sıra (boştayken) göz kırpar
@@ -2695,6 +2695,7 @@ const { FEZA, ITEMS } = (function () {
     function setTwins(obj, on) { obj.traverse(o => { if (o.userData.xrayTwin) o.visible = on; }); }
     // kostümün başlığı / sırtı eşya şapkasını / pelerinini gizler (iki katman çakışmaz); saç, takılı olan başlığın içine toplanır
     const hairHat = () => KOST.hatE || S.eq.hat;
+    const hsay = k => { try { const a = GAME.halaApi; if (a && a.hasLine && a.hasLine(k)) a.say(k, 2); } catch (e) { /* isteğe bağlı */ } };
     function kostVis() {
       const d = KOST.id ? COSTUMES[KOST.id] : null;
       hatSlot.visible = !(d && d.hat); capeSlot.visible = !(d && d.cape);
@@ -2706,7 +2707,8 @@ const { FEZA, ITEMS } = (function () {
         const a = ITEMS.setOf(S.eq.weapon.item), b = ITEMS.setOf(S.eq.hat.item), c = ITEMS.setOf(S.eq.cape.item);
         if (a && a === b && b === c) id = a;
       }
-      SETG.id = id; H.setComplete = id;
+      const was = SETG.id; SETG.id = id; H.setComplete = id;
+      if (id && id !== was && typeof GAME !== 'undefined' && GAME && GAME.H === H && GAME.state === 'play') { hsay('set_tamam'); H.express('sevinc', 1.5); }
       if (!id) { if (SETG.obj) SETG.obj.visible = false; return; }
       if (!SETG.obj) {
         const N = 18, pos = new Float32Array(N * 3);
@@ -2721,7 +2723,7 @@ const { FEZA, ITEMS } = (function () {
     }
 
     const H = {
-      root, tip: v3(), wandTip: v3(), hand: v3(), bones: B, skeleton: skel, slots: { weapon: wSlot, offhand: offSlot, hat: hatSlot, cape: capeSlot },
+      root, tip: v3(), wandTip: v3(), hand: v3(), bones: B, skeleton: skel, slots: { weapon: wSlot, offhand: offSlot, hat: hatSlot, cape: capeSlot, kHat, kCape },
       update, readSeatHeight: .40,
       bladeOn: true,       // lightsaber on (or igniting); false while retracted / asleep
       ignite,              // H.ignite(): blade grows out of the hilt (0 → full in 0.3 s) with a small flash
@@ -2817,7 +2819,7 @@ const { FEZA, ITEMS } = (function () {
   // → { url } when it is cached, else a picture (draw / finish, see picNow) of that hat on Feza
   function portraitPic(H, hatItem) {
     const S = H._S, e = hatItem === undefined || !H._hat ? S.eq.hat : (hatItem ? H._hatEntry(hatItem) : null);
-    const hk = e ? e.key : '-';
+    const hk = (e ? e.key : '-') + (H.costume ? '|' + H.costume : '');
     if (PORTRAITS[hk]) return { url: PORTRAITS[hk] };
     return {
       draw() {
@@ -2830,7 +2832,7 @@ const { FEZA, ITEMS } = (function () {
         const ws = H.slots.weapon, wv = ws.visible, cs = H.slots.cape, cvis = cs.visible; const os = H.slots.offhand, ov = os.visible; ws.visible = false; os.visible = false; cs.visible = false;
         try {
           OFF.scene.add(root); root.position.set(0, 0, 0); root.rotation.set(0, -0.32, 0); root.scale.set(1, 1, 1); root.updateMatrixWorld(true);
-          const box = new THREE.Box3().setFromObject(H.slots.hat), top = clamp(box.isEmpty() ? 0 : box.max.y, 1.42, 1.62), ex = (top - 1.42) * 0.5;
+          const box = new THREE.Box3().setFromObject(H.slots.hat.visible ? H.slots.hat : H.slots.kHat || H.slots.hat), top = clamp(box.isEmpty() ? 0 : box.max.y, 1.42, 1.62), ex = (top - 1.42) * 0.5;
           offDraw(v3(0.0, 1.13 + ex, 0.03), 0.39 + ex, v3(-0.4, 0.1, 1), 24);
         } finally {   // always put Feza back where he was
           OFF.scene.remove(root);

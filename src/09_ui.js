@@ -2528,8 +2528,10 @@ const UI = (() => {
     on('station', st => {
       if (st.kind === 'kapi') { const i = (M.ZONES || []).findIndex(z => z.id === st.zone); if (i >= 0) travelTo(i, { kapi: true }); return; }
       if (st.kind === 'mini' && st.mini && typeof MINIGAME !== 'undefined') { safe('MINIGAME.start', () => MINIGAME.start(st.mini, { from: 'zone' })); return; }
+      if (st.kind === 'binis') { safe('rideBilbo', () => g.rideBilbo && g.rideBilbo(true, st.sure || 14)); return; }   // Bilbo'ya bin!
       if (typeof HUB !== 'undefined' && HUB.open) safe('HUB.open', () => HUB.open(st.id, st));
     });
+    on('costume', () => portraitSoon(0.2));   // Dev Ev: kostüm değişince sol üstteki Feza resmi de değişir
     on('area', a => { if (a.index > 0) banner({ kind: 'zone', title: a.ad, small: a.boss ? 'Boss Arenası' : (a.index + 1) + '. alan', dur: 2 }); });
     on('levelup', d => {
       banner({ kind: 'level', icon: '⭐', title: `Seviye ${d.lvl}!`, sub: 'Daha da güçlendin!', rays: true, dur: 2.2 });

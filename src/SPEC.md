@@ -129,6 +129,31 @@ Bölüm içine de istasyon konabilir (yerlesim'de `L.stations`). `CAKE.build(api
 katmanı, #ui içinde; bitince silinir), t, score, from: 'hub'|'zone', data }`. `MINIGAME.start(id, {from, onEnd})`, `.finish()`, `.list()`, `.active`,
 `.current`. GAME.update her kare `MINIGAME.update(dt)`; holdsWorld iken dünya durur. Sonuç `GAME.miniResult` ile kayda girer. Yer tutucu: `sekerYakala`.
 
+### Feza (src/04_feza.js): kıyafet, kostümler, ifadeler, binme
+Görünüş (gerçek Feza): kahverengi kısa saç, alna düşen yan kakül; krem zemin üstünde ince lacivert + açık mavi YATAY çizgili uzun kollu
+tişört (krem riba yaka/kol ağzı, göğüste küçük lacivert etiket), koyu gri eşofman altı (lastikli paça), turuncu-turkuaz çizgili çoraplar,
+mavi-beyaz spor ayakkabı. (Eski "bulut/uçak baskılı tişört" metni geçersiz.)
+**Kostümler** — eşyalardan AYRI katman. `GAME.setCostume(id)` → `H.setCostume(id)` (+ `recalcStats`, `costume` olayı, Hala `kostum_<id>` cümlesi).
+`FEZA.COSTUMES`, `FEZA.costumes()` → `[{id, ad, arti}]` (Gardırop ekranı için), `FEZA.costumeBonus(id)` → `{hp, dmg, armor, speed}` (recalcStats okur):
+| id | ad | görünüş | artı |
+|---|---|---|---|
+| `gunluk` (= null) | Günlük Feza | çizgili tişört | — |
+| `pastaci` | Pastacı Feza | beyaz aşçı şapkası, pembe kenarlı önlük, cepte tahta kaşık | can +%12 |
+| `superkahraman` | Süper Kahraman Feza | kırmızı maske, sarı F rozeti, altın kemer, F'li kırmızı pelerin | hız +%10 |
+| `sovalye` | Şövalye Feza | oluklu karton zırh (bant, boyalı yıldız), karton omuzluk, sol kolda tencere kapağı kalkan | zırh +8 |
+| `kasif` | Kâşif Feza | kâşif şapkası (yeşil bant), dürbün, çapraz askılı deri çanta | vuruş +%7 |
+| `astronot` | Astronot Feza | cam baloncuk kask + yaka, ışıklı sırt çantası, göğüs paneli | hız +%5, zırh +4 |
+Başlıklı kostüm (pastacı, kâşif, astronot) takılı eşya şapkasını GİZLER; pelerinli/sırt çantalı kostüm (süper kahraman, astronot) eşya pelerinini
+gizler (eşyanın gücü sürer). Kayıttan yüklenince `applyLooks()` (07_game) kostümü ve Bilbo aksesuarını yeniden giydirir. Kostümün kilidi: `GAME.unlockCostume(id)`.
+**İfadeler**: `H.express('sevinc'|'saskin'|'kararli', saniye, sonraki?)`, `H.wink()` (sol göz). Feza kendisi de tepki verir: huysuz neşelenince
+ara sıra sevinç, boss gelince kararlılık, eşya/kayıp eşya/malzeme/altın şekerde şaşkınlık → sevinç, seviye atlayınca göz kırpma, boştayken ara sıra göz kırpma.
+**Binme**: `H.update(dt, { …, ride: 0..1 })` → Bilbo'nun sırtında oturma pozu (bacaklar iki yana, eller öne, gövde öne eğik; vuruş yine yapılır).
+Oyun `H.root.position.y`'yi Bilbo'nun eyer yüksekliğine koyar; poz kasığı köke oturtur.
+**Eşya setleri**: silah + şapka + pelerin aynı sete (`ITEMS.setOf(item)`, `ITEMS.SETS[set].renk`) aitse Feza'nın çevresinde setin renginde
+parıltılar döner (`H.setComplete` = set id), Hala `set_tamam` der. **Eşya kaydı** `ITEMS.register / paintCape / clearBases / setStarter / BOSS_GIFT / SETS / KIT`
+(ayrıntı: src/04_feza.js `const ITEMS` üstündeki açıklama; ev temalı eşyalar src/04_esyalar.js'de).
+Sesler: `src/02l_feza.js` (`kostum_<id>`, `set_tamam`, Bilbo cümleleri).
+
 ### QA
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
 cheerAll(), hurt(n), down(), info() }`. Python: `scratchpad/qa/hala_qa.py` (sınıf `Hala`, kullanım dosyanın başında), duman testi `hala_smoke.py`.
