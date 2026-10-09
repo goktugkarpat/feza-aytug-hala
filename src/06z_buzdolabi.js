@@ -642,7 +642,7 @@ const ODAB = (() => {
     // zemine serpiştirilmiş kırağı kristalleri ve minik buz parçaları
     for (const f of O.floorSpots(L, api, 50, { avoid })) frost(B, f.x, f.z, rnd);
     // ── Geçitler: buz kemerleri ──
-    (L.areas || []).forEach((a, k) => { if (k && a.gate) iceArch(B, api, L, k); });
+    (L.areas || []).forEach((a, k) => { if (k && a.gate) (a.boss ? freezerDoor : iceArch)(B, api, L, k); });
     // ── Buz pistleri ──
     for (const e of D.ice) { iceRink(api, e); R.ice.push(e); }
     const pist = D.ice.find(e => e.kind === 'pist');
@@ -813,6 +813,37 @@ const ODAB = (() => {
     B.add('glow', G.sphere(8, 6), C(0xffffff, 2.2), [ex, ey, ez], null, [0.16, 0.16, 0.16]);
     api.light(cx, 3.2, cz, 0xcfeeff, 2.2, 7, 0);
     api.glow(cx, cz, half + 1, 0xd8f2ff, 0.16);
+  }
+  // Dondurucu kapısı (arenaya giriş): iki yana açılmış, karlı, kulplu beyaz dondurucu kapakları + üstte buzlu çerçeve
+  function freezerDoor(B, api, L, k) {
+    const g = L.areas[k].gate, d = O.gateDir(L, k), px = -d.dz, pz = d.dx, w = O.corridorHalf(api, g.x, g.z, px, pz);
+    if (w.a >= 7 || w.b >= 7) { iceArch(B, api, L, k); return; }
+    const cx = g.x + px * (w.a - w.b) / 2, cz = g.z + pz * (w.a - w.b) / 2, half = (w.a + w.b) / 2 + 0.6;
+    for (const sd of [-1, 1]) {
+      const hx = cx + px * half * sd, hz = cz + pz * half * sd;
+      // kapak: menteşeden dışa ve arenaya doğru 50° açık
+      const ox = px * sd * Math.cos(0.87) + d.dx * Math.sin(0.87), oz = pz * sd * Math.cos(0.87) + d.dz * Math.sin(0.87);
+      const mx = hx + ox * 1.6, mz = hz + oz * 1.6;
+      if (api.isFloor(mx, mz) || api.isFloor(hx + ox * 3, hz + oz * 3)) continue;
+      const yaw = Math.atan2(ox, oz) + PI / 2;
+      B.add('gloss', G.rbox(3), C(0xf8fbff), [mx, 2.6, mz], [0, yaw, 0], [3.2, 5.2, 0.35]);
+      B.add('gloss', G.rbox(2), C(0xdfeaf4), [mx, 2.6, mz], [0, yaw, 0], [2.7, 4.6, 0.42]);
+      B.add('gloss', G.rbox(2), C(0x9ab8d8), [mx + ox * 1.1 + Math.cos(yaw) * 0.0, 2.6, mz + oz * 1.1], [0, yaw, 0], [0.18, 2.2, 0.6]);
+      B.add('snow', G.rbox(2), C(0xffffff), [mx, 5.3, mz], [0, yaw, 0], [3.3, 0.35, 0.6]);
+      for (let i = 0; i < 6; i++) B.add('ice', G.cone(8), C(0xd4f0ff), [mx + ox * (-1.3 + i * 0.52), 4.95, mz + oz * (-1.3 + i * 0.52)], [PI, 0, 0], [0.12, 0.5 + (i % 3) * 0.2, 0.12]);
+      for (let i = 0; i < 4; i++) B.add('glow', G.sphere(6, 4), C(0xbfeaff, 1.8), [mx + ox * (-1 + i * 0.7), 1.0 + (i % 2) * 2.4, mz + oz * (-1 + i * 0.7)], null, [0.07, 0.07, 0.07]);
+      // menteşe direği
+      for (let i = 0; i < 5; i++) B.add('ice', G.rbox(2), C(i % 2 ? 0xd2eeff : 0xbfe4ff), [hx, 0.55 + i * 1.05, hz], [0, i * 0.4, 0], [0.8, 1.0, 0.8]);
+      B.add('snow', G.sphere(10, 7), C(0xffffff), [hx, 5.5, hz], null, [0.6, 0.3, 0.6]);
+    }
+    // üst çerçeve: buz kirişi + kar + parlayan kar tanesi
+    const N = 12;
+    for (let i = 0; i <= N; i++) { const u = i / N - 0.5, x = cx + px * u * half * 2, z = cz + pz * u * half * 2; B.add('ice', G.rbox(2), C(0xd8f2ff), [x, 5.6, z], [0, Math.atan2(px, pz), 0], [half * 2 / N + 0.1, 0.6, 0.7]); if (i % 2 === 0) B.add('snow', G.sphere(8, 6), C(0xffffff), [x, 5.95, z], null, [0.45, 0.2, 0.45]); }
+    const yawF = Math.atan2(px, pz);
+    for (let i = 0; i < 6; i++) { const a = i * PI / 3; B.add('glow', G.box(), C(0xdff6ff, 2), [cx + px * Math.cos(a) * 0.55, 6.6 + Math.sin(a) * 0.55, cz + pz * Math.cos(a) * 0.55], [0, yawF, a], [1.1, 0.12, 0.12]); }
+    B.add('glow', G.sphere(10, 8), C(0xffffff, 2.4), [cx, 6.6, cz], null, [0.22, 0.22, 0.22]);
+    api.light(cx + d.dx * 2, 3.5, cz + d.dz * 2, 0xbfe6ff, 3, 9, 0.05);
+    api.glow(cx, cz, half + 1.5, 0xcfeeff, 0.22);
   }
   // Buz pisti: yarı saydam, parlak buz diski + pist çizgileri (tuval doku)
   let rinkTex = null;
@@ -1164,5 +1195,23 @@ const ODAB = (() => {
     minimap: { zemin: '#cfe8f7' },
     harita: { ad: 'Buzdolabı', detay: 'Buz pisti, jöle tepeleri, dondurma kaydırağı', renk: '#9fd6ef', x: 78, y: 34, simge: '🧊' },
     yerlesim, kur,
+    // çıkış kapısı (portal) buzlansın: taş kemer → yarı saydam buz blokları, üstünde kar, sarkıtlar
+    kurSon(L, api) {
+      const po = L.portalObj; if (!po || !po.obj) return;
+      const g = po.obj;
+      const arch = g.children.find(o => o.isMesh && o.geometry && o.geometry.attributes.color && !o.material.isShaderMaterial && o.material.vertexColors);
+      if (arch) {
+        const c = arch.geometry.attributes.color;
+        for (let i = 0; i < c.count; i++) { const v = 0.5 + 0.5 * (c.getX(i) + c.getY(i) + c.getZ(i)) / 3; c.setXYZ(i, 0.72 * v + 0.2, 0.86 * v + 0.12, 1.0); }
+        c.needsUpdate = true; arch.material = O.mat('ice'); arch.castShadow = false;
+      }
+      const k = new Kit();
+      for (let n = 0; n <= 10; n++) { const a = n / 10 * PI; k.add(G.sphere(8, 6), C(0xffffff), [Math.cos(a) * 1.65, 2.3 + Math.sin(a) * 1.65 + 0.38, 0], null, [0.42, 0.24, 0.5]); }
+      for (const sx of [-1, 1]) k.add(G.sphere(8, 6), C(0xffffff), [sx * 1.58, 2.35, 0], null, [0.5, 0.2, 0.5]);
+      const snow = new THREE.Mesh(k.build(), O.mat('snow')); snow.castShadow = true; g.add(snow);
+      const ic = new Kit();
+      for (let n = 1; n < 10; n++) { const a = n / 10 * PI, l = 0.35 + (n % 3) * 0.18; ic.add(G.cone(6), C(0xd4f0ff), [Math.cos(a) * 1.3, 2.3 + Math.sin(a) * 1.3 - l / 2, 0.3], [PI, 0, 0], [0.08, l, 0.08]); }
+      g.add(new THREE.Mesh(ic.build(), O.mat('ice')));
+    },
   });
 })();
