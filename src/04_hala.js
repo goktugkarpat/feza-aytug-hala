@@ -309,7 +309,8 @@ const HALA = (() => {
     return withAttrs(g, (x, y, z, c) => {
       const a = Math.atan2(x - HC.x, z - HC.z); let t = 0;
       for (const n of ns) t += Math.sin(a * n[1] + n[0]) * n[2];
-      return hairTone(clamp(t * 0.5 + 0.08 * (y - HC.y) * 10, -1, 1) * 0.6, c);
+      const d = _sa.set(x - HC.x, y - HC.y, z - HC.z).normalize(), edge = 1 - sstep(0.0, 0.14, phOf(d) - hairline(thOf(d)));
+      return hairTone(clamp(t * 0.5 + 0.08 * (y - HC.y) * 10, -1, 1) * 0.6 * (1 - edge) - 0.55 * edge, c);
     }, 0);
   }
   // topuza doğru uzanan dalgalı tutam: ön saç çizgisinden başlar, yanal S dalgasıyla topuza gider
@@ -680,7 +681,19 @@ const HALA = (() => {
       float happy = hzLine(abs(e.y - hy) / sqrt(1.0 + hzSq(1.24 * hx)), 0.14, aE) * (1.0 - smoothstep(0.9, 1.02, abs(e.x)));
       float calm = hzLine(abs(e.y - cy) / sqrt(1.0 + hzSq(0.7 * hx)), 0.12, aE) * (1.0 - smoothstep(0.9, 1.02, abs(e.x)));
       vec3 lashC = SRGB(0.1, 0.05, 0.04);
+      // dış köşede üç kıvrık kirpik teli (kapak çizgisinden yukarı-dışa)
+      float strands = 0.0;
+      for (int i = 0; i < 3; i++) {
+        float lx = 0.42 + 0.22 * float(i), lc = sqrt(max(0.0, 1.0 - lx * lx));
+        float ltop = pow(lc, 0.62) * 0.93 + 0.1 * lx, lbot = -pow(lc, 0.85) * 0.72 + 0.06 * lx;
+        float lhy = -0.12 + 0.62 * (1.0 - lx * lx), lcy = 0.08 - 0.34 * (1.0 - lx * lx);
+        float llid = mix(mix(ltop, mix(lcy + 0.02, lhy, cmp) + 0.03, sqz), lbot * 0.85 + 0.05, hzEye.x);
+        vec2 p0 = vec2(lx, llid + 0.06), dir = normalize(vec2(0.3 + 0.35 * float(i), 1.0));
+        float h = clamp(dot(e - p0, dir) / 0.26, 0.0, 1.0);
+        strands = max(strands, hzLine(length(e - p0 - dir * h * 0.26), mix(0.045, 0.012, h), aE));
+      }
       float ow = smoothstep(0.05, 0.35, hzEyeW.x), cw = smoothstep(0.45, 0.9, sqz);
+      col = mix(col, lashC, strands * mix(0.85, 0.6, cw));
       col = mix(col, col * SRGB(0.82, 0.64, 0.6), lower * 0.6 * ow);
       col = mix(col, eye, vis * ow);
       col = mix(col, lashC, lash * ow);
@@ -697,7 +710,7 @@ const HALA = (() => {
       col = mix(col, SRGB(0.2, 0.11, 0.07), brow * 0.95);
       // ağız
       vec2 m = q - vec2(0.0, -0.445);
-      vec3 lipC = SRGB(0.83, 0.4, 0.44), lineC = SRGB(0.4, 0.13, 0.15), inner = SRGB(0.4, 0.07, 0.11);
+      vec3 lipC = SRGB(0.85, 0.36, 0.42), lineC = SRGB(0.4, 0.13, 0.15), inner = SRGB(0.4, 0.07, 0.11);
       float W = 0.125, cs = hzMouth.x;
       float sx = clamp(m.x, -W, W);
       float sy = 1.9 * sx * sx - 0.006 + 5.0 * hzSq(max(0.0, abs(sx) - 0.085));
@@ -705,7 +718,7 @@ const HALA = (() => {
       float inM = 1.0 - smoothstep(W - 0.012, W + 0.004, abs(m.x));
       float smileL = hzLine(sd, 0.0075 * (1.0 - 0.5 * smoothstep(0.06, 0.12, abs(m.x))), aa) * inM;
       float lipUp = exp(-hzSq(m.x / 0.085) - hzSq((m.y - sy - 0.012) / 0.0095)) * (1.0 - 0.4 * exp(-hzSq(m.x / 0.012) - hzSq((m.y - sy - 0.019) / 0.006)));
-      float lipLo = exp(-hzSq(m.x / 0.075) - hzSq((m.y - sy + 0.02) / 0.014));
+      float lipLo = exp(-hzSq(m.x / 0.078) - hzSq((m.y - sy + 0.021) / 0.016));
       float dimple = exp(-hzSq((abs(m.x) - 0.128) / 0.01) - hzSq((m.y - 0.032) / 0.012));
       col = mix(col, lipC, (0.85 * lipLo + 0.7 * lipUp) * cs);
       col = mix(col, col * 1.18, 0.3 * exp(-hzSq((m.x + 0.015) / 0.025) - hzSq((m.y - sy + 0.024) / 0.006)) * cs);
