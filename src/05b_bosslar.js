@@ -225,7 +225,7 @@
     // kapak: hafif kubbe, kenar halkası, arkaya uzanan sap, kırmızı emniyet düğmesi
     r.on('lid').fx(0, 1);
     r.add(lathe('tenLid', LID_P, 56, 4), vgrad(1.85, 2.16, [[0, TEN.steelD], [0.6, TEN.steel], [1, mixc(TEN.steel, TEN.steelL, 0.4)]]));
-    r.fx(0, 0.4).add(G.torus(PI * 2, 0.08, 40), '#3a3f52', [0, 2.13, 0], [PI / 2, 0, 0], [0.42, 0.42, 0.6]);
+    r.fx(0, 1).add(G.torus(PI * 2, 0.16, 40), TEN.steelD, [0, 2.12, 0], [PI / 2, 0, 0], [0.4, 0.4, 0.45]);
     r.add(G.torus(PI * 2, 0.06, 56), TEN.steelD, [0, 1.9, 0], [PI / 2, 0, 0], [1.33, 1.33, 0.8]);
     r.fx(0, 0.6).add(G.capsule(1, 12), TEN.handle, [0, 2.06, -1.35], [PI / 2 - 0.1, 0, 0], [0.12, 0.65, 0.1]);
     r.add(G.sphere(14, 10), TEN.knob, [0, 2.12, -2.0], null, 0.15);
@@ -238,7 +238,7 @@
     r.fx(0, 0.3).add(G.cyl(1, 1, 12), '#4a3a22', [0, 2.58, 0], null, [0.05, 0.04, 0.05]);
     r.mark('muzzle', [0, 2.62, 0]);
     r.fx(0, 0);
-    face(r, [0, 1.14, 0], 1.29, { bone: 'body', tilt: 0.08, ex: 0.47, ey: 0.2, er: 0.31, iris: '#3a2a6a', skin: TEN.enamel, browCol: '#4a1a24',
+    face(r, [0, 1.14, 0], 1.29, { bone: 'body', tilt: 0.08, ex: 0.47, ey: 0.2, er: 0.31, iris: '#3a2a6a', browCol: '#4a1a24',
       browY: 1.42, mouthY: -0.4, mouthW: 0.36, heartY: 0.75, heartX: 1.05, heartS: 0.28, mouthPivot: true, blushCol: '#ffb0b8', mouthIn: '#5a1424' });
     return { height: 2.6, glowC: col('#ffd9a0'), dieHop: 0.14, mat: { rough: 0.22, rim: '#ffffff', rimK: 0.3, rimP: 2.2 }, portrait: { cx: 0, cy: 1.5, cz: 0, rad: 1.6, dy: 0.4 } };
   }
@@ -345,7 +345,7 @@
     r.on('s2').fx(0, 0.75);
     scoop(r, [0, 2.42, -0.05], 0.92, DON.van, DON.vanD, 2);
     r.fx(0, 1);
-    for (let i = 0; i < 13; i++) { const a = (i / 13) * PI * 2 + 0.3, l = [0.1, 0.2, 0.14, 0.26][i % 4]; r.add(G.sphere(10, 8), '#ff6f9a', [Math.sin(a) * 0.86, 2.72 - l * 0.6, -0.05 + Math.cos(a) * 0.86], [Math.cos(a) * 0.25, 0, -Math.sin(a) * 0.25], [0.07, l * 1.3, 0.07]); }
+    for (let i = 0; i < 13; i++) { const a = (i / 13) * PI * 2 + 0.3, l = [0.1, 0.2, 0.14, 0.26][i % 4]; r.add(G.sphere(10, 8), '#ff6f9a', [Math.sin(a) * 0.88, 2.74 - l * 0.55, -0.05 + Math.cos(a) * 0.88], null, [0.085, l * 0.95, 0.085]); }
     r.add(G.sphere(28, 14), '#ff6f9a', [0, 3.0, -0.05], null, [0.66, 0.16, 0.66]);
     sprinkles(r, [0, 2.42, -0.05], 0.92, 10, 0.45);
     // 3. top (çilek) — yuvarlanıp gidebilir (st.scoopOff)
@@ -375,8 +375,8 @@
     r.fx(0.5, 1).add(heartGeo(), hdr('#ff5aa8', 1.3), [-1.85, 2.18, 0.62], null, 0.17);
     r.on('armR').mark('muzzle', [-1.82, 1.4, 0.6]);
     r.fx(0, 0);
-    face(r, [0, 1.42, 0], 1.25, { bone: 'body', tilt: 0.1, ex: 0.42, ey: 0.3, er: 0.28, iris: '#2a5c86', skin: DON.mint, browCol: '#2a5245',
-      browY: 1.4, mouthY: -0.2, mouthW: 0.34, heartY: 1.0, heartX: 1.1, heartS: 0.28, mouthPivot: true, blushCol: '#ff8fb4' });
+    face(r, [0, 1.42, 0], 1.25, { bone: 'body', tilt: 0.1, ex: 0.42, ey: 0.3, er: 0.28, iris: '#2a5c86', browCol: '#2a5245',
+      browY: 1.15, mouthY: -0.2, mouthW: 0.34, heartY: 1.0, heartX: 1.1, heartS: 0.28, mouthPivot: true, blushCol: '#ff8fb4' });
     return { height: 3.5, glowC: col('#c8f2ff'), dieHop: 0.1, mat: { rough: 0.45, sss: col('#ffe6f0').multiplyScalar(0.05), rim: '#f2fcff', rimK: 0.3, rimP: 2.3, wob: 0.012, wobF: 1.4, wobS: 2.5 }, portrait: { cx: 0, cy: 2.3, cz: 0, rad: 2.0, dy: 0.5 } };
   }
   function animDondurma(m, dt, st, s) {
@@ -494,8 +494,8 @@
     strawberry(r.fx(0, 0), [0, 2.78, 0], 0.65, 0);
     r.mark('muzzle', [0, 3.0, 0.5]);
     r.fx(0, 0);
-    face(r, [0, 1.5, 0], 1.47, { bone: 'mid', tilt: 0.05, ex: 0.5, ey: 0.24, er: 0.3, iris: '#6a3a2a', skin: PAS.pink, browCol: '#5a2a2a', mouthIn: '#6a1a34',
-      browY: 1.25, mouthY: -0.2, mouthW: 0.36, heartY: 0.7, heartX: 1.1, heartS: 0.3, mouthPivot: true, blushCol: '#ff7fa8' });
+    face(r, [0, 1.5, 0], 1.47, { bone: 'mid', tilt: 0.05, ex: 0.5, ey: 0.18, er: 0.3, iris: '#6a3a2a', skin: PAS.pink, browCol: '#5a2a2a', mouthIn: '#6a1a34',
+      browY: 0.95, mouthY: -0.2, mouthW: 0.36, heartY: 0.7, heartX: 1.1, heartS: 0.3, mouthPivot: true, blushCol: '#ff7fa8' });
     return { height: 3.6, glowC: col('#ffd6e8'), dieHop: 0.08, hide: ['flames', 'slot1', 'slot2', 'slot3'],
       mat: { rough: 0.5, sss: col('#fff0e8').multiplyScalar(0.03), rim: '#fff4fa', rimK: 0.16, rimP: 2.6, wob: 0.01, wobF: 1.2, wobS: 2.6 }, portrait: { cx: 0, cy: 2.0, cz: 0, rad: 2.2, dy: 0.5 } };
   }
