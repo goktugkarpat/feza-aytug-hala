@@ -138,7 +138,7 @@ Diğer ajanlar için: `ODAB.riding()` → Feza şu an zıplıyor / kayıyor / sa
 Feza 2,6 m yaklaşınca kar tümseği açılır ve `GAME.foundLostItem('toka','buzdolabi')`. Gizli çıkartmalar: `gizli_jole_altin`, `gizli_buz_iglo`,
 `gizli_buzdolabi_isigi`, `gizli_buz_canlari`, `gizli_krema_sal`, `gizli_krema_torbasi`, `gizli_lolipop_fener`, `gizli_kurabiye_ev`,
 `gizli_seker_mum`, `gizli_pamuk_altin`. Pasta arenası `GAME.boss` canına göre süslenir (≤%67 süs ipleri + ışık balonları, ≤%34 mumlar yanar),
-boss neşelenince havai fişek + konfeti kendiliğinden başlar (STORY.ending'den bağımsız).
+boss neşelenince havai fişek + konfeti kendiliğinden başlar (STORY.ending'den bağımsız); `ODAB.celebrate()` bir anda büyük kutlama (hikâye ajanı STORY.ending'de çağırabilir).
 Her iki bölümde bir mini oyun köşesi (`L.stations` `{kind:'mini', mini}`): kayıtlı mini oyunlardan bölüme uyan id (`buzPateni`/`paten`…, `sekerYakala`/`pasta`…), yoksa ilki.
 
 ### QA

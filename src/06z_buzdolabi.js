@@ -337,6 +337,50 @@ const ODAB = (() => {
     });
     return pts;
   }
+  // Zemine yapışık süs desenleri (tek mesh, tek doku): 'kar' (kırağı kar tanesi) | 'kalp' (krema sıkma kalp + serpinti) | 'girdap'
+  const DECAL_TEX = {};
+  function decalTexture(kind) {
+    if (DECAL_TEX[kind]) return DECAL_TEX[kind];
+    const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+    x.translate(128, 128);
+    const dot = (px, py, r, col) => { x.fillStyle = col; x.beginPath(); x.arc(px, py, r, 0, TAU); x.fill(); x.fillStyle = 'rgba(255,255,255,0.55)'; x.beginPath(); x.arc(px - r * 0.3, py - r * 0.35, r * 0.35, 0, TAU); x.fill(); };
+    if (kind === 'kar') {
+      x.strokeStyle = 'rgba(255,255,255,0.85)'; x.lineCap = 'round';
+      for (let i = 0; i < 6; i++) {
+        x.save(); x.rotate(i * PI / 3); x.lineWidth = 9; x.beginPath(); x.moveTo(0, 0); x.lineTo(0, -108); x.stroke();
+        x.lineWidth = 6; for (const [d, l] of [[40, 30], [70, 24], [95, 14]]) for (const sd of [-1, 1]) { x.beginPath(); x.moveTo(0, -d); x.lineTo(sd * l * 0.8, -d - l * 0.6); x.stroke(); }
+        x.restore();
+      }
+      x.fillStyle = 'rgba(255,255,255,0.9)'; x.beginPath(); x.arc(0, 0, 14, 0, TAU); x.fill();
+    } else if (kind === 'kalp') {
+      const pts = [];
+      for (let t = 0; t < TAU; t += TAU / 34) { const hx = 16 * Math.pow(Math.sin(t), 3), hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)); pts.push([hx * 6, hy * 6 + 6]); }
+      for (const [px, py] of pts) dot(px, py, 11, '#ffffff');
+      for (const [px, py] of pts) dot(px * 0.62, py * 0.62 + 2, 8, '#ff9ec4');
+      const sc = ['#ff5f9e', '#ffb13b', '#6fd6ff', '#9a7bff', '#6fe0a0', '#ffe45a'];
+      for (let i = 0; i < 26; i++) { const a = Math.random() * TAU, r = Math.random() * 50; x.save(); x.translate(Math.cos(a) * r, Math.sin(a) * r + 4); x.rotate(Math.random() * TAU); x.fillStyle = sc[i % sc.length]; x.fillRect(-7, -2.5, 14, 5); x.restore(); }
+    } else {
+      for (let i = 0; i < 60; i++) { const a = i * 0.32, r = 14 + i * 1.6; dot(Math.cos(a) * r, Math.sin(a) * r, 9 - i * 0.06, i % 2 ? '#ffffff' : '#ffd0e4'); }
+    }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.userData.keep = true;
+    return (DECAL_TEX[kind] = t);
+  }
+  function decals(api, L, kind, n, size, o = {}) {
+    const spots = floorSpots(L, api, n, { pmin: o.pmin ?? 1.2, avoid: o.avoid });
+    if (!spots.length) return null;
+    const pos = [], uv = [], nor = [], idx = [];
+    spots.forEach((p, i) => {
+      const a = api.rnd() * TAU, s = size * (0.8 + api.rnd() * 0.4) / 2, cs = Math.cos(a) * s, sn = Math.sin(a) * s, b = i * 4;
+      for (const [u, v] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { pos.push(p.x + u * cs - v * sn, 0.03, p.z + u * sn + v * cs); uv.push((u + 1) / 2, (v + 1) / 2); nor.push(0, 1, 0); }
+      idx.push(b, b + 2, b + 1, b, b + 3, b + 2);
+    });
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setIndex(idx);
+    const key = 'decal-' + kind;
+    if (!M[key]) M[key] = kp(new THREE.MeshStandardMaterial({ map: decalTexture(kind), transparent: true, depthWrite: false, roughness: 0.4, opacity: o.opacity || 0.9, polygonOffset: true, polygonOffsetFactor: -3, side: THREE.DoubleSide }));
+    const m = new THREE.Mesh(g, M[key]); m.receiveShadow = true; m.renderOrder = 1; m.name = 'odab-desen-' + kind; api.add(m);
+    return m;
+  }
   // Peri ışıkları: kuzey kıyıdaki direkler arasında sarkan ipler, üstünde renkli parlayan ampuller (ışıl ışıl)
   function fairyLights(B, api, L, o = {}) {
     const spots = edgeSpots(L, api, { dmin: 1.6, dmax: 3.0, space: o.space || 4.2, avoid: o.avoid }).filter(c => c.side === 'north' && (!o.rooms || o.rooms.has(c.room)));
@@ -517,7 +561,7 @@ const ODAB = (() => {
     while (b < 7 && api.isFloor(x - px * b, z - pz * b)) b += 0.25;
     return { a, b };
   }
-  return { riding, get lift() { return riding() ? ACTIVE.lift || 0 : 0; }, mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, fairyLights, clearSpawns, gentlePacks, miniCorner, miniCornerLook, gateDir, corridorHalf, flakeTexture };
+  return { riding, get lift() { return riding() ? ACTIVE.lift || 0 : 0; }, mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, decals, fairyLights, clearSpawns, gentlePacks, miniCorner, miniCornerLook, gateDir, corridorHalf, flakeTexture };
 })();
 
 /* ════════════════════════════ Buzdolabı ════════════════════════════ */
@@ -708,6 +752,7 @@ const ODAB = (() => {
     }
     // zemine serpiştirilmiş kırağı kristalleri ve minik buz parçaları
     for (const f of O.floorSpots(L, api, 50, { avoid })) frost(B, f.x, f.z, rnd);
+    O.decals(api, L, 'kar', 26, 2.6, { avoid, opacity: 0.75 });
     // ── Cam raf bölmeleri: Raf Buzulları odalarının kuzeyinde, şişelerin arkasında dikey cam paneller ──
     for (const ri of ((L.areas || [])[0] || { rooms: [] }).rooms) {
       const rm = L.rooms[ri]; if (!rm || rm.kind === 'side') continue;

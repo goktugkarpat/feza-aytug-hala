@@ -185,6 +185,7 @@
       else { if (low) gumdrops(B, c.x, c.z, 0.7, rnd); else if (mid) rockCandy(B, c.x, c.z, 0.6, rnd); else (rnd() < 0.5 ? candyMountain(B, bx, bz, 0.62, rnd) : rockCandy(B, c.x, c.z, 0.95, rnd)); }
     }
     for (const f of O.floorSpots(L, api, 55, { avoid })) floorCandy(B, f.x, f.z, areaOf(f.room), rnd);
+    O.decals(api, L, 'kalp', 16, 2.4, { avoid }); O.decals(api, L, 'girdap', 14, 2.2, { avoid, opacity: 0.85 });
     // geçitler: şeker kamışı kemerleri + kurabiye köprü
     (L.areas || []).forEach((a, k) => { if (k && a.gate) candyArch(B, api, L, k); });
     // ── Krema Nehri: bisküvi sal ──
@@ -735,6 +736,15 @@
     // kutlama
     const st = { phase: 1, t: 0, fin: false, finT: 0, fwT: 0, ph2: 0, ph3: 0, wasDone: !!(typeof GAME !== 'undefined' && GAME.P && GAME.P.bossNese && GAME.P.bossNese.pasta) };
     R.zones.push({ x: A.x, z: A.z, r: A.r, enter: () => O.say('odp_arena', { gap: 3 }) });
+    // STORY.ending (ya da başka biri) büyük kutlamayı başlatabilir: ODAB.celebrate() → bir anda 6 havai fişek + konfeti, sonra 90 s sürer
+    O.celebrate = () => {
+      if (!GAME.L || GAME.L !== L) return false;
+      st.fin = true; st.finT = 0; st.phase = 3;
+      const P = GAME.P;
+      for (let i = 0; i < 6; i++) setTimeout(() => firework(api, P.pos.x + (Math.random() - 0.5) * 10, 3.8 + Math.random() * 2, P.pos.z - 1 - Math.random() * 6, CANDY[i % CANDY.length]), i * 180);
+      O.burst('confetti', P.pos.x, 3, P.pos.z, {}); O.burst('hearts', P.pos.x, 2, P.pos.z, {});
+      return true;
+    };
     api.anim(dt => {
       st.t += dt;
       const b = GAME.boss;
@@ -811,8 +821,8 @@
     muzik: 'kale',
     final: true, malzeme: 'krema', kayipEsya: null,
     isik: { fog: [0xffd6e6, 42, 104], hemiSky: 0xfff4fa, hemiGround: 0xe0a0bc, hemi: 0.58, sunColor: 0xfff0dc, sun: 1.95, sunOffset: [-12, 26, 14],
-      env: [0xffe0f0, 0xfff0e4, 0xd8a8c0, 0.6], bloom: 0.36, exposure: 0.98, sat: 1.14, vig: 0.22, fezaLight: 0, moss: [0xffe0ec, 0], rim: [0xfff0f6, 0.12] },
-    zemin: { tA: 0xfff0f5, tB: 0xffe4c0, tC: 0xffffff, out: 0xf4b8cc, outAmt: 0.45, macro: 0xfff6fa },
+      env: [0xffe0f0, 0xfff0e4, 0xd8a8c0, 0.6], bloom: 0.34, exposure: 0.95, sat: 1.16, vig: 0.22, fezaLight: 0, moss: [0xffe0ec, 0], rim: [0xfff0f6, 0.12] },
+    zemin: { tA: 0xffdde9, tB: 0xffe4c0, tC: 0xffffff, out: 0xf0a8c0, outAmt: 0.5, macro: 0xfff0f6 },
     minimap: { zemin: '#f6c8d8' },
     harita: { ad: 'Pasta Krallığı', detay: 'Krema nehirleri, çilek ormanı, şeker dağı', renk: '#f4a8c4', x: 76, y: 70, simge: '🎂' },
     yerlesim, kur,
