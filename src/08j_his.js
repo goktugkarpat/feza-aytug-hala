@@ -261,7 +261,7 @@ const HIS = (() => {
 
   // ── Vuruş hissi ──
   // Zil sesi seri boyunca pentatonik dizide yükselir (do re mi sol la …), 12'den sonra tepede kalır.
-  const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24, 26].map(s => Math.pow(2, s / 12));
+  const SCALE = [0, 2, 4, 7, 9, 12, 14, 16, 19].map(s => Math.pow(2, s / 12));
   const MILESTONE = { 5: 1, 10: 2, 15: 2, 20: 3, 25: 3, 30: 3, 40: 3, 50: 3, 75: 3, 100: 3 };
   const FEZA_KIND = { sword: 1, cream: 1, spin: 1, meteor: 1, magic: 1, star: 1, arcane: 1, ice: 1, crescent: 1 };
   const SQ = [];   // yay gibi esneyen huysuzlar
@@ -307,7 +307,7 @@ const HIS = (() => {
     const c = S.combo;
     if (t - S.lastTone > 0.06) {
       S.lastTone = t;
-      sfx('bell', { vol: 0.26 + Math.min(0.14, c * 0.01), pitch: 1.5 * SCALE[Math.min(c - 1, SCALE.length - 1)] });
+      sfx('bell', { vol: 0.18 + Math.min(0.12, c * 0.01), pitch: SCALE[Math.min(c - 1, SCALE.length - 1)] });
     }
     if (t - S.lastBoing > 0.13) { S.lastBoing = t; sfx('bounce', { vol: h.boss ? 0.3 : 0.42, pitch: h.boss ? 0.8 : rnd(1.05, 1.4), x: h.x, z: h.z }); }
     squash(h.e, h.crit);
