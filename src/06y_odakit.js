@@ -527,7 +527,12 @@ const ODAKIT = (() => {
       cb(px, pz, maxH, fd, k++);
     }
   }
-  const K_ = { tex, carpetColor, fill, outRect, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
+  // yürünür alana küçük, yassı süsler serp (üstünden geçilir): cb(x, z, k)
+  function scatter(L, rnd, ids, perRoom, cb) {
+    let k = 0;
+    for (const ri of ids) { const r0 = L.rooms[ri]; for (let i = 0; i < perRoom; i++) { const a = rnd() * TAU, d = Math.sqrt(rnd()) * r0.r * 1.05, x = r0.x + Math.sin(a) * d, z = r0.z + Math.cos(a) * d; if (isF(L, x, z) && floorDist(L, x + 0.6, z, 1) === 0) cb(x, z, k++); } }
+  }
+  const K_ = { tex, carpetColor, fill, outRect, scatter, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
     say, sfx, burst, ring, sugar, playing, heroY, sticker, toys, hash, sm, keepG, GEOC, last: null };
   return K_;
 })();

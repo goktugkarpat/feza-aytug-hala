@@ -401,6 +401,12 @@ const MUTFAK = (() => {
       else if (maxH > 0.6) { api.put(penneGeo(), x, 0, z, 1, 1, 1, null, rnd() * TAU); api.put(penneGeo(), x + 0.8, 0, z + 0.5, 1, 1, 1, null, rnd() * TAU); }
       else for (let j = 0; j < 6; j++) api.ball(x + (rnd() - 0.5) * 1.4, 0.12, z + (rnd() - 0.5) * 1.0, 0.28, 0.12, 0.14, 0xfbf7ee);   // pirinç taneleri
     }, { step: 2.5, margin: 7 });
+    // rafa dökülmüş mercimek, pirinç taneleri ve parıltılı şeker kristalleri (üstünden geçilir)
+    K.scatter(L, rnd, a3.rooms, 14, (x, z, k) => {
+      if (k % 3 === 0) api.put(G.cyl(1, 1, 12), x, 0.04, z, 0.32, 0.08, 0.32, 0xe8833a);
+      else if (k % 3 === 1) api.ball(x, 0.07, z, 0.3, 0.12, 0.15, 0xfbf7ee);
+      else api.put(G.box(), x, 0.12, z, 0.24, 0.24, 0.24, 0xf2fbff, rnd() * TAU);
+    });
     // makarna köprüsü: 3. alanın yan koridorunda spagetti demeti
     const side = a3.rooms.find(i => L.rooms[i].kind === 'side');
     const sl = side != null && L.links.find(l => !l.main && (l.b === side || l.a === side) && l.curve);

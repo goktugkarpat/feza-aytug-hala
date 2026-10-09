@@ -363,6 +363,12 @@ const OTURMA = (() => {
         for (let s = 0; s < n; s++) { const th = 0.35 + rnd() * 0.25, h = 3.2 - s * 0.25 + rnd() * 0.4; api.put(bookGeo(Math.floor(rnd() * 8)), x + (rnd() - 0.5) * 0.3, y + th / 2, z, th, h, 2.3 - s * 0.1, null, rnd() * TAU, 0, Math.PI / 2); y += th; }
       }
     }, { skip: occ, step: 2.6 });
+    // parkeye dağılmış minik şeyler: pul, patlamış mısır tanesi, renkli boncuk (üstünden geçilir)
+    K.scatter(L, rnd, L.areas[1].rooms, 10, (x, z, k) => {
+      if (k % 3 === 0) api.put(G.cyl(1, 1, 14), x, 0.03, z, 0.26, 0.05, 0.26, [0xf2c14a, 0xe8504d, 0x4f8fdc][k % 3 === 0 ? (k / 3) % 3 | 0 : 0]);
+      else if (k % 3 === 1) { api.ball(x, 0.2, z, 0.3, 0.22, 0.28, 0xfff4d6); api.ball(x + 0.2, 0.26, z + 0.1, 0.18, 0.16, 0.18, 0xfffaf0); }
+      else api.ball(x, 0.16, z, 0.17, 0.17, 0.17, [0xf48fb1, 0x7fd0f0, 0x8fd18a][k % 3]);
+    });
     // domino kitaplar: odanın kenarında dizili dik kitaplar; dokununca sırayla devrilir, sonuncusu şeker kavanozunu devirir
     const dr = L.rooms[rooms[rooms.length - 1]], spots = rimSpots(L, dr, 1.1).filter(s => s.z < dr.z + dr.r * 0.3);
     const s0 = spots.sort((p1, p2) => p1.z - p2.z)[0];
