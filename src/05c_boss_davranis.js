@@ -288,6 +288,14 @@ const BOSSDAV = (() => {
       if (S) clearAll();
       S = b.dv = { enc: b.encounter, n: 0, napCd: 0, stage: (S && S.stage) || 1, half: S ? S.half : false, lineN: 0, tired: false, tiredT: 0 };
       b.st.lid = null; b.st.scoopOff = 0;
+      // Dövüş süresi: 07'nin boss canı (seviyeye göre, tüm bosslar aynı) × hpK — çocuk-bot ölçümü: düz can ile 15–22 s sürüyordu,
+      // hedef ~35–50 s (pasta, 3 aşama + Takım Hamlesi ile ~60–80 s). Bir kez (uyuyup uyanınca tekrar değil).
+      const D = DEFS[b.type];
+      if (!b.dvHp && D && D.hpK && b.sized) {
+        b.dvHp = true; const k = D.hpK;
+        b.maxHp = Math.round(b.maxHp * k); b.hp = Math.round(b.hp * k);
+        if (b.difficultyHp) b.difficultyHp = b.difficultyHp.map(v => Math.round(v * k));
+      }
     }
     W.boss = b;
     return S;
@@ -309,7 +317,7 @@ const BOSSDAV = (() => {
 
   // ════════ 1. Uykucu Süpürge ════════
   const SUP = {
-    keep: 6.2,
+    keep: 6.2, hpK: 2.2,
     choose(b, S, d) {
       if (S.n >= 3 && S.napCd <= 0) { A.bossPhase(b, 'nap', 4.6); return; }
       const ph = A.pickPhase(b, d < b.r + 3 ? [['suck', 0.25], ['blow', 0.35], ['cable', 0.4]] : [['suck', 0.42], ['blow', 0.33], ['cable', 0.25]]);
@@ -377,7 +385,7 @@ const BOSSDAV = (() => {
 
   // ════════ 2. Düdüklü Tencere ════════
   const TEN = {
-    keep: 5.6,
+    keep: 5.6, hpK: 2.2,
     choose(b, S, d) {
       const ph = A.pickPhase(b, [['lid', 0.4], ['steam', 0.28], ['rain', 0.32]]);
       A.bossPhase(b, ph, { lid: 2.9, steam: 2.6, rain: 3.2 }[ph]);
@@ -434,7 +442,7 @@ const BOSSDAV = (() => {
 
   // ════════ 3. Dondurma Kralı ════════
   const DON = {
-    keep: 6,
+    keep: 6, hpK: 2.3,
     choose(b, S, d) {
       const ph = A.pickPhase(b, d < b.r + 2.5 ? [['snow', 0.3], ['slide', 0.4], ['scoop', 0.3]] : [['snow', 0.42], ['slide', 0.28], ['scoop', 0.3]]);
       A.bossPhase(b, ph, { snow: 2.6, slide: 1.4, scoop: 3.4 }[ph]);
@@ -496,7 +504,7 @@ const BOSSDAV = (() => {
   // ════════ 4. Koca Huysuz Pasta (3 aşama) ════════
   const STAGE_AT = [0.66, 0.33], FINISH_AT = 0.06;
   const PAS = {
-    keep: 6.6,
+    keep: 6.6, hpK: 3.2,
     choose(b, S, d) {
       let opts;
       if (S.stage === 1) opts = [['squirt', 0.7], ['taunt', 0.3]];
