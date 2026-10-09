@@ -825,7 +825,9 @@ const { FEZA, ITEMS } = (function () {
   const nowT = () => (typeof TIME !== 'undefined' && TIME.u ? TIME.u.value : performance.now() / 1000);
   // ITEMS.bladeColor(item | baseId) → '#rrggbb' (the rainbow blade: its colour right now, at mid-blade)
   function bladeColor(item) {
-    const id = typeof item === 'string' ? item : item ? baseId(item) : 'tahta', d = WAND[id] || saberDef(id);
+    const id = typeof item === 'string' ? item : item ? baseId(item) : 'tahta', cu = CUSTOM['weapon:' + id];
+    if (cu && cu.def.col && !cu.reuse) return cu.def.col;   // Dev Ev eşyası: vuruş izi rengi
+    const d = WAND[(cu && cu.reuse) || id] || saberDef((cu && cu.reuse) || id);
     return d.rainbow ? hsvHex(fract(nowT() * RB_SPEED + RB_Y * RB_GRAD), RB_SAT, 1) : d.trail || d.col;
   }
   // (Round 6) blade variants (glow shell + halo only, one program each): SB_GRAD colour ramp hilt → tip (uCol → uCol2),
@@ -1511,6 +1513,13 @@ const { FEZA, ITEMS } = (function () {
   const CAPE_TEX = {};
   function capeTex(id) {
     if (CAPE_TEX[id]) return CAPE_TEX[id];
+    if (CAPE_PAINT[id]) {   // Dev Ev: kayıtlı pelerin boyacısı painter(g, S, ge, R): g renk, ge parlama (siyah = parlamaz), S = 256
+      const S = 256, cv = canvasEl(S, S), g = cv.getContext('2d'), ev = canvasEl(S, S), ge = ev.getContext('2d');
+      ge.fillStyle = '#000'; ge.fillRect(0, 0, S, S);
+      try { CAPE_PAINT[id](g, S, ge, mulberry32(id.length * 97 + 5)); } catch (e) { console.warn('cape paint ' + id, e); }
+      const mk = c => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = ANISO; return keep(t); };
+      return (CAPE_TEX[id] = { map: mk(cv), emissiveMap: mk(ev) });
+    }
     const d = CAPE_DEF[id] || CAPE_DEF.kirmizi, S = 256, cv = canvasEl(S, S), g = cv.getContext('2d'), ev = canvasEl(S, S), ge = ev.getContext('2d'), R = mulberry32(id.length * 97 + 5);
     ge.fillStyle = '#000'; ge.fillRect(0, 0, S, S);
     const edge = x => {
@@ -1751,8 +1760,15 @@ const { FEZA, ITEMS } = (function () {
 
   // ── Item templates (for ground display, thumbnails) ──
   const TPL = {};
+  // Dev Ev: dışarıdan kaydedilen eşyalar (src/04_esyalar.js → ITEMS.register). CUSTOM['slot:id'] = { def, build?, reuse? }
+  const CUSTOM = {}, CAPE_PAINT = {};
   function buildItem(slot, id, r, own) {
-    const o = slot === 'weapon' ? buildSword(id, r) : slot === 'hat' ? buildHat(id, r) : buildCape(id, r, own);
+    const cu = CUSTOM[slot + ':' + id];
+    if (cu && cu.reuse) id = cu.reuse;   // eski bir modeli yeni adla kullan
+    let o = null;
+    if (cu && cu.build) { try { o = cu.build(r, own, ITEM_KIT); } catch (e) { console.warn('ITEMS build ' + slot + ':' + id, e); o = null; } }
+    if (o && slot === 'cape' && !o.fzCapeU) o = null;
+    if (!o) o = slot === 'weapon' ? buildSword(id, r) : slot === 'hat' ? buildHat(id, r) : buildCape(id, r, own);
     o.traverse(m => {
       if (!m.isMesh) return;
       // only parts big enough to make a visible shadow cast one (gems, small stars, the cape clasp don't)
@@ -2697,7 +2713,7 @@ const { FEZA, ITEMS } = (function () {
   let UID = (Date.now() % 1e9) * 10;
   function make(slot, id, rarity = 0, ilvl = 1) {
     if (!BASES[slot]) slot = 'weapon';
-    const b = BASES[slot].find(q => q.id === id) || BASES[slot][0];
+    const b = BASES[slot].find(q => q.id === id) || (LEGACY[slot] || []).find(q => q.id === id) || BASES[slot][0];
     rarity = clamp(rarity | 0, 0, 3); ilvl = Math.max(1, ilvl | 0);
     return { uid: ++UID, slot, base: b.id, rarity, ilvl, power: Math.round((ilvl * 2 + 4) * MULT[rarity]), ad: b.ad + (rarity >= 2 ? ' ✦' : '') };
   }
@@ -2713,6 +2729,8 @@ const { FEZA, ITEMS } = (function () {
     return !!base && (!base.classLock || base.classLock === heroClass) && (item.slot !== 'weapon' || heroClass === 'hybrid' || (base.heroClass || 'warrior') === (heroClass === 'wizard' ? 'wizard' : 'warrior'));
   }
   function bossReward(type, heroClass = 'warrior', ilvl = 1) {
+    const bg = ITEMS.BOSS_GIFT[type];   // Dev Ev bossları
+    if (bg) { const gg = bg[heroClass] || bg.warrior; return gg ? make(gg[0], gg[1], 3, ilvl) : null; }
     const wizard = heroClass === 'wizard', gift = heroClass === 'hybrid' ? {
       kopukusta: ['weapon', 'kopukikiz'], aytavsan: ['weapon', 'aytavsanikiz'],
       kraljole: ['weapon', 'joleikiz'], kefirdev: ['weapon', 'kefirikiz'], kostebekusta: ['weapon', 'magaraikiz'],
@@ -2779,7 +2797,7 @@ const { FEZA, ITEMS } = (function () {
         if (b) { b.scale.y = 1; wrap.updateMatrixWorld(true); }
         const wk = SB_U.k.value, wg = SB_U.grad.value, wr = SB_U.ramp.value;
         if (slot === 'weapon') { SB_U.k.value = 0.45; SB_U.grad.value = 1.15; SB_U.ramp.value = 1 / 0.6; }
-        try { offDraw(c, Math.max(sz.x, sz.y, sz.z) * (slot === 'weapon' ? 0.46 : 0.56), dir, fov); }
+        try { offDraw(c, Math.max(sz.x, sz.y, sz.z) * (slot === 'weapon' ? (b ? 0.46 : 0.5) : 0.56), dir, fov); }
         finally { SB_U.k.value = wk; SB_U.grad.value = wg; SB_U.ramp.value = wr; OFF.scene.remove(wrap); }
       },
       finish(cv) {
@@ -2791,7 +2809,7 @@ const { FEZA, ITEMS } = (function () {
         g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 4; g.shadowOffsetY = 2;
         g.drawImage(cv, 4, 4, 120, 120);
         g.restore();
-        if (slot === 'weapon' && !WAND[id]) {   // the blade fades out into the top-right corner (instead of a hard cut)
+        if (slot === 'weapon' && !WAND[id] && !(CUSTOM['weapon:' + id] && !CUSTOM['weapon:' + id].reuse) && !WAND[(CUSTOM['weapon:' + id] || {}).reuse]) {   // the blade fades out into the top-right corner (instead of a hard cut)
           g.save(); g.globalCompositeOperation = 'destination-out';
           const fd = g.createLinearGradient(96, 32, 124, 4); fd.addColorStop(0, 'rgba(0,0,0,0)'); fd.addColorStop(1, 'rgba(0,0,0,1)');
           g.fillStyle = fd; g.fillRect(64, 0, 64, 64); g.restore();
@@ -2851,6 +2869,11 @@ const { FEZA, ITEMS } = (function () {
     }
     g.restore();
   }
+  const STARTER = { warrior: 'tahta', wizard: 'findik' }, LEGACY = {};
+  // Eşya modeli yapım takımı (src/04_esyalar.js kullanır). Hepsi 04_feza.js içindeki yardımcılar.
+  const ITEM_KIT = { THREE, G, Kit, kitGeo, geoC, mat, vcM, vcMat, stdMat, glowMat, glowVC, metalMat, steelM, goldM, feltMat, rimify, patchMat, stencil, keep, tex,
+    sweep, lathe, curvePts, kcyl, flatGeo, starShape, starGeo, heartShape, capsuleGeo, v3, V2, rarCol, mulberry32, buildCape: (id, r, own) => buildCape(id, r, own),
+    buildHat: (id, r) => buildHat(id, r), buildSword: (id, r) => buildSword(id, r), canvasEl, TAU };
   const ITEMS = {
     RARITY, BASES,
     make, roll, model, thumb, prebake, nameOf, allowed, bossReward,
@@ -2861,9 +2884,28 @@ const { FEZA, ITEMS } = (function () {
       const gift = bossReward(type, heroClass, item.ilvl);
       return { ...item, slot: gift.slot, base: gift.base, ad: nameOf({ ...gift, rarity: item.rarity }) };
     },
-    isWand: item => !!item && item.slot === 'weapon' && !!WAND[baseId(item)],
+    isWand: item => { if (!item || item.slot !== 'weapon') return false; const id = baseId(item), cu = CUSTOM['weapon:' + id]; return cu ? (cu.def.heroClass === 'wizard' || !!WAND[cu.reuse]) : !!WAND[id]; },
     bladeColor,   // ITEMS.bladeColor(item | baseId) → '#rrggbb' (rainbow blade: its current colour)
-    starter: (heroClass = 'warrior') => ({ weapon: make('weapon', heroClass === 'wizard' ? 'findik' : 'tahta', 0, 1), ...(heroClass === 'hybrid' ? { offhand: make('weapon', 'findik', 0, 1) } : {}), hat: null, cape: null }),
+    starter: (heroClass = 'warrior') => ({ weapon: make('weapon', heroClass === 'wizard' ? STARTER.wizard : STARTER.warrior, 0, 1), ...(heroClass === 'hybrid' ? { offhand: make('weapon', STARTER.wizard, 0, 1) } : {}), hat: null, cape: null }),
+    // ── Dev Ev eşya kaydı (src/04_esyalar.js) ──
+    // ITEMS.register(slot, def, build?) · def: { id, ad, minLvl, legendary?, boss?, heroClass?, set?, col? (vuruş izi), reuse? (eski model id) }
+    //   build(r, own, KIT) → THREE.Group (silah: tutma yeri orijinde, +Y ucu, g.fzTip = uç Object3D; şapka: baş merkezi orijin,
+    //   isteğe bağlı g.fzHatIn = {h, c, r, y0, fade}); pelerin için build yerine ITEMS.paintCape(id, painter) kullan.
+    register(slot, def, build) {
+      if (!BASES[slot] || !def || !def.id) return false;
+      const L = BASES[slot], i = L.findIndex(q => q.id === def.id);
+      if (i >= 0) L[i] = def; else L.push(def);
+      if (def.boss && !def.classLock) def.classLock = def.heroClass || 'warrior';
+      CUSTOM[slot + ':' + def.id] = { def, build: build || null, reuse: def.reuse || null };
+      return true;
+    },
+    paintCape(id, painter) { CAPE_PAINT[id] = painter; delete CAPE_TEX[id]; },
+    clearBases(keep) { for (const slot of Object.keys(BASES)) { LEGACY[slot] = BASES[slot].slice(); BASES[slot].length = 0; } if (keep) for (const [slot, id] of keep) { const b = LEGACY[slot].find(q => q.id === id); if (b) BASES[slot].push(b); } },
+    setStarter(warrior, wizard) { if (warrior) STARTER.warrior = warrior; if (wizard) STARTER.wizard = wizard; },
+    BOSS_GIFT: {},     // ITEMS.BOSS_GIFT[bossType] = { warrior: [slot, id], wizard: [slot, id], hybrid: [slot, id] }
+    SETS: {},          // ITEMS.SETS[setId] = { ad, renk, parca: ['weapon:id', 'hat:id', 'cape:id'] } (üçü takılınca parlak görünüm)
+    setOf: it => { const cu = it && CUSTOM[it.slot + ':' + baseId(it)]; return cu ? cu.def.set || null : null; },
+    get KIT() { return ITEM_KIT; },
     // Stars show only how strong a piece is (its power), never its rarity (that is the colour/glow): a stronger item
     // never shows fewer stars (parent: a stronger castle drop with fewer stars than a shiny forest one confused Feza).
     stars: it => { const p = it ? it.power || 0 : 0; return p >= 34 ? 5 : p >= 24 ? 4 : p >= 16 ? 3 : p >= 10 ? 2 : 1; },

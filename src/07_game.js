@@ -692,12 +692,15 @@ const GAME = (() => {
   function recalcStats() {
     const w = P.equip.weapon, h = P.equip.hat, c = P.equip.cape;
     const old = P.maxHp;
-    P.maxHp = Math.round(T.baseHp + 12 * (P.lvl - 1) + 5 * (h ? h.power : 0));
+    // Dev Ev: kostümün küçük artısı (FEZA.costumeBonus, src/04_feza.js) ve Bilbo'ya binerken hız (P.rideMul)
+    let cb = null; try { cb = typeof FEZA !== 'undefined' && FEZA.costumeBonus ? FEZA.costumeBonus(P.kostum) : null; } catch (err) { cb = null; }
+    cb = cb || {};
+    P.maxHp = Math.round((T.baseHp + 12 * (P.lvl - 1) + 5 * (h ? h.power : 0)) * (1 + (cb.hp || 0)));
     const base = 8 + 2 * (P.lvl - 1), wand = P.heroClass === 'hybrid' ? P.equip.offhand : w;
-    P.meleeDmg = base + (w ? w.power : 0); P.magicDmg = base + (wand ? wand.power : 0);
+    P.meleeDmg = Math.round((base + (w ? w.power : 0)) * (1 + (cb.dmg || 0))); P.magicDmg = Math.round((base + (wand ? wand.power : 0)) * (1 + (cb.dmg || 0)));
     P.dmg = P.heroClass === 'hybrid' ? Math.max(P.meleeDmg, P.magicDmg) : P.meleeDmg;
-    P.armor = Math.min(45, c ? c.power : 0);
-    P.speed = T.speed * (1 + 0.04 * (c ? c.rarity : 0));
+    P.armor = Math.min(50, (c ? c.power : 0) + (cb.armor || 0));
+    P.speed = T.speed * (1 + 0.04 * (c ? c.rarity : 0)) * (1 + (cb.speed || 0)) * (P.rideMul || 1);
     if (P.maxHp > old) P.hp += P.maxHp - old;
     P.hp = Math.min(P.hp, P.maxHp);
     P.xpNext = xpFor(P.lvl);
@@ -6789,6 +6792,7 @@ const GAME = (() => {
   function resetKoleksiyon() {
     for (const k of KOL_OBJ) P[k] = {};
     P.kostum = null; P.bilboAksesuar = { sahip: {}, takili: null }; P.pastaSusleri = []; P.altinSeker = 0; P.gununSurprizi = null; P.area = -1;
+    applyLooks();
   }
   function koleksiyonKaydi() {
     const o = {};
@@ -6805,6 +6809,12 @@ const GAME = (() => {
     const ba = obj(s.bilboAksesuar); P.bilboAksesuar = { sahip: obj(ba.sahip), takili: typeof ba.takili === 'string' && ba.sahip && ba.sahip[ba.takili] ? ba.takili : null };
     P.pastaSusleri = Array.isArray(s.pastaSusleri) ? s.pastaSusleri.filter(d => d && d.id).map(d => ({ id: String(d.id), a: +d.a || 0, h: +d.h || 0 })) : [];
     P.altinSeker = Math.max(0, s.altinSeker | 0); P.gununSurprizi = typeof s.gununSurprizi === 'string' ? s.gununSurprizi : null;
+    applyLooks();
+  }
+  // Kayıttaki kostüm ve Bilbo aksesuarı modellere giydirilir (yeni oyun / devam)
+  function applyLooks() {
+    if (H && typeof H.setCostume === 'function') { try { H.setCostume(P.kostum || null); } catch (err) { warnOnce('setCostume', err); } }
+    if (Bilbo && typeof Bilbo.setAccessory === 'function') { try { Bilbo.setAccessory((P.bilboAksesuar && P.bilboAksesuar.takili) || null); } catch (err) { warnOnce('setAccessory', err); } }
   }
   // Çıkartma: her huysuz türü / boss / gizli şey ilk neşelendirmede (ya da bulununca) albüme girer
   function giveSticker(id, kind = 'gizli') {
@@ -6820,6 +6830,7 @@ const GAME = (() => {
     if (id && !P.kostumler[id]) return false;
     P.kostum = id || null; emit('costume', { id: P.kostum });
     if (H && typeof H.setCostume === 'function') { try { H.setCostume(P.kostum); } catch (err) { warnOnce('setCostume', err); } }
+    try { recalcStats(); } catch (err) { warnOnce('recalcStats', err); }
     return true;
   }
   function unlockBilboAccessory(id) { if (!id || P.bilboAksesuar.sahip[id]) return false; P.bilboAksesuar.sahip[id] = true; emit('bilboAccNew', { id }); return true; }
@@ -6880,7 +6891,7 @@ const GAME = (() => {
   function teleport(x, z) { placeHero(x, z, P.face); P.checkpoint = { x, z }; C.hasT = false; C.drag = false; return true; }
 
   const GAME = {
-    revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API,
+    revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API, recalcStats,
     giveSticker, addGoldSugar, unlockCostume, setCostume, unlockBilboAccessory, setBilboAccessory, addCakeDecoration, cakeStage, dailySurprise,
     miniResult, unlockMinigame, startMinigame: (id, o) => (typeof MINIGAME !== 'undefined' && MINIGAME ? MINIGAME.start(id, o) : false),
     get teamCharge() { const v = typeof HALA !== 'undefined' && HALA ? HALA.charge : 0; return typeof v === 'number' ? v : 0; },
