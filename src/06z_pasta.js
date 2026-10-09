@@ -354,7 +354,10 @@
     B.add('glow', G.sphere(7, 5), C(0xffffff, 1.6), [cx + px * 0.2, hy + 0.3, cz + pz * 0.2], null, [0.09, 0.09, 0.09]);
     // kurabiye köprü (koridorun ortasına yassı dev kurabiye) + kenarda krema
     const yaw = Math.atan2(px, pz);
-    B.add('gloss', G.cyl(1, 1, 18), C(0xe0a35a), [cx, 0.05, cz], [0, yaw, 0], [Math.min(half, 2.8), 0.1, 2.4]);
+    const cr = Math.min(half, 2.8, 2.4);
+    B.add('gloss', G.cyl(1, 1, 36), C(0xe0a35a), [cx, 0.05, cz], null, [cr, 0.1, cr]);
+    B.add('cream', G.torus(TAU, 0.07, 40), C(0xfff6fa), [cx, 0.12, cz], [PI / 2, 0, 0], [cr * 0.93, cr * 0.93, cr * 0.93]);
+    for (let i = 0; i < 16; i++) { const a = i * TAU / 16; B.add('glow', G.cyl(1, 1, 5), C(CANDY[i % CANDY.length], 1.1), [cx + Math.sin(a) * cr * 0.93, 0.2, cz + Math.cos(a) * cr * 0.93], [PI / 2, a, 0], [0.035, 0.2, 0.035]); }
     for (let i = 0; i < 12; i++) { const a = i * 2.4, r = 0.4 + (i % 4) * 0.5; B.add('gloss', G.sphere(7, 5), C(0x5a3020), [cx + Math.sin(a) * r, 0.12, cz + Math.cos(a) * r], null, [0.18, 0.08, 0.18]); }
     api.light(cx, 3.5, cz, 0xffd0e4, 2.2, 7, 0.08);
     api.glow(cx, cz, half + 1, 0xffd8ea, 0.16);
