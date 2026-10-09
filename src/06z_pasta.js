@@ -146,6 +146,7 @@
       D.trails.push({ x: rm.x, z: rm.z, pts });
     }
     O.clearSpawns(L, api, taken.map(q => ({ x: q.x, z: q.z, r: q.r + 1.5 })));
+    D.mini = O.miniCorner(L, api, room(a3[0]) || room(a2[1]), ['sekerYakala', 'seker', 'pasta', 'krema', 'mum'], taken);
     O.gentlePacks(L, 5);
   }
 
@@ -223,6 +224,11 @@
     if (firstRoom(1)) R.zones.push({ x: firstRoom(1).x, z: firstRoom(1).z, r: firstRoom(1).r, enter: () => O.say('odp_orman') });
     if (firstRoom(2)) R.zones.push({ x: firstRoom(2).x, z: firstRoom(2).z, r: firstRoom(2).r, enter: () => O.say('odp_dag') });
     for (const t of D.trails) if (t.pts.length) R.zones.push({ x: t.x, z: t.z, r: 11, enter(z) { if (!z.done) { z.done = true; O.restCoins(t.pts); } } });
+    if (D.mini) O.miniCornerLook(B, api, R, D.mini, { ring: 0xffa8d0, star: 0xff5f9e, line: 'odp_mini', prop: (B2, x, z) => {   // şeker kavanozu
+      B2.add('glass', G.cyl(1, 1, 18), C(0xeaf8ff), [x, 0.85, z], null, [0.6, 1.7, 0.6]);
+      B2.add('candy', G.cyl(1, 1, 16), C(0xff5f9e), [x, 1.78, z], null, [0.64, 0.16, 0.64]);
+      for (let i = 0; i < 14; i++) B2.add('candy', G.sphere(7, 5), C(CANDY[i % CANDY.length]), [x + Math.sin(i * 2.4) * 0.35, 0.25 + (i % 7) * 0.17, z + Math.cos(i * 2.4) * 0.35], null, [0.15, 0.15, 0.15]);
+    } });
     O.sparkles(api, { n: 150, kind: 'dot', colors: [0xff9ac8, 0xffe08a, 0x9ae8ff, 0xd6b0ff, 0xffffff], k: 1.8, size: 0.2, fall: -0.18, y0: 0.2, h: 7 });
     B.done();
   }

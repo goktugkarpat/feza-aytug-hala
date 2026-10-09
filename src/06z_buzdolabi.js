@@ -469,6 +469,34 @@ const ODAB = (() => {
       }
     }
   }
+  // Bölüm içi mini oyun köşesi (yerleşimde): kayıtlı mini oyunlardan bölüme uyanı (yoksa ilki) → L.stations'a { kind: 'mini' }
+  function miniCorner(L, api, rm, prefer, taken) {
+    if (!rm || typeof MINIGAME === 'undefined' || !MINIGAME || !MINIGAME.list) return null;
+    const ids = MINIGAME.list(); if (!ids.length) return null;
+    const id = prefer.find(p => ids.includes(p)) || ids.find(i => prefer.some(p => i.toLowerCase().includes(p.toLowerCase()))) || ids[0];
+    const p = roomSpot(L, api, rm, { r: 1.0, pmin: 2.4, pmax: 7, k: 0.8, taken });
+    if (!p) return null;
+    const st = { id: 'mini_' + id, kind: 'mini', mini: id, x: p.x, z: p.z, r: 1.0 };
+    (L.stations || (L.stations = [])).push(st);
+    taken.push({ x: p.x, z: p.z, r: 2 });
+    return st;
+  }
+  // mini oyun köşesinin görünüşü: parlayan halka + yıldızlı tabela; yaklaşınca Hala söyler
+  function miniCornerLook(B, api, R, st, o = {}) {
+    const ring = new Kit(); ring.add(G.torus(TAU, 0.1, 36), C(o.ring || 0x9ae8ff, 1.8), [0, 0.05, 0], [PI / 2, 0, 0], [1.0, 1.0, 1.0]);
+    const rm = solo(ring, 'glow', api); rm.position.set(st.x, 0, st.z);
+    const sk = new Kit();   // tabela: direk + yıldız
+    sk.add(G.cyl(1, 1, 8), C(0xffffff), [0, 1.0, 0], null, [0.06, 2.0, 0.06]);
+    sk.add(G.cyl(1, 1, 5), C(o.star || 0xffd24a), [0, 2.25, 0], [PI / 2, 0, 0], [0.26, 0.14, 0.26]);
+    for (let i = 0; i < 5; i++) { const a = i * TAU / 5; sk.add(G.cone(4), C(o.star || 0xffd24a), [Math.sin(a) * 0.32, 2.25 + Math.cos(a) * 0.32, 0], [0, 0, -a], [0.17, 0.36, 0.1]); }
+    const star = solo(sk, 'candy', api); star.position.set(st.x - 1.15, 0, st.z - 0.4);
+    if (o.prop) o.prop(B, st.x + 1.1, st.z - 0.5);
+    api.light(st.x, 1.6, st.z, o.ring || 0x9ae8ff, 1.4, 5, 0.1);
+    api.glow(st.x, st.z, 1.8, o.ring || 0x9ae8ff, 0.25);
+    let t = 0;
+    api.anim(dt => { t += dt; const s = 1 + Math.sin(t * 3) * 0.07; rm.scale.set(s, 1, s); star.rotation.y = Math.sin(t * 1.4) * 0.5; });
+    R.zones.push({ x: st.x, z: st.z, r: 5.5, enter: () => say(o.line || 'odb_mini') });
+  }
   // Nazik gruplar: bir grupta en çok `max` huysuz (fazlası, seçkin olmayanlardan başlayarak çıkar)
   function gentlePacks(L, max = 5) {
     const by = {};
@@ -489,7 +517,7 @@ const ODAB = (() => {
     while (b < 7 && api.isFloor(x - px * b, z - pz * b)) b += 0.25;
     return { a, b };
   }
-  return { riding, get lift() { return riding() ? ACTIVE.lift || 0 : 0; }, mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, fairyLights, clearSpawns, gentlePacks, gateDir, corridorHalf, flakeTexture };
+  return { riding, get lift() { return riding() ? ACTIVE.lift || 0 : 0; }, mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, fairyLights, clearSpawns, gentlePacks, miniCorner, miniCornerLook, gateDir, corridorHalf, flakeTexture };
 })();
 
 /* ════════════════════════════ Buzdolabı ════════════════════════════ */
@@ -636,6 +664,7 @@ const ODAB = (() => {
       D.trails.push({ x: rm.x, z: rm.z, pts });
     }
     O.clearSpawns(L, api, taken.map(q => ({ x: q.x, z: q.z, r: q.r + 1.5 })));
+    D.mini = O.miniCorner(L, api, room(a1[0]) || R[0], ['buzPateni', 'paten', 'buz', 'dondurma', 'sekerYakala'], taken);
     O.gentlePacks(L, 5);
   }
 
@@ -731,6 +760,15 @@ const ODAB = (() => {
     O.fairyLights(B, api, L, { avoid: avoid.concat(edgeList.map(c => ({ x: c.x, z: c.z, r: 1.5 }))), colors: [0xfff0c8, 0xbfe6ff, 0xffd8e8], k: 2.4, light: 0xfff0d8, wire: 0x8aa8c0,
       rooms: new Set(L.rooms.map((r, i) => (r.kind === 'boss' ? -1 : i))),
       post: (B2, x, z, h) => { B2.add('ice', G.cyl(0.8, 1, 10), C(0xd4f0ff), [x, h / 2, z], null, [0.14, h, 0.14]); B2.add('snow', G.sphere(8, 6), C(0xffffff), [x, h + 0.06, z], null, [0.24, 0.14, 0.24]); B2.add('glow', G.sphere(7, 5), C(0xdff6ff, 2), [x, h + 0.22, z], null, [0.09, 0.09, 0.09]); } });
+    // ── Mini oyun köşesi (buz pateni / şeker yakala…) ──
+    if (D.mini) O.miniCornerLook(B, api, R, D.mini, { ring: 0x9ae8ff, line: 'odb_mini', prop: (B2, x, z) => {   // buz pateni ayakkabısı
+      B2.add('gloss', G.rbox(3), C(0xffffff), [x, 0.75, z], null, [0.55, 0.6, 0.95]);
+      B2.add('gloss', G.rbox(2), C(0xffffff), [x, 1.2, z - 0.25], null, [0.52, 0.7, 0.5]);
+      B2.add('candy', G.torus(TAU, 0.3, 12), C(0xff7aa8), [x, 1.5, z - 0.25], [PI / 2, 0, 0], [0.27, 0.27, 0.27]);
+      B2.add('gold', G.box(), C(0xdfe8f2), [x, 0.28, z + 0.05], null, [0.08, 0.3, 1.2]);
+      B2.add('gold', G.torus(PI, 0.2, 10), C(0xdfe8f2), [x, 0.2, z + 0.62], [0, PI / 2, 0], [0.18, 0.18, 0.18]);
+      for (let i = 0; i < 3; i++) B2.add('candy', G.sphere(6, 4), C(0xff7aa8), [x + 0.29, 0.9 + i * 0.18, z - 0.1 + i * 0.05], null, [0.05, 0.05, 0.05]);
+    } });
     // ── Kar tanesi parıltıları ──
     O.sparkles(api, { n: 170, kind: 'flake', colors: [0xe8f6ff, 0xffffff, 0xcfeaff, 0xfff2d8], k: 1.5, size: 0.3, fall: 0.3 });
     B.done();

@@ -139,6 +139,7 @@ Feza 2,6 m yaklaşınca kar tümseği açılır ve `GAME.foundLostItem('toka','b
 `gizli_buzdolabi_isigi`, `gizli_buz_canlari`, `gizli_krema_sal`, `gizli_krema_torbasi`, `gizli_lolipop_fener`, `gizli_kurabiye_ev`,
 `gizli_seker_mum`, `gizli_pamuk_altin`. Pasta arenası `GAME.boss` canına göre süslenir (≤%67 süs ipleri + ışık balonları, ≤%34 mumlar yanar),
 boss neşelenince havai fişek + konfeti kendiliğinden başlar (STORY.ending'den bağımsız).
+Her iki bölümde bir mini oyun köşesi (`L.stations` `{kind:'mini', mini}`): kayıtlı mini oyunlardan bölüme uyan id (`buzPateni`/`paten`…, `sekerYakala`/`pasta`…), yoksa ilki.
 
 ### QA
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
