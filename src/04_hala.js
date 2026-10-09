@@ -324,7 +324,7 @@ const HALA = (() => {
       P.push(surfAt(d, lift, v3())); U.push(headNormal(th, ph, v3()));
     }
     const pts = curvePts(P, 16), ups = pts.map((p, i) => U[Math.min(U.length - 1, Math.round(i / 16 * N))]);
-    return sweep(pts, ups, t => w * (0.3 + 0.7 * sstep(0, 0.25, t)) * (1 - 0.45 * t), t => 0.0085 * (0.25 + 0.75 * sstep(0, 0.2, t)) * (1 - 0.4 * t), 6, 0.25,
+    return sweep(pts, ups, t => w * (0.3 + 0.7 * sstep(0, 0.25, t)) * (1 - 0.75 * t * t), t => 0.0085 * (0.25 + 0.75 * sstep(0, 0.2, t)) * (1 - 0.6 * t * t), 8, 0.4,
       (t, c) => hairTone(tone + 0.25 * Math.sin(t * 9 + phase), c, 0.8), null);
   }
   // kıvrık tutam: P0'dan P1'e sarmal (yaylı: aFlex uca doğru artar)
@@ -383,8 +383,8 @@ const HALA = (() => {
     parts.push(waveLock(0.1, 0.51, 0.044, 0.02, 0.1, 2.2, 0.12, 0.85));
     // şakaklarda yüzü çerçeveleyen kıvrık tutamlar
     for (const s of [-1, 1]) {
-      const n0 = surfAt(dirOf(s * 2.55, -0.5), 0.012, v3()), n1 = n0.clone().add(v3(s * 0.01, -0.09, -0.02));
-      parts.push(curlLock(n0, n1, dirOf(s * 2.55, -0.6), 0.009, 1.8, 0.0055, 0));
+      const n0 = surfAt(dirOf(s * 2.45, -0.42), 0.01, v3()), n1 = n0.clone().add(v3(s * 0.008, -0.065, -0.012));
+      parts.push(curlLock(n0, n1, dirOf(s * 2.45, -0.5), 0.0085, 1.5, 0.0068, 0));
     }
     for (const g of bunGeos()) parts.push(g);
     return concat(parts.map(g => withAttrs(g, null, 0)));
@@ -1641,6 +1641,58 @@ const HALA = (() => {
   function dance(dur = 5.5) { if (!S.ctx) return false; startAct('dance', { dur }); return true; }
   function cheer(dur = 1.6) { if (!S.ctx) return false; startAct('cheer', { dur }); return true; }
 
+  // ── Arayüz için yüz resmi (konuşma balonu / sol üst köşe): { smile, talk, blink } dataURL (256², yuvarlak rozet) ──
+  // Bir kez çizilir ve saklanır; arayüz konuşurken 'smile' ↔ 'talk' arasında gidip gelerek ağzı oynatabilir.
+  let PORTRAIT = null;
+  function portrait() {
+    if (PORTRAIT) return PORTRAIT;
+    if (!S.root || typeof renderer === 'undefined' || renderer.getContext().isContextLost()) return null;
+    const N = 256, root = S.root, parent = root.parent, pos = root.position.clone(), ry = root.rotation.y;
+    const rt = new THREE.WebGLRenderTarget(N, N, { samples: 4, colorSpace: THREE.SRGBColorSpace });
+    const sc = new THREE.Scene(); sc.environment = scene.environment;
+    sc.add(new THREE.HemisphereLight(0xfff4ea, 0x9a7a65, 0.75));
+    const key = new THREE.DirectionalLight(0xfff0dc, 1.6); key.position.set(-1.0, 3.2, 2.6); sc.add(key);
+    const cam = new THREE.PerspectiveCamera(22, 1, 0.1, 10);
+    const saved = { eye: U.hzEye.value.clone(), ew: U.hzEyeW.value.clone(), mo: U.hzMouth.value.clone(), br: U.hzBrow.value.clone(), ho: HU.hzOff.value.clone(), held: S.held.visible };
+    const prevRT = renderer.getRenderTarget(), prevCol = renderer.getClearColor(new THREE.Color()), prevA = renderer.getClearAlpha();
+    const buf = new Uint8Array(N * N * 4), cv = document.createElement('canvas'); cv.width = cv.height = N;
+    const out = {};
+    try {
+      idlePose(M.P, 0); M.P[C.kRZ] = 0.12; M.P[C.kRX] = -0.03; M.P[C.kRY] = 0.12; applyPose(M.P);
+      HU.hzOff.value.set(0, 0, 0); S.held.visible = false;
+      root.position.set(0, 0, 0); root.rotation.y = 0; sc.add(root); root.updateMatrixWorld(true);
+      S.headC.getWorldPosition(_v);
+      cam.position.set(_v.x + 0.3, _v.y + 0.08, _v.z + 1.62); cam.lookAt(_v.x + 0.01, _v.y - 0.01, _v.z);
+      const g = cv.getContext('2d');
+      for (const [k, mo, eye, ew] of [['smile', [1, 0, 0, 0], [0, 0.15, 0.05, 0], [1, 0, 0]], ['talk', [0, 1, 0.9, 0.6], [0, 0.15, 0.05, 0], [1, 0, 0]],
+        ['blink', [0.3, 0.75, 0.42, 0.9], [0, 0, 0, 0], [0, 1, 0]]]) {
+        U.hzMouth.value.set(...mo); U.hzEye.value.set(...eye); U.hzEyeW.value.set(...ew); U.hzBrow.value.set(0.35, 0, 0.6, 0);
+        renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(true, true, true);
+        renderer.render(sc, cam);
+        renderer.readRenderTargetPixels(rt, 0, 0, N, N, buf);
+        const id = g.createImageData(N, N), D = id.data;
+        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+          const s = ((N - 1 - y) * N + x) * 4, d = (y * N + x) * 4, a = buf[s + 3], kk = a > 0 && a < 255 ? 255 / a : 1;
+          D[d] = Math.min(255, buf[s] * kk); D[d + 1] = Math.min(255, buf[s + 1] * kk); D[d + 2] = Math.min(255, buf[s + 2] * kk); D[d + 3] = a;
+        }
+        const pic = document.createElement('canvas'); pic.width = pic.height = N; pic.getContext('2d').putImageData(id, 0, 0);
+        g.clearRect(0, 0, N, N);
+        g.save(); g.beginPath(); g.arc(N / 2, N / 2, N / 2 - 4, 0, TAU); g.clip();
+        const gr = g.createRadialGradient(N * 0.45, N * 0.38, 10, N / 2, N / 2, N / 2); gr.addColorStop(0, '#ffe9df'); gr.addColorStop(1, '#ff9f8f');
+        g.fillStyle = gr; g.fillRect(0, 0, N, N); g.drawImage(pic, 0, 0); g.restore();
+        g.lineWidth = 7; g.strokeStyle = '#ffffff'; g.beginPath(); g.arc(N / 2, N / 2, N / 2 - 4.5, 0, TAU); g.stroke();
+        out[k] = cv.toDataURL('image/png');
+      }
+    } catch (e) { console.warn('HALA.portrait', e); }
+    finally {
+      if (parent) parent.add(root); root.position.copy(pos); root.rotation.y = ry; root.updateMatrixWorld(true);
+      U.hzEye.value.copy(saved.eye); U.hzEyeW.value.copy(saved.ew); U.hzMouth.value.copy(saved.mo); U.hzBrow.value.copy(saved.br); HU.hzOff.value.copy(saved.ho); S.held.visible = saved.held;
+      renderer.setRenderTarget(prevRT); renderer.setClearColor(prevCol, prevA); rt.dispose();
+    }
+    if (out.smile) PORTRAIT = out;
+    return out.smile ? out : null;
+  }
+
   // QA: belirli bir hareketi zorla (ekran görüntüsü için) — HALA._qa.act('hug') vb.
   const _qa = {
     act(k, o = {}) {
@@ -1659,6 +1711,6 @@ const HALA = (() => {
   };
 
   Object.defineProperty(api, 'busy', { get: () => (S.act ? S.act.k : null), enumerable: true });   // şu anki eylem (yoksa null)
-  return Object.assign(api, { create, update, onFezaHurt, onFezaLow, onFezaDown, onCheer, teamReady, teamMove, pointTo, say, boost, dance, cheer,
+  return Object.assign(api, { create, update, onFezaHurt, onFezaLow, onFezaDown, onCheer, teamReady, teamMove, pointTo, say, boost, dance, cheer, portrait,
     _S: S, _M: M, _qa });
 })();

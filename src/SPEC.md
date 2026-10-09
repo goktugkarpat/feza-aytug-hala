@@ -104,6 +104,8 @@ Aytuğ Hala'nın ek API'si (karakter ajanı, src/04_hala.js; sesli cümleleri `s
   ör. `GAME.on('station', s => { if (s.id === 'raf_ust') HALA.boost(s.hx, s.hz); })`. Dünya düz (y = 0); inilecek yer yürünür olmalı.
 - `HALA.dance(s = 5.5)` (bölüm sonu/hikâye dansı), `HALA.cheer(s)` (alkışlı sevinç zıplaması), `HALA.busy` (şu anki eylem adı ya da null:
   'throw' | 'hug' | 'lift' | 'point' | 'clap' | 'cheer' | 'shield' | 'team' | 'boost' | 'dance').
+- `HALA.portrait()` → `{ smile, talk, blink }` (256² yuvarlak rozet dataURL'leri; ilk çağrı ~0,5 s sürer — yükleme ekranında çağır,
+  sonra önbellekten). Arayüz "sol üstte Hala'nın yüzü konuşurken ağzı oynar" için `AUD.current` varken smile ↔ talk değiştirebilir.
 - Kendiliğinden yaptıkları: Feza'nın yanında/hafif arkasında takip (yolunu kesmez, takılırsa kalpli parıltıyla yanına ışınlanır); savaşta
   4–7 s'de bir **Pasta Topu** (yay çizer, krema+konfeti patlaması, Feza'nın vuruşunun ~%45'i; huysuzu ASLA tek başına neşelendirmez,
   son dokunuş hep Feza'nın); can < %35 → koşup diz çöküp **sarılır** (Feza ona döner, kollarını boynuna dolar; 3×%14 can, 22 s bekleme);
