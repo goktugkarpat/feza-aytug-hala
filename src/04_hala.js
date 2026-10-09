@@ -543,9 +543,9 @@ const HALA = (() => {
       const P = [], U = [];
       for (let i = 0; i <= 44; i++) {
         const a = lerp(0.3, TAU - 0.3, i / 44), sa = Math.sin(a), ca = Math.cos(a);
-        P.push(v3(sa * 0.09, 1.528 - 0.014 * sq(Math.cos(a / 2)), ca * 0.083 + 0.004)); U.push(v3(sa, 0, ca));
+        P.push(v3(sa * 0.09, 1.535 - 0.016 * sq(Math.cos(a / 2)), ca * 0.083 + 0.004)); U.push(v3(sa, 0, ca));
       }
-      coat.push({ geo: sweep(P, U, () => 0.042, () => 0.012, 10, 1, (t, c) => c.set(COAT), null), w: (x, y) => [2, 3, 0.12 * sstep(1.5, 1.55, y)], color: coatCol });
+      coat.push({ geo: sweep(P, U, () => 0.046, () => 0.012, 10, 1, (t, c) => c.set(COAT), null), w: (x, y) => [2, 3, 0.12 * sstep(1.5, 1.55, y)], color: coatCol });
     }
     {   // fermuar bandı + dişler
       const P = [], U = [];
@@ -558,6 +558,12 @@ const HALA = (() => {
         }
       });
       coat.push({ geo: teeth, w: (x, y) => [1, 2, sstep(0.98, 1.17, y)] });
+    }
+    {   // dikiş çizgileri: önde ve arkada omuz boyunduruğu (kumaş parçalı görünsün)
+      const seam = (pts, w) => { const P = [], U = []; for (const [a, y] of pts) { P.push(torsoPt(a, y, v3(), 0.0025)); U.push(torsoN(a, y, v3())); }
+        return sweep(curvePts(P, P.length * 3), curvePts(U, P.length * 3), () => w, () => 0.002, 5, 1, (t, c) => c.set(0xbf3a31), null); };
+      for (const s of [1, -1]) coat.push({ geo: seam([[s * 0.06, 1.35], [s * 0.45, 1.362], [s * 0.9, 1.385], [s * 1.25, 1.41]], 0.0028), bone: 2 });
+      coat.push({ geo: seam([[1.75, 1.39], [2.3, 1.33], [Math.PI, 1.31], [-2.3, 1.33], [-1.75, 1.39]], 0.0028), bone: 2 });
     }
     for (const s of [1, -1]) {   // yan cepler (fermuarlı yarık)
       const P = [], U = [];
@@ -628,7 +634,7 @@ const HALA = (() => {
       col *= 1.0 - 0.3 * exp(-hzSq((abs(q.x) - 0.05) / 0.016) - hzSq((q.y + 0.232) / 0.011));
       // gözler (e: göz yerel, +x = dış köşe)
       float side = q.x < 0.0 ? -1.0 : 1.0;
-      vec2 ec = vec2(0.29 * side, 0.0), er = vec2(0.146, 0.128);
+      vec2 ec = vec2(0.3 * side, 0.0), er = vec2(0.158, 0.138);
       vec2 e = vec2((q.x - ec.x) * side, q.y - ec.y) / er;
       float aE = aa / er.y;
       float xx = clamp(e.x, -1.0, 1.0), cx = sqrt(max(0.0, 1.0 - xx * xx));
@@ -649,7 +655,7 @@ const HALA = (() => {
       col = mix(col, col * SRGB(0.74, 0.52, 0.49), crease * 0.6);
       // iris: sıcak kahve, bal rengi halka, iki parıltı
       vec2 ic = ec + vec2(hzEye.y * 0.034, hzEye.z * 0.026 - 0.01);
-      vec2 di = q - ic; float ir = 0.099, dr = length(di) / ir, aI = aa / ir;
+      vec2 di = q - ic; float ir = 0.106, dr = length(di) / ir, aI = aa / ir;
       vec3 iris = mix(SRGB(0.28, 0.15, 0.07), SRGB(0.62, 0.39, 0.17), smoothstep(0.25, -0.95, di.y / ir));
       iris = mix(iris, SRGB(0.8, 0.6, 0.28), 0.3 * exp(-hzSq((dr - 0.56) / 0.13)));
       iris *= 0.85 + 0.15 * sin(atan(di.y, di.x) * 17.0 + dr * 6.0);
@@ -685,7 +691,7 @@ const HALA = (() => {
       emis += vec3(0.5) * cl * vis * ow;
       // kaşlar: kavisli, içte dolgun, dışa doğru incelen
       float bx = e.x;
-      float by = 0.238 + 0.045 * (1.0 - hzSq((bx - 0.25) / 1.1)) + hzBrow.x * 0.042 - hzBrow.y * 0.032 * bx;
+      float by = 0.25 + 0.045 * (1.0 - hzSq((bx - 0.25) / 1.1)) + hzBrow.x * 0.042 - hzBrow.y * 0.032 * bx;
       float bw = mix(0.021, 0.0085, smoothstep(-1.0, 1.15, bx));
       float brow = hzLine(abs(q.y - by), bw, aa) * (1.0 - smoothstep(0.95, 1.12, abs(bx - 0.1))) * mix(0.75, 1.0, smoothstep(-1.0, -0.7, bx));
       col = mix(col, SRGB(0.2, 0.11, 0.07), brow * 0.95);
@@ -1299,6 +1305,8 @@ const HALA = (() => {
       return { x: P.pos.x + ox / l * r, z: P.pos.z + oz / l * r };
     };
     let f = spot(S.side);
+    const Bp = S.ctx && S.ctx.Bilbo && S.ctx.Bilbo.root ? S.ctx.Bilbo.root.position : null;   // Bilbo'nun üstüne basma
+    if (Bp && Math.hypot(Bp.x - f.x, Bp.z - f.z) < 0.9 && S.t - (S.sideT || 0) > 2.5) { const g = spot(-S.side); if (free(A, g.x, g.z) && Math.hypot(Bp.x - g.x, Bp.z - g.z) > 1.2) { S.side = -S.side; S.sideT = S.t; f = g; } }
     if (!free(A, f.x, f.z)) { const g = spot(-S.side); if (free(A, g.x, g.z)) { S.side = -S.side; f = g; } else { const b = { x: P.pos.x - mx * 1.3, z: P.pos.z - mz * 1.3 - (sp > 0.3 ? 0 : 1.2) }; if (free(A, b.x, b.z)) f = b; } }
     return f;
   }
