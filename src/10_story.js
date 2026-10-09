@@ -1099,7 +1099,7 @@ const STORY = (() => {
           if (END.K.dollop) END.K.dollop.visible = false;
           setScale(1); CINE.near = 0.5; const bt = ov && ov.querySelector('.st-blow'); if (bt) bt.classList.add('st-hide'); CINE.wait = null;
           credits(0); h.act = 'dans'; f.cheer = true; b.bark = 0; b.sit = 0;
-          Object.assign(f, { x: -0.2, z: 0.6, face: 0.2 }); Object.assign(h, { x: -0.9, z: 0.5, y: 0, face: 0.4 }); Object.assign(b, { x: 0.5, z: 0.75, face: -0.3, y: 0 });
+          Object.assign(f, { x: -0.2, z: 0.6, face: 0.2 }); Object.assign(h, { x: -0.9, z: 0.5, y: 0, face: 0.4 }); Object.assign(b, { x: 0.95, z: 0.25, face: -0.5, y: 0 });
           END.t = 0;
         },
         tick(u, dt, t) {
