@@ -899,6 +899,31 @@ const STORY = (() => {
     if (g && g.storyCheer) { g.storyCheer(dur); for (let t = 1.4; t < dur; t += 1.5) later(t, () => g.storyCheer(0.1, true)); }
   }
 
+  // neşelenmiş Koca Pasta (finalin ilk anı: boss gitmiş olsa da sevinçle zıplar, sonra parıltıya dönüşür)
+  function happyCake() {
+    const g = new THREE.Group(), k = new Kit(), kf = new Kit();
+    const pink = 0xffb3cf, cream = 0xfff6ee, berry = 0xe8243c;
+    k.add(lathe('hc1', [[0, 0], [1.7, 0], [1.75, 0.08], [1.72, 1.1], [1.6, 1.18], [0, 1.2]], 40), pink);
+    k.add(lathe('hc2', [[0, 0], [1.25, 0], [1.3, 0.08], [1.27, 1.0], [1.15, 1.08], [0, 1.1]], 40), cream, [0, 1.15, 0]);
+    k.add(lathe('hc3', [[0, 0], [0.8, 0], [0.84, 0.06], [0.82, 0.8], [0.72, 0.88], [0, 0.9]], 36), pink, [0, 2.2, 0]);
+    for (let i = 0; i < 18; i++) { const a = i / 18 * TAU; k.add(SPH(), cream, [Math.sin(a) * 1.68, 1.15, Math.cos(a) * 1.68], null, [0.2, 0.16, 0.2]); }
+    for (let i = 0; i < 14; i++) { const a = i / 14 * TAU; k.add(SPH(), 0xffd1e0, [Math.sin(a) * 1.24, 2.22, Math.cos(a) * 1.24], null, [0.15, 0.12, 0.15]); }
+    for (let i = 0; i < 8; i++) { const a = i / 8 * TAU + 0.2; k.add(SPH(), berry, [Math.sin(a) * 0.55, 3.15, Math.cos(a) * 0.55], null, [0.14, 0.17, 0.14]); }
+    k.add(SPH(), berry, [0, 3.35, 0], null, 0.24); k.add(CYL(8), 0x4fa64a, [0.05, 3.62, 0], [0, 0, 0.3], [0.03, 0.25, 0.03]);
+    for (let i = 0; i < 40; i++) { const a = i * 2.39996, r = 1.0 + (i % 3) * 0.2, y = 0.3 + (i % 5) * 0.18; if (Math.cos(a) > 0.5) continue; k.add(CYL(6), SUGAR_COL[i % 6], [Math.sin(a) * 1.73, y, Math.cos(a) * 1.73], [Math.PI / 2, a, 0.6], [0.025, 0.1, 0.025]); }
+    // yüz (ön, orta kat): mutlu kapalı gözler ^ ^, kocaman gülüş, yanaklar
+    for (const sd of [-1, 1]) {
+      kf.add(TOR(Math.PI, 0.22), 0x4a2a2a, [sd * 0.42, 1.78, 1.24], null, [0.17, 0.15, 0.12]);
+      kf.add(SPH(), 0xff7f9f, [sd * 0.72, 1.5, 1.14], null, [0.17, 0.1, 0.06]);
+    }
+    kf.add(SPH(), 0x7a2a3a, [0, 1.42, 1.22], null, [0.32, 0.2, 0.08]);
+    kf.add(SPH(), 0xff8fa8, [0, 1.36, 1.27], null, [0.18, 0.08, 0.04]);
+    kf.add(G.box(), 0xffffff, [0, 1.56, 1.27], null, [0.34, 0.06, 0.03]);
+    const body = new THREE.Mesh(k.build(), vcMat({ roughness: 0.45 })), face = new THREE.Mesh(kf.build(), vcMat({ roughness: 0.3 }));
+    body.castShadow = true; g.add(body, face);
+    return g;
+  }
+
   // ───────────────────────── Final ─────────────────────────
   const END = { K: null, sugar: null, hidden: [], blown: false, t: 0 };
   function endingBeats() {
@@ -934,11 +959,29 @@ const STORY = (() => {
     return [
       { key: 'son_1', min: 3.8, enter() {
           origin = { x: P.pos.x, z: P.pos.z }; ACT.worldMode = true;
-          camTo(0.5, 2.4, 6.2, 0, 1.3, 0, 1.5, true); camTo(0.3, 2.0, 5.0, 0, 1.2, 0, 1.2);
+          camTo(0.6, 3.0, 8.4, 0, 1.8, -3, 1.5, true); camTo(0.4, 2.6, 7.2, 0, 1.9, -3.2, 1.2);
           burst('hearts', P.pos.x, 2, P.pos.z, { count: 16 });
+          if (!END.cake) { END.cake = happyCake(); scene.add(END.cake); }
+          END.cake.position.set(P.pos.x + 0.3, 0, P.pos.z - 5.2); END.cake.scale.setScalar(0.9); END.cake.visible = true;
+        },
+        tick(u, dt, t) {   // Koca Pasta sevinçle zıplar, kalpler saçar
+          const c = END.cake; if (!c) return;
+          const hop = Math.abs(Math.sin(t * 4.2));
+          c.position.y = hop * 0.45; c.scale.set(0.9 * (1 + (1 - hop) * 0.08), 0.9 * (1 - (1 - hop) * 0.1), 0.9 * (1 + (1 - hop) * 0.08));
+          c.rotation.z = Math.sin(t * 2.1) * 0.06;
+          if ((t % 0.7) < dt) burst('hearts', c.position.x, 3.4, c.position.z, { count: 6 });
         } },
       { key: 'son_2', min: 4.2, enter() { gather(P.pos.x, P.pos.z); sfx('star', { vol: 0.8 }); },
-        tick(u, dt, t) { camTo(0.2, 1.7 + u, 4.4 - u, 0, 1.2, 0, 1.5); if (t > 3.2 && !this._w) { this._w = true; white(1, 0.5); } } },
+        tick(u, dt, t) {
+          camTo(0.2, 2.0 + u, 6.2 - u * 1.5, 0, 1.4, -1.5, 1.5);
+          const c = END.cake;
+          if (c && c.visible) {   // pasta parıltıya dönüşüp küçülür; şekerleri karakterlere akar
+            const k = clamp(t / 2.4, 0, 1); c.scale.setScalar(0.9 * (1 - ease(k))); c.position.y = Math.sin(k * Math.PI) * 0.8; c.rotation.y += dt * (2 + k * 8);
+            if ((t % 0.15) < dt) burst('sparkle', c.position.x + (Math.random() - 0.5) * 3, 1 + Math.random() * 2.5, c.position.z, { count: 4 });
+            if (k >= 1) c.visible = false;
+          }
+          if (t > 3.2 && !this._w) { this._w = true; white(1, 0.5); }
+        } },
       // mutfaktayız, minicikten normal boya
       { min: 3.4, noSkip: false, enter() {
           buildSet(); ACT.worldMode = false;
@@ -980,7 +1023,7 @@ const STORY = (() => {
         } },
       { key: 'son_4', min: 3.6, enter() {
           const dl = END.K.dollop; if (dl) { dl.visible = true; dl.position.set(0.52, 0, 0.5); dl.scale.setScalar(1.5); burst('sparkle', origin.x + 0.52, 0.3, origin.z + 0.5, { count: 8 }); }
-          camTo(0.1, 1.2, 2.9, 0.75, 0.35, 0.45, 2);
+          camTo(-0.1, 1.55, 4.3, 0.55, 0.5, 0.35, 2, true);
           Object.assign(b, { x: 1.28, z: 0.5, face: -Math.PI / 2, sit: 0, nose: 1, lick: 1, y: 0 });
           Object.assign(f, { x: -0.55, z: 0.1, face: 0.9 });
           f.cheer = true; h.act = 'alkis';
@@ -998,6 +1041,7 @@ const STORY = (() => {
       { min: 10, final: true, enter() {   // jenerik
           if (!built) { buildSet(); ACT.worldMode = false; white(0, 0.8); }   // "Geç" ile doğrudan buraya gelindiyse
           if (END.tmpSugar) { disposeTree(END.tmpSugar.im); END.tmpSugar = null; }
+          if (END.cake) END.cake.visible = false;
           for (const c of END.K.candles) { c.on = false; c.f.visible = false; }
           if (END.K.dollop) END.K.dollop.visible = false;
           setScale(1); CINE.near = 0.5; const bt = ov && ov.querySelector('.st-blow'); if (bt) bt.classList.add('st-hide'); CINE.wait = null;
@@ -1070,6 +1114,7 @@ const STORY = (() => {
     END.hidden = [];
     if (END.K) { disposeTree(END.K.g); END.K = null; END.sugar = null; END.puffs = null; }
     if (END.tmpSugar) { disposeTree(END.tmpSugar.im); END.tmpSugar = null; }
+    if (END.cake) { disposeTree(END.cake); END.cake = null; }
     if (END.post && typeof POST !== 'undefined') { POST.vignette = END.post.vig; END.post = null; }
     if (END.fog != null && scene.fog) { scene.fog.color.setHex(END.fog); END.fog = null; }
     ACT.worldMode = false;
