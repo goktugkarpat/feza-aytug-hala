@@ -26,7 +26,17 @@ const HUYSUZ = (() => {
   }
   const type = (id, def) => reg(id, def, false);
   const boss = (id, def) => reg(id, def, true);
-  function zone(zid, o) { Z[zid] = Object.assign(Z[zid] || {}, o); return Z[zid]; }
+  // Repeated calls for the same room MERGE (several files may add types to one room): enemies / variants per id, elites as a set; scalars override.
+  function zone(zid, o) {
+    const z = Z[zid] || (Z[zid] = {});
+    for (const k in o) {
+      const v = o[k];
+      if (k === 'elites' && Array.isArray(v)) z.elites = Array.from(new Set((z.elites || []).concat(v)));
+      else if ((k === 'enemies' || k === 'variants') && v && typeof v === 'object') z[k] = Object.assign({}, z[k] || {}, v);
+      else z[k] = v;
+    }
+    return z;
+  }
   const forZone = zid => Z[zid] || null;
   const get = id => T[id] || null;
   const each = fn => { for (const id in T) fn(id, T[id]); };
