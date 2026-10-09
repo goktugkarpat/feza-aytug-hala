@@ -822,12 +822,12 @@
     ['corap', 'Tek Çorap', 'goblin', 'yakin', { eliteAd: 'Kocaman Çorap', hp: 24, dmg: 4, speed: 2.3, r: 0.45, height: 0.85, atkRange: 1.0, atkCd: 1.9, windup: 0.8, aggro: 8.5 }, buildCorap, animCorap, 0.6],
     ['kasik', 'Haylaz Kaşık', 'goblin', 'yakin', { eliteAd: 'Kocaman Kaşık', hp: 30, dmg: 5, speed: 2.7, r: 0.45, height: 1.2, atkRange: 1.1, atkCd: 1.8, windup: 0.75, aggro: 9 }, buildKasik, animKasik, 0.6],
     ['kopukBalonu', 'Köpük Balonu', 'kopuk', 'uzak', { eliteAd: 'Kocaman Köpük', hp: 18, dmg: 4, speed: 2.1, r: 0.45, height: 0.9, atkRange: 6.5, range: 6.5, atkCd: 2.8, windup: 0.85, fly: true, hover: 0.7, aggro: 9 }, buildKopuk, animKopuk, 0.5],
-    ['unTorbasi', 'Un Torbacığı', 'goblin', 'yuvarlanan', { eliteAd: 'Kocaman Un Torbası', hp: 26, dmg: 5, speed: 2.4, r: 0.48, height: 0.8, atkRange: 2.4, atkCd: 2.2, windup: 0.8, aggro: 9 }, buildUn, animUn, 0.55],
+    ['unTorbasi', 'Un Torbacığı', 'goblin', 'yuvarlanan', { eliteAd: 'Kocaman Un Torbası', hp: 26, dmg: 5, speed: 2.4, r: 0.48, height: 0.8, atkRange: 2.4, atkCd: 2.2, windup: 0.8, aggro: 9, trailCol: '#fffaf0' }, buildUn, animUn, 0.55],
     ['buzKupu', 'Buz Küpü', 'cisdamlasi', 'kayan', { eliteAd: 'Kocaman Buz Küpü', hp: 24, dmg: 5, speed: 2.8, r: 0.45, height: 0.62, atkRange: 2.4, atkCd: 2.2, windup: 0.8, aggro: 9, trail: 'milk', trailCol: '#dff4ff' }, buildBuz, animBuz, 0.6],
     ['joleTatlisi', 'Jöle Ayıcık', 'yogurt', 'ziplayan', { eliteAd: 'Kocaman Jöle Ayıcık', hp: 22, dmg: 4, speed: 2.5, r: 0.45, height: 0.9, atkRange: 2.4, atkCd: 2.0, windup: 0.75, aggro: 9 }, buildJole, animJoleT, 0.55, ['kirmizi', 'yesil', 'turuncu']],
     ['sutDamlasi', 'Süt Damlası', 'mantar', 'uzak', { eliteAd: 'Kocaman Süt Damlası', hp: 18, dmg: 4, speed: 2.0, r: 0.42, height: 0.8, atkRange: 6.5, range: 6.5, atkCd: 2.7, windup: 0.85, aggro: 9, trail: 'milk', shot: { kind: 'bubble', speed: 3.6, r: 0.28, col: '#f4fbff' } }, buildSut, animSut, 0.6],
     ['sekerleme', 'Şekerleme Askeri', 'goblin', 'yakin', { eliteAd: 'Kocaman Şekerleme', hp: 30, dmg: 5, speed: 2.6, r: 0.45, height: 1.0, atkRange: 1.15, atkCd: 1.9, windup: 0.75, aggro: 9 }, buildSeker, animSeker, 0.55],
-    ['cilekcik', 'Çilekçik', 'goblin', 'yuvarlanan', { eliteAd: 'Kocaman Çilek', hp: 24, dmg: 5, speed: 2.6, r: 0.45, height: 0.78, atkRange: 2.4, atkCd: 2.1, windup: 0.75, aggro: 9 }, buildCilek, animCilek, 0.6],
+    ['cilekcik', 'Çilekçik', 'goblin', 'yuvarlanan', { eliteAd: 'Kocaman Çilek', hp: 24, dmg: 5, speed: 2.6, r: 0.45, height: 0.78, atkRange: 2.4, atkCd: 2.1, windup: 0.75, aggro: 9, trailCol: '#ffc0d0' }, buildCilek, animCilek, 0.6],
     ['kremaTopu', 'Krema Topu', 'mantar', 'uzak', { eliteAd: 'Kocaman Krema Topu', hp: 24, dmg: 5, speed: 1.8, r: 0.48, height: 0.95, atkRange: 6.5, range: 6.5, atkCd: 2.8, windup: 0.9, aggro: 9, shot: { kind: 'jelly', speed: 3.4, r: 0.3, col: '#ffd0e4' } }, buildKrema, animKrema, 0.55],
     // nadir (gizli) huysuzlar: neşelenince "gizli" çıkartma + altın şeker
     ['gokkusagiCorap', 'Gökkuşağı Çorap', 'goblin', 'yakin', Object.assign({ r: 0.45, height: 0.85, atkRange: 1.0, atkCd: 2.2, windup: 0.9 }, RARE_STATS), (r, o) => buildCorap(r, Object.assign({}, o, { rare: true })), animCorap, 0.6, null, true],
@@ -856,7 +856,10 @@
   function hook() {
     if (typeof GAME === 'undefined' || !GAME || !GAME.on) { setTimeout(hook, 250); return; }
     GAME.on('happy', e => {
-      if (!e || !RARE[e.type]) return;
+      if (!e || !HUYSUZ.get(e.type) || e.boss) return;
+      // her neşelenen ev eşyası: minik şeker / konfeti serpintisi (kalpleri GAME saçar)
+      if (typeof FX !== 'undefined' && FX && FX.burst) { try { FX.burst('confetti', e.x, 0.9, e.z, { scale: e.elite ? 1.1 : 0.7 }); } catch (err) { /* yok say */ } }
+      if (!RARE[e.type]) return;
       try {
         const P = GAME.P;
         if (P && P.cikartmalar && P.cikartmalar[e.type]) P.cikartmalar[e.type].tur = 'gizli';

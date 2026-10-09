@@ -1690,7 +1690,7 @@ const GAME = (() => {
           burst('milk', e.x, 0.1, e.z, { count: 6, scale: 0.7, dir: { x: -e.rdx, z: -e.rdz } });
         } else {
           sfx('roll', { x: e.x, z: e.z, vol: 0.8, pitch: e.elite ? 0.85 : frand(1, 1.15) });
-          burst('dust', e.x, 0.05, e.z, { count: 6, dir: { x: -e.rdx, z: -e.rdz } });
+          burst('dust', e.x, 0.05, e.z, { count: e.def.trailCol ? 12 : 6, color: e.def.trailCol, dir: { x: -e.rdx, z: -e.rdz } });   // (Dev Ev: un torbası puf diye un bulutu)
         }
       }
       return;
@@ -1707,7 +1707,7 @@ const GAME = (() => {
         e.trailT -= dt;
         if (e.trailT <= 0 && e.dist < 26) {
           e.trailT = 0.07;
-          burst('dust', e.x - e.rdx * e.r, 0.04, e.z - e.rdz * e.r, { count: 2, color: '#c9a07a', dir: { x: -e.rdx, z: -e.rdz } });
+          burst('dust', e.x - e.rdx * e.r, 0.04, e.z - e.rdz * e.r, { count: 2, color: e.def.trailCol || '#c9a07a', dir: { x: -e.rdx, z: -e.rdz } });
           if (Math.random() < 0.5 && isT(e.type, 'kaplumbaga')) burst('embers', e.x, 0.3, e.z, { count: 2 });   // (Dev Ev: yalnız lav kaplumbağası kıvılcım saçar)
         }
       }
