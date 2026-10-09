@@ -162,7 +162,7 @@ sit, happy 0..1 (hızlı mutlu kuyruk + arka sallama + dil dışarıda), sniff, 
 `sapka` (Parti Şapkası), `gozluk` (Havalı Gözlük), `pelerin` (Süper Pelerin, koşarken dalgalanır). Kemiklere bağlı küçük mesh'ler; ilk takılışta
 kurulur, saklanır. `GAME.setBilboAccessory(id)` takar; `bilboAcc` olayında Hala `bilbo_<id>` (yoksa `bilbo_aksesuar`) der.
 **Binme**: `GAME.rideBilbo(true, saniye=14)` / `GAME.rideBilbo(false)`. Bölüm tasarımcısı istasyonla başlatır:
-`L.stations.push({ id: 'binis1', kind: 'binis', x, z, r: 1.6, sure: 14 })`. Binerken `P.rideMul = 1.6` (hız), Feza saldırabilir; süre bitince,
+`L.stations.push({ id: 'binis1', kind: 'binis', x, z, r: 1.6, sure: 14 })`. Binerken `P.rideMul = 1.25` (≈ 6,5 m/s), Feza saldırabilir; süre bitince,
 bölüm değişince, Feza düşünce biter. Durum: `BILBO_FUN.riding`, `BILBO_FUN.rideLeft`. Sesler `bilbo_bin`, `bilbo_in`.
 **Kayıp eşya**: bölümün `kayipEsya`'sı (`gozluk`, `anahtar`, `toka`; başka id → hediye kutusu) için yer: `L.lostSpot = {x, z, id?}` (ya da
 `L.lostSpots[0]`; yerlesim'de verilebilir), yoksa ortadaki/sonraki bir ana odada (başlangıç ve boss arenası değil) otomatik seçilir. Merkezde (hub) ve
@@ -170,7 +170,7 @@ bölüm değişince, Feza düşünce biter. Durum: `BILBO_FUN.riding`, `BILBO_FU
 koklar, havlar, kazar (~4-5 s), eşya kavisle Feza'nın yanına düşer → `GAME.foundLostItem(id, bölüm)` (+ `STORY.lostItem`), Hala `bilbo_buldu_<id>`.
 Tehlike gelirse yarıda bırakır, sonra yeniden dener. Durum: `BILBO_FUN.lost` `{x, z, id, phase: wait|go|sniff|dig|pop|done}`.
 **Hapşırma**: `GAME.bilboSneeze()` (dünya efektleri: bulut + konfeti, küçük sarsıntı, öndeki boss olmayan huysuzlar geri savrulup 1,4 s sersemler,
-Hala `bilbo_hapsu`); yalnız görüntü için `GAME.Bilbo.sneeze()`. Hikâye sahneleri kullanabilir.
+Hala `bilbo_hapsu`; sesler `bilboHa` + `bilboHapsu`, WebAudio ile sentez, `AUD.defineSfx(ad, fn(ctx, out, t, pitch), vol)` ile kayıtlı); yalnız görüntü için `GAME.Bilbo.sneeze()`. Hikâye sahneleri kullanabilir.
 
 ### Eşyalar (src/04_esyalar.js)
 `ITEMS.clearBases()` ile eski ışın kılıcı/uzay eşyaları kaldırılır (eski kayıtlar `make` içinde LEGACY'den bulunur), yerine ev eşyaları
