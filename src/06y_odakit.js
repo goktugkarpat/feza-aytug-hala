@@ -409,7 +409,10 @@ const ODAKIT = (() => {
         if (it.tick) it.tick(dt, t, hx, hz);
         if (!P || !playing()) continue;
         const d = Math.hypot(hx - it.x, hz - it.z);
-        if (it.line && !heard[it.line] && d < it.near && !it.used) { heard[it.line] = 1; say(it.line, it.prio ?? 2); }
+        if (it.line && !heard[it.line] && d < it.near && !it.used) {
+          heard[it.line] = 1; say(it.line, it.prio ?? 2);
+          if (it.star && typeof HALA !== 'undefined' && HALA && typeof HALA.pointTo === 'function') { try { HALA.pointTo(it.x, it.z); } catch (e) { /* */ } }   // Aytuğ Hala oyuncağı gösterir
+        }
         const inside = d < it.r;
         if (inside && !it.inside && t - it.last > it.cd && !(it.once && it.used) && !ride && !(it.can && !it.can())) {
           it.last = t; it.used++;
