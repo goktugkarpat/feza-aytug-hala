@@ -131,13 +131,6 @@
       const c2 = mixc(g(0, C[1] + yy * R, 0), hash(i, 5, 5) > 0.7 ? '#f4f4fa' : '#7d8194', 0.35 * hash(i, 1, 4));
       r.add(G.sphere(10, 8), c2, [C[0] + dx * out, C[1] + yy * out * 0.96, C[2] + dz * out * 0.94], null, [rad, rad * 0.9, rad]);
     }
-    // dağınık toz telleri (yumuşak uçlu)
-    for (let i = 0; i < 14; i++) {
-      const yy = 0.9 - i / 14 * 1.5, a = i * 2.4 + 0.5, rr = Math.sqrt(Math.max(0, 1 - yy * yy));
-      const dx = Math.sin(a) * rr, dz = Math.cos(a) * rr;
-      if (dz > 0.3 && Math.abs(dx) < 0.8 && yy > -0.7 && yy < 0.6) continue;
-      K.softSpike(r, [C[0] + dx * R * 0.95, C[1] + yy * R, C[2] + dz * R * 0.92], [dx + 0.3 * Math.sin(i * 7), yy + 0.4, dz], 0.13, 0.025, i & 1 ? deep : base, 8);
-    }
     // yüzün çevresine kabarık yanak tüyleri
     for (const sd of [-1, 1]) for (let k = 0; k < 4; k++) {
       const a = sd * (0.62 + k * 0.1), yy = -0.28 + k * 0.08;
@@ -556,17 +549,14 @@
     r.bone('legL', 'root', [0.1, 0.16, 0]); r.bone('legR', 'root', [-0.1, 0.16, 0]);
     const wob = (x, y) => sm((y - 0.05) / 0.5);
     r.on('body').fx(0, 1, 0, wob);
-    r.add(G.sphere(28, 20), jc, [0, 0.34, 0], null, [0.22, 0.25, 0.19]);
-    r.fx(0, 1, 0, wob).add(G.sphere(20, 14), rb ? col('#fff4c0') : mixc(base, light, 0.45), [0, 0.32, 0.075], null, [0.15, 0.17, 0.12]);   // açık karın
+    { const bl = rb ? col('#fff4c0') : mixc(base, light, 0.5), o2 = new THREE.Color();   // açık renkli karın (yumuşak geçiş)
+      r.add(G.sphere(28, 20), (x, y, z) => o2.copy(jc(x, y, z)).lerp(bl, 0.75 * sm((z / 0.19 - 0.55) / 0.3) * sm((1 - Math.hypot(x / 0.15, (y - 0.31) / 0.17)) / 0.4)), [0, 0.34, 0], null, [0.22, 0.25, 0.19]); }
     r.on('head').fx(0, 1, 0, 1).add(G.sphere(30, 22), jc, [0, 0.68, 0], null, [0.215, 0.195, 0.19]);
     r.add(G.sphere(18, 12), mixc(light, base, 0.4), [0, 0.63, 0.15], null, [0.09, 0.065, 0.06]);   // ağız çevresi
     for (const sd of [-1, 1]) {
       r.add(G.sphere(16, 12), jc, [0.15 * sd, 0.85, -0.02], null, [0.07, 0.07, 0.05]);
       r.fx(0.2, 1, 0, 1).add(G.sphere(12, 8), light, [0.15 * sd, 0.85, 0.02], null, [0.04, 0.04, 0.02]).fx(0, 1, 0, 1);
     }
-    // içeride hava kabarcıkları + parlak ışıltılar
-    r.on('body').fx(0.6, 0, 0, wob);
-    for (const b of [[0.1, 0.22, 0.15, 0.02], [-0.12, 0.42, 0.13, 0.016], [0.06, 0.48, -0.14, 0.018]]) r.add(G.sphere(8, 6), mixc(light, '#ffffff', 0.6), [b[0], b[1], b[2]], null, b[3]);
     r.on('head').fx(1, 0, 0, 1).add(G.sphere(12, 8), hdr('#ffffff', 1.4), [-0.1, 0.8, 0.13], [0.5, -0.5, 0.4], [0.055, 0.022, 0.01]);
     r.on('body').fx(1, 0, 0, wob).add(G.sphere(12, 8), hdr('#ffffff', 1.3), [-0.13, 0.44, 0.13], [0.3, -0.6, 0.5], [0.05, 0.02, 0.01]);
     for (const sd of [-1, 1]) {
@@ -574,7 +564,7 @@
       r.on(sd > 0 ? 'legL' : 'legR').fx(0, 1, 0, 0).add(G.sphere(16, 10), jc, [0.11 * sd, 0.07, 0.05], null, [0.08, 0.075, 0.1]);
     }
     r.fx(0, 0);
-    K.face(r, [0, 0.68, 0], 0.195, yuz({ bone: 'head', tilt: 0.2, ex: 0.075, ey: 0.035, er: 0.06, iris: rb ? '#5a2a8a' : mixc(deep, '#1a0f24', 0.6), skin: rb ? col('#ffd84a') : mixc(base, light, 0.15),
+    K.face(r, [0, 0.68, 0], 0.195, yuz({ bone: 'head', tilt: 0.2, ex: 0.078, ey: 0.045, er: 0.067, iris: rb ? '#5a2a8a' : mixc(deep, '#1a0f24', 0.6), skin: rb ? col('#ffd84a') : mixc(base, light, 0.15),
       browCol: mixc(deep, '#1a0a14', 0.6), browY: 1.38, mouthY: -0.09, mouthW: 0.065, heartY: 1.0, heartX: 1.3, heartS: 0.32 }));
     if (E) K.crown(r.on('head'), [0, 0.87, 0], 0.45);
     if (rb) glints(r.on('head'), [[0.22, 0.9, 0.08, 0.03], [-0.26, 0.55, 0.1, 0.025], [0.24, 0.3, 0.1, 0.02]]);
@@ -618,7 +608,7 @@
     r.add(G.sphere(10, 8), '#ffffff', [0.06, 0.78, -0.02], null, 0.03);
     r.add(G.sphere(8, 6), '#ffffff', [0.1, 0.8, -0.02], null, 0.022);
     r.fx(0, 0);
-    K.face(r, [0, 0.25, 0], 0.3, yuz({ bone: 'body', tilt: 0.18, ex: 0.1, ey: 0.04, er: 0.09, iris: '#4a7ad0', skin: col('#f6f9ff'), browCol: '#8aa0c8', browY: 1.35,
+    K.face(r, [0, 0.25, 0], 0.318, yuz({ bone: 'body', tilt: 0.18, ex: 0.1, ey: 0.04, er: 0.09, iris: '#4a7ad0', skin: col('#f6f9ff'), browCol: '#8aa0c8', browY: 1.35,
       mouthY: -0.1, mouthW: 0.085, heartY: 1.2, heartX: 1.25, blushCol: '#ffa0c4' }));
     r.on('body').mark('muzzle', [0, 0.25, 0.32]);
     return { height: 0.8, glowC: col('#ffffff'), mat: { rough: 0.15, sss: col('#ffffff').multiplyScalar(0.1), rim: '#ffffff', rimK: 0.4, rimP: 2.0, wob: 0.012, wobF: 3, wobS: 4 } };
@@ -659,7 +649,7 @@
       const st2 = Math.sin(a * 6 + (y - 0.52) * 9) > -0.15 ? red : wht;
       return out.copy(st2).lerp(wht, fz);
     };
-    r.add(G.sphere(32, 24), swirl, [0, 0.52, 0], null, [0.27, 0.26, 0.25]);
+    r.add(G.sphere(32, 24), swirl, [0, 0.52, 0], null, [0.265, 0.26, 0.25]);
     r.fx(1, 0).add(G.sphere(12, 8), hdr('#ffffff', 1.4), [-0.13, 0.66, 0.17], [0.4, -0.5, 0.5], [0.06, 0.022, 0.01]).fx(0, 0);
     // asker kemeri
     r.fx(0, 0.6).add(G.torus(TAU, 0.18, 32), '#4a7ae8', [0, 0.38, 0], [PI / 2, 0, 0], [0.235, 0.235, 0.12]);
@@ -684,7 +674,7 @@
     r.seg([-0.42, 0.42, 0.06], [-0.42, 0.78, 0.06], 0.012, '#ffffff', 0.012, 6);
     r.fx(0, 1).add(G.cyl(1, 1, 28), (x, y, z) => rainbowAt(Math.atan2(y - 0.84, x + 0.42) / TAU + Math.hypot(y - 0.84, x + 0.42) * 6), [-0.42, 0.84, 0.06], [PI / 2, 0, 0], [0.085, 0.03, 0.085]);
     r.fx(0, 0);
-    K.face(r, [0, 0.52, 0], 0.255, yuz({ bone: 'body', tilt: 0.2, ex: 0.085, ey: 0.035, er: 0.078, iris: '#2a3a7a', skin: wht, browCol: '#5a2a3a', browY: 1.36,
+    K.face(r, [0, 0.52, 0], 0.275, yuz({ bone: 'body', tilt: 0.2, ex: 0.09, ey: 0.04, er: 0.084, iris: '#1a2458', skin: wht, browCol: '#5a2a3a', browY: 1.36,
       mouthY: -0.09, mouthW: 0.075, heartY: 1.15, heartX: 1.3, heartS: 0.3 }));
     r.on('body').mark('muzzle', [0, 0.52, 0.28]);
     return { height: 1.0, glowC: col('#ff7a9a'), mat: { rough: 0.2, sss: col('#ffffff').multiplyScalar(0.04), rim: '#ffffff', rimK: 0.32, rimP: 2.4 } };
@@ -738,7 +728,7 @@
     r.seg([0, 0.66, 0], [0.02, 0.76, -0.01], 0.022, '#3a9a46', 0.016, 8);
     r.add(G.sphere(8, 6), '#3a9a46', [0.02, 0.765, -0.01], null, 0.018);
     r.fx(0, 0);
-    K.face(r, [0, 0.46, 0], 0.31, yuz({ bone: 'body', tilt: 0.16, ex: 0.1, ey: 0.0, er: 0.085, iris: '#3a1a10', skin: red, browCol: '#6a0a20', browY: 1.36,
+    K.face(r, [0, 0.46, 0], 0.31, yuz({ bone: 'body', tilt: 0.16, ex: 0.1, ey: 0.0, er: 0.085, iris: '#2a0e08', skin: red, browCol: '#6a0a20', browY: 1.36,
       mouthY: -0.1, mouthW: 0.08, heartY: 1.2, heartX: 1.25, blushCol: '#ffb0c8' }));
     for (const sd of [-1, 1]) {
       r.on(sd > 0 ? 'armL' : 'armR').fx(0, 0.5);
@@ -804,7 +794,7 @@
     r.fx(1, 0).add(G.sphere(8, 6), hdr('#ffffff', 1.5), [-0.025, 0.83, 0.05], null, 0.014);
     r.fx(0, 0.4); r.seg([0, 0.86, 0], [0.04, 0.97, -0.03], 0.008, '#5a8a2a', 0.006, 6);
     r.fx(0, 0);
-    K.face(r, [0, 0.33, 0], 0.32, yuz({ bone: 'body', tilt: 0.2, ex: 0.1, ey: 0.03, er: 0.09, iris: '#5a2a3a', skin: cream, browCol: '#a06a7a', browY: 1.35,
+    K.face(r, [0, 0.33, 0], 0.365, yuz({ bone: 'body', tilt: 0.2, ex: 0.105, ey: 0.035, er: 0.096, iris: '#2a1420', skin: mixc(cream, creamD, 0.5), browCol: '#a06a7a', browY: 1.35,
       mouthY: -0.1, mouthW: 0.085, heartY: 1.15, heartX: 1.25, blushCol: '#ff9ac0' }));
     if (E) K.crown(r.on('top'), [0, 0.86, 0], 0.5);
     r.on('top').mark('muzzle', [0, 0.72, 0.1]);
