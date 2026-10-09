@@ -775,6 +775,7 @@
     O.sfx('whoosh', { x, z, vol: 0.25, pitch: 1.6 });
   }
 
+  ODAB.models = Object.assign(ODAB.models || {}, { creamSwirl, cupcake: (B, x, z, s, r) => cupcake(B, null, x, z, s, r), macaron, sprinkleDrop, strawberryTree: (B, x, z, s, r) => strawberryTree(B, null, x, z, s, r), candyFlowerPatch, rockCandy, candyMountain, meringue, gumdrops });
   BOLUM.define('pasta', {
     ad: 'Pasta Krallığı',
     taban: 'dairy',   // Kefir Vadisi zemini: akan sıvı (burada pembe-beyaz krema), bisküvi kırıntısı yol, krema tepeler

@@ -119,6 +119,7 @@ const ODAB = (() => {
   // ── Hareket düzeni (her bölüm kurulumunda bir tane): zıplatan tepecikler, buzda kayma, kaydırak/sal yolculuğu, toplanan şeyler ──
   function rig(api, L) {
     const R = { fly: null, ice: [], pads: [], picks: [], zones: [], v: [0, 0], prev: null, lift: 0, cd: 0, trailT: 0, sndT: 0, t: 0, iceOn: false, iceT: 0 };
+    ACTIVE = R; R.L = L;
     // yay şeklinde zıplatma: (x1,z1)'e, tepe yüksekliği h, süre dur
     R.arc = (x1, z1, h = 2.6, dur = 0.85, o = {}) => {
       const P = GAME.P;
@@ -261,6 +262,9 @@ const ODAB = (() => {
     });
     return R;
   }
+  let ACTIVE = null;
+  // Feza şu an zıplıyor / kaydıraktan iniyor / salda mı? (Aytuğ Hala ve Bilbo beklesin diye: ODAB.riding())
+  const riding = () => !!(ACTIVE && ACTIVE.fly && typeof GAME !== 'undefined' && GAME.L === ACTIVE.L);
   // altın şeker: hem ödül hem çıkartma
   function goldSugar(api, R, x, y, z, o = {}) {
     const g = goldCandy(); g.position.set(x, y, z); api.add(g);
@@ -453,7 +457,7 @@ const ODAB = (() => {
     while (b < 7 && api.isFloor(x - px * b, z - pz * b)) b += 0.25;
     return { a, b };
   }
-  return { mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, clearSpawns, gateDir, corridorHalf, flakeTexture };
+  return { riding, get lift() { return riding() ? ACTIVE.lift || 0 : 0; }, mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, clearSpawns, gateDir, corridorHalf, flakeTexture };
 })();
 
 /* ════════════════════════════ Buzdolabı ════════════════════════════ */
@@ -1183,6 +1187,8 @@ const ODAB = (() => {
     } });
   }
 
+  // (QA: modelleri yakından incelemek için)
+  ODAB.models = Object.assign(ODAB.models || {}, { milkBottle, yogurt, strawberry, jelloMold, fruitBowl, berry, iceBlock, peasBag, snowMound, frost, cone });
   BOLUM.define('buzdolabi', {
     ad: 'Buzdolabı',
     taban: 'moon',   // yumuşak kar dokusu + kenarda buz kayalıkları ("buzul"); ayın koyu uzay zemini kur()'da kapatılır
