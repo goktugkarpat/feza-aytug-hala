@@ -510,13 +510,23 @@ const OTURMA = (() => {
       }
     }
     const nr = L.rooms[rooms.slice().sort((p, q) => L.rooms[p].z - L.rooms[q].z)[0]];
-    const sk = K.northOf(L, (sofa.x0 + sofa.x1) / 2, nr.z - nr.r - 1.2, Math.min(18, (sofa.x1 - sofa.x0) / 2), 0.6, 0.4, 10);
-    if (sk) {   // koltuğun eteği: gri-mavi kumaş, düğmeler, püskül
-      const w = Math.min(36, sofa.x1 - sofa.x0);
-      api.box(sk.x, 4, sk.z - 0.4, w, 8, 0.8, 0x6d7f99);
-      api.box(sk.x, 0.5, sk.z + 0.05, w, 1, 0.1, 0x5f7089);
-      for (let x = -w / 2 + 1; x < w / 2; x += 2.4) { api.ball(sk.x + x, 2.4, sk.z + 0.02, 0.22, 0.22, 0.12, 0x56677f); }
-      for (let x = -w / 2 + 0.4; x < w / 2; x += 0.5) api.put(G.cyl(0.4, 1, 5, true), sk.x + x, 0.35, sk.z + 0.12, 0.06, 0.7, 0.06, 0xd8d0c0);
+    // koltuğun eteği (kuzeyde): gri-mavi kumaş, kapitone düğmeler, krem püsküller; sığan en geniş boyda, her 3. alan odası için
+    const skirts = [];
+    for (const ri of rooms) {
+      const r0 = L.rooms[ri];
+      for (const w of [30, 22, 16, 11]) {
+        const sk = K.northOf(L, r0.x, r0.z - r0.r - 1.0, w / 2, 0.6, 0.35, 9);
+        if (sk && !skirts.some(q => Math.abs(q.x - sk.x) < (q.w + w) / 2 && Math.abs(q.z - sk.z) < 2)) { skirts.push(Object.assign(sk, { w })); break; }
+      }
+    }
+    L._otSofa = skirts[0] || null;
+    for (const sk of skirts) {
+      const w = sk.w;
+      api.box(sk.x, 4.2, sk.z - 0.45, w, 8.4, 0.9, 0x6d7f99);
+      api.box(sk.x, 0.55, sk.z + 0.05, w, 1.1, 0.12, 0x5f7089);
+      api.box(sk.x, 8.2, sk.z - 0.3, w + 0.4, 0.5, 1.2, 0x7a8ca6);
+      for (let x = -w / 2 + 1.2; x < w / 2 - 0.6; x += 2.4) for (const y of [2.6, 5.4]) api.ball(sk.x + x + (y > 3 ? 1.2 : 0), y, sk.z + 0.02, 0.24, 0.24, 0.14, 0x56677f);
+      for (let x = -w / 2 + 0.4; x < w / 2; x += 0.45) api.put(G.cyl(0.4, 1, 5, true), sk.x + x, 0.38, sk.z + 0.14, 0.07, 0.76, 0.07, x % 0.9 < 0.45 ? 0xd8d0c0 : 0xc8bfae);
     }
     // sıcak loş ışık havuzları + kayıp eşyalar + toz yumakları
     for (const ri of all) { const r0 = L.rooms[ri]; api.light(r0.x, 2.6, r0.z, 0xffb070, 2.4, 10); }
@@ -546,7 +556,7 @@ const OTURMA = (() => {
     // vazo (koltuğun yanında) + uçuşan yapraklar
     const vr = L.rooms[rooms[0]], vp = K.northOf(L, vr.x + vr.r * 0.4, vr.z - vr.r - 2.4, 2, 2, 0.5, 10);
     if (vp) {
-      api.put(cupGeo(), vp.x, 0, vp.z, 1, 1, 1, null, 0.3);
+      api.put(cupGeo(), vp.x, 0, vp.z, 1, 1, 1, null, 0.3); L._otVase = vp;
       const n = 26, petals = [], g = new THREE.SphereGeometry(1, 8, 4); g.scale(0.32, 0.05, 0.22); api.dispose(g);
       const pm = new THREE.MeshStandardMaterial({ roughness: 0.6, side: THREE.DoubleSide }); api.dispose(pm);
       const im = new THREE.InstancedMesh(g, pm, n); im.castShadow = false; im.frustumCulled = false; api.add(im);
