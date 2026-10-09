@@ -76,8 +76,8 @@ const STORY = (() => {
   // Yerel koordinat: zemin y=0, +z kameraya doğru. Feza ≈ 1,45 m. Ada tezgâhı üstü y = 1,15.
   const ISLAND_Y = 1.15;
   const SPOT = {
-    cake: [-0.55, ISLAND_Y, -0.85], jar: [0.38, ISLAND_Y, -0.72], hala: [-0.35, -1.92], bag: [-2.62, 0.18],
-    bilbo: [-1.93, 0.27], feza: [3.3, -3.42], door: [3.4, -3.2],
+    cake: [-0.55, ISLAND_Y, -0.85], jar: [0.38, ISLAND_Y, -0.72], hala: [-0.35, -1.92], bag: [-2.3, 0.3],
+    bilbo: [-1.5, 0.39], feza: [3.3, -3.42], door: [3.4, -3.2],
     group: { feza: [0.42, 0.78], hala: [-0.5, 0.52], bilbo: [1.12, 0.92] },   // sinematikte bir araya geldikleri yer
   };
   function buildKitchen(o = {}) {
@@ -129,8 +129,8 @@ const STORY = (() => {
     KS.add(rbox(0.13, 2.62, 0.26, 0.03), 0xffffff, [3.94, 1.31, -3.2]);
     KS.add(rbox(1.21, 0.13, 0.26, 0.03), 0xffffff, [3.4, 2.62, -3.2]);
     KM.add(G.box(), tone(0xf6d58e, 0.03), [3.4, 2.2, -5.4], null, [2.2, 4.4, 0.2]);   // koridor duvarı
-    KM.add(G.box(), tone(0xf3cf86, 0.03), [2.35, 2.2, -4.3], null, [0.2, 4.4, 2.2]);
-    KM.add(G.box(), tone(0xf3cf86, 0.03), [4.45, 2.2, -4.3], null, [0.2, 4.4, 2.2]);
+    KM.add(G.box(), tone(0xf3cf86, 0.03), [2.45, 2.2, -4.4], null, [0.2, 4.4, 2.0]);
+    KM.add(G.box(), tone(0xf3cf86, 0.03), [4.35, 2.2, -4.4], null, [0.2, 4.4, 2.0]);
     KM.add(G.box(), tone(0xb98352, 0.05, 14), [3.4, 0.005, -4.3], null, [2.2, 0.01, 2.2]);   // koridor tahta zemin
     KS.push([3.92, 0, -3.3], [0, 1.25, 0]);   // kapı kanadı (içeri açık)
     KS.add(rbox(0.95, 2.45, 0.06, 0.02), 0xfff8ee, [-0.48, 1.23, 0]);
@@ -248,7 +248,7 @@ const STORY = (() => {
     const sack = (x, y, z) => (y > 0.18 && y < 0.36 ? C(0x4f8fd0) : C(0xd9bd8c).multiplyScalar(1 + 0.05 * Math.sin(x * 40 + z * 33) * Math.sin(y * 25)));
     KM.add(lathe('sack', [[0, 0], [0.24, 0], [0.3, 0.06], [0.32, 0.25], [0.28, 0.5], [0.24, 0.6], [0.27, 0.64], [0.25, 0.66], [0.2, 0.62]], 28), sack, [bx, 0, bz], [0, 0.4, 0.12]);
     KM.add(SPH(), 0xffffff, [bx + 0.04, 0.6, bz], null, [0.2, 0.08, 0.2]);
-    KM.add(lathe('spill', [[0, 0], [0.9, 0], [0.6, 0.012], [0, 0.02]], 30), 0xfafafa, [bx + 0.45, 0, bz + 0.15], null, [1, 1, 0.75]);
+    KM.add(lathe('spill', [[0, 0], [0.5, 0], [0.3, 0.01], [0, 0.016]], 30), 0xf4efe4, [bx + 0.3, 0, bz + 0.12], null, [1, 1, 0.7]);
     for (let k = 0; k < 6; k++) KM.add(SPH(), 0xffffff, [bx + 0.3 + Math.cos(k * 1.7) * 0.5, 0, bz + 0.2 + Math.sin(k * 1.7) * 0.35], null, [0.06 + (k % 3) * 0.02, 0.03, 0.06]);
     // Bilbo'nun mama kabı
     KG.add(lathe('dbowl', [[0, 0], [0.16, 0], [0.18, 0.07], [0.12, 0.08], [0, 0.06]], 24), 0xe85d5d, [4.6, 0, -2.4]);
@@ -288,13 +288,18 @@ const STORY = (() => {
         const a = k / 5 * TAU + 0.5, x = Math.sin(a) * 0.12, z = Math.cos(a) * 0.12;
         const c = new THREE.Mesh(CYL(10), new THREE.MeshStandardMaterial({ color: [0xff8fb3, 0x7fd0ff, 0xffd84a, 0x9fe89f, 0xc9a2ff][k], roughness: 0.4 }));
         own.push(c.material);
-        c.scale.set(0.014, 0.13, 0.014); c.position.set(x, 0.63, z); cake.add(c);
-        const f = new THREE.Mesh(SPHL(), flameMat); f.position.set(x, 0.715, z); f.scale.set(0.016, 0.03, 0.016); f.visible = false; cake.add(f);
+        c.scale.set(0.017, 0.2, 0.017); c.position.set(x, 0.66, z); cake.add(c);
+        const f = new THREE.Mesh(SPHL(), flameMat); f.position.set(x, 0.79, z); f.scale.set(0.024, 0.045, 0.024); f.visible = false; cake.add(f);
         candles.push({ f, x, z, on: false, out: 0 });
       }
     }
     g.traverse(m => { if (m.isMesh && m !== floor && m !== sky && m !== jar && m !== bulb) { m.castShadow = true; m.receiveShadow = true; } });
-    return { g, own, jar, lid, cake, candles, cakeTop: cakeY + (finished ? 0.57 : 0.25) };
+    let dollop = null;
+    if (finished) {   // yere düşen krema (Bilbo yalar)
+      dollop = new THREE.Mesh(lathe('dollop', [[0, 0], [0.09, 0], [0.1, 0.02], [0.07, 0.05], [0.075, 0.06], [0.04, 0.09], [0.02, 0.12], [0, 0.13]], 20), new THREE.MeshStandardMaterial({ color: 0xfff6fa, roughness: 0.35 }));
+      own.push(dollop.material); dollop.castShadow = true; dollop.visible = false; g.add(dollop);
+    }
+    return { g, own, jar, lid, cake, candles, dollop, cakeTop: cakeY + (finished ? 0.57 : 0.25) };
   }
 
   // ───────────────────────── Sihirli şekerler (tek çizim) ─────────────────────────
@@ -458,7 +463,7 @@ const STORY = (() => {
     const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0, depthWrite: false });
     const list = [];
     for (let i = 0; i < 16; i++) { const m = new THREE.Mesh(SPHL(), mat); m.visible = false; parent.add(m); list.push({ m, t: -1, v: new THREE.Vector3(), s: 0.1 }); }
-    return { mat, list, life: 1.6 };
+    return { mat, list, life: 1.6, peak: 0.6 };
   }
   function puff(Pf, x, y, z, n, power = 1, big = 1) {
     let k = 0;
@@ -483,7 +488,7 @@ const STORY = (() => {
     Pf.mat.opacity = any ? 0.85 : 0;
     // tek malzeme: en yaşlı bulut solarken hepsi biraz saydamlaşır (yumuşak)
     let maxU = 0; for (const p of Pf.list) if (p.t >= 0) maxU = Math.max(maxU, p.t / Pf.life);
-    Pf.mat.opacity = any ? 0.9 * (1 - maxU * 0.85) : 0;
+    Pf.mat.opacity = any ? Pf.peak * (1 - maxU * 0.85) : 0;
   }
   // canlanan sevimli fincan (huysuz, gülümseyen)
   function makeMug(parent) {
@@ -525,8 +530,8 @@ const STORY = (() => {
     const peek = 0.5 + 0.5 * Math.sin(T * 0.55);
     f.x = SPOT.feza[0] - 0.12 * peek; f.lean = 0.06 * peek; f.face = -0.92 + 0.1 * Math.sin(T * 0.4);
     // Bilbo burnu un torbasında, kuyruk sallanır; ara ara un pofu
-    b.nose = 1; b.speed = 0.12;
-    if ((T % 3.1) < dt) puff(TS.puffs, SPOT.bag[0] + 0.12, 0.66, SPOT.bag[1], 2, 0.3, 0.3);
+    b.nose = 0.8 + 0.2 * Math.sin(T * 1.7); b.speed = 0.12;
+    if ((T % 3.1) < dt) puff(TS.puffs, SPOT.bag[0] + 0.12, 0.7, SPOT.bag[1], 1, 0.3, 0.22);
     // Hala şeker serper: kavanozdan birkaç şeker pastaya yağar
     h.act = 'serp'; h.face = -0.12 + 0.05 * Math.sin(T * 0.8);
     sprAt -= dt;
@@ -565,7 +570,7 @@ const STORY = (() => {
   }
   function realCam() { try { return window.__storyCam || null; } catch (e) { return null; } }
   function titleCamera() {
-    const T = TS.t, aspect = innerWidth / Math.max(1, innerHeight), narrow = aspect < 1.3 ? (1.3 - aspect) * 3.2 : 0;
+    const T = TS.t, aspect = innerWidth / Math.max(1, innerHeight), narrow = aspect < 1.5 ? (1.5 - aspect) * 3.0 : 0;
     camTo(0.45 + Math.sin(T * 0.12) * 0.25, 2.55 + narrow * 0.3, 6.7 + narrow, 0.25, 1.0, -1.1, 1.2, CAM_.snapTitle !== TS.L);
     CAM_.snapTitle = TS.L; CINE.near = 0.5; CAM_.tfov = 40;
   }
@@ -573,10 +578,10 @@ const STORY = (() => {
   // DOM katmanı: dokununca bir sonraki ana geç, "Geç" düğmesi hepsini atlar
   let ov = null;
   function overlay(on, o = {}) {
-    if (!on) { if (ov) { ov.remove(); ov = null; } return; }
+    if (!on) { if (ov) { ov.remove(); ov = null; } document.body.classList.remove('st-cinema'); return; }
     if (ov) ov.remove();
     injectCss(); WH.a = WH.to = 0; WH.hold = 0; WH.then = null;
-    ov = document.createElement('div'); ov.className = 'st-ov';
+    ov = document.createElement('div'); ov.className = 'st-ov'; document.body.classList.add('st-cinema');
     ov.innerHTML = `<div class="st-white"></div><div class="st-credits"></div>${o.skip !== false ? '<button class="st-skip" aria-label="Geç">Geç ⏩</button>' : ''}<button class="st-blow st-hide" aria-label="Üfle">🌬️<span>Üfle!</span></button>`;
     document.body.appendChild(ov);
     const sk = ov.querySelector('.st-skip');
@@ -638,7 +643,7 @@ const STORY = (() => {
     const res = CINE.done, kind = CINE.kind;
     CINE.on = false; CINE.beats = null; CINE.done = null; CINE.kind = '';
     // beyaz perde, UI'nın yükleme karartması gelene kadar kalır (başlık bir an görünmesin)
-    if (ov && WH.a > 0.5) { const o = ov; ov = null; o.style.pointerEvents = 'none'; const sk = o.querySelector('.st-skip'); if (sk) sk.remove(); setTimeout(() => o.remove(), 700); }
+    if (ov && WH.a > 0.5) { const o = ov; ov = null; o.style.pointerEvents = 'none'; const sk = o.querySelector('.st-skip'); if (sk) sk.remove(); setTimeout(() => { o.remove(); if (!ov) document.body.classList.remove('st-cinema'); }, 700); }
     else overlay(false);
     WH.a = WH.to = 0; WH.hold = 0; WH.then = null;
     restoreNear();
@@ -674,6 +679,7 @@ const STORY = (() => {
           if (t > 1.55 && !sneezeDone) {
             sneezeDone = true; b.nose = -0.5; b.bark = 1.3;
             sfx('bilboBark', { vol: 0.9, pitch: 1.25 }); sfx('whoosh', { vol: 0.9 }); sfx('fizz', { vol: 0.6 }); shake(0.35, 0.4);
+            TS.puffs.peak = 0.92; later(2.2, () => { TS.puffs.peak = 0.6; });
             puff(TS.puffs, SPOT.bag[0] - 0.1, 0.62, SPOT.bag[1], 16, 2.6, 2.4);
             // kavanoz devrilir gibi: bütün şekerler havaya
             for (let i = 0; i < S.n; i++) { const o = i * 3; S.mode[i] = 2; S.t[i] = Math.random() * 0.3; S.v[o] = (Math.random() - 0.5) * 2.2; S.v[o + 1] = 2.2 + Math.random() * 2.2; S.v[o + 2] = (Math.random() - 0.3) * 2.0;
@@ -769,9 +775,9 @@ const STORY = (() => {
     const g = G_(), P = g && g.P; if (!P) return;
     MOM.t += dt;
     const u = MOM.t / MOM.dur, w = ease(Math.min(MOM.t / 0.7, (MOM.dur - MOM.t) / 0.8, 1));
-    const a = MOM.a0 + u * 0.9, R = 5.2, cx = MOM.cx ?? P.pos.x, cz = MOM.cz ?? P.pos.z;
-    _mp.set(cx + Math.sin(a) * R, 2.6, cz + Math.cos(a) * R);
-    _ml.set(cx, 1.3, cz);
+    const a = MOM.a0 + u * 0.9, R = MOM.R || 5.2, cx = MOM.cx ?? P.pos.x, cz = MOM.cz ?? P.pos.z;
+    _mp.set(cx + Math.sin(a) * R, MOM.H || 2.4, cz + Math.cos(a) * R);
+    _ml.set(cx, 1.55, cz);
     c.position.lerp(_mp, w);
     _cv.set(0, 0, -1).applyQuaternion(c.quaternion).multiplyScalar(6).add(c.position);   // önceki bakış noktası
     _cv.lerp(_ml, w);
@@ -779,7 +785,7 @@ const STORY = (() => {
   }
   function moment(dur, o = {}) {
     const c = realCam(), g = G_();
-    MOM.on = true; MOM.t = 0; MOM.dur = dur; MOM.cx = o.x; MOM.cz = o.z;
+    MOM.on = true; MOM.t = 0; MOM.dur = dur; MOM.cx = o.x; MOM.cz = o.z; MOM.R = o.R; MOM.H = o.H;
     MOM.a0 = typeof CAM !== 'undefined' ? CAM.yaw || 0 : 0;
     return new Promise(res => { MOM.fn = res; });
   }
@@ -812,7 +818,7 @@ const STORY = (() => {
     }
     const m = new THREE.Mesh(k.build(), vcMat({ roughness: 0.3, emissive: 0x332211 }));
     m.position.y = -0.4; g.add(m);
-    const halo = new THREE.Mesh(SPHL(), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.8, 1.5, 0.9), transparent: true, opacity: 0.25, depthWrite: false }));
+    const halo = new THREE.Mesh(SPHL(), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.8, 0.45), transparent: true, opacity: 0.12, depthWrite: false, blending: THREE.AdditiveBlending }));
     halo.scale.setScalar(0.55); g.add(halo);
     g.userData.halo = halo;
     return g;
@@ -827,7 +833,7 @@ const STORY = (() => {
       g.rotation.y += dt * (3 + out * 10);
       const s = (0.3 + 0.7 * easeOut(u / 0.5)) * (1 - out * 0.85) * o.s;
       g.scale.setScalar(s);
-      if (g.userData.halo) g.userData.halo.material.opacity = 0.25 + 0.15 * Math.sin(u * 8);
+      if (g.userData.halo) g.userData.halo.material.opacity = 0.1 + 0.06 * Math.sin(u * 8);
       if (Math.random() < dt * 12) burst('sparkle', g.position.x, g.position.y, g.position.z, { count: 2 });
       if (out >= 1) { if (g.parent) g.parent.remove(g); disposeTree(g); FLY.splice(i, 1); }
     }
@@ -901,20 +907,20 @@ const STORY = (() => {
           setScale(1);
           white(0.8, 0.15, [0.1, 0]);
           // Hala adanın arkasında mumları yakar, Feza ve Bilbo önde
-          Object.assign(h, { x: SPOT.hala[0] + 0.1, z: SPOT.hala[1], face: -0.1, act: 'mum', s: 1 });
-          Object.assign(f, { x: -0.45, z: 0.2, face: Math.PI - 0.1, s: 1, cheer: false });
-          Object.assign(b, { x: 0.55, z: 0.35, face: Math.PI + 0.5, s: 1, nose: 0, sit: 1 });
-          camTo(0.2, 1.95, 2.6, -0.45, 1.35, -0.9, 2, true);
+          Object.assign(h, { x: 0.3, z: -1.85, face: -0.55, act: 'mum', s: 1 });
+          Object.assign(f, { x: 0.45, z: -0.05, face: -2.3, s: 1, cheer: false });
+          Object.assign(b, { x: 1.2, z: 0.35, face: -2.0, s: 1, nose: 0, sit: 1 });
+          camTo(-1.55, 1.9, 2.3, -0.15, 1.35, -0.95, 2, true);
           END.lit = 0;
         },
         tick(u, dt, t) {
           const K = END.K;
           const n = Math.min(K.candles.length, Math.floor(t / 0.45));
-          for (let i = END.lit; i < n; i++) { const c = K.candles[i]; c.on = true; c.f.visible = true; sfx('pop', { vol: 0.5, pitch: 1.6 }); burst('sparkle', origin.x + SPOT.cake[0] + c.x, SPOT.cake[1] + 0.85, origin.z + SPOT.cake[2] + c.z, { count: 3 }); }
+          for (let i = END.lit; i < n; i++) { const c = K.candles[i]; c.on = true; c.f.visible = true; sfx('pop', { vol: 0.5, pitch: 1.6 }); burst('sparkle', origin.x + SPOT.cake[0] + c.x, SPOT.cake[1] + 0.13 + 0.8, origin.z + SPOT.cake[2] + c.z, { count: 3 }); }
           END.lit = n;
         } },
       { key: 'son_ufle', min: 3.2, enter() {
-          camTo(-0.5, 1.75, 0.85, -0.55, 1.6, -0.85, 2);
+          camTo(-1.35, 1.7, 0.95, -0.45, 1.5, -0.8, 2);
           for (const c of END.K.candles) { c.on = true; c.f.visible = true; }
           const bt = ov && ov.querySelector('.st-blow'); if (bt) bt.classList.remove('st-hide');
           CINE.wait = 'blow'; END.blowT = 0;
@@ -924,55 +930,66 @@ const STORY = (() => {
           if (CINE.wait === 'blow' && END.blowT > 14) blowNow();   // dokunmazsa kendiliğinden üfler
         } },
       { key: 'son_4', min: 3.6, enter() {
-          camTo(0.4, 1.8, 2.3, -0.1, 1.2, -0.7, 2);
-          Object.assign(b, { x: -0.05, z: -0.3, face: Math.PI + 0.6, sit: 0, nose: 0, lick: 1, y: 0 });
+          const dl = END.K.dollop; if (dl) { dl.visible = true; dl.position.set(0.5, 0, 0.45); }
+          camTo(0.75, 1.45, 3.3, 0.6, 0.55, 0.35, 2);
+          Object.assign(b, { x: 1.28, z: 0.5, face: -Math.PI / 2, sit: 0, nose: 1, lick: 1, y: 0 });
+          Object.assign(f, { x: -0.55, z: 0.1, face: 0.9 });
           f.cheer = true; h.act = 'alkis';
           burst('confetti', origin.x - 0.3, 2.4, origin.z - 0.4, { count: 30 }); sfx('cheer', { vol: 0.6 });
         },
-        tick(u, dt, t) { b.y = 0.35 + Math.abs(Math.sin(t * 3)) * 0.05; b.bark = t % 1 < 0.3 ? 0.4 : 0; } },
+        tick(u, dt, t) { b.bark = (t % 0.6) < 0.25 ? 0.35 : 0; const dl = END.K.dollop; if (dl) dl.scale.setScalar(Math.max(0.2, 1 - t * 0.2)); } },
       { key: 'son_5', min: 3.6, enter() {
-          Object.assign(h, { x: -0.9, z: 0.35, face: 1.4, act: 'saril' });
-          Object.assign(f, { x: -0.45, z: 0.3, face: -1.6, cheer: false });
-          Object.assign(b, { x: 0.25, z: 0.55, face: -0.8, lick: 0, y: 0, sit: 1 });
-          camTo(-0.4, 1.6, 2.6, -0.65, 1.0, 0.25, 2);
+          Object.assign(h, { x: -0.8, z: 0.45, face: 1.45, act: 'saril' });
+          Object.assign(f, { x: -0.25, z: 0.5, face: -1.45, cheer: false });
+          Object.assign(b, { x: 0.5, z: 0.8, face: -1.0, lick: 0, nose: 0, y: 0, sit: 1 });
+          if (END.K.dollop) END.K.dollop.visible = false;
+          camTo(-0.45, 1.55, 3.0, -0.5, 1.0, 0.45, 2);
           burst('hearts', origin.x - 0.65, 1.6, origin.z + 0.3, { count: 14 });
         } },
-      { min: 9, final: true, enter() {   // jenerik
-          credits(true); h.act = 'dans'; f.cheer = true; b.bark = 0; b.sit = 0;
+      { min: 10, final: true, enter() {   // jenerik
+          credits(0); h.act = 'dans'; f.cheer = true; b.bark = 0; b.sit = 0;
           Object.assign(f, { x: -0.2, z: 0.6, face: 0.2 }); Object.assign(h, { x: -0.9, z: 0.5, face: 0.4 }); Object.assign(b, { x: 0.5, z: 0.75, face: -0.3, y: 0 });
           END.t = 0;
         },
         tick(u, dt, t) {
-          END.t += dt;
+          END.t += dt; credits(END.t);
           const a = 0.6 * Math.sin(t * 0.25);
           camTo(-0.2 + Math.sin(a) * 3.6, 1.6, 0.6 + Math.cos(a) * 3.6, -0.2, 1.0, 0.0, 1.2);
           b.hop = Math.abs(Math.sin(t * 4)) * 0.6; b.y = Math.abs(Math.sin(t * 4)) * 0.12;
           if ((t % 1.2) < dt) burst('confetti', origin.x + (Math.random() - 0.5) * 3, 3, origin.z + (Math.random() - 0.5) * 2, { count: 12 });
         } },
-      { key: 'son_6', min: 4.4, noSkip: true, enter() { credits(false); }, tick(u, dt, t) { if (t > CINE.dur - 0.7 && !this._w) { this._w = true; white(1, 0.6); } } },
+      { key: 'son_6', min: 4.6, noSkip: true, enter() {}, tick(u, dt, t) { END.t += dt; credits(END.t); if (t > CINE.dur - 0.7 && !this._w) { this._w = true; white(1, 0.6); } } },
     ];
   }
   function blowNow() {
     if (CINE.wait !== 'blow' || !END.K) return;
     CINE.wait = null; CINE.bt = Math.max(CINE.bt, CINE.dur - 0.1);
     const bt = ov && ov.querySelector('.st-blow'); if (bt) bt.classList.add('st-hide');
-    for (const c of END.K.candles) { c.on = false; c.f.visible = false; puff(END.puffs, SPOT.cake[0] + c.x, SPOT.cake[1] + 0.86, SPOT.cake[2] + c.z, 1, 0.25, 0.35); }
+    for (const c of END.K.candles) { c.on = false; c.f.visible = false; puff(END.puffs, SPOT.cake[0] + c.x, SPOT.cake[1] + 0.13 + 0.8, SPOT.cake[2] + c.z, 1, 0.25, 0.35); }
     sfx('whoosh', { vol: 0.8 }); sfx('cheer', { vol: 0.8 }); sfx('levelup', { vol: 0.6 });
-    for (let i = 0; i < 4; i++) setTimeout(() => burst('confetti', origin.x - 0.4 + (Math.random() - 0.5) * 2, 2.8, origin.z - 0.4, { count: 26 }), i * 280);
+    for (let i = 0; i < 4; i++) later((i * 280) / 1000, () => burst('confetti', origin.x - 0.4 + (Math.random() - 0.5) * 2, 2.8, origin.z - 0.4, { count: 26 }));
     ACT.feza.cheer = true;
   }
-  function credits(on) {
+  // jenerik: sırayla beliren kartlar (sinematik zamanıyla; okuma bilmeyen çocuk için büyük ve kısa)
+  const CREDITS = [
+    ['', 'Feza, Bilbo ve Aytuğ Hala', 'Dev Ev Macerası'],
+    ['Kahraman', 'Feza', '⭐'],
+    ['Pastacı ve anlatıcı', 'Aytuğ Hala', '🍰'],
+    ['Burnu en akıllı köpek', 'Bilbo', '🐾'],
+    ['Neşelenen huysuzlar', 'Uykucu Süpürge · Düdüklü Tencere', 'Dondurma Kralı · Koca Pasta'],
+    ['Sevgiyle yapıldı', 'Feza için', '💛'],
+    ['', 'İyi ki varsın Feza!', '🎂'],
+  ];
+  function credits(t) {
     const el = ov && ov.querySelector('.st-credits'); if (!el) return;
-    if (!on) { el.classList.remove('on'); return; }
-    el.innerHTML = `<div class="st-roll">
-      <div class="st-ct">Feza, Bilbo ve Aytuğ Hala</div><div class="st-cs">Dev Ev Macerası</div>
-      <div class="st-cr"><b>Kahraman</b><span>Feza</span></div>
-      <div class="st-cr"><b>Pastacı ve anlatıcı</b><span>Aytuğ Hala</span></div>
-      <div class="st-cr"><b>Burnu en akıllı köpek</b><span>Bilbo</span></div>
-      <div class="st-cr"><b>Neşelenen huysuzlar</b><span>Uykucu Süpürge, Düdüklü Tencere,<br>Dondurma Kralı, Koca Pasta</span></div>
-      <div class="st-cr"><b>Sevgiyle yapıldı</b><span>Feza için 💛</span></div>
-      <div class="st-ce">İyi ki varsın Feza!</div></div>`;
+    const per = 2.05, i = Math.min(CREDITS.length - 1, Math.floor(t / per));
+    if (el._i !== i) {
+      el._i = i; const c = CREDITS[i];
+      el.innerHTML = `<div class="st-card">${c[0] ? `<b>${c[0]}</b>` : ''}<span>${c[1]}</span><i>${c[2]}</i></div>`;
+    }
     el.classList.add('on');
+    const k = (t - i * per) / per, card = el.firstChild;
+    if (card) { const a = i === CREDITS.length - 1 ? Math.min(1, k * 4) : Math.min(1, k * 4, (1 - k) * 5); card.style.opacity = String(Math.max(0, a)); card.style.transform = `translateY(${(1 - Math.min(1, k * 4)) * 18}px) scale(${0.92 + 0.08 * Math.min(1, k * 4)})`; }
   }
   function ownsWorld(dt) {   // GAME.update 'end' durumunda: final sahnesi karakterleri kendisi oynatır
     if (!(CINE.on && CINE.kind === 'ending')) return false;
@@ -991,7 +1008,7 @@ const STORY = (() => {
     if (END.puffs) puffStep(END.puffs, dt);
     if (END.sugar) sugarsStep(END.sugar, dt, END.T);
     if (END.tmpSugar) sugarsStep(END.tmpSugar, dt, END.T);
-    if (END.K) for (const c of END.K.candles) if (c.on) { c.f.scale.set(0.016 + 0.003 * Math.sin(END.T * 23 + c.x * 50), 0.03 + 0.006 * Math.sin(END.T * 17 + c.z * 40), 0.016); }
+    if (END.K) for (const c of END.K.candles) if (c.on) { c.f.scale.set(0.024 + 0.004 * Math.sin(END.T * 23 + c.x * 50), 0.045 + 0.009 * Math.sin(END.T * 17 + c.z * 40), 0.024); }
     return true;
   }
   function endingCleanup() {
@@ -1039,15 +1056,15 @@ const STORY = (() => {
   function pastaScene() {   // Pasta Krallığı açıldı: masadaki pembe kapıya kamera gider, kıvılcımlar
     const g = G_(), L = g && g.L;
     const st = L && L.stations && L.stations.find(s => s.id === 'kapi_pasta');
-    setTimeout(() => {
+    later(1.4, () => {
       line('pasta_acildi', 'Üç malzeme tamam! Pasta Krallığı açıldı!', 3); line('pasta_acildi2', null, 3);
       if (st) {
-        moment(lineLen('pasta_acildi') + lineLen('pasta_acildi2') + 1.2, { x: st.x, z: st.z });
-        for (let i = 0; i < 6; i++) setTimeout(() => { burst('magic', st.x, 1.5, st.z, { count: 20, color: '#ff8fd8' }); burst('confetti', st.x, 3, st.z, { count: 14 }); }, 600 + i * 700);
+        moment(lineLen('pasta_acildi') + lineLen('pasta_acildi2') + 1.2, { x: st.x, z: st.z, R: 8.5, H: 3.6 });
+        for (let i = 0; i < 6; i++) later((600 + i * 700) / 1000, () => { burst('magic', st.x, 1.5, st.z, { count: 20, color: '#ff8fd8' }); burst('confetti', st.x, 3, st.z, { count: 14 }); });
         const HL = H_(); if (HL && HL.pointTo) try { HL.pointTo(st.x, st.z); } catch (e) { /* ignore */ }
       }
       sfx('unlock', { vol: 0.9 });
-    }, 1400);
+    });
   }
   function area(a) {
     if (!a || a.boss) return;
@@ -1064,11 +1081,11 @@ const STORY = (() => {
     const d = line('malzeme_' + id, (MALZEME[id] || id) + ' bulundu! Pastaya bir adım daha!', 4);
     const d2 = line(pick(['dans_1', 'dans_2', 'dans_3']), null, 3);
     if (P) {
-      spawnTrophy(id, P.pos.x, 0.8, P.pos.z, { h: 2.0, hold: Math.max(2.6, d * 0.9), s: 1.3 });
+      spawnTrophy(id, P.pos.x, 1.3, P.pos.z + 0.5, { h: 1.0, hold: Math.max(2.8, d * 0.9), s: 1.2 });
       moment(Math.max(4, d + 1.2));
       dance(Math.max(4, d + d2));
-      for (let i = 0; i < 5; i++) setTimeout(() => { burst('confetti', P.pos.x + (Math.random() - 0.5) * 3, 3, P.pos.z + (Math.random() - 0.5) * 3, { count: 18 }); burst('hearts', P.pos.x, 1.6, P.pos.z, { count: 5 }); }, 300 + i * 600);
-      sfx('levelup', { vol: 0.7 }); setTimeout(() => sfx('cheer', { vol: 0.6 }), 400);
+      for (let i = 0; i < 5; i++) later((300 + i * 600) / 1000, () => { burst('confetti', P.pos.x + (Math.random() - 0.5) * 3, 3, P.pos.z + (Math.random() - 0.5) * 3, { count: 18 }); burst('hearts', P.pos.x, 1.6, P.pos.z, { count: 5 }); });
+      sfx('levelup', { vol: 0.7 }); later((400) / 1000, () => sfx('cheer', { vol: 0.6 }));
     }
     if (malzemeCount() >= 3) pendingPasta = true;
     return d;
@@ -1080,9 +1097,9 @@ const STORY = (() => {
     const B = g && g.Bilbo;
     const x = B ? B.root.position.x : g && g.P.pos.x, z = B ? B.root.position.z : g && g.P.pos.z;
     if (x != null) {
-      spawnTrophy(KAYIP[id] ? id : 'toka', x, 0.6, z, { h: 1.4, hold: 2.2, s: 0.9 });
+      spawnTrophy(KAYIP[id] ? id : 'toka', x, 0.6, z, { h: 1.0, hold: 2.4, s: 0.9 });
       burst('hearts', x, 1.2, z, { count: 10 });
-      sfx('chest', { vol: 0.6 }); setTimeout(() => sfx('bilboBark', { vol: 0.6 }), 350);
+      sfx('chest', { vol: 0.6 }); later((350) / 1000, () => sfx('bilboBark', { vol: 0.6 }));
     }
     const HL = H_(); if (HL && typeof HL.celebrate === 'function') { try { HL.celebrate('alkis', 2.5); } catch (e) { /* ignore */ } }
     return d;
@@ -1091,7 +1108,10 @@ const STORY = (() => {
   function station(st) { /* istasyon anlatımları merkez ajanında */ }
 
   // her kare (09_ui kamera kancasından): uçan ödüller + an kamerası süresi
+  const TQ = [];   // sinematik/oyun zamanıyla zamanlayıcı (__step ile de doğru)
+  function later(t, fn) { TQ.push({ t, fn }); }
   function frame(dt) {
+    for (let i = TQ.length - 1; i >= 0; i--) { const q = TQ[i]; q.t -= dt; if (q.t <= 0) { TQ.splice(i, 1); try { q.fn(); } catch (e) { console.warn('STORY later', e); } } }
     if (FLY.length) flyStep(dt);
     if (MOM.on && MOM.t >= MOM.dur) { MOM.on = false; const f = MOM.fn; MOM.fn = null; if (f) f(); }
   }
@@ -1128,6 +1148,7 @@ const STORY = (() => {
     if (cssDone) return; cssDone = true;
     const s = document.createElement('style'); s.id = 'storyCss';
     s.textContent = `
+.st-cinema #ui>:not(.u-sub){opacity:0!important;pointer-events:none!important;transition:opacity .3s}
 .st-ov{position:fixed;inset:0;z-index:40;touch-action:none;-webkit-user-select:none;user-select:none;cursor:pointer}
 .st-white{position:absolute;inset:0;background:#fffaf2;opacity:0;pointer-events:none}
 .st-skip{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);right:calc(env(safe-area-inset-right,0px) + 16px);min-width:120px;height:72px;padding:0 22px;border-radius:40px;border:4px solid #fff;
@@ -1141,12 +1162,12 @@ const STORY = (() => {
 @keyframes st-pulse{0%,100%{transform:translateX(-50%) scale(1);box-shadow:0 0 0 0 rgba(255,255,255,.7),0 14px 30px rgba(0,0,0,.3)}50%{transform:translateX(-50%) scale(1.08);box-shadow:0 0 0 26px rgba(255,255,255,0),0 14px 30px rgba(0,0,0,.3)}}
 .st-credits{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .8s}
 .st-credits.on{opacity:1}
-.st-roll{position:absolute;left:0;right:0;top:100%;text-align:center;color:#fff;font-family:"Chalkboard SE","Marker Felt","Segoe Print","Comic Sans MS",cursive;
- text-shadow:0 3px 0 #b0466e,0 0 14px rgba(120,40,80,.55);animation:st-roll 11s linear forwards}
-.st-ct{font-size:54px;font-weight:900;color:#ffe46b}.st-cs{font-size:34px;margin-bottom:46px;color:#ffb3d1}
-.st-cr{margin:0 0 30px}.st-cr b{display:block;font-size:24px;color:#bfe9ff;font-weight:700}.st-cr span{font-size:38px;font-weight:900}
-.st-ce{font-size:50px;font-weight:900;color:#ffe46b;margin-top:30px}
-@keyframes st-roll{from{transform:translateY(0)}to{transform:translateY(calc(-100% - 100vh * .55))}}
+.st-card{position:absolute;left:50%;top:9%;translate:-50% 0;min-width:46%;max-width:86%;padding:18px 34px 20px;border-radius:30px;text-align:center;color:#fff;
+ background:linear-gradient(rgba(255,120,170,.82),rgba(190,70,140,.82));border:4px solid rgba(255,255,255,.85);box-shadow:0 10px 30px rgba(90,20,60,.3);
+ font-family:"Chalkboard SE","Marker Felt","Segoe Print","Comic Sans MS",cursive;text-shadow:0 3px 0 rgba(120,30,80,.55)}
+.st-card b{display:block;font-size:24px;color:#fff1a8;font-weight:700;margin-bottom:4px}.st-card span{display:block;font-size:46px;font-weight:900;line-height:1.1}
+.st-card i{display:block;font-style:normal;font-size:30px;margin-top:6px}
+@media (max-width:820px){.st-card span{font-size:34px}.st-card b{font-size:20px}}
 .sl-logo{display:flex;flex-direction:column;align-items:center;font-family:"Chalkboard SE","Marker Felt","Segoe Print","Comic Sans MS",cursive;line-height:1;filter:drop-shadow(0 6px 0 rgba(90,30,60,.35)) drop-shadow(0 12px 18px rgba(0,0,0,.25))}
 .sl-row{display:flex;align-items:flex-end;justify-content:center;gap:.04em;white-space:nowrap}
 .sl-big{font-size:calc(var(--k,1) * 104px);font-weight:900}
@@ -1182,6 +1203,6 @@ const STORY = (() => {
     busy: () => CINE.on,
     endingDone: false,
     get cine() { return CINE.on ? CINE.kind : ''; },
-    _CINE: CINE, _TS: TS, _ACT: ACT, _SPOT: SPOT, _END: END, _MOM: MOM, _skip: () => skipAll(), _next: () => nextBeat(), _blow: () => blowNow(),
+    _CINE: CINE, _TS: TS, _ACT: ACT, _SPOT: SPOT, _END: END, _MOM: MOM, _FLY: FLY, _skip: () => skipAll(), _next: () => nextBeat(), _blow: () => blowNow(),
   };
 })();

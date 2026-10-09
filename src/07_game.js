@@ -6883,6 +6883,7 @@ const GAME = (() => {
 
   const GAME = {
     revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API,
+    _victory: () => victory(),   // QA: final sahnesini doğrudan başlat
     giveSticker, addGoldSugar, unlockCostume, setCostume, unlockBilboAccessory, setBilboAccessory, addCakeDecoration, cakeStage, dailySurprise,
     miniResult, unlockMinigame, startMinigame: (id, o) => (typeof MINIGAME !== 'undefined' && MINIGAME ? MINIGAME.start(id, o) : false),
     get teamCharge() { const v = typeof HALA !== 'undefined' && HALA ? HALA.charge : 0; return typeof v === 'number' ? v : 0; },
