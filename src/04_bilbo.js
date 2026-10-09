@@ -476,14 +476,14 @@ const BILBO = (() => {
         const disc = own(new THREE.CylinderGeometry(1, 1, 1, 24)), rim = own(new THREE.TorusGeometry(1, .14, 6, 24));
         const arm = own(new THREE.BoxGeometry(.014, .016, .23));
         for (const side of [-1, 1]) {
-          const l = new THREE.Group(); l.position.set(side * .196, .142, .318); l.rotation.set(0, side * .42, 0); g.add(l);
-          add(l, disc, lens, null, [.072, .012, .060], [Math.PI / 2, 0, 0]);
-          add(l, rim, frame, [0, 0, .002], [.074, .062, .09]);
+          const l = new THREE.Group(); l.position.set(side * .192, .145, .338); l.rotation.set(0, side * .42, 0); g.add(l);
+          add(l, disc, lens, null, [.080, .014, .068], [Math.PI / 2, 0, 0]);
+          add(l, rim, frame, [0, 0, .004], [.082, .070, .10]);
           add(l, sph, glint, [-.024, .022, .012], [.016, .008, .003], [0, 0, .6]).castShadow = false;
           // Arm back toward the ear.
           add(g, arm, frame, [side * .262, .15, .19], null, [0, side * .32, 0]);
         }
-        add(g, own(new THREE.TorusGeometry(.09, .011, 6, 16, Math.PI)), frame, [0, .155, .345], [1.05, .55, 1]);
+        add(g, own(new THREE.TorusGeometry(.09, .011, 6, 16, Math.PI)), frame, [0, .16, .362], [1.05, .55, 1]);
         return { g };
       },
       pelerin() {
@@ -492,17 +492,28 @@ const BILBO = (() => {
         // Cape draped over the back: v runs neck → tail, u wraps down both flanks (just outside the trunk's ellipse).
         const geo = own(new THREE.PlaneGeometry(1, 1, 12, 14)), p = geo.attributes.position;
         for (let i = 0; i < p.count; i++) {
-          const u = p.getX(i) + .5, v = .5 - p.getY(i), z = .30 - v * .86;
-          const rx = .39 - .04 * v, ry = .40 - .05 * v, cy = .80 - .03 * v;
-          const ang = (u * 2 - 1) * (.62 + .72 * v) * (1 - .2 * (1 - v));
+          const u = p.getX(i) + .5, v = .5 - p.getY(i), z = .30 - v * .76;
+          const rx = .39 + .07 * v * v, ry = .40 - .01 * v, cy = .80 - .03 * v;
+          const ang = (u * 2 - 1) * (.62 + .55 * v) * (1 - .2 * (1 - v));
           p.setXYZ(i, Math.sin(ang) * rx, cy + Math.cos(ang) * ry - 1.16 + .012 * Math.cos(u * Math.PI * 6) * v, z - .30);
         }
         geo.computeVertexNormals();
         const cape = new THREE.Group(); g.add(cape);
         add(cape, geo, red);
+        // Golden trim along the neck edge and the hem (same formula as the cloth, a hair outside it).
+        const trim = std(0xffc93c, { roughness: .4, metalness: .3, emissive: 0x6b4a00, emissiveIntensity: .25 });
+        for (const v of [0, 1]) {
+          const pts = [];
+          for (let k = 0; k <= 10; k++) {
+            const u = k / 10, ang = (u * 2 - 1) * (.62 + .55 * v) * (1 - .2 * (1 - v));
+            const rx = (.39 + .07 * v * v) * 1.015, ry = (.40 - .01 * v) * 1.015, cy = .80 - .03 * v;
+            pts.push(new THREE.Vector3(Math.sin(ang) * rx, cy + Math.cos(ang) * ry - 1.16, -v * .76));
+          }
+          add(cape, own(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 20, .018, 6, false)), trim);
+        }
         // Yellow star emblem on the back.
         add(cape, own(new THREE.ShapeGeometry(starShape(.085, .038))),
-          std(0xffd23a, { roughness: .5, emissive: 0x6b4a00, emissiveIntensity: .3, side: THREE.DoubleSide }), [0, .004, -.42], null, [-Math.PI / 2 + .02, 0, 0]);
+          std(0xffd23a, { roughness: .5, emissive: 0x6b4a00, emissiveIntensity: .3, side: THREE.DoubleSide }), [0, .03, -.40], null, [-Math.PI / 2 + .04, 0, 0]);
         // Gold clasp at the neck.
         add(g, sph, std(0xffc53d, { metalness: .5, roughness: .3 }), [0, -.005, .01], [.045, .045, .03]);
         return { g, cape };
