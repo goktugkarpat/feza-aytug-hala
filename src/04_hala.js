@@ -245,8 +245,19 @@ const HALA = (() => {
     const NU = 72, NV = 48, ctr = v3(0, HB + HC.y, HC.z);
     const g = paramGeo((u, v, o) => { headSurf(headTh(u), headPh(v), o); o.y += HB; }, NU, NV, ctr, true);
     const f = new Float32Array((NU + 1) * (NV + 1) * 2);
-    for (let j = 0, k = 0; j <= NV; j++) for (let i = 0; i <= NU; i++, k++) { f[k * 2] = headTh(i / NU); f[k * 2 + 1] = headPh(j / NV); }
+    const col = new Float32Array((NU + 1) * (NV + 1) * 3);
+    for (let j = 0, k = 0; j <= NV; j++) for (let i = 0; i <= NU; i++, k++) {
+      const th = headTh(i / NU), ph = headPh(j / NV), at = Math.abs(th);
+      f[k * 2] = th; f[k * 2 + 1] = ph;
+      // yumuşak gölgeler: çene altı, kulak çevresi ve saç dibi biraz koyu/sıcak, burun ucu ve yanaklar hafif pembe
+      let r = 1, gg = 1, b = 1;
+      const under = sstep(-0.55, -1.15, ph) * (0.6 + 0.4 * sstep(0.4, 1.2, at)), side = Math.exp(-sq((at - 1.6) / 0.35) - sq((ph + 0.1) / 0.45));
+      const k1 = 0.16 * under + 0.08 * side; r -= k1 * 0.7; gg -= k1 * 1.05; b -= k1 * 1.0;
+      const nose = Math.exp(-sq(th / 0.07) - sq((ph + 0.2) / 0.06)); gg -= 0.05 * nose; b -= 0.04 * nose;
+      col[k * 3] = r; col[k * 3 + 1] = gg; col[k * 3 + 2] = b;
+    }
     g.setAttribute('aFace', new THREE.BufferAttribute(f, 2));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     return g;
   }
   const EAR = { th: 1.6, ph: 0.0 };
@@ -505,7 +516,8 @@ const HALA = (() => {
     // ten: baş, kulaklar, boyun, eller
     skin.push({ geo: headGeo(), bone: 3 });
     for (const s of [1, -1]) skin.push({ geo: earGeo(s), bone: 3 });
-    skin.push({ geo: lathe(NECK_P, 18, 0, 0.004, 1, 0.94), w: (x, y) => [2, 3, sstep(1.5, 1.56, y)] });
+    skin.push({ geo: lathe(NECK_P, 18, 0, 0.004, 1, 0.94), w: (x, y) => [2, 3, sstep(1.5, 1.56, y)],
+      color: (x, y, z, c) => { const k = 0.86 + 0.14 * sstep(1.6, 1.5, y); return c.setRGB(k + 0.04 * (1 - k), k * 0.97, k * 0.96); } });
     for (const s of [1, -1]) {
       const up = s > 0 ? 4 : 7, fo = up + 1, hd = up + 2, ax = 0.193 * s;
       // el: yassı avuç (avuç içi gövdeye bakar), dört parmak, başparmak
@@ -520,7 +532,11 @@ const HALA = (() => {
       }), w: (x, y) => [fo, hd, sstep(0.875, 0.86, y)], color: 0xffffff });
     }
     // polar ceket
-    const coatCol = (x, y, z, c) => c.set(COAT).multiplyScalar(0.97 + 0.03 * Math.sin(y * 40));
+    const coatCol = (x, y, z, c) => {   // koltuk altı, yaka dibi ve yan dikişlerde hafif gölge (doku derinliği)
+      const ax = Math.abs(x), pit = Math.exp(-sq((ax - 0.175) / 0.045) - sq((y - 1.3) / 0.09)), neck = Math.exp(-sq((y - 1.47) / 0.03)) * sstep(0.12, 0.05, ax);
+      const side = Math.exp(-sq(Math.atan2(ax, z) - Math.PI / 2) / 0.05) * sstep(1.25, 1.0, y) * 0.5;
+      return c.set(COAT).multiplyScalar((0.97 + 0.03 * Math.sin(y * 40)) * (1 - 0.22 * pit - 0.15 * neck - 0.08 * side));
+    };
     coat.push({ geo: torsoGeo(), w: (x, y) => {
       const ax = Math.abs(x);
       if (y > 1.3 && ax > 0.13) return [2, x > 0 ? 4 : 7, 0.45 * sstep(0.13, 0.2, ax) * sstep(1.32, 1.42, y)];
@@ -1408,7 +1424,13 @@ const HALA = (() => {
     S.mode = S.act ? S.act.k : 'follow';
     animate(dt);
     S.root.position.set(S.x, S.y, S.z); S.root.rotation.y = S.face;
+    // kapıdan geçerken Feza ile birlikte küçülüp döner (yeni bölümde yine tam boy)
+    const tr = ctx.state === 'transition' && ctx.H ? clamp(ctx.H.root.scale.x / (S.fezaScale || 1), 0.05, 1) : 1;
+    if (ctx.state !== 'transition' && ctx.H) S.fezaScale = ctx.H.root.scale.x || 1;
+    S.root.scale.setScalar(HALA_SCALE * tr);
+    if (tr < 1) S.root.rotation.y += (1 - tr) * 9;
   }
+  const HALA_SCALE = 1.06;   // Feza ≈ 1,54 m (saçıyla), Hala ≈ 1,95 m
   function sayVar2(key, prio) { return say(key, prio); }
   const TEAM_FILL = 1 / 45;   // kendiliğinden dolum (/s); her neşelenen huysuz +0.06, boss +0.3
 
@@ -1688,7 +1710,7 @@ const HALA = (() => {
   function create(scene_) {
     if (S.root) return S.root;
     const g = buildModel();
-    g.scale.setScalar(1.06);   // Feza ≈ 1,54 m (saçıyla), Hala ≈ 1,95 m
+    g.scale.setScalar(HALA_SCALE);
     S.root = g; (scene_ || scene).add(g);
     shieldMesh();
     animate(0);
