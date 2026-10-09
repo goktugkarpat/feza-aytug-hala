@@ -61,7 +61,7 @@ const BOSSDAV = (() => {
       }
       case 'buhar': case 'toz': {   // yumuşak bulut (buhar: beyaz-mavi, toz: bej-lila)
         // (yere yakın, yarı saydam yumuşak puflar: kameradan bakınca Feza'yı örtmez)
-        const m = mat(kind, kind === 'buhar' ? { color: '#e4f3ff', roughness: 1, transparent: true, opacity: 0.38, emissive: '#9fcfff', emissiveIntensity: 0.08, depthWrite: false }
+        const m = mat(kind, kind === 'buhar' ? { color: '#d6ecff', roughness: 1, transparent: true, opacity: 0.52, emissive: '#8fc4ff', emissiveIntensity: 0.1, depthWrite: false }
           : { color: '#b9a99c', roughness: 1, transparent: true, opacity: 0.45, emissive: '#8f7fb0', emissiveIntensity: 0.05, depthWrite: false });
         const P0 = [[0, 0.22, 0, 0.6], [0.62, 0.18, 0.25, 0.45], [-0.58, 0.18, -0.2, 0.5], [0.2, 0.3, -0.5, 0.42], [-0.3, 0.16, 0.55, 0.42], [0.55, 0.15, -0.45, 0.36], [-0.65, 0.14, 0.4, 0.34]];
         for (const p of P0) { const o = add(sph, m, [p[0], p[1], p[2]], [p[3], p[3] * 0.55, p[3]]); o.castShadow = false; o.renderOrder = 3; }
