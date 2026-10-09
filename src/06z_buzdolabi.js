@@ -315,6 +315,24 @@ const ODAB = (() => {
     });
     return pts;
   }
+  // Buğu / pus: yürünür alanın kenarlarında yerde süzülen yumuşak bulutçuklar (tek çizim)
+  function mist(api, L, o = {}) {
+    const spots = edgeSpots(L, api, { dmin: 0.6, dmax: 2.8, space: o.space || 7 }).slice(0, o.n || 16);
+    if (!spots.length) return null;
+    const n = spots.length, pos = new Float32Array(n * 3);
+    spots.forEach((s, i) => { pos[i * 3] = s.x; pos[i * 3 + 1] = 0.5; pos[i * 3 + 2] = s.z; });
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const key = 'mist-' + (o.color || 0xffffff);
+    if (!M[key]) M[key] = kp(new THREE.PointsMaterial({ size: o.size || 7, map: flakeTexture('dot'), color: o.color || 0xffffff, transparent: true, opacity: o.opacity || 0.2, depthWrite: false, sizeAttenuation: true }));
+    const pts = new THREE.Points(g, M[key]); pts.renderOrder = 2; pts.frustumCulled = false; api.add(pts);
+    let t = 0;
+    api.anim(dt => {
+      t += dt;
+      for (let i = 0; i < n; i++) { pos[i * 3] = spots[i].x + Math.sin(t * 0.21 + i * 1.7) * 0.8; pos[i * 3 + 2] = spots[i].z + Math.cos(t * 0.17 + i) * 0.4; pos[i * 3 + 1] = 0.45 + Math.sin(t * 0.3 + i) * 0.12; }
+      g.attributes.position.needsUpdate = true;
+    });
+    return pts;
+  }
   // ── Yerleşim yardımcıları ──
   // oda kenarı: merkezden (dx,dz) yönünde zeminin bittiği yer
   function edge(api, rm, dx, dz, max = 20) {
@@ -435,7 +453,7 @@ const ODAB = (() => {
     while (b < 7 && api.isFloor(x - px * b, z - pz * b)) b += 0.25;
     return { a, b };
   }
-  return { mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, clearSpawns, gateDir, corridorHalf, flakeTexture };
+  return { mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, clearSpawns, gateDir, corridorHalf, flakeTexture };
 })();
 
 /* ════════════════════════════ Buzdolabı ════════════════════════════ */
@@ -552,6 +570,27 @@ const ODAB = (() => {
       const rm3 = room(a3[0]);
       if (rm3) D.ice.push({ x: rm3.x, z: rm3.z, rx: rm3.r * 0.5, rz: rm3.r * 0.4, kind: 'serit', fric: 2.2 });
     }
+    // Buzdolabı ışığı düğmesi: başlangıç odasının kuzey kenarı (lamba kenarın ötesinde)
+    {
+      const rm = R[0];
+      for (const ang of [0, 0.5, -0.5]) {
+        const dx = Math.sin(PI + ang), dz = Math.cos(PI + ang), e = O.edge(api, rm, dx, dz);
+        if (e.d < 3) continue;
+        const bx = e.x - dx * 1.4, bz = e.z - dz * 1.4, lx = e.x + dx * 3.2, lz = e.z + dz * 3.2;
+        if (!api.circleFree(bx, bz, 0.9) || !O.clearOf(L, bx, bz, 0.9) || api.isFloor(lx, lz) || api.isFloor(lx - dx * 1.2, lz - dz * 1.2)) continue;
+        D.lamp = { bx, bz, lx, lz, yaw: Math.atan2(-dx, -dz) };
+        taken.push({ x: bx, z: bz, r: 1.6 });
+        break;
+      }
+    }
+    // Buz çanları: dondurucunun ikinci odasında 5 parlak buz kristali (dokununca nota çalar)
+    {
+      const rm = room(a3[1] ?? a3[0]); D.chimes = [];
+      if (rm) for (let k = 0; k < 5; k++) {
+        const p = O.roomSpot(L, api, rm, { r: 0.65, pmin: 1.6, pmax: 6.5, k: 0.85, taken: taken.concat(D.chimes.map(q => ({ x: q.x, z: q.z, r: 2.4 }))) });
+        if (p) { D.chimes.push(p); p.solid = api.solid(p.x, p.z, 0.3, 'can'); taken.push({ x: p.x, z: p.z, r: 1.2 }); }
+      }
+    }
     // Arena: buz pateni alanı (yumuşak kayma)
     if (arena) { D.ice.push({ x: arena.x, z: arena.z, rx: arena.r - 1.2, rz: arena.r - 1.2, kind: 'arena', fric: 2.8, acc: 3.4, boost: 1.12 }); D.arena = { x: arena.x, z: arena.z, r: arena.r }; }
     // yan odalarda şeker dizileri
@@ -634,7 +673,9 @@ const ODAB = (() => {
     // ── Şeker dizileri (Feza yaklaşınca belirir) ──
     for (const t of D.trails) if (t.pts.length) R.zones.push({ x: t.x, z: t.z, r: 11, enter(z) { if (!z.done) { z.done = true; O.restCoins(t.pts); } } });
     // ── Buzdolabı lambası: başlangıç odasının kuzeyinde sıcak beyaz ışık ──
-    fridgeLamp(B, api, L.rooms[0]);
+    if (D.lamp) lightSwitch(B, api, R, D.lamp); else fridgeLamp(B, api, L.rooms[0]);
+    if (D.chimes && D.chimes.length) chimes(B, api, R, D.chimes);
+    O.mist(api, L, { color: 0xeef8ff, n: 16, opacity: 0.2 });
     // ── Kar tanesi parıltıları ──
     O.sparkles(api, { n: 170, kind: 'flake', colors: [0xe8f6ff, 0xffffff, 0xcfeaff, 0xfff2d8], k: 1.5, size: 0.3, fall: 0.3 });
     B.done();
@@ -750,7 +791,8 @@ const ODAB = (() => {
   // Buz kemeri (alan geçidi): buz küpü direkler + yay + parlayan kar tanesi
   function iceArch(B, api, L, k) {
     const g = L.areas[k].gate, d = O.gateDir(L, k), px = -d.dz, pz = d.dx, w = O.corridorHalf(api, g.x, g.z, px, pz);
-    const half = Math.max(2.4, Math.min(4.2, Math.max(w.a, w.b) + 0.5)), cx = g.x + px * (w.a - w.b) / 2, cz = g.z + pz * (w.a - w.b) / 2;
+    const half = (w.a + w.b) / 2 + 0.75, cx = g.x + px * (w.a - w.b) / 2, cz = g.z + pz * (w.a - w.b) / 2;
+    if (half > 6.5 || w.a >= 7 || w.b >= 7) return;
     const yaw = Math.atan2(px, pz);
     for (const sd of [-1, 1]) {
       const x = cx + px * half * sd, z = cz + pz * half * sd;
@@ -864,6 +906,78 @@ const ODAB = (() => {
     B.add('glow', G.rbox(2), C(0xfff2d6, 2.4), [x, 5.2, z + 0.6], null, [3.6, 1.0, 0.4]);
     api.light(x, 4.5, z + 2.5, 0xfff0d8, 4, 13, 0);
     api.glow(x, z + 4, 6, 0xfff0d0, 0.18);
+  }
+  // Işık düğmesi: basınca buzdolabının lambası yanar / söner
+  function lightSwitch(B, api, R, S) {
+    const x = S.lx, z = S.lz, LT = api.B.lights, sy = Math.sin(S.yaw), cy = Math.cos(S.yaw);
+    B.add('gloss', G.rbox(3), C(0xffffff), [x, 5.0, z], [0, S.yaw, 0], [4.4, 1.6, 1.4]);
+    B.add('gloss', G.rbox(2), C(0xe8f2fa), [x, 5.0, z], [0, S.yaw, 0], [3.7, 1.05, 1.5]);
+    const pk = new Kit(); pk.add(G.rbox(2), C(0xfff2d6, 2.4), [0, 0, 0], null, [3.6, 1.0, 0.4]);
+    const panel = O.solo(pk, 'glow', api); panel.position.set(x + sy * 0.6, 5.0, z + cy * 0.6); panel.rotation.y = S.yaw;
+    const li = api.light(x + sy * 2.5, 4.4, z + cy * 2.5, 0xfff0d8, 4, 13, 0) - 1;
+    api.glow(x + sy * 4, z + cy * 4, 6, 0xfff0d0, 0.16);
+    // kocaman düğme (beyaz taban + mavi parlak kubbe)
+    B.add('gloss', G.cyl(1, 1.12, 18), C(0xffffff), [S.bx, 0.14, S.bz], null, [0.85, 0.28, 0.85]);
+    B.add('gloss', G.torus(TAU, 0.2, 16), C(0xdfeaf4), [S.bx, 0.28, S.bz], [PI / 2, 0, 0], [0.78, 0.78, 0.78]);
+    const bk = new Kit(); bk.add(G.sphere(16, 10), C(0x5ab8ff), [0, 0, 0], null, [0.62, 0.3, 0.62]); bk.add(G.sphere(8, 6), C(0xffffff), [-0.2, 0.15, -0.15], null, [0.14, 0.06, 0.1]);
+    const btn = O.solo(bk, 'candy', api); btn.position.set(S.bx, 0.3, S.bz);
+    const hk = new Kit(); hk.add(G.sphere(12, 8), C(0x8fd4ff, 0.7), [0, 0, 0], null, [1, 1, 1]);
+    const halo = new THREE.Mesh(hk.build(), O.mat('halo')); halo.position.set(S.bx, 0.35, S.bz); halo.renderOrder = 3; api.add(halo);
+    const st = { on: true, press: 0, n: 0, k: 1 };
+    api.anim(dt => {
+      st.press = Math.max(0, st.press - dt * 4); btn.position.y = 0.3 - Math.sin(st.press * PI) * 0.14;
+      st.k = damp(st.k, st.on ? 1 : 0, 9, dt); panel.scale.setScalar(0.2 + st.k * 0.8); panel.visible = st.k > 0.05;
+      if (LT[li]) LT[li].int = 0.3 + 3.7 * st.k;
+      halo.scale.setScalar(0.75 + Math.sin(R.t * 3) * 0.08);
+    });
+    R.zones.push({ x: S.bx, z: S.bz, r: 6, enter: () => O.say('odb_dugme') });
+    R.zones.push({ x: S.bx, z: S.bz, r: 0.95, enter() {
+      st.on = !st.on; st.press = 1; st.n++;
+      O.sfx('click', { vol: 0.9 }); O.sfx(st.on ? 'unlock' : 'close', { vol: 0.5 });
+      if (st.on) { O.burst('star', x + sy * 1.2, 4.6, z + cy * 1.2, { count: 12 }); O.say(st.n < 3 ? 'odb_isik' : O.pick(['odb_isik', 'odb_isik2']), { once: false, gap: 6 }); }
+      else { O.burst('sparkle', S.bx, 0.8, S.bz, { count: 6, color: '#8fd4ff' }); if (st.n === 1) O.say('odb_isik_kapa', { gap: 2 }); }
+      if (st.n <= 4) O.coins(S.bx, S.bz, 2, 0.7);
+      if (st.n === 4 && GAME.giveSticker) GAME.giveSticker('gizli_buzdolabi_isigi', 'gizli');
+    } });
+  }
+  // Buz çanları: dokununca nota çalar, parlar; hepsi çalınca hediye
+  function chimes(B, api, R, list) {
+    const notes = [1, 1.122, 1.26, 1.335, 1.498], cols = [0x9fe0ff, 0xc8b0ff, 0xa8f0d8, 0xffc0e0, 0xfff0a0], LT = api.B.lights;
+    let lit = 0, done = false;
+    list.forEach((p, i) => {
+      const c = cols[i % cols.length], k = new Kit();
+      k.add(G.octa(), C(c), [0, 1.15, 0], [0, 0.4, 0], [0.42, 1.15, 0.42]);
+      k.add(G.octa(), C(c).lerp(C(0xffffff), 0.3), [0.32, 0.55, 0.1], [0.2, 0.8, -0.35], [0.22, 0.55, 0.22]);
+      k.add(G.octa(), C(c).lerp(C(0xffffff), 0.3), [-0.28, 0.45, -0.1], [-0.25, 0.2, 0.4], [0.2, 0.45, 0.2]);
+      const m = O.solo(k, 'ice', api); m.position.set(p.x, 0, p.z);
+      B.add('snow', G.sphere(12, 8), C(0xffffff), [p.x, 0.04, p.z], null, [0.7, 0.18, 0.7]);
+      const gk = new Kit(); gk.add(G.sphere(10, 8), C(c, 2.2), [0, 0, 0], null, [1, 1, 1]);
+      const core = O.solo(gk, 'glow', api); core.position.set(p.x, 1.15, p.z); core.scale.setScalar(0.12);
+      const li = api.light(p.x, 1.6, p.z, c, 0, 5, 0) - 1;
+      const st = { on: false, ring: 0 };
+      api.anim(dt => {
+        st.ring = Math.max(0, st.ring - dt * 1.6);
+        const w = Math.sin(R.t * 30) * st.ring * 0.08; m.rotation.z = w; m.rotation.x = w * 0.6;
+        core.scale.setScalar(0.12 + (st.on ? 0.1 : 0) + st.ring * 0.25);
+        if (LT[li]) LT[li].int = (st.on ? 1.2 : 0) + st.ring * 3;
+      });
+      R.zones.push({ x: p.x, z: p.z, r: 1.3, enter() {
+        st.ring = 1;
+        O.sfx('star', { x: p.x, z: p.z, pitch: notes[i % 5] * 0.85, vol: 0.8 }); O.sfx('ice', { pitch: notes[i % 5] * 1.2, vol: 0.4 });
+        O.burst('sparkle', p.x, 1.5, p.z, { count: 8, color: '#' + C(c).getHexString() }); O.burst('notes', p.x, 2.2, p.z, {});
+        if (!st.on) { st.on = true; lit++; O.coins(p.x, p.z, 1, 0.5, 1.6); }
+        if (lit === list.length && !done) {
+          done = true;
+          setTimeout(() => {
+            const P = GAME.P; O.burst('confetti', P.pos.x, 2, P.pos.z, {}); O.sfx('cheer', { vol: 0.8 }); O.coins(P.pos.x, P.pos.z, 12, 1.1);
+            if (GAME.giveSticker) GAME.giveSticker('gizli_buz_canlari', 'gizli');
+            O.say('odb_can_ok', { gap: 0 });
+            O.goldSugar(api, R, P.pos.x + 1.2, 0.8, P.pos.z - 0.8, {});
+          }, 600);
+        }
+      } });
+    });
+    R.zones.push({ x: list[0].x, z: list[0].z, r: 7, enter: () => O.say('odb_can') });
   }
   // Zıplatan jöle tepeciği (tek hareketli mesh: sıkışır, sallanır)
   function jellyPad(api, p) {

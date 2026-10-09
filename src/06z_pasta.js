@@ -49,6 +49,27 @@
         if (D.raft) break;
       }
     }
+    // 1b) Dev krema torbası: alanın ilk odasının kenarında, ucu odaya bakar; her dokunuşta yere krema çiçeği sıkar
+    {
+      const rm = room(a1[0]);
+      if (rm) for (const ang of [PI, PI - 0.6, PI + 0.6, PI / 2, -PI / 2, PI - 1.1, PI + 1.1]) {
+        const dx = Math.sin(ang), dz = Math.cos(ang), e = O.edge(api, rm, dx, dz);
+        if (e.d < 3.5) continue;
+        const bx = e.x + dx * 2.0, bz = e.z + dz * 2.0, sx = e.x - dx * 1.1, sz = e.z - dz * 1.1;
+        if (api.linkDist(bx, bz) < 4 || D.raft && hyp(D.raft.dock.x - sx, D.raft.dock.z - sz) < 5) continue;
+        let bad = false;
+        for (let q = 0; q < 8; q++) { const b = q * PI / 4; if (api.isFloor(bx + Math.sin(b) * 1.3, bz + Math.cos(b) * 1.3)) { bad = true; break; } }
+        if (bad || !api.circleFree(sx, sz, 0.8) || !O.clearOf(L, sx, sz, 1)) continue;
+        const spots = [];
+        for (let i = 0; i < 6; i++) {
+          const a = (i - 2.5) * 0.42, d = 2.4 + (i % 2) * 0.9, x = e.x - (dx * Math.cos(a) - dz * Math.sin(a)) * d, z = e.z - (dz * Math.cos(a) + dx * Math.sin(a)) * d;
+          if (api.isFloor(x, z) && api.circleFree(x, z, 0.4)) spots.push({ x, z });
+        }
+        D.bag = { bx, bz, sx, sz, ex: e.x, ez: e.z, dx, dz, spots };
+        taken.push({ x: sx, z: sz, r: 1.8 });
+        break;
+      }
+    }
     // 2) Çilek Ormanı: lolipop fenerleri (alanın ilk odası), kurabiye evleri (ikinci oda kenarı)
     {
       const rm = room(a2[0]);
@@ -165,6 +186,7 @@
     (L.areas || []).forEach((a, k) => { if (k && a.gate) candyArch(B, api, L, k); });
     // ── Krema Nehri: bisküvi sal ──
     if (D.raft) raft(B, api, R, D.raft);
+    if (D.bag) pipingBag(B, api, R, D.bag);
     // ── Çilek Ormanı: fenerler, kurabiye evleri ──
     if (D.lanterns.length) lanterns(B, api, R, D.lanterns);
     D.houses.forEach((h, i) => cookieHouse(B, api, R, h, i));
@@ -195,6 +217,8 @@
   }
 
   // ═════ Modeller ═════
+  const CYLH = {};
+  const cylH = (rt = 1) => CYLH[rt] || (CYLH[rt] = (() => { const g = new THREE.CylinderGeometry(rt, 1, 1, 16, 12); g.userData.keep = true; return g; })());   // boyuna bölümlü: sarmal şeritler için
   const stripes = (cx, cz, a, b, k = 2, f = 5) => (x, y, z) => (Math.sin(Math.atan2(x - cx, z - cz) * k + y * f) > 0 ? a : b);
   function creamSwirl(B, x, z, s, rnd) {
     const c = C(PASTEL[(rnd() * PASTEL.length) | 0]);
@@ -222,7 +246,7 @@
   }
   function strawberryTree(B, api, x, z, s, rnd) {
     // gövde: yeşil-krem çizgili şeker sapı; taç: yumuşak yaprak bulutları; sarkan dev çilekler
-    B.add('candy', G.cyl(0.7, 1, 14), stripes(x, z, C(0x6fc85a), C(0xe8ffd8), 1, 3), [x, 2.0 * s, z], null, [0.38 * s, 4.0 * s, 0.38 * s]);
+    B.add('candy', cylH(0.7), stripes(x, z, C(0x6fc85a), C(0xe8ffd8), 1, 3), [x, 2.0 * s, z], null, [0.38 * s, 4.0 * s, 0.38 * s]);
     const leaf = [0x5cc85a, 0x7ad86a, 0x4ab84e];
     for (let i = 0; i < 6; i++) { const a = i * TAU / 6 + 0.3, r = 1.5 * s; B.add('cream', G.sphere(12, 9), C(leaf[i % 3]), [x + Math.sin(a) * r, 4.4 * s + (i % 2) * 0.4 * s, z + Math.cos(a) * r], null, [1.3 * s, 0.9 * s, 1.3 * s]); }
     B.add('cream', G.sphere(14, 10), C(0x6ad05e), [x, 5.0 * s, z], null, [1.7 * s, 1.1 * s, 1.7 * s]);
@@ -285,11 +309,12 @@
   // Şeker kamışı kemeri + kurabiye köprü (alan geçidi)
   function candyArch(B, api, L, k) {
     const g = L.areas[k].gate, d = O.gateDir(L, k), px = -d.dz, pz = d.dx, w = O.corridorHalf(api, g.x, g.z, px, pz);
-    const half = Math.max(2.4, Math.min(4.2, Math.max(w.a, w.b) + 0.5)), cx = g.x + px * (w.a - w.b) / 2, cz = g.z + pz * (w.a - w.b) / 2;
+    const half = (w.a + w.b) / 2 + 0.75, cx = g.x + px * (w.a - w.b) / 2, cz = g.z + pz * (w.a - w.b) / 2;
+    if (half > 6.5 || w.a >= 7 || w.b >= 7) return;
     const red = C(0xff3b5c), wh = C(0xffffff);
     for (const sd of [-1, 1]) {
       const x = cx + px * half * sd, z = cz + pz * half * sd;
-      B.add('candy', G.cyl(1, 1, 16), stripes(x, z, red, wh, 2, 6), [x, 2.1, z], null, [0.28, 4.2, 0.28]);
+      B.add('candy', cylH(), stripes(x, z, red, wh, 2, 6), [x, 2.1, z], null, [0.28, 4.2, 0.28]);
       B.add('candy', G.sphere(11, 8), C(CANDY[k % CANDY.length]), [x, 4.35, z], null, [0.45, 0.45, 0.45]);
       B.add('cream', G.torus(TAU, 0.4, 16), C(0xfff2f6), [x, 0.2, z], [PI / 2, 0, 0], [0.5, 0.5, 0.5]);
     }
@@ -317,7 +342,7 @@
     for (let i = 0; i < 3; i++) B.add('gloss', G.rbox(2), C(i % 2 ? 0xe8b06a : 0xd89a52), [S.e.x + S.dx * (i * 0.7 - 0.4), 0.12, S.e.z + S.dz * (i * 0.7 - 0.4)], [0, yaw, 0], [2.0, 0.18, 0.6]);
     for (const sd of [-1, 1]) {
       const x = S.e.x + S.px * 1.1 * sd + S.dx * 0.6, z = S.e.z + S.pz * 1.1 * sd + S.dz * 0.6;
-      B.add('candy', G.cyl(1, 1, 12), stripes(x, z, C(0xff5f9e), C(0xffffff), 2, 6), [x, 0.6, z], null, [0.12, 1.2, 0.12]);
+      B.add('candy', cylH(), stripes(x, z, C(0xff5f9e), C(0xffffff), 2, 6), [x, 0.6, z], null, [0.12, 1.2, 0.12]);
       B.add('glow', G.sphere(8, 6), C(0xffd0e8, 1.8), [x, 1.3, z], null, [0.16, 0.16, 0.16]);
     }
     // gölün kendi kreması (zemin sıvısını güçlendirir): yumuşak, parlak, hafif dalgalı
@@ -366,6 +391,50 @@
       } });
     } });
   }
+  // ── Dev krema torbası: dokununca sıkılır, yere krema çiçeği + şekerler ──
+  function pipingBag(B, api, R, S) {
+    const k = new Kit();   // yerel: uç +z yönünde
+    k.add(G.cone(18), (x, y, z) => (Math.sin(Math.atan2(x, y) * 6) > 0 ? C(0xffffff) : C(0xffd6e6)), [0, 0, 0.4], [PI / 2, 0, 0], [1.15, 3.0, 1.15]);
+    k.add(G.sphere(14, 10), C(0xffd6e6), [0, 0, -1.15], null, [1.15, 1.15, 0.5]);
+    k.add(G.sphere(12, 8), C(0xffffff), [0, 0.1, -1.6], null, [0.55, 0.45, 0.45]);
+    k.add(G.torus(TAU, 0.3, 14), C(0xff7aa8), [0, 0, -1.2], null, [1.0, 1.0, 1.0]);
+    for (let i = 0; i < 8; i++) { const a = i * TAU / 8; k.add(G.cone(4), C(0xd8dee8), [Math.sin(a) * 0.14, Math.cos(a) * 0.14, 2.05], [PI / 2, 0, 0], [0.09, 0.4, 0.09]); }
+    k.add(G.sphere(12, 8), C(0xffe6f0), [0, 0, 2.25], null, [0.3, 0.3, 0.3]);
+    const bag = O.solo(k, 'cream', api), yaw = Math.atan2(-S.dx, -S.dz);
+    bag.position.set(S.bx, 1.15, S.bz); bag.rotation.set(0, yaw, 0); bag.rotateX(0.32);
+    B.add('cream', G.sphere(12, 8), C(0xfff2f6), [S.bx, 0.05, S.bz], null, [1.6, 0.3, 1.3]);
+    const ring = new Kit(); ring.add(G.torus(TAU, 0.12, 32), C(0xffd24a, 1.6), [0, 0.06, 0], [PI / 2, 0, 0], [0.85, 0.85, 0.85]);
+    const rmk = O.solo(ring, 'glow', api); rmk.position.set(S.sx, 0, S.sz);
+    api.light(S.sx, 1.6, S.sz, 0xffc8e0, 1.4, 5, 0);
+    // krema çiçekleri (önceden kurulur, sırayla belirir)
+    const ros = S.spots.map((p, i) => {
+      const c = PASTEL[i % PASTEL.length], rk = new Kit();
+      for (let j = 0; j < 3; j++) rk.add(G.torus(TAU, 0.42, 14), C(c), [0, 0.12 + j * 0.16, 0], [PI / 2, 0, j * 0.8], [0.42 - j * 0.11, 0.42 - j * 0.11, 0.36 - j * 0.08]);
+      rk.add(G.cone(10), C(c), [0, 0.62, 0], null, [0.12, 0.25, 0.12]);
+      rk.add(G.sphere(8, 6), C(CANDY[i % CANDY.length]), [0, 0.8, 0], null, [0.1, 0.1, 0.1]);
+      const m = O.solo(rk, 'cream', api); m.position.set(p.x, 0, p.z); m.visible = false; m.userData.t = -1;
+      return m;
+    });
+    let n = 0, sq = 0, pulse = 0;
+    api.anim(dt => {
+      pulse += dt; rmk.scale.setScalar(1 + Math.sin(pulse * 4) * 0.08);
+      sq = Math.max(0, sq - dt * 2.5);
+      const w = Math.sin(sq * PI);
+      bag.scale.set(1 - w * 0.12, 1 - w * 0.12, 1 + w * 0.06);
+      for (const m of ros) if (m.userData.t >= 0 && m.userData.t < 1) { m.userData.t = Math.min(1, m.userData.t + dt * 2.5); const u = m.userData.t, b = 1 + Math.sin(u * PI) * 0.35; m.scale.set(b * u, u, b * u); }
+    });
+    R.zones.push({ x: S.sx, z: S.sz, r: 6, enter: () => O.say('odp_torba') });
+    R.zones.push({ x: S.sx, z: S.sz, r: 1.1, enter() {
+      sq = 1; n++;
+      O.sfx('squish', { vol: 0.9, pitch: 0.9 + Math.random() * 0.3 });
+      const tipX = S.ex - S.dx * 0.2, tipZ = S.ez - S.dz * 0.2;
+      O.burst('cream', tipX, 0.6, tipZ, { count: 10 }); O.burst('sparkle', tipX, 0.8, tipZ, { count: 6, color: '#ffc0d8' });
+      const m = ros[(n - 1) % Math.max(1, ros.length)];
+      if (m) { m.visible = true; m.userData.t = 0; m.scale.setScalar(0.01); O.burst('confetti', m.position.x, 0.8, m.position.z, {}); }
+      if (n <= 6) O.coins(tipX, tipZ, 2, 0.8);
+      if (n === 3) { O.say('odp_torba_ok', { gap: 0 }); if (GAME.giveSticker) GAME.giveSticker('gizli_krema_torbasi', 'gizli'); O.goldSugar(api, R, tipX - S.dx * 1.6, 0.8, tipZ - S.dz * 1.6, {}); }
+    } });
+  }
   // akan krema / çikolata yüzeyi (paylaşılan gölge: hafif dalga + parıltı)
   const POOL = {};
   function poolMat(a, b, choc) {
@@ -385,7 +454,7 @@
     const LT = api.B.lights;
     list.forEach((p, i) => {
       const c = CANDY[(i * 2) % CANDY.length];
-      B.add('candy', G.cyl(1, 1, 10), stripes(p.x, p.z, C(0xffffff), C(0xffd0e4), 1, 4), [p.x, 1.1, p.z], null, [0.07, 2.2, 0.07]);
+      B.add('candy', cylH(), stripes(p.x, p.z, C(0xffffff), C(0xffd0e4), 1, 4), [p.x, 1.1, p.z], null, [0.07, 2.2, 0.07]);
       B.add('cream', G.torus(TAU, 0.35, 16), C(0x7ad86a), [p.x, 1.2, p.z], [0, 0.4, 0], [0.18, 0.18, 0.18]);
       const k = new Kit();
       k.add(G.sphere(28, 18), (x, y, z) => (Math.sin(Math.atan2(y, x) * 2 + Math.hypot(x, y) * 14) > 0 ? C(c) : C(0xffffff)), [0, 0, 0], null, [0.62, 0.62, 0.16]);
@@ -480,7 +549,7 @@
     const LT = api.B.lights, flame = flameGeo();
     list.forEach((p, i) => {
       const c = CANDY[(i * 3 + 1) % CANDY.length], h = 1.5 + (i % 3) * 0.35;
-      B.add('candy', G.cyl(1, 1, 16), stripes(p.x, p.z, C(c), C(0xffffff), 2, 5), [p.x, h / 2, p.z], null, [0.26, h, 0.26]);
+      B.add('candy', cylH(), stripes(p.x, p.z, C(c), C(0xffffff), 2, 5), [p.x, h / 2, p.z], null, [0.26, h, 0.26]);
       B.add('cream', G.cyl(1, 1.15, 16), C(0xfff6f0), [p.x, 0.1, p.z], null, [0.5, 0.2, 0.5]);
       B.add('cream', G.sphere(8, 6), C(0xfff6f0), [p.x + 0.12, h - 0.05, p.z + 0.1], null, [0.12, 0.2, 0.12]);
       B.add('matte', G.cyl(1, 1, 6), C(0x3a2a20), [p.x, h + 0.08, p.z], null, [0.025, 0.16, 0.025]);
@@ -615,7 +684,7 @@
       const a = PI / 2 + (i / (nC - 1)) * PI, x = A.x + Math.sin(a) * (A.r + 2.6), z = A.z + Math.cos(a) * (A.r + 2.6), h = 3.4 + (i % 2) * 0.8;
       if (api.isFloor(x, z)) continue;
       const c = CANDY[i % CANDY.length];
-      B.add('candy', G.cyl(1, 1, 18), stripes(x, z, C(c), C(0xffffff), 2, 3), [x, h / 2, z], null, [0.42, h, 0.42]);
+      B.add('candy', cylH(), stripes(x, z, C(c), C(0xffffff), 2, 3), [x, h / 2, z], null, [0.42, h, 0.42]);
       B.add('cream', G.sphere(8, 6), C(0xfff6f0), [x + 0.2, h - 0.1, z + 0.15], null, [0.18, 0.32, 0.18]);
       B.add('matte', G.cyl(1, 1, 6), C(0x3a2a20), [x, h + 0.1, z], null, [0.035, 0.22, 0.035]);
       candlesA.push({ x, z, h, c });
