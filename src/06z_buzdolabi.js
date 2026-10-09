@@ -991,14 +991,21 @@ const ODAB = (() => {
     api.glow(cx, cz, half + 1.5, 0xcfeeff, 0.22);
   }
   // Buz pisti: yarı saydam, parlak buz diski + pist çizgileri (tuval doku)
-  let rinkTex = null;
-  function rinkTexture() {
-    if (rinkTex) return rinkTex;
+  let rinkTex = null, plainTex = null;
+  function rinkTexture(plain) {
+    if (plain && plainTex) return plainTex;
+    if (!plain && rinkTex) return rinkTex;
     const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
     const gr = x.createRadialGradient(256, 256, 30, 256, 256, 256); gr.addColorStop(0, '#f6fcff'); gr.addColorStop(0.75, '#d6efff'); gr.addColorStop(1, '#bfe2fb');
     x.fillStyle = gr; x.fillRect(0, 0, 512, 512);
     x.globalAlpha = 0.35; x.strokeStyle = '#ffffff'; x.lineWidth = 1.5;
     for (let i = 0; i < 70; i++) { const a = Math.random() * TAU, r = 60 + Math.random() * 180, l = 0.3 + Math.random() * 0.8; x.beginPath(); x.arc(256, 256, r, a, a + l); x.stroke(); }
+    if (plain) {   // yalnız buz: çatlak ışıltıları + kar tanesi kırağısı
+      x.globalAlpha = 0.5; x.strokeStyle = '#ffffff'; x.lineWidth = 2;
+      for (let i = 0; i < 26; i++) { const a = Math.random() * TAU, r = 40 + Math.random() * 190, px = 256 + Math.cos(a) * r, py = 256 + Math.sin(a) * r; x.beginPath(); x.moveTo(px, py); for (let k = 0; k < 3; k++) x.lineTo(px + (Math.random() - 0.5) * 50, py + (Math.random() - 0.5) * 50); x.stroke(); }
+      plainTex = new THREE.CanvasTexture(c); plainTex.colorSpace = THREE.SRGBColorSpace; plainTex.anisotropy = 4; plainTex.userData.keep = true;
+      return plainTex;
+    }
     x.globalAlpha = 0.75; x.lineWidth = 7; x.strokeStyle = '#ff9ec0'; x.beginPath(); x.arc(256, 256, 70, 0, TAU); x.stroke();
     x.strokeStyle = '#8fd0ff'; x.lineWidth = 6; x.beginPath(); x.moveTo(256, 20); x.lineTo(256, 492); x.stroke();
     x.beginPath(); x.arc(256, 256, 236, 0, TAU); x.lineWidth = 9; x.strokeStyle = '#a8dcff'; x.stroke();
@@ -1008,7 +1015,8 @@ const ODAB = (() => {
     return rinkTex;
   }
   function iceRink(api, e) {
-    const m = ODAB_RINK_MAT || (ODAB_RINK_MAT = (() => { const mm = new THREE.MeshStandardMaterial({ map: rinkTexture(), roughness: 0.04, metalness: 0.1, transparent: true, opacity: 0.86, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }); mm.userData.keep = true; return mm; })());
+    const plain = e.kind === 'serit', mk = plain ? 'plain' : 'rink';
+    const m = RINK_MATS[mk] || (RINK_MATS[mk] = (() => { const mm = new THREE.MeshStandardMaterial({ map: rinkTexture(plain), roughness: 0.04, metalness: 0.1, transparent: true, opacity: 0.86, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }); mm.userData.keep = true; return mm; })());
     const geo = new THREE.CircleGeometry(1, 64); geo.rotateX(-PI / 2);
     const mesh = new THREE.Mesh(geo, m); mesh.position.set(e.x, 0.025, e.z); mesh.scale.set(e.rx, 1, e.rz); mesh.receiveShadow = true; mesh.renderOrder = 1; mesh.name = 'buz-pisti';
     api.add(mesh);
@@ -1019,7 +1027,7 @@ const ODAB = (() => {
     const cg = tg.attributes.position.count, cc = new Float32Array(cg * 3); for (let i = 0; i < cg * 3; i++) cc[i] = 1; tg.setAttribute('color', new THREE.BufferAttribute(cc, 3));
     api.add(rim);
   }
-  let ODAB_RINK_MAT = null;
+  const RINK_MATS = {};
   // pistin kenarında oyuncak penguen değil: sevimli kardan adam şişeleri yerine — buz pateni süsleri (patenli şeker çubukları)
   function skatePenguinProps(B, api, e, rnd) {
     for (let k = 0; k < 4; k++) {
@@ -1131,7 +1139,8 @@ const ODAB = (() => {
       const core = O.solo(gk, 'glow', api); core.position.set(p.x, 1.15, p.z); core.scale.setScalar(0.12);
       const li = api.light(p.x, 1.6, p.z, c, 0, 5, 0) - 1;
       const st = { on: false, ring: 0 };
-      api.anim(dt => {
+      api.anim((dt, fx0, fz0) => {
+        if (!st.on && Math.random() < dt * 0.6 && hyp(fx0 - p.x, fz0 - p.z) < 10) O.burst('sparkle', p.x, 1.6, p.z, { count: 2, color: '#' + C(c).getHexString() });
         st.ring = Math.max(0, st.ring - dt * 1.6);
         const w = Math.sin(R.t * 30) * st.ring * 0.08; m.rotation.z = w; m.rotation.x = w * 0.6;
         core.scale.setScalar(0.12 + (st.on ? 0.1 : 0) + st.ring * 0.25);
@@ -1161,6 +1170,8 @@ const ODAB = (() => {
     k.add(G.sphere(18, 12), c, [0, 0, 0], null, [1, 0.62, 1]);
     k.add(G.sphere(14, 10), c2, [0, 0.42, 0], null, [0.62, 0.3, 0.62]);
     for (let i = 0; i < 6; i++) { const a = i * TAU / 6; k.add(G.sphere(8, 6), C(0xffffff).lerp(c, 0.4), [Math.sin(a) * 0.45, 0.2, Math.cos(a) * 0.45], null, [0.12, 0.12, 0.12]); }
+    const fruit = [0xff3b5c, 0xffb13b, 0x6fd86a, 0x8a4ad0];
+    for (let i = 0; i < 7; i++) { const a = i * 2.3, r = 0.2 + (i % 3) * 0.17; k.add(G.box(), C(fruit[i % 4]), [Math.sin(a) * r, 0.12 + (i % 2) * 0.14, Math.cos(a) * r], [i, i * 0.7, 0], [0.13, 0.13, 0.13]); }
     const m = O.solo(k, 'jelly', api); m.position.set(p.x, 0, p.z); m.scale.setScalar(p.r * 1.05);
     const top = new Kit();
     top.add(G.sphere(11, 8), C(0xfffaf4), [0, 0.7, 0], null, [0.32, 0.18, 0.32]);
@@ -1173,7 +1184,9 @@ const ODAB = (() => {
     pad.anim = dt => {   // yay: sıkış + salınım
       if (pad.hit) { pad.wv -= 9; pad.hit = 0; }
       pad.wv += (-pad.w * 120 - pad.wv * 7) * dt; pad.w += pad.wv * dt;
-      const sy = 1 + pad.w * 0.18, sx = 1 - pad.w * 0.09, s = p.r * 1.05;
+      pad.idle = (pad.idle || Math.random() * 6) + dt;
+      const iw = Math.sin(pad.idle * 2.6) * 0.035;
+      const sy = 1 + pad.w * 0.18 + iw, sx = 1 - pad.w * 0.09 - iw * 0.5, s = p.r * 1.05;
       m.scale.set(s * sx, s * sy, s * sx); t.scale.set(s * sx, s * sy, s * sx);
     };
     return pad;
@@ -1242,6 +1255,7 @@ const ODAB = (() => {
         if (Math.random() < 0.6) setTimeout(() => O.sfx('bilboBark', { vol: 0.6 }), 350);
         O.coins(e.x, e.z, rides === 1 ? 10 : rides < 4 ? 3 : 1, 1);
         if (rides === 1) O.say('odb_kaydirak_ok', { once: true, gap: 0 }); else if (rides === 3) O.say('odb_kaydirak_tekrar', { once: true, gap: 3 });
+        if (rides === 1) { const b = pts[pts.length - 2]; O.goldSugar(api, R, e.x + (e.x - b.x) * 2.2, 0.8, e.z + (e.z - b.z) * 2.2, { sticker: 'gizli_dondurma_kaydiragi' }); }
       } });
     } });
   }
@@ -1268,6 +1282,10 @@ const ODAB = (() => {
     api.glow(ix, iz, 2.6, 0xffe4a0, 0.2);
     // yuvarlanma izi (karda çizgi) – önceden çizilmez; yuvarlanınca kar tozu
     const st = { state: 'wait', t: 0, x: S.x, z: S.z, v: 0 };
+    const hr = new Kit(); hr.add(G.torus(TAU, 0.08, 36), C(0x9ae8ff, 1.6), [0, 0.05, 0], [PI / 2, 0, 0], [1.35, 1.35, 1.35]);
+    const hint = O.solo(hr, 'glow', api); hint.position.set(S.x, 0, S.z);
+    let wob = 0;
+    api.anim(dt => { if (st.state !== 'wait') { hint.visible = false; return; } wob += dt; ball.rotation.z = Math.sin(wob * 2.2) * 0.05; const s2 = 1 + Math.sin(wob * 3) * 0.06; hint.scale.set(s2, 1, s2); });
     R.zones.push({ x: S.x, z: S.z, r: 6.5, enter: () => { if (st.state === 'wait') O.say('odb_kartopu'); } });
     R.zones.push({ x: S.x, z: S.z, r: rad + 0.42 + 0.35, enter() {
       if (st.state !== 'wait') return;

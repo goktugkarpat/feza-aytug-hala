@@ -493,8 +493,9 @@
       const li = api.light(p.x, 2.8, p.z, c, 0, 6, 0.08) - 1, L0 = LT[li];
       p.state = { on: false, t: 0 };
       api.glow(p.x, p.z, 1.0, c, 0.12);
-      api.anim(dt => {
+      api.anim((dt, fx0, fz0) => {
         pop.rotation.y = Math.sin(R.t * 1.2 + i) * 0.35;
+        if (!p.state.on && Math.random() < dt * 0.6 && hyp(fx0 - p.x, fz0 - p.z) < 10) O.burst('sparkle', p.x, 2.7, p.z, { count: 2, color: '#' + C(c).getHexString() });
         if (p.state.on) { p.state.t = Math.min(1, p.state.t + dt * 2.5); const s = 0.9 + Math.sin(R.t * 3 + i) * 0.08; halo.scale.setScalar(s * p.state.t); if (L0) L0.int = 2.6 * p.state.t; }
       });
       R.zones.push({ x: p.x, z: p.z, r: 1.5, enter() {
@@ -584,7 +585,7 @@
       const fl = new THREE.Mesh(flame, O.mat('glow')); fl.position.set(p.x, h + 0.16, p.z); fl.scale.setScalar(0.01); api.add(fl);
       const li = api.light(p.x, h + 0.6, p.z, 0xffc070, 0, 6, 0.25) - 1, L0 = LT[li];
       let t = 0, on = false;
-      api.anim(dt => { if (!on) return; t = Math.min(1, t + dt * 3); const f = 1 + Math.sin(R.t * 17 + i) * 0.08 + Math.sin(R.t * 29 + i * 2) * 0.05; fl.scale.set(t * f, t * (1.1 + (f - 1) * 2), t * f); if (L0) L0.int = 2.4 * t; });
+      api.anim((dt, fx0, fz0) => { if (!on) { if (Math.random() < dt * 0.6 && hyp(fx0 - p.x, fz0 - p.z) < 10) O.burst('sparkle', p.x, h + 0.25, p.z, { count: 2, color: '#ffd080' }); return; } t = Math.min(1, t + dt * 3); const f = 1 + Math.sin(R.t * 17 + i) * 0.08 + Math.sin(R.t * 29 + i * 2) * 0.05; fl.scale.set(t * f, t * (1.1 + (f - 1) * 2), t * f); if (L0) L0.int = 2.4 * t; });
       R.zones.push({ x: p.x, z: p.z, r: 1.35, enter() {
         if (on) return;
         on = true; lit++;
