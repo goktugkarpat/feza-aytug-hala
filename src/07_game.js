@@ -6881,6 +6881,7 @@ const GAME = (() => {
 
   const GAME = {
     revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API,
+    dropSugar: (x, z, gold = 8, n) => spawnCoins(x, z, gold, n),   // (Dev Ev: odalardaki oyuncaklar/hazineler şeker saçar)
     giveSticker, addGoldSugar, unlockCostume, setCostume, unlockBilboAccessory, setBilboAccessory, addCakeDecoration, cakeStage, dailySurprise,
     miniResult, unlockMinigame, startMinigame: (id, o) => (typeof MINIGAME !== 'undefined' && MINIGAME ? MINIGAME.start(id, o) : false),
     get teamCharge() { const v = typeof HALA !== 'undefined' && HALA ? HALA.charge : 0; return typeof v === 'number' ? v : 0; },
