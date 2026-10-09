@@ -82,6 +82,20 @@ Model sözleşmesi (EMODEL ile aynı): `{ root (ayak y=0, +z'ye bakar), height, 
 setTint(renk|null), muzzle() → Vector3, dispose() }`; `st = { move, windup, attack, hurt, frozen, dying (0..1 neşelenip kaybolma), t, … }`.
 Korkutucu hiçbir şey yok: kaşsız/somurtmasız, sevimli, gülümseyen; neşelenince kalpler/konfeti.
 
+### Bosslar (src/05b_bosslar.js modeller · src/05c_boss_davranis.js BOSSDAV hamleler · src/02l_boss.js cümleler)
+Modeller EMODEL'in kendi Rig'i ile kurulur: `EMODEL.register(tip, kurucu(r, o), anim(m, dt, st, s), lod)`, `EMODEL.make` (HUYSUZ'un
+sarmadığı build), `EMODEL.KIT` (G, face, lathe, gloss, strawberry … Rig yardımcıları). Tek iskeletli örgü = boss başına 1 çizim
+(üçgen: süpürge ~13k, tencere ~13k, dondurma ~13.5k, pasta ~20.6k). `bossKit.own: true` → 07'nin eski RAID/bonus hamleleri
+uğramaz; 07 başlarken `BOSSDAV.install(api)`, `BOSS_AI[tip] = BOSSDAV.step`; her oyun karesi `BOSSDAV.update(dt)` (düşen
+şeyler, yuvarlanan top, dönen krema, buhar bulutu, kutlama), `damage()` içinde `BOSSDAV.hit(b, miktar, o)` (uykuda ×1,5; pasta
+aşama geçişinde 0; son anda yalnız `kind:'team'`). Buhar bulutu Feza'yı `P.slowT` / `P.slowK` ile yavaşlatır (07 hareket kodu).
+Hamleler (st.phase): süpürge suck/blow/cable/nap · tencere lid/steam/rain (st.lid {k,x,y,z} kapak uçuşu) · dondurma snow/slide/
+slideGo/scoop (st.scoopOff, st.melt) · pasta squirt/taunt/cookies/strawrain/sweep/jump/shock/tired (st.stage, st.slots = yanan
+malzeme yuvası, mumlar `dying`de yanar). Pasta: %66 ve %33'te 'shock' (komik tepki + yuva parlar), %6'da 'tired' → HALA.charge = 1
+(Takım düğmesi dolu) → Takım Hamlesi neşelendirir (30 s sonra yedek: normal vuruş da olur). Boss canı = 07 canı × hpK (2,2 / 2,2 /
+2,3 / 3,2). Pastanın çağırdığı `kurabiyeAsker` (zencefilli kurabiye asker, base nobetci) 05b'de. Neşelenince: konfeti, kalpler,
+şeker yağmuru, bölümün malzemesi (`ingredient` olayı) havada döner ve Feza'ya uçar; tencere düdükle şarkı çalar.
+
 ### Aytuğ Hala (HALA, src/04_hala.js)
 07_game'in çağırdıkları (hepsi isteğe bağlı, hata yutulur):
 - `HALA.create(scene)` — GAME.init'te bir kez; modeli sahneye ekle.
