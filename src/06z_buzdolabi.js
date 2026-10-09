@@ -469,6 +469,14 @@ const ODAB = (() => {
       }
     }
   }
+  // Nazik gruplar: bir grupta en çok `max` huysuz (fazlası, seçkin olmayanlardan başlayarak çıkar)
+  function gentlePacks(L, max = 5) {
+    const by = {};
+    for (const s of L.spawns || []) { const k = s.pack ?? s.room; (by[k] || (by[k] = [])).push(s); }
+    const drop = new Set();
+    for (const k in by) { const g = by[k]; if (g.length <= max) continue; g.slice().sort((a, b) => (a.elite ? 1 : 0) - (b.elite ? 1 : 0)).slice(0, g.length - max).forEach(s => drop.add(s)); }
+    if (drop.size) L.spawns = L.spawns.filter(s => !drop.has(s));
+  }
   // Alan geçidi: kemer (iki direk + yay), koridor yönüne dik
   function gateDir(L, k) {
     const a = L.areas[k], prev = L.areas[k - 1];
@@ -481,7 +489,7 @@ const ODAB = (() => {
     while (b < 7 && api.isFloor(x - px * b, z - pz * b)) b += 0.25;
     return { a, b };
   }
-  return { riding, get lift() { return riding() ? ACTIVE.lift || 0 : 0; }, mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, fairyLights, clearSpawns, gateDir, corridorHalf, flakeTexture };
+  return { riding, get lift() { return riding() ? ACTIVE.lift || 0 : 0; }, mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, fairyLights, clearSpawns, gentlePacks, gateDir, corridorHalf, flakeTexture };
 })();
 
 /* ════════════════════════════ Buzdolabı ════════════════════════════ */
@@ -628,6 +636,7 @@ const ODAB = (() => {
       D.trails.push({ x: rm.x, z: rm.z, pts });
     }
     O.clearSpawns(L, api, taken.map(q => ({ x: q.x, z: q.z, r: q.r + 1.5 })));
+    O.gentlePacks(L, 5);
   }
 
   // ── Görsel kurulum ──

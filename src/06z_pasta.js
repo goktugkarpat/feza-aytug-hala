@@ -146,6 +146,7 @@
       D.trails.push({ x: rm.x, z: rm.z, pts });
     }
     O.clearSpawns(L, api, taken.map(q => ({ x: q.x, z: q.z, r: q.r + 1.5 })));
+    O.gentlePacks(L, 5);
   }
 
   // ── Görsel kurulum ──
