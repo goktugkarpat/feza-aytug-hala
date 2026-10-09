@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Records every narrator line (AUD.LINES) with a natural Turkish female voice and writes sesler.js.
-
-English: python3 tools/gen_english_voices.py generates sesler-en.js from voice-en-text.json.
-Turkish recordings and pronunciation rules remain independent.
+"""Records every narrator line (Aytuğ Hala's voice) with a natural Turkish female voice and writes sesler.js.
 
 Needs:  python3 -m pip install edge-tts   (internet while recording)   and ffmpeg
 Run:    python3 gen_voice.py            only new/changed lines are recorded; the rest come from .ses_onbellek/
+        python3 gen_voice.py --liste    only list every line (NEW = not recorded yet); no network
         python3 gen_voice.py --hepsi    record everything again
 
-Lines are read from index.html if it contains the /*SESLER*/{...}/*SESLER-SON*/ block, else from src/02_audio.js.
+Lines: the /*SESLER*/{...}/*SESLER-SON*/ JSON block (index.html if present, else src/02_audio.js) PLUS every
+src/02l_*.js file's  Object.assign(AUD.LINES, { key: 'Türkçe cümle', ... })  (index.html load order; later files win).
+Voice tr-TR-EmelNeural; silence at the start/end is trimmed with ffmpeg; recordings are cached by text in .ses_onbellek/.
 Output: sesler.js  →  window.VOICE_MP3 = {key: base64 mp3}  and  window.VOICE_DUR = {key: seconds}  (keys in LINES order).
 """
 import asyncio
@@ -20,6 +20,11 @@ import re
 import shutil
 import subprocess
 import sys
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8")   # Turkish text on a Windows console
+except Exception:
+    pass
 
 import edge_tts
 
@@ -72,7 +77,82 @@ def spoken(text):
     return text
 
 
+def _js_object(src, start):
+    """Parse a plain JS object literal of string values starting at src[start] == '{'.
+    Keys: identifiers or quoted strings; values: '…' / "…" / `…` strings (no ${}), joined with + if needed.
+    Comments (// and /* */) and a trailing comma are allowed. Returns (dict, end_index)."""
+    i, n, out = start + 1, len(src), {}
+
+    def skip(i):
+        while i < n:
+            if src[i].isspace():
+                i += 1
+            elif src.startswith("//", i):
+                j = src.find("\n", i); i = n if j < 0 else j + 1
+            elif src.startswith("/*", i):
+                j = src.find("*/", i + 2); i = n if j < 0 else j + 2
+            else:
+                break
+        return i
+
+    def string(i):
+        q = src[i]; j = i + 1; buf = []
+        esc = {"n": "\n", "t": "\t", "'": "'", '"': '"', "`": "`", "\\": "\\"}
+        while j < n and src[j] != q:
+            if src[j] == "\\":
+                c = src[j + 1]
+                if c == "u":
+                    buf.append(chr(int(src[j + 2:j + 6], 16))); j += 6; continue
+                buf.append(esc.get(c, c)); j += 2; continue
+            if q == "`" and src.startswith("${", j):
+                raise ValueError("template ${} is not supported in a voice line")
+            buf.append(src[j]); j += 1
+        return "".join(buf), j + 1
+
+    while True:
+        i = skip(i)
+        if i >= n:
+            raise ValueError("unterminated object")
+        if src[i] == "}":
+            return out, i + 1
+        if src[i] in "'\"`":
+            key, i = string(i)
+        else:
+            m = re.compile(r"[A-Za-z_$][\w$]*").match(src, i)
+            if not m:
+                raise ValueError(f"unexpected {src[i:i + 20]!r}")
+            key, i = m.group(0), m.end()
+        i = skip(i)
+        if src[i] != ":":
+            raise ValueError(f"':' expected after {key}")
+        i = skip(i + 1)
+        parts = []
+        while True:
+            if src[i] not in "'\"`":
+                raise ValueError(f"line {key}: only string values are allowed")
+            s, i = string(i); parts.append(s)
+            i = skip(i)
+            if src[i] == "+":
+                i = skip(i + 1); continue
+            break
+        out[key] = "".join(parts)
+        if src[i] == ",":
+            i += 1
+
+
+def _extra_files():
+    """src/02l_*.js in index.html load order (others after, alphabetical) – later files override earlier keys, like the game."""
+    files = sorted(f for f in os.listdir(os.path.join(ROOT, "src")) if re.fullmatch(r"02l_.*\.js", f))
+    try:
+        html = open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
+        order = [m.group(1) for m in re.finditer(r'src="src/(02l_[^"]+\.js)"', html)]
+    except OSError:
+        order = []
+    return [f for f in order if f in files] + [f for f in files if f not in order]
+
+
 def load_lines():
+    lines = None
     for rel in ("index.html", os.path.join("src", "02_audio.js")):
         path = os.path.join(ROOT, rel)
         if not os.path.exists(path):
@@ -80,8 +160,29 @@ def load_lines():
         m = re.search(r"/\*SESLER\*/(.*?)/\*SESLER-SON\*/", open(path, encoding="utf-8").read(), re.S)
         if m:
             print(f"lines from {rel}")
-            return json.loads(m.group(1))
-    sys.exit("LINES block (/*SESLER*/ ... /*SESLER-SON*/) not found in index.html or src/02_audio.js")
+            lines = json.loads(m.group(1))
+            break
+    if lines is None:
+        sys.exit("LINES block (/*SESLER*/ ... /*SESLER-SON*/) not found in index.html or src/02_audio.js")
+    # Every agent's own file: Object.assign(AUD.LINES, { key: 'Türkçe cümle', ... })
+    for f in _extra_files():
+        src = open(os.path.join(ROOT, "src", f), encoding="utf-8").read()
+        n = 0
+        for m in re.finditer(r"Object\.assign\(\s*AUD\.LINES\s*,\s*\{", src):
+            try:
+                d, _ = _js_object(src, m.end() - 1)
+            except (ValueError, IndexError) as e:
+                sys.exit(f"src/{f}: cannot read the AUD.LINES object ({e})")
+            for k, v in d.items():
+                if k in lines and lines[k] != v:
+                    print(f"  note: src/{f} overrides {k}")
+                lines[k] = v
+            n += len(d)
+        print(f"lines from src/{f}: {n}")
+    bad = [k for k, v in lines.items() if re.search(r"(^|[\s,.!?])(Aa+|Oo+)([\s,.!?]|$)", v)]
+    if bad:
+        print("WARNING: 'Aa'/'Oo' may be read as an abbreviation:", ", ".join(bad))
+    return lines
 
 
 def cache_path(text):
@@ -144,6 +245,11 @@ async def record(key, text, sem):
 async def main():
     os.makedirs(CACHE, exist_ok=True)
     lines = load_lines()
+    if "--liste" in sys.argv:   # only list (no recording, no network): key, cached?, text
+        for k, t in lines.items():
+            print(f"  {'ok ' if os.path.exists(cache_path(t)) else 'NEW'} {k:22s} {t}")
+        print(f"{len(lines)} lines, {sum(not os.path.exists(cache_path(t)) for t in lines.values())} not recorded yet")
+        return
     if "--hepsi" in sys.argv:
         for t in lines.values():
             if os.path.exists(cache_path(t)):
@@ -167,8 +273,8 @@ async def main():
         print(f"  {k:16s} {d:5.2f} s  {cps:4.1f} chr/s{flag}")
 
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:   # LF also on Windows (the Mac commits it)
-        f.write("// Narrator voice lines for \"Feza Huysuzlara Karşı\" – Emel (tr-TR-EmelNeural), trimmed mono mp3 as base64.\n"
-                "// Bu dosya gen_voice.py ile üretildi; elle değiştirmeyin. Keys follow AUD.LINES order.\n")
+        f.write("// Aytuğ Hala'nın sesi (\"Feza, Bilbo ve Aytuğ Hala: Dev Ev Macerası\") – Emel (tr-TR-EmelNeural), trimmed mono mp3 as base64.\n"
+                "// Bu dosya gen_voice.py ile üretildi; elle değiştirmeyin. Keys: AUD.LINES (02_audio.js) + src/02l_*.js.\n")
         f.write("window.VOICE_MP3 = {\n")
         f.write(",\n".join(f" {json.dumps(k)}: \"{v}\"" for k, v in mp3.items()))
         f.write("\n};\n")
