@@ -5,7 +5,7 @@ const UI = (() => {
 
   const PREF_KEY = 'fezaAytugHala.ayar';
   const SLOTS = ['weapon', 'hat', 'cape'];
-  const SLOT_AD = { weapon: 'Işın Kılıçları', hat: 'Şapkalar', cape: 'Pelerinler' };
+  const SLOT_AD = { weapon: 'Kılıçlar', hat: 'Şapkalar', cape: 'Pelerinler' };
   const SLOT_EMO = { weapon: '⚔️', hat: '🎩', cape: '🦸' };   // weapon: replaced by the tiny saber SVG once SVG exists (below)
   const BLADE_DEF = '#5ad8ff';   // attack-button blade colour when ITEMS.bladeColor is missing
   const BASE_EMO = { migfer: '⛑️', sihirbaz: '🧙', kovboy: '🤠', korsan: '🏴‍☠️', tac: '👑',
@@ -556,7 +556,7 @@ const UI = (() => {
     el('div', 'u-choicehint', p, 'Bugün hangi Feza olacaksın?');
     const row = el('div', 'u-herorow', p);
     const names = ['Savaşçı Feza', 'Büyücü Feza', 'Büyülü Şövalye Feza'];
-    const hints = ['Işın kılıcını kuşan, <br>cesurca yaklaş!', 'Değneğini salla, <br>uzaktan büyü yap!', 'Yakında kılıç, <br>uzakta büyü!'];
+    const hints = ['Kılıcını kuşan, <br>cesurca yaklaş!', 'Değneğini salla, <br>uzaktan büyü yap!', 'Yakında kılıç, <br>uzakta büyü!'];
     D.heroes = ['warrior', 'wizard', 'hybrid'].map((id, i) => {
       const b = el('button', 'u-herocard ' + id, row, heroArt(id) +
         `<strong>${names[i]}</strong><span class="u-herodesc">${hints[i]}</span><span class="u-herogo">${SVG.play} Seç ve Oyna</span>`);
@@ -2041,7 +2041,7 @@ const UI = (() => {
     c.style.setProperty('--rc', col); c.style.setProperty('--rl', shade(col, 0.55)); c.style.setProperty('--rd', shade(col, -0.55));
     c.classList.toggle('leg', r >= 3);
     const name = (it.ad || (typeof it.base === 'string' ? it.base : 'Hazine')).replace(/ ✦$/, '\u00a0✦');   // (a long name wraps before its ✦, never leaves it alone)
-    const slotWord = it.slot === 'weapon' ? (M.ITEMS && M.ITEMS.isWand(it) ? 'BÜYÜ DEĞNEĞİ' : 'IŞIN KILICI') : it.slot === 'hat' ? 'ŞAPKA' : 'PELERİN';
+    const slotWord = it.slot === 'weapon' ? (M.ITEMS && M.ITEMS.isWand(it) ? 'BÜYÜ DEĞNEĞİ' : 'KILIÇ') : it.slot === 'hat' ? 'ŞAPKA' : 'PELERİN';
     c.innerHTML = FEZA_LANG.html(`<div class="u-cthumb">${itemThumb(it)}</div><div class="u-ctext">
       <div class="u-cnew">YENİ ${slotWord} · ${esc(FEZA_LANG.t(rarAd(r)).toLocaleUpperCase(FEZA_LANG.language()))}</div>
       <div class="u-cname${name.length > 17 ? ' long' : ''}">${ol(name)}</div>
@@ -2357,7 +2357,7 @@ const UI = (() => {
     D.bagChips.innerHTML = FEZA_LANG.html(chips.join(''));
     for (const sl of SLOTS) {
       const box = D.slots[sl], cur = P.equip[sl];
-      if (sl === 'weapon') box.label.innerHTML = FEZA_LANG.html(P.heroClass === 'wizard' ? '🪄 Büyü Değnekleri' : P.heroClass === 'hybrid' ? `${SVG.saber} Kılıçlar ve 🪄 Değnekler` : `${SVG.saber} Işın Kılıçları`);
+      if (sl === 'weapon') box.label.innerHTML = FEZA_LANG.html(P.heroClass === 'wizard' ? '🪄 Büyü Değnekleri' : P.heroClass === 'hybrid' ? `${SVG.saber} Kılıçlar ve 🪄 Değnekler` : `${SVG.saber} Kılıçlar`);
       const worn = sl === 'weapon' && P.heroClass === 'hybrid' ? [cur, P.equip.offhand].filter(Boolean) : [cur].filter(Boolean);
       box.hdName.innerHTML = FEZA_LANG.html(worn.length ? '· ' + worn.map(it => esc(it.ad || '')).join(' + ') : '');
       box.tiles.innerHTML = FEZA_LANG.html('');

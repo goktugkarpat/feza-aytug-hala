@@ -2725,7 +2725,7 @@ const { FEZA, ITEMS } = (function () {
         const N = 18, pos = new Float32Array(N * 3);
         for (let i = 0; i < N; i++) { const a = i / N * TAU * 2, y = 0.15 + 1.2 * (i / N); pos[i * 3] = Math.sin(a) * 0.48; pos[i * 3 + 1] = y; pos[i * 3 + 2] = Math.cos(a) * 0.48; }
         const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-        SETG.mat = new THREE.PointsMaterial({ size: 0.13, map: sparkTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: 0xffffff });
+        SETG.mat = new THREE.PointsMaterial({ size: 0.19, map: sparkTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, color: 0xffffff });
         SETG.obj = new THREE.Points(g, SETG.mat); SETG.obj.frustumCulled = false; SETG.obj.renderOrder = HERO_ORDER + 2; root.add(SETG.obj);
       }
       const set = ITEMS.SETS && ITEMS.SETS[id];

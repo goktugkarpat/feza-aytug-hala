@@ -7,6 +7,7 @@ Object.assign(AUD.LINES, {
   "kostum_sovalye": "Şövalye Feza! Tencere kapağı kalkanın parlıyor.",
   "kostum_kasif": "Kâşif Feza! Dürbününle her yeri görürsün.",
   "kostum_astronot": "Astronot Feza! Kaskın tıpkı bir baloncuk.",
+  "kilic": "Yeni bir kılıç buldun! Hadi deneyelim!",
   "set_tamam": "Setin tamamlandı! Bak, her yanın pırıl pırıl parlıyor!"
 });
 // ── Bilbo: aksesuar, binme, kazma, hapşırma ──
