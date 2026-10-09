@@ -519,6 +519,7 @@ const UI = (() => {
     for (const ch of 'FEZA') el('span', 'u-let', word, `<b>${ch}</b><i>${ch}</i>`);
     el('span', 'u-sidekick', word, `<span class="u-sidekick-ve">${ol('ve')}</span>${ol('Bilbo')}`);
     el('div', 'u-ribbon', logo, ol('Dev Ev Macerası'));
+    if (typeof STORY !== 'undefined' && STORY.logo) safe('STORY.logo', () => STORY.logo(logo));   // Dev Ev: el yazısı renkli logo
     [[-8, 12, 0], [104, 6, 0.7], [96, 64, 1.4], [-4, 70, 1.9], [50, -8, 1.1]].forEach(([x, y, d]) => {
       const s = el('span', 'u-spark', logo, '✦'); s.style.left = x + '%'; s.style.top = y + '%'; s.style.animationDelay = d + 's';
     });
@@ -2244,7 +2245,7 @@ const UI = (() => {
     const cont = !D.contBtn.classList.contains('u-hide');
     aud('say', cont ? 'devam' : 'basla', { prio: 1 });   // "Devam Et düğmesine bas…" with a save, else "Oyna düğmesine bas…"
   }
-  async function startGame(cont, heroClass) {
+  async function startGame(cont, heroClass, so = {}) {
     const g = M.GAME;
     if (S.busy || !g || (S.mode !== 'title' && S.mode !== 'choose')) return;
     if (!cont && !heroClass) { openChoice('title'); return; }
@@ -2263,6 +2264,16 @@ const UI = (() => {
         fade(0, 0.6, null);
       } else {
         showScreen(D.choice, false); setPaused(false);
+        // Dev Ev: giriş sinematiği (STORY.playIntro) başlık mutfağında oynar; sonra masa yüklenir
+        if (!so.noIntro && !Q.has('girissiz') && typeof STORY !== 'undefined' && STORY.playIntro && g.L && g.L._storyTitle) {
+          showScreen(D.title, false); setMode('intro');
+          try { await STORY.playIntro(); } catch (e) { warn('STORY.playIntro', e); }
+          await fade(1, 0.35, 'load'); ensureTex(0);
+          newGameWithIntro(g, { heroClass: heroClass === 'hybrid' ? 'hybrid' : heroClass === 'wizard' ? 'wizard' : 'warrior', plus: false });
+          setMode('play'); refreshAllSkills(); portraitSoon(0);
+          renderNow(); await frames(2); fade(0, 0.6, null); startHint();
+          return;
+        }
         newGameWithIntro(g, { heroClass: heroClass === 'hybrid' ? 'hybrid' : heroClass === 'wizard' ? 'wizard' : 'warrior', plus: false });
         setMode('play'); refreshAllSkills(); portraitSoon(0);
         // Baştan Başla while Feza napped: the nap's dim layer takes the touches — lift it, or he could not walk at all
@@ -2570,7 +2581,16 @@ const UI = (() => {
       bossFill(S.bossFrac);
       if (D.boss.animate) D.boss.animate([{ filter: 'brightness(1.6)' }, { filter: 'brightness(1)' }], { duration: 200 });
     });
-    on('victory', () => { hideBoss(); if (S.menu) closeMenu(); setTimeout(() => { if (g.state === 'end' && S.mode === 'play') showVictory(); }, 2600); });
+    on('victory', () => {
+      hideBoss(); if (S.menu) closeMenu();
+      // Dev Ev: final sahnesi (STORY) sürerken bekle; bittiyse masaya dön (Şeker Yağmuru = yeni tur), yoksa eski zafer ekranı
+      const after = () => {
+        if (typeof STORY !== 'undefined' && STORY.busy && STORY.busy()) { setTimeout(after, 400); return; }
+        if (g.state !== 'end' || S.mode !== 'play') return;
+        if (typeof STORY !== 'undefined' && STORY.endingDone) playAgain(); else showVictory();
+      };
+      setTimeout(after, 2600);
+    });
     on('happy', d => {
       S.cheered++;
       if (d.boss) {   // camera story beat: the boss cheers up → the castle's crystal rises / the zone's portal wakes up
@@ -3098,6 +3118,7 @@ const UI = (() => {
       }
       if (M.FX && M.FX.update) { try { M.FX.update(dt); } catch (e) { warn('FX.update', e); } }
       try { updateCamera(dt); } catch (e) { warn('camera', e); }
+      if (typeof STORY !== 'undefined' && STORY.camera) { try { STORY.camera(dt, camera); } catch (e) { warn('STORY.camera', e); } }   // Dev Ev: sinematik kamera
       if (P) {
         try { lightsFollow(P.pos.x, P.pos.z); } catch (e) { warn('lightsFollow', e); }
         if (!SILENT && M.AUD && M.AUD.setListener) { try { M.AUD.setListener(P.pos.x, P.pos.z); } catch (e) { warn('AUD.setListener', e); } }
@@ -3204,7 +3225,8 @@ if (!window.UI_MANUAL) {
 window.__step = (n = 1, dt = 1 / 60) => UI._step(n, dt);   // rAF'tan bağımsız, deterministik kareler
 window.__qa = {
   ready: () => UI.ready,
-  async start(heroClass = 'warrior') { await UI.ready; await UI.startGame(false, heroClass); return GAME.state; },
+  async start(heroClass = 'warrior') { await UI.ready; await UI.startGame(false, heroClass, { noIntro: true }); return GAME.state; },
+  async intro(heroClass = 'warrior') { await UI.ready; return UI.startGame(false, heroClass); },   // giriş sinematiğiyle yeni oyun (beklemeden: sinematik __step ile ilerler)
   async zone(i) { if (typeof i === 'string') i = ZONES.findIndex(z => z.id === i); await UI.travelTo(i, { qa: true }); return GAME.P.zone; },
   put(x, z) { return GAME.teleport(x, z); },
   spawn(type, dx = 3, dz = -3, o) { const P = GAME.P, e = GAME.spawnEnemy(type, P.pos.x + dx, P.pos.z + dz, o); return e ? { type: e.type, name: e.name, x: e.x, z: e.z } : null; },
