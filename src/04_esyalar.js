@@ -14,13 +14,16 @@
   const ss = (a, b, x) => { const t = cl((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
   const fr = x => x - Math.floor(x);
   const C = h => new THREE.Color(h);
+  // wood grain: darker streaks running along the piece (by the angle round it), a few knots by height
+  const WD = hex => { const b = C(hex), d = C(hex).multiplyScalar(0.7).lerp(C('#8a4a1c'), 0.15);
+    return (x, y, z) => { const a = Math.atan2(x, z), n = 0.5 + 0.5 * Math.sin(a * 6 + 2.1 * Math.sin(y * 21 + a * 3) + y * 9); return b.clone().lerp(d, Math.pow(n, 3) * 0.85); }; };
   const kcyl = (k, y0, y1, r0, r1, col, seg = 24) => k.add(G.cyl(r1 / r0, 1, seg), col, [0, (y0 + y1) / 2, 0], 0, [r0, y1 - y0, r0]);
 
   // ── Ortak malzemeler (nadirlik ≥ 2: renkli kenar ışığı) ──
   const rk = r => (r >= 2 ? r : 0);
   const rimR = (m, r) => (rk(r) ? rimify(m, rarCol(r), r === 3 ? 0.62 : 0.42, 2.3) : rimify(m, 0xffffff, 0.14));
   const M = {
-    wood: r => mat('ez:wood|' + rk(r), () => { const t = tex('wood'), m = vcMat({ roughness: 0.5, normalMap: t ? t.normalMap : null, normalScale: V2(0.7, 0.7), envMapIntensity: 0.8 }); return rimR(m, r); }),
+    wood: r => mat('ez:wood|' + rk(r), () => { const t = tex('fabric'), m = vcMat({ roughness: 0.48, normalMap: t ? t.normalMap : null, normalScale: V2(0.12, 0.12), envMapIntensity: 0.85 }); return rimR(m, r); }),
     gloss: r => mat('ez:gloss|' + rk(r), () => rimR(vcMat({ roughness: 0.24, metalness: 0.02, envMapIntensity: 1.0 }), r)),
     soft: r => mat('ez:soft|' + rk(r), () => rimR(vcMat({ roughness: 0.62, envMapIntensity: 0.75 }), r)),
     shell: r => mat('ez:shell|' + rk(r), () => rimR(vcMat({ roughness: 0.5, side: THREE.DoubleSide, envMapIntensity: 0.8 }), r)),
@@ -92,21 +95,21 @@
   W({ id: 'kasik', ad: 'Tahta Kaşık Kılıç', minLvl: 0, set: 'pastaci', col: '#ffcf8a' }, r => {
     const g = new THREE.Group();
     mesh(g, geoC('ez:kasik:wood', () => kitGeo(k => {
-      kcyl(k, -0.1, 0.33, 0.021, 0.016, '#f4c58c', 16);
-      k.add(G.sphere(16), '#f4c58c', [0, -0.1, 0], 0, [0.026, 0.02, 0.026]);
-      k.add(G.capsule(1, 12), '#e8b073', [0, 0.085, 0], [0, 0, PI / 2], [0.017, 0.045, 0.017]);   // balçak
-      k.add(G.sphere(28), '#f6cb92', [0, 0.41, 0], 0, [0.062, 0.088, 0.024]);                    // kaşık çanağı
-      k.add(G.sphere(28), '#d9975a', [0, 0.408, 0.011], 0, [0.05, 0.074, 0.016]);               // çanağın içi
-      k.seg([0, 0.31, 0.004], [0, 0.335, 0.012], 0.014, '#f4c58c', 0.013, 12);
-      k.add(G.torus(TAU, 0.35, 16), '#c98a50', [0, -0.07, 0.0], [0, 0, 0], [0.012, 0.012, 0.012]);  // asma deliği
-      // yakılmış küçük kalp (sapın üstünde)
-      k.add(flatGeo(heartPath(new THREE.Shape(), 1, 0, 0), 0.1, 0.02), '#9a5a2c', [0, 0.2, 0.017], 0, [0.022, 0.022, 0.03]);
+      const w = WD('#eab47a');
+      kcyl(k, -0.11, 0.34, 0.022, 0.017, w, 18);
+      k.add(G.sphere(18), w, [0, -0.11, 0], 0, [0.027, 0.02, 0.027]);
+      k.add(G.capsule(1, 14), WD('#d99a5c'), [0, 0.095, 0], [0, 0, PI / 2], [0.019, 0.05, 0.019]);     // balçak
+      k.add(G.sphere(32), w, [0, 0.445, -0.004], 0, [0.07, 0.1, 0.026]);                               // kaşık çanağı
+      k.add(G.sphere(32), WD('#c98446'), [0, 0.442, 0.009], 0, [0.058, 0.086, 0.018]);                 // çanağın içi
+      k.seg([0, 0.32, 0.002], [0, 0.36, 0.008], 0.0165, w, 0.015, 14);
+      k.add(G.torus(TAU, 0.35, 16), '#b87a42', [0, -0.08, 0.0], 0, 0.012);   // asma deliği
+      k.add(flatGeo(heartPath(new THREE.Shape(), 1, 0, 0), 0.1, 0.02), '#9a5a2c', [0, 0.23, 0.018], 0, [0.024, 0.024, 0.03]);   // yakılmış kalp
     })), M.wood(r));
     mesh(g, geoC('ez:kasik:ribbon', () => kitGeo(k => {
-      for (let i = 0; i < 6; i++) k.add(G.torus(TAU, 0.22, 20), i & 1 ? '#ffffff' : '#ff4f5e', [0, -0.045 + i * 0.022, 0], [PI / 2 + 0.25, 0, 0], [0.0225, 0.0225, 0.0225]);
-      k.add(G.sphere(12), '#ffd23f', [0, 0.085, 0.017], 0, [0.012, 0.012, 0.008]);
+      for (let i = 0; i < 7; i++) k.add(G.torus(TAU, 0.22, 20), i & 1 ? '#ffffff' : '#ff4f5e', [0, -0.06 + i * 0.022, 0], [PI / 2 + 0.25, 0, 0], 0.0235);
+      k.add(G.sphere(14), '#ffd23f', [0, 0.095, 0.019], 0, [0.014, 0.014, 0.009]);
     })), M.gloss(r));
-    tipAt(g, 0, 0.5, 0);
+    tipAt(g, 0, 0.545, 0);
     return g;
   });
 
@@ -114,13 +117,13 @@
   W({ id: 'oklava', ad: 'Oklava', minLvl: 1, col: '#ffe2b0' }, r => {
     const g = new THREE.Group();
     mesh(g, geoC('ez:oklava:wood', () => kitGeo(k => {
-      kcyl(k, -0.1, 0.075, 0.017, 0.021, '#e9b57a', 16);
+      kcyl(k, -0.1, 0.075, 0.017, 0.021, WD('#e9b57a'), 16);
       k.add(G.sphere(18), '#e3a96b', [0, -0.11, 0], 0, [0.027, 0.024, 0.027]);
       kcyl(k, 0.075, 0.1, 0.014, 0.014, '#d79c5e', 16);
-      kcyl(k, 0.1, 0.44, 0.047, 0.047, '#f2c792', 32);
+      kcyl(k, 0.1, 0.44, 0.047, 0.047, WD('#f2c792'), 40);
       for (const y of [0.1, 0.44]) k.add(G.sphere(28), '#f2c792', [0, y, 0], 0, [0.047, 0.012, 0.047]);
       kcyl(k, 0.44, 0.465, 0.014, 0.014, '#d79c5e', 16);
-      kcyl(k, 0.465, 0.58, 0.021, 0.017, '#e9b57a', 16);
+      kcyl(k, 0.465, 0.58, 0.021, 0.017, WD('#e9b57a'), 16);
       k.add(G.sphere(18), '#e3a96b', [0, 0.59, 0], 0, [0.027, 0.024, 0.027]);
     })), M.wood(r));
     mesh(g, geoC('ez:oklava:paint', () => kitGeo(k => {
@@ -187,19 +190,19 @@
     mesh(g, geoC('ez:kepce:steel', () => kitGeo(k => {
       k.add(G.capsule(1, 14), '#e8edf4', [0, 0.2, 0], 0, [0.014, 0.17, 0.009]);
       k.add(G.torus(TAU, 0.28, 20), '#e8edf4', [0, -0.11, 0], 0, [0.022, 0.022, 0.022]);
-      k.add(G.hemi(36), '#e8edf4', [0, 0.45, 0], [-PI / 2, 0, 0], [0.078, 0.078, 0.066]);
-      k.add(G.torus(TAU, 0.07, 48), '#f6f9fc', [0, 0.45, 0], 0, 0.078);
+      k.add(G.hemi(40), '#e8edf4', [0, 0.465, 0], [-PI / 2, 0, 0], [0.092, 0.092, 0.075]);
+      k.add(G.torus(TAU, 0.07, 56), '#f6f9fc', [0, 0.465, 0], 0, 0.092);
     })), M.metal(r));
     mesh(g, geoC('ez:kepce:soup', () => kitGeo(k => {
       k.add(G.capsule(1, 16), '#ff4f5e', [0, -0.03, 0], 0, [0.02, 0.07, 0.014]);
       for (let i = 0; i < 3; i++) k.add(G.torus(TAU, 0.18, 20), '#ffffff', [0, -0.065 + i * 0.03, 0], [PI / 2, 0, 0], [0.0205, 0.0205, 0.015]);
-      k.add(G.cyl(1, 1, 36), '#ffa040', [0, 0.45, -0.02], [PI / 2, 0, 0], [0.07, 0.004, 0.07]);
+      k.add(G.cyl(1, 1, 40), '#ffa040', [0, 0.465, -0.022], [PI / 2, 0, 0], [0.083, 0.004, 0.083]);
       const R = mulberry32(9), sg = starGeo(1, 0.4);
-      for (let i = 0; i < 9; i++) { const a = R() * TAU, d = Math.sqrt(R()) * 0.05; k.add(sg, '#ffe36a', [Math.sin(a) * d, 0.45 + Math.cos(a) * d, -0.016], [0, 0, R() * 2], 0.011); }
-      k.add(G.sphere(10), '#7bd06a', [0.025, 0.468, -0.016], 0, [0.009, 0.009, 0.004]);
-      k.add(G.sphere(10), '#ff7f50', [-0.03, 0.43, -0.016], 0, [0.01, 0.008, 0.004]);
+      for (let i = 0; i < 9; i++) { const a = R() * TAU, d = Math.sqrt(R()) * 0.06; k.add(sg, '#ffe36a', [Math.sin(a) * d, 0.465 + Math.cos(a) * d, -0.018], [0, 0, R() * 2], 0.011); }
+      k.add(G.sphere(10), '#7bd06a', [0.03, 0.488, -0.018], 0, [0.009, 0.009, 0.004]);
+      k.add(G.sphere(10), '#ff7f50', [-0.035, 0.44, -0.018], 0, [0.01, 0.008, 0.004]);
     })), M.gloss(r));
-    tipAt(g, 0, 0.53, 0);
+    tipAt(g, 0, 0.56, 0);
     return g;
   });
 
@@ -251,6 +254,35 @@
       for (let i = 0; i < 4; i++) for (const sd of [-1, 1]) k.add(G.sphere(10), '#ffe36a', [sd * 0.012 * (i & 1 ? 0 : 1), -0.05 + i * 0.03, 0.019 * sd], 0, [0.0055, 0.0055, 0.003]);
     })), M.gloss(r));
     tipAt(g, 0, 0.47, 0);
+    return g;
+  });
+
+  // Dondurma Kaşığı: pembe saplı çelik top kaşığı, içinde çikolata parçacıklı çilekli dondurma topu
+  W({ id: 'dondurmakasigi', ad: 'Dondurma Kaşığı', minLvl: 7, col: '#ffb3d1' }, r => {
+    const g = new THREE.Group();
+    mesh(g, geoC('ez:dkasik:grip', () => kitGeo(k => {
+      k.add(G.capsule(1, 18), '#ff8fbd', [0, 0.03, 0], 0, [0.025, 0.12, 0.022]);
+      for (let i = 0; i < 5; i++) k.add(G.torus(TAU, 0.16, 24), '#ff6fa8', [0, -0.05 + i * 0.035, 0], [PI / 2, 0, 0], [0.0255, 0.0255, 0.0225]);
+      k.add(G.sphere(16), '#ffffff', [0, -0.13, 0.0], 0, [0.016, 0.012, 0.014]);
+    })), M.gloss(r));
+    mesh(g, geoC('ez:dkasik:steel', () => kitGeo(k => {
+      kcyl(k, 0.17, 0.19, 0.022, 0.02, '#e8edf4', 20);
+      k.seg([0, 0.19, 0], [0, 0.31, 0], 0.012, '#e8edf4', 0.014, 14);
+      k.add(G.hemi(40), '#e8edf4', [0, 0.37, 0], [-PI / 2, 0, 0], [0.066, 0.066, 0.055]);
+      k.add(G.torus(TAU, 0.08, 56), '#f6f9fc', [0, 0.37, 0], 0, 0.066);
+      k.seg([0.022, 0.04, 0.012], [0.02, 0.2, 0.01], 0.004, '#d6dde7', 0.004, 6);   // bırakma teli
+      k.add(G.sphere(12), '#d6dde7', [0.024, 0.06, 0.016], 0, [0.008, 0.016, 0.006]);
+    })), M.metal(r));
+    mesh(g, geoC('ez:dkasik:ice', () => kitGeo(k => {
+      const geo = new THREE.SphereGeometry(1, 36, 24), P = geo.attributes.position;
+      for (let i = 0; i < P.count; i++) { const x = P.getX(i), y = P.getY(i), z = P.getZ(i), f = 1 + 0.05 * Math.sin(x * 9 + y * 5) * Math.cos(z * 7 - y * 3); P.setXYZ(i, x * f, y * f, z * f); }
+      geo.computeVertexNormals();
+      k.add(geo, '#ffa9c9', [0, 0.375, 0.026], 0, [0.066, 0.064, 0.06]);
+      const R = mulberry32(14);
+      for (let i = 0; i < 14; i++) { const th = R() * PI * 0.8, ph = R() * TAU, n = v3(Math.sin(th) * Math.sin(ph), Math.cos(th) * 0.9, Math.sin(th) * Math.cos(ph)).normalize(); if (n.z < -0.2) continue; k.add(G.dodeca(), '#5a2f1e', [n.x * 0.066, 0.375 + n.y * 0.064, 0.026 + n.z * 0.06], [R(), R(), R()], 0.0075); }
+      k.add(G.sphere(16), '#ff2f4a', [0.01, 0.445, 0.03], 0, 0.016);
+    })), M.gloss(r));
+    tipAt(g, 0, 0.45, 0);
     return g;
   });
 
@@ -336,7 +368,7 @@
   // Çırpıcı Değnek: tahta sap, tel çırpıcı; içinde parlayan sihir topu
   WZ({ id: 'cirpici', ad: 'Çırpıcı Değnek', minLvl: 0, col: '#ffd86a' }, r => {
     const g = new THREE.Group();
-    mesh(g, geoC('ez:cirpici:wood', () => kitGeo(k => { wandHandle(k, '#f0c08a', '#e09a5a'); k.add(flatGeo(heartPath(new THREE.Shape(), 1, 0, 0), 0.2, 0.03), '#ff5f7e', [0, 0.0, 0.016], 0, [0.018, 0.018, 0.02]); })), M.wood(r));
+    mesh(g, geoC('ez:cirpici:wood', () => kitGeo(k => { wandHandle(k, WD('#f0c08a'), '#e09a5a'); k.add(flatGeo(heartPath(new THREE.Shape(), 1, 0, 0), 0.2, 0.03), '#ff5f7e', [0, 0.0, 0.016], 0, [0.018, 0.018, 0.02]); })), M.wood(r));
     mesh(g, geoC('ez:cirpici:wire', () => kitGeo(k => {
       kcyl(k, 0.1, 0.15, 0.019, 0.013, '#e8edf4', 20);
       const n = 4;
@@ -403,6 +435,31 @@
     return g;
   });
 
+  // Krema Sıkacağı Değnek: çizgili krema torbası, altın yıldız uç, parlayan krema gülü
+  WZ({ id: 'kremasikacagi', ad: 'Krema Sıkacağı Değnek', minLvl: 7, col: '#ffa6cc' }, r => {
+    const g = new THREE.Group();
+    mesh(g, geoC('ez:sikac:bag', () => kitGeo(k => {
+      const geo = lathe([[0.004, -0.11], [0.016, -0.105], [0.02, -0.06], [0.018, 0.0], [0.04, 0.05], [0.062, 0.13], [0.064, 0.18], [0.05, 0.24], [0.028, 0.3], [0.014, 0.335], [0.012, 0.34]], 36, 0, 0, 1, 1);
+      k.add(geo, (x, y, z) => (y < 0.005 ? C('#e8f6ff') : fr(Math.atan2(x, z) / TAU * 8 + y * 1.5) < 0.5 ? C('#ffffff') : C('#9fdcff')));
+      for (const y of [-0.075, -0.035]) k.add(G.torus(TAU, 0.2, 20), '#ff6f9a', [0, y, 0], [PI / 2, 0, 0], 0.0205);
+      k.add(G.sphere(14), '#ff6f9a', [0.02, -0.055, 0.0], 0, [0.016, 0.012, 0.012]);
+      for (const sd of [-1, 1]) k.add(G.capsule(1, 8), '#ff6f9a', [0.022 + sd * 0.006, -0.08, 0.004], [0, 0, 0.4 + sd * 0.4], [0.006, 0.02, 0.005]);
+    })), M.soft(r));
+    mesh(g, geoC('ez:sikac:nozzle', () => kitGeo(k => {
+      k.add(G.cone(8), '#ffcf5a', [0, 0.365, 0], 0, [0.016, 0.05, 0.016]);
+      kcyl(k, 0.335, 0.345, 0.017, 0.017, '#ffcf5a', 16);
+    })), M.metal(r));
+    mesh(g, geoC('ez:sikac:rose', () => {
+      const P = [], N = 70;
+      for (let i = 0; i <= N; i++) { const t = i / N, a = t * TAU * 2.4, rr = 0.034 * (1 - t * 0.8); P.push(v3(Math.sin(a) * rr, 0.41 + t * 0.03, Math.cos(a) * rr)); }
+      const geo = sweep(P, P.map(() => v3(0, 1, 0)), t => 0.014 * (1 - t * 0.5), t => 0.012 * (1 - t * 0.5), 10, 0.8, (t, c) => c.set('#ffb3d6').lerp(C('#fff0f7'), t), null);
+      geo.deleteAttribute('aFlex'); return geo;
+    }), M.glow('sikacRose', 0.75));
+    const halo = mesh(g, G.sphere(16), M.halo('#ff9ad0', 0.25), [0, 0.42, 0], null, true); halo.scale.setScalar(0.06);
+    tipAt(g, 0, 0.44, 0);
+    return g;
+  });
+
   // EFSANE: Doğum Günü Mumu Değneği — sarmal çizgili mum, altın sap, parlayan alev
   WZ({ id: 'mumdegnek', ad: 'Doğum Günü Mumu Değneği', minLvl: 0, legendary: true, col: '#ffb347' }, r => {
     const g = new THREE.Group();
@@ -429,7 +486,7 @@
   // BOSS (Uykucu Süpürge): Süpürge Teli Değnek — minik süpürge, sarı saman telleri, kırmızı dikiş, parlayan toz pırıltıları
   WZ({ id: 'supurgedegnek', ad: 'Süpürge Teli Değnek', minLvl: 0, boss: true, col: '#ffe27a' }, r => {
     const g = new THREE.Group();
-    mesh(g, geoC('ez:supurge:stick', () => kitGeo(k => { kcyl(k, -0.11, 0.2, 0.017, 0.015, '#d89b5f', 16); k.add(G.sphere(16), '#a8d8ff', [0, -0.115, 0], 0, [0.022, 0.02, 0.022]); })), M.wood(r));
+    mesh(g, geoC('ez:supurge:stick', () => kitGeo(k => { kcyl(k, -0.11, 0.2, 0.017, 0.015, WD('#d89b5f'), 16); k.add(G.sphere(16), '#a8d8ff', [0, -0.115, 0], 0, [0.022, 0.02, 0.022]); })), M.wood(r));
     mesh(g, geoC('ez:supurge:straw', () => kitGeo(k => {
       const R = mulberry32(55);
       k.add(G.cone(24), '#f3cd62', [0, 0.235, 0], [PI, 0, 0], [0.05, 0.1, 0.03]);
@@ -537,16 +594,16 @@
     const [g, h] = hatGroup();
     h.position.set(0, 0.2, -0.01); h.rotation.set(-0.16, 0, 0.06);
     mesh(h, geoC('ez:fincan:china', () => kitGeo(k => {
-      k.add(lathe([[0.17, -0.012], [0.3, 0.0], [0.355, 0.03], [0.36, 0.042], [0.345, 0.044], [0.3, 0.018], [0.17, 0.008]], 64, 0, 0, 1, 1), '#fdfbff');
+      k.add(lathe([[0.17, -0.012], [0.3, 0.0], [0.355, 0.03], [0.36, 0.042], [0.345, 0.044], [0.3, 0.018], [0.17, 0.008]], 64, 0, 0, 1, 1), (x, y, z) => (Math.hypot(x, z) > 0.33 ? C('#ff9fc4') : C('#fff4f8')));
       const dots = (x, y, z) => {   // pembe puantiye
         const a = Math.atan2(x, z) / TAU * 12, b = (y - 0.02) / 0.042, ai = Math.round(a + (Math.round(b) & 1) * 0.5) - (Math.round(b) & 1) * 0.5;
         const d = Math.hypot((a - ai) * 0.11, (b - Math.round(b)) * 0.042);
-        return d < 0.017 ? C('#ff8fbd') : C('#fdfbff');
+        return d < 0.017 ? C('#ffffff') : C('#6cc8ff');
       };
       k.add(lathe([[0.205, 0.006], [0.203, 0.03], [0.19, 0.1], [0.165, 0.16], [0.12, 0.2], [0.0, 0.205]], 64, 0, 0, 1, 1), dots);
-      kcyl(k, 0.19, 0.225, 0.1, 0.105, '#fdfbff', 48);
-      k.add(G.cyl(1, 1, 48), '#fdfbff', [0, 0.226, 0], 0, [0.1, 0.004, 0.1]);
-      k.add(G.torus(PI * 1.2, 0.22, 24), '#fdfbff', [0.205, 0.1, 0], [0, 0, -PI * 0.6], [0.055, 0.055, 0.055]);   // kulp
+      kcyl(k, 0.19, 0.225, 0.1, 0.105, '#6cc8ff', 48);
+      k.add(G.cyl(1, 1, 48), '#6cc8ff', [0, 0.226, 0], 0, [0.1, 0.004, 0.1]);
+      k.add(G.torus(PI * 1.2, 0.22, 24), '#6cc8ff', [0.205, 0.1, 0], [0, 0, -PI * 0.6], [0.055, 0.055, 0.055]);   // kulp
     })), M.gloss(r));
     mesh(h, geoC('ez:fincan:gold', () => kitGeo(k => {
       k.add(G.torus(TAU, 0.06, 64), '#ffcf5a', [0, 0.012, 0], [PI / 2, 0, 0], 0.206);
@@ -564,23 +621,23 @@
 
   // Yumurta Kabuğu Şapka: kırık kenarlı yumurta kabuğu, tepede minik civciv
   H({ id: 'yumurta', ad: 'Yumurta Kabuğu Şapka', minLvl: 4, set: 'kurabiyeci' }, r => {
-    const [g, h] = hatGroup(), ER = [0.31, 0.33, 0.32];
-    h.position.set(0, 0.1, -0.025); h.rotation.set(-0.22, 0, -0.05);
+    const [g, h] = hatGroup(), ER = [0.3, 0.3, 0.31];
+    h.position.set(0, 0.15, -0.03); h.rotation.set(-0.22, 0, -0.05);
     mesh(h, geoC('ez:yumurta:shell', () => kitGeo(k => {
       const zig = ph => { const f = fr(ph / TAU * 9); return 0.1 * Math.abs(f * 2 - 1); };
       const geo = surf((u, v, o) => {
-        const ph = u * TAU, th = v * PI * (0.53 - zig(ph)), sn = Math.sin(th), egg = 1 - 0.1 * Math.cos(th);
+        const ph = u * TAU, th = v * PI * (0.47 - zig(ph)), sn = Math.sin(th), egg = 1 - 0.1 * Math.cos(th);
         return o.set(Math.sin(ph) * sn * ER[0] * egg, Math.cos(th) * ER[1] - 0.02, Math.cos(ph) * sn * ER[2] * egg);
       }, 72, 18);
       const R = mulberry32(8), spots = []; for (let i = 0; i < 16; i++) spots.push([R() * TAU, 0.2 + R() * 1.0]);
       k.add(geo, (x, y, z) => {
         const ph = Math.atan2(x, z), th = Math.acos(cl((y + 0.02) / ER[1], -1, 1));
-        for (const [a, b] of spots) if (Math.hypot((ph - a) * Math.sin(th), th - b) < 0.05) return C('#e8cfae');
-        return C('#f6e6cf');
+        for (const [a, b] of spots) if (Math.hypot((ph - a) * Math.sin(th), th - b) < 0.05) return C('#c9b8f0');
+        return C('#f7faff').lerp(C('#d8ecff'), ss(0.2, 1.4, th));
       });
     })), M.shell(r));
     mesh(h, geoC('ez:yumurta:chick', () => kitGeo(k => {
-      const y0 = 0.325;
+      const y0 = 0.29;
       k.add(G.sphere(24), '#ffd84a', [0, y0, 0], 0, [0.075, 0.062, 0.07]);
       k.add(G.sphere(24), '#ffde5a', [0, y0 + 0.075, 0.02], 0, 0.052);
       k.add(G.cone(12), '#ff9a3c', [0, y0 + 0.07, 0.078], [PI / 2, 0, 0], [0.014, 0.024, 0.01]);
@@ -592,7 +649,7 @@
       }
       for (const a of [-0.4, 0, 0.4]) k.add(G.capsule(1, 6), '#ffcf3a', [Math.sin(a) * 0.01, y0 + 0.13, 0.01], [0.2, 0, a], [0.006, 0.014, 0.006]);
     })), M.gloss(r));
-    g.fzHatIn = { h, c: [0, -0.02, 0], r: [0.3, 0.32, 0.31], y0: -0.02, fade: 0.08 };
+    g.fzHatIn = { h, c: [0, -0.02, 0], r: [0.29, 0.29, 0.3], y0: 0.0, fade: 0.08 };
     return g;
   });
 
@@ -623,11 +680,63 @@
     return g;
   });
 
+  // Makaron Şapka: yan yatmış fıstık yeşili kocaman makaron, pembe kremalı, fırfırlı ayaklı
+  H({ id: 'makaron', ad: 'Makaron Şapka', minLvl: 6 }, r => {
+    const [g, h] = hatGroup();
+    h.position.set(0.0, 0.215, -0.02); h.rotation.set(-0.18, 0, 0.2);
+    mesh(h, geoC('ez:makaron', () => kitGeo(k => {
+      const SH = '#a6e8c6', FT = '#93dbb6';
+      k.add(G.sphere(40), SH, [0, -0.035, 0], 0, [0.25, 0.05, 0.25]);   // alt kabuk
+      k.add(G.sphere(40), SH, [0, 0.085, 0], 0, [0.25, 0.085, 0.25]);   // üst kabuk
+      kcyl(k, 0.005, 0.03, 0.235, 0.235, '#ff9fc4', 64);                  // krema
+      k.add(G.torus(TAU, 0.07, 64), '#ffb3d1', [0, 0.018, 0], [PI / 2, 0, 0], 0.235);
+      for (const y of [-0.005, 0.042]) for (let i = 0; i < 44; i++) { const a = i / 44 * TAU; k.add(G.sphere(8), FT, [Math.sin(a) * 0.243, y, Math.cos(a) * 0.243], 0, [0.016, 0.012, 0.016]); }   // fırfırlı ayaklar
+      const R = mulberry32(27);
+      for (let i = 0; i < 18; i++) { const a = R() * TAU, d = Math.sqrt(R()) * 0.17; k.add(G.sphere(6), '#ffffff', [Math.sin(a) * d, 0.085 + 0.085 * Math.sqrt(Math.max(0, 1 - (d / 0.25) ** 2)) + 0.001, Math.cos(a) * d], 0, [0.006, 0.0025, 0.006]); }
+    })), M.soft(r));
+    g.fzHatIn = { h, c: [0, -0.04, 0], r: [0.22, 0.13, 0.22], y0: -0.08, fade: 0.05 };
+    return g;
+  });
+
+  // Pasta Dilimi Şapka: katlı pasta dilimi (pandispanya, krema, reçel), üstünde krema gülleri ve çilek
+  H({ id: 'pastadilimi', ad: 'Pasta Dilimi Şapka', minLvl: 7 }, r => {
+    const [g, h] = hatGroup(), T0 = -0.2, RS = 0.33, AS = 0.5;   // dilim: uç (0, T0), yarıçap RS, yarım açı AS (şekil y → -z)
+    h.position.set(0, 0.2, -0.012); h.rotation.set(-0.12, 0.95, 0.06);
+    const slice = (s, R0, a) => { s.moveTo(0, T0); s.lineTo(Math.sin(-a) * R0, T0 + Math.cos(a) * R0); s.absarc(0, T0, R0, PI / 2 + a, PI / 2 - a, true); s.lineTo(0, T0); return s; };
+    mesh(h, geoC('ez:dilim:cake', () => kitGeo(k => {
+      const lay = (x, y) => { const t = (y - 0.012) / 0.13; return t < 0.27 ? C('#f6d184') : t < 0.37 ? C('#ff6f9a') : t < 0.43 ? C('#fff6ee') : t < 0.72 ? C('#f6d184') : t < 0.8 ? C('#fff6ee') : C('#ffd3e4'); };
+      k.add(flatGeo(slice(new THREE.Shape(), RS, AS), 0.12, 0.008), lay, [0, 0.078, 0], [-PI / 2, 0, 0]);
+      k.add(flatGeo(slice(new THREE.Shape(), RS + 0.005, AS + 0.005), 0.012, 0.006), '#ffd3e4', [0, 0.146, 0], [-PI / 2, 0, 0]);   // pembe şeker hamuru
+    })), M.soft(r));
+    mesh(h, geoC('ez:dilim:board', () => kitGeo(k => {   // altın pasta altlığı (dantel kenarlı)
+      k.add(G.cyl(1, 1, 64), '#ffd76a', [0, 0.004, 0], 0, [0.24, 0.014, 0.24]);
+      for (let i = 0; i < 40; i++) { const a = i / 40 * TAU; k.add(G.sphere(8), '#fff6e0', [Math.sin(a) * 0.241, 0.004, Math.cos(a) * 0.241], 0, [0.016, 0.008, 0.016]); }
+    })), M.metal(r));
+    mesh(h, geoC('ez:dilim:top', () => kitGeo(k => {
+      for (let i = 0; i < 6; i++) { const a = -0.42 + i / 5 * 0.84, x = Math.sin(a) * (RS - 0.03), z = -(T0 + Math.cos(a) * (RS - 0.03)); k.add(G.sphere(14), '#fffaf2', [x, 0.166, z], 0, [0.022, 0.019, 0.022]); k.add(G.cone(10), '#fffaf2', [x, 0.188, z], 0, [0.013, 0.028, 0.013]); }
+      const cz = -(T0 + RS * 0.55);
+      k.add(G.sphere(24), '#ff3b55', [0, 0.195, cz], [0.4, 0, 0], [0.038, 0.047, 0.038]);
+      k.add(G.cone(6), '#5fbf4a', [0, 0.238, cz - 0.01], [0.4, 0, 0], [0.028, 0.017, 0.028]);
+      for (let i = 0; i < 9; i++) { const th = 0.3 + (i % 3) * 0.4, ph = i * 2.1; k.add(G.sphere(6), '#ffe36a', [Math.sin(th) * Math.sin(ph) * 0.036, 0.195 + Math.cos(th) * 0.046, cz + Math.sin(th) * Math.cos(ph) * 0.036], 0, 0.0035); }
+      k.add(G.sphere(14), '#ff3b55', [0.05, 0.17, cz + 0.07], 0, [0.02, 0.024, 0.02]);
+      k.add(G.sphere(14), '#5a2f1e', [-0.05, 0.164, cz + 0.08], 0, [0.018, 0.011, 0.018]);
+    })), M.gloss(r));
+    mesh(h, geoC('ez:dilim:pillbox', () => kitGeo(k => {   // pembe yuvarlak şapka gövdesi (saçı örter), dantel şerit
+      kcyl(k, -0.02, 0.07, 0.205, 0.2, (x, y, z) => (fr(Math.atan2(x, z) / TAU * 16) < 0.5 ? C('#ffc2da') : C('#ffd6e6')), 64);
+      k.add(G.cyl(1, 1, 64), '#ffc2da', [0, 0.07, 0], 0, [0.2, 0.004, 0.2]);
+      k.add(G.torus(TAU, 0.08, 72), '#ffffff', [0, -0.012, 0], [PI / 2, 0, 0], 0.207);
+      for (let i = 0; i < 32; i++) { const a = i / 32 * TAU; k.add(G.sphere(8), '#ffffff', [Math.sin(a) * 0.208, 0.0, Math.cos(a) * 0.208], 0, [0.012, 0.016, 0.006]); }
+    })), M.soft(r), [0, 0, 0]);
+    for (const o of h.children.slice(0, 3)) o.position.y = 0.07;
+    g.fzHatIn = { h, c: [0, 0, 0], r: [0.2, 0.22, 0.21], y0: 0, fade: 0.06 };
+    return g;
+  });
+
   // EFSANE: Pasta Tacı (ve Koca Pastanın tacı): iki katlı pembe pasta, krema damlaları, mumlar ve çilekler
   function cakeCrown(boss) {
     return r => {
       const [g, h] = hatGroup();
-      h.position.set(0.012, 0.25, -0.03); h.rotation.set(-0.12, 0, 0.12);
+      h.position.set(0.012, 0.225, -0.03); h.rotation.set(-0.12, 0, 0.12); h.scale.setScalar(1.12);
       const key = boss ? 'boss' : 'n';
       mesh(h, geoC('ez:ptac:cake:' + key, () => kitGeo(k => {
         kcyl(k, -0.01, 0.085, 0.195, 0.195, '#ffb3cf', 56);
@@ -809,6 +918,45 @@
     for (const [x, y, s, a] of [[44, 50, 1.5, -0.3], [212, 52, 1.5, 0.3], [40, 170, 1.4, 0.2], [216, 170, 1.4, -0.2], [128, 30, 1, 0], [90, 190, 1.1, 0.4], [166, 190, 1.1, -0.4]]) strawberry(g, x, y, s, a);
     trim(g, S, F, '#ffffff', 14);
     g.fillStyle = '#ff4f7e'; for (let x = 0; x < S; x += 256 / 6) { g.beginPath(); g.arc(x + 256 / 12, e(x + 256 / 12) - 10, 3, 0, TAU); g.fill(); }
+    g.restore();
+  });
+
+  // Buzlu Pelerin: buz mavisi, parlayan kar taneleri, buz çiçekleri, sarkıt saçaklı kenar
+  CP({ id: 'buzlu', ad: 'Buzlu Pelerin', minLvl: 6 }, (g, S, ge, R) => {
+    const e = x => { const f = fr(x / 256 * 9), big = Math.floor(x / 256 * 9) % 2; return 206 + (big ? 30 : 20) * Math.pow(1 - Math.abs(f * 2 - 1), 1.6); }, F = capeFrame(g, S, e);
+    g.save(); F.path(g); g.clip(); ge.save(); F.path(ge); ge.clip();
+    const gr = g.createLinearGradient(0, 0, 0, S); gr.addColorStop(0, '#d6f4ff'); gr.addColorStop(0.6, '#8fd4f4'); gr.addColorStop(1, '#5ab4e6'); g.fillStyle = gr; g.fillRect(0, 0, S, S);
+    g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1.5;   // buz çiçekleri
+    for (let i = 0; i < 9; i++) { const x = R() * S, y = R() * 200; for (let j = 0; j < 6; j++) { const a = R() * TAU, l = 14 + R() * 18; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); } }
+    const flake = (c, x, y, rr, col, w) => {
+      c.strokeStyle = col; c.lineWidth = w; c.lineCap = 'round';
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU, cx = Math.cos(a), sy = Math.sin(a); c.beginPath(); c.moveTo(x, y); c.lineTo(x + cx * rr, y + sy * rr); c.stroke();
+        for (const t of [0.5, 0.75]) { const px = x + cx * rr * t, py = y + sy * rr * t, b = rr * 0.25; c.beginPath(); c.moveTo(px + Math.cos(a + 0.8) * b, py + Math.sin(a + 0.8) * b); c.lineTo(px, py); c.lineTo(px + Math.cos(a - 0.8) * b, py + Math.sin(a - 0.8) * b); c.stroke(); } }
+    };
+    flake(g, 128, 100, 44, '#ffffff', 5); flake(ge, 128, 100, 44, '#5fa8d8', 5);
+    for (const [x, y, rr] of [[42, 44, 18], [214, 48, 18], [40, 160, 16], [216, 160, 16], [128, 190, 13], [86, 26, 10], [170, 26, 10]]) { flake(g, x, y, rr, '#ffffff', 3); flake(ge, x, y, rr, '#4a90c0', 3); }
+    for (let i = 0; i < 60; i++) { const x = R() * S, y = R() * 220; g.fillStyle = '#ffffff'; g.fillRect(x, y, 2, 2); ge.fillStyle = '#9fd8ff'; ge.fillRect(x, y, 2, 2); }
+    g.strokeStyle = '#ffffff'; g.lineWidth = 10; F.line(g); g.stroke(); ge.strokeStyle = '#3a7aa8'; ge.lineWidth = 8; F.line(ge); ge.stroke();
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, 6, S); g.fillRect(S - 6, 0, 6, S);
+    g.restore(); ge.restore();
+  });
+
+  // Makaron Pelerin: krem zemin üstünde sıra sıra pastel makaronlar, şerit ve fistolu kenar
+  CP({ id: 'makaronpelerin', ad: 'Makaron Pelerin', minLvl: 7 }, (g, S, ge, R) => {
+    const e = EDGE.scallop(8, 224, 16), F = capeFrame(g, S, e);
+    g.save(); F.path(g); g.clip();
+    g.fillStyle = '#fff7ef'; g.fillRect(0, 0, S, S);
+    g.fillStyle = 'rgba(255,190,215,0.35)'; for (let i = 0; i < 8; i++) g.fillRect(i * 32 + 12, 0, 8, S);
+    const mac = (x, y, sh, cr) => {
+      g.fillStyle = 'rgba(0,0,0,0.12)'; g.beginPath(); g.ellipse(x + 1.5, y + 3, 17, 13, 0, 0, TAU); g.fill();
+      g.fillStyle = sh; g.beginPath(); g.ellipse(x, y - 5, 16, 7, 0, PI, TAU); g.lineTo(x + 16, y - 3); g.lineTo(x - 16, y - 3); g.fill();
+      g.beginPath(); g.ellipse(x, y + 5, 16, 6, 0, 0, PI); g.lineTo(x - 16, y + 3); g.lineTo(x + 16, y + 3); g.fill();
+      g.fillStyle = cr; g.fillRect(x - 15, y - 3, 30, 6);
+      g.fillStyle = 'rgba(255,255,255,0.5)'; g.beginPath(); g.ellipse(x - 5, y - 8, 6, 2, -0.2, 0, TAU); g.fill();
+    };
+    const SH = [['#ffb3cf', '#fff6ee'], ['#a6e8c6', '#ff9fc4'], ['#fff0a0', '#fff6ee'], ['#d4b8ff', '#fff6ee'], ['#9fdcff', '#ffe0ec']];
+    for (let j = 0; j < 5; j++) for (let i = 0; i < 5; i++) { const [a, b] = SH[(i + j * 2) % 5]; mac(28 + i * 50 + (j & 1) * 25 - 12, 26 + j * 42, a, b); }
+    trim(g, S, F, '#ff9fc4', 14);
     g.restore();
   });
 
