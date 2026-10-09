@@ -176,7 +176,7 @@
     })), M.glow('catalGem', 0.55));
     mesh(g, geoC('ez:catal:tines', () => kitGeo(k => {
       for (const x of TX) { k.add(G.cyl(1, 1, 10), 0xffffff, [x, 0.36, 0], 0, [0.0075, 0.22, 0.0075]); k.add(G.sphere(10), 0xffffff, [x, 0.47, 0], 0, 0.0075); }
-    })), M.light('#bff6ff', 2.6 + 0.2 * r), null, null, true);
+    })), M.light('#7eeaff', 2.3 + 0.2 * r), null, null, true);
     mesh(g, geoC('ez:catal:halo', () => kitGeo(k => {
       for (const x of TX) { k.seg([x, 0.255, 0], [x, 0.47, 0], 0.016, 0xffffff, 0.016, 12); k.add(G.sphere(12), 0xffffff, [x, 0.47, 0], 0, 0.016); }
     })), M.halo('#4fd8ff', 0.4), null, null, true);

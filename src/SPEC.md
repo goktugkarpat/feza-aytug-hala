@@ -172,6 +172,25 @@ Tehlike gelirse yarıda bırakır, sonra yeniden dener. Durum: `BILBO_FUN.lost` 
 **Hapşırma**: `GAME.bilboSneeze()` (dünya efektleri: bulut + konfeti, küçük sarsıntı, öndeki boss olmayan huysuzlar geri savrulup 1,4 s sersemler,
 Hala `bilbo_hapsu`); yalnız görüntü için `GAME.Bilbo.sneeze()`. Hikâye sahneleri kullanabilir.
 
+### Eşyalar (src/04_esyalar.js)
+`ITEMS.clearBases()` ile eski ışın kılıcı/uzay eşyaları kaldırılır (eski kayıtlar `make` içinde LEGACY'den bulunur), yerine ev eşyaları
+`ITEMS.register` ile gelir. Modeller Kit ile birleştirilmiş 2–4 parça, geometri/malzeme önbellekte; nadirlik ≥ 2 renkli kenar ışığı.
+Başlangıç: `ITEMS.setStarter('kasik', 'cirpici')`. id (minLvl; * efsane, ! boss hazinesi):
+- Kılıç: kasik Tahta Kaşık Kılıç 0 · oklava 1 · spatula 2 · catal Çatal Işın Kılıcı 3 · kepce 4 · sekerkamisi Şeker Kamışı Kılıcı 5 ·
+  ekmekbicagi Tırtıklı Ekmek Bıçağı 6 · dondurmakasigi 7 · pastakurek* Altın Pasta Küreği · gokkusagiseker* Gökkuşağı Şeker Kılıcı · dondurmakilic! Dondurma Külahı Kılıcı
+- Değnek (heroClass 'wizard'): cirpici Çırpıcı 0 · lolipop 1 (eski model, reuse) · kurabiye 3 · kraker Sihirli Çubuk Kraker 5 · kremasikacagi 7 ·
+  mumdegnek* Doğum Günü Mumu · supurgedegnek! Süpürge Teli
+- Şapka: kevgir 0 · bere Kurdeleli Bere 1 · kekkalibi Kek Kalıbı Kask 2 · fincan 3 · yumurta Yumurta Kabuğu 4 · cupcake 5 · makaron 6 · pastadilimi 7 ·
+  pastataci* Pasta Tacı · kocapastatac! · duduklukask! Düdüklü Kask · dondurmatac! (eski dondurma şapkası, reuse)
+- Pelerin (`ITEMS.paintCape`): onluk Önlük 0 · mutfakbezi 1 · krep 2 · potikare Pötikare Masa Örtüsü 3 · cilekli 5 · buzlu 6 · makaronpelerin 7 ·
+  krema* Krema Pelerin · tozbezi! Toz Bezi Pelerini
+Setler (`ITEMS.SETS`, `def.set`): pastaci (kasik + kekkalibi + onluk, #ffb347) · kahvalti (catal + fincan + krep, #7fe8ff) ·
+sekerci (sekerkamisi + cupcake + cilekli, #ff6fae) · kurabiyeci (kurabiye + yumurta + potikare, #ffcf5a; büyücü seti).
+Boss hazineleri (`ITEMS.BOSS_GIFT`, nadirlik 3; boss eşyalarında classLock yok, silah türü kuralı yine geçerli):
+uykucuSupurge → savaşçı cape:tozbezi, büyücü/ikiz weapon:supurgedegnek · dudukluTencere → hat:duduklukask (hepsi) ·
+dondurmaKrali → savaşçı/ikiz weapon:dondurmakilic, büyücü hat:dondurmatac · kocaPasta → hat:kocapastatac (hepsi).
+Yedek: aynı hediyeler eski taban adlarıyla da (kraljole, kefirdev, lavkaplumbaga, ejderha, kostebekusta, sovalye, duduklu).
+
 ### QA
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
 cheerAll(), hurt(n), down(), info() }`. Python: `scratchpad/qa/hala_qa.py` (sınıf `Hala`, kullanım dosyanın başında), duman testi `hala_smoke.py`.
