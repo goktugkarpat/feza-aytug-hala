@@ -16,7 +16,7 @@
     HUYSUZ.zone('oturma', { boss: 'uykucuSupurge' }); HUYSUZ.zone('mutfak', { boss: 'dudukluTencere' }); HUYSUZ.zone('buzdolabi', { boss: 'dondurmaKrali' }); HUYSUZ.zone('pasta', { boss: 'kocaPasta' });
     return;
   }
-  const { G, PI, col, hdr, mixc, vgrad, qz, qy, lathe, onLathe, face, heartGeo, star5Geo, strawberry, gloss, act, bump, bph, bpt, hurtSide, preAggro, GOLD } = K;
+  const { G, PI, col, hdr, mixc, vgrad, qz, qy, lathe, onLathe, face, heartGeo, star5Geo, strawberry, gloss, profR, act, bump, bph, bpt, hurtSide, preAggro, GOLD } = K;
   const _c = new THREE.Color();
   const wobK = (s, dt, base) => { s.wobA = damp(s.wobA ?? base, base, 3, dt); return s.wobA; };
 
@@ -24,7 +24,7 @@
   // Lavanta-mavi gövde (yumuşak yumurta biçimi), pembe tampon, iki büyük arka teker, üstte açma düğmesi ve uyku şapkası
   // (mavi-beyaz çizgili, ponponlu, ucu sarkar). Sağ yanda halkalı hortum → krom boru → fırçalı emme başlığı (ağız gibi).
   // Arkada kıvrık kablo ve sevimli fiş (kuyruk). Gözler hep uykulu (yarı kapalı), sık sık esner.
-  const SUP = { body: '#8ea4ec', bodyL: '#c9d6ff', bodyD: '#5a6fc8', bump: '#ff9ec2', tire: '#3c3f55', hub: '#f4f6ff', hose: '#9aa3c9', hoseD: '#6d77a6', chrome: '#e6ebf5' };
+  const SUP = { body: '#7b90e4', bodyL: '#aebfff', bodyD: '#4a5cb4', bump: '#ff9ec2', tire: '#3c3f55', hub: '#f4f6ff', hose: '#9aa3c9', hoseD: '#6d77a6', chrome: '#e6ebf5' };
   function buildSupurge(r) {
     r.bone('body', 'root', [0, 0, 0]);
     r.bone('cap', 'body', [0.05, 2.02, -0.05]); r.bone('capTip', 'cap', [0.35, 2.75, -0.2]);
@@ -37,7 +37,7 @@
     gloss(r, [-0.55, 1.75, 0.55], [-0.45, 0.7, 0.5], 0.22, 0.09, 1.2, 0.6);
     gloss(r, [0.62, 1.62, -0.55], [0.5, 0.6, -0.4], 0.12, 0.05, 1.1, -0.4);
     // tampon (yumuşak pembe halka) + alt gölge kısmı
-    r.fx(0, 0.4).add(G.torus(PI * 2, 0.16, 56), SUP.bump, [0, 0.52, 0.02], [PI / 2, 0, 0], [1.13, 1.23, 1.0]);
+    r.fx(0, 0.4).add(G.torus(PI * 2, 0.12, 56), SUP.bump, [0, 0.5, 0.02], [PI / 2, 0, 0], [1.1, 1.2, 0.9]);
     r.fx(0, 0.2).add(G.sphere(28, 12), SUP.bodyD, [0, 0.42, 0], null, [1.02, 0.28, 1.12]);
     // üstte: açma düğmesi (yuvarlak pembe) + güç kadranı + taşıma tutamağı kemeri
     r.fx(0.2, 1).add(G.sphere(18, 12), hdr('#ff6fa8', 1.15), [0.42, 2.0, 0.42], null, [0.17, 0.08, 0.17]);
@@ -171,7 +171,7 @@
   }
 
   // ════════════════ 2. Düdüklü Tencere ════════════════
-  const TEN = { steel: '#dfe5ee', steelL: '#ffffff', steelD: '#9aa6b8', band: '#58b7ff', handle: '#2f3240', knob: '#ff6f61', valve: '#ffd23f' };
+  const TEN = { steel: '#c9d2df', steelL: '#f4f7fb', steelD: '#7d8aa0', enamel: '#f2554e', enamelL: '#ff8c78', enamelD: '#b8323a', band: '#ffffff', handle: '#2f3240', knob: '#ffcf3f', valve: '#ffd23f' };
   const POT_P = [[0, 0.12], [0.95, 0.12], [1.18, 0.2], [1.27, 0.38], [1.29, 0.8], [1.29, 1.4], [1.27, 1.78], [1.22, 1.86], [1.12, 1.88], [0, 1.88]];
   const LID_P = [[0, 1.86], [1.3, 1.86], [1.34, 1.9], [1.28, 1.97], [1.0, 2.07], [0.5, 2.14], [0, 2.16]];
   function buildTencere(r) {
@@ -181,9 +181,17 @@
     r.bone('footL', 'body', [0.55, 0.12, 0.1]); r.bone('footR', 'body', [-0.55, 0.12, 0.1]);
     // parlak çelik gövde (+ mavi şerit etiket, alt kenarda hafif koyu)
     r.on('body').fx(0, 1);
-    r.add(lathe('tenPot', POT_P, 56, 4), vgrad(0.1, 1.9, [[0, TEN.steelD], [0.25, TEN.steel], [0.7, TEN.steelL], [1, TEN.steel]]));
-    r.fx(0, 1).add(G.cyl(1, 1, 56, true), TEN.band, [0, 0.42, 0], null, [1.3, 0.18, 1.3]);
-    for (let i = 0; i < 10; i++) { const a = i / 10 * PI * 2; r.add(G.sphere(8, 6), '#ffffff', [Math.sin(a) * 1.31, 0.42, Math.cos(a) * 1.31], null, [0.05, 0.05, 0.02]); }
+    // (kırmızı emaye düdüklü tencere: beyaz puantiyeli, çelik kapak ve kenar)
+    r.add(lathe('tenPot', POT_P, 56, 4), vgrad(0.1, 1.9, [[0, TEN.enamelD], [0.3, TEN.enamel], [0.8, TEN.enamelL], [1, TEN.enamel]]));
+    r.fx(0, 1).add(G.torus(PI * 2, 0.05, 56), TEN.steel, [0, 1.86, 0], [PI / 2, 0, 0], [1.24, 1.24, 1]);
+    r.fx(0, 0.8).add(G.cyl(1, 1, 56, true), TEN.band, [0, 0.36, 0], null, [1.29, 0.07, 1.29]);
+    r.fx(0, 0.8);
+    for (let i = 0; i < 26; i++) {   // puantiye (yüzün olduğu ön kısım boş)
+      const a = i * 2.39996 + 0.4, y = 0.62 + ((i * 0.618) % 1) * 1.05, aa = Math.atan2(Math.sin(a), Math.cos(a));
+      if (Math.abs(aa) < 0.95 && y > 0.55 && y < 1.75) continue;
+      const rr = profR('tenPot', POT_P)(y) + 0.005;
+      r.add(G.sphere(12, 8), '#fff6f0', [Math.sin(a) * rr, y, Math.cos(a) * rr], qz(Math.sin(a), 0, Math.cos(a)), [0.11, 0.11, 0.025]);
+    }
     // yansıma çizgileri (boyalı parıltı)
     gloss(r, [-0.62, 1.25, 1.1], [-0.5, 0.1, 0.86], 0.07, 0.42, 1.25, 0);
     gloss(r, [-0.85, 1.1, 0.95], [-0.67, 0.1, 0.74], 0.04, 0.28, 1.15, 0);
@@ -213,8 +221,8 @@
     r.fx(0, 0.3).add(G.cyl(1, 1, 12), '#4a3a22', [0, 2.58, 0], null, [0.05, 0.04, 0.05]);
     r.mark('muzzle', [0, 2.62, 0]);
     r.fx(0, 0);
-    face(r, [0, 1.12, 0], 1.29, { bone: 'body', tilt: 0.08, ex: 0.44, ey: 0.18, er: 0.27, iris: '#2b5f9a', skin: TEN.steel, skinFx: 0, browCol: '#2c3446',
-      browY: 1.45, mouthY: -0.36, mouthW: 0.34, heartY: 0.75, heartX: 1.05, heartS: 0.28, mouthPivot: true, blushCol: '#ff8a9a' });
+    face(r, [0, 1.14, 0], 1.29, { bone: 'body', tilt: 0.08, ex: 0.47, ey: 0.2, er: 0.31, iris: '#3a2a6a', skin: TEN.enamel, browCol: '#4a1a24',
+      browY: 1.42, mouthY: -0.4, mouthW: 0.36, heartY: 0.75, heartX: 1.05, heartS: 0.28, mouthPivot: true, blushCol: '#ffb0b8', mouthIn: '#5a1424' });
     return { height: 2.6, glowC: col('#ffd9a0'), dieHop: 0.14, mat: { rough: 0.22, rim: '#ffffff', rimK: 0.3, rimP: 2.2 }, portrait: { cx: 0, cy: 1.5, cz: 0, rad: 1.6, dy: 0.4 } };
   }
   function animTencere(m, dt, st, s) {
@@ -411,7 +419,7 @@
   }
 
   // ════════════════ 4. Koca Huysuz Pasta ════════════════
-  const PAS = { pink: '#ffbfd6', pinkD: '#f392b6', cream: '#fff6ee', creamD: '#f0dcc8', sponge: '#f5c98c', red: '#ff4f6e', choc: '#9a5a3a', plate: '#b9e6ff' };
+  const PAS = { pink: '#f08fb3', pinkD: '#d0638e', pinkL: '#f9b6cf', cream: '#fff1e6', creamD: '#ecd2bc', choc: '#9b5e45', chocD: '#6e3c2a', chocL: '#bf7f5e', red: '#ff3f62', plate: '#b9e6ff' };
   const tierP = (R, y0, h) => [[0, y0], [R - 0.08, y0], [R, y0 + 0.06], [R + 0.02, y0 + h * 0.5], [R, y0 + h - 0.06], [R - 0.1, y0 + h], [0, y0 + h]];
   const ING_COL = ['#ffffff', '#fff1c8', '#ff4f6e', '#ffd6e8'];
   function buildPasta(r) {
@@ -423,14 +431,14 @@
     r.on('body').fx(0, 1).add(G.cyl(1, 0.92, 48), PAS.plate, [0, 0.06, 0], null, [2.25, 0.12, 2.25]);
     r.add(G.torus(PI * 2, 0.05, 48), '#ffffff', [0, 0.12, 0], [PI / 2, 0, 0], [2.22, 2.22, 1]);
     // alt kat: pembe krema, kenarda damlalar, üst kenarda krema süsleri
-    r.fx(0, 0.5).add(lathe('pasT1', tierP(1.9, 0.12, 0.95), 56, 3), vgrad(0.1, 1.07, [[0, PAS.pinkD], [0.6, PAS.pink], [1, mixc(PAS.pink, '#ffffff', 0.3)]]));
+    r.fx(0, 0.6).add(lathe('pasT1', tierP(1.9, 0.12, 0.95), 56, 3), vgrad(0.1, 1.07, [[0, PAS.chocD], [0.55, PAS.choc], [1, PAS.chocL]]));
     for (let i = 0; i < 16; i++) { const a = i / 16 * PI * 2; r.add(G.sphere(12, 8), PAS.cream, [Math.sin(a) * 1.82, 1.08, Math.cos(a) * 1.82], null, [0.2, 0.15, 0.2]); r.add(G.cone(10), PAS.cream, [Math.sin(a) * 1.82, 1.24, Math.cos(a) * 1.82], [0, a, 0], [0.1, 0.16, 0.1]); }
-    for (let i = 0; i < 18; i++) { const a = (i + 0.5) / 18 * PI * 2; r.add(G.capsule(1, 8), mixc(PAS.pink, '#ffffff', 0.5), [Math.sin(a) * 1.9, 0.9 - (i % 3) * 0.06, Math.cos(a) * 1.9], null, [0.08, 0.12 + (i % 3) * 0.05, 0.06]); }
+    for (let i = 0; i < 18; i++) { const a = (i + 0.5) / 18 * PI * 2; r.add(G.capsule(1, 8), PAS.cream, [Math.sin(a) * 1.9, 0.9 - (i % 3) * 0.06, Math.cos(a) * 1.9], null, [0.08, 0.12 + (i % 3) * 0.05, 0.06]); }
     // 4 malzeme yuvası (boş hâli: koyu halka + soluk iç) — dolunca slotN kemiğindeki parlak simge büyür
     for (let i = 0; i < 4; i++) {
       const x = (i - 1.5) * 0.78, z = Math.sqrt(1.92 * 1.92 - x * x), a = Math.atan2(x, z);
       r.fx(0, 1).add(G.torus(PI * 2, 0.16, 28), GOLD, [x * 1.01, 0.55, z * 1.01], [0, a, 0], [0.27, 0.27, 0.2]);
-      r.fx(0, 0.3).add(G.cyl(1, 1, 24), '#d98aa8', [x, 0.55, z - 0.02], [PI / 2, 0, -a], [0.24, 0.05, 0.24]);
+      r.fx(0, 0.3).add(G.cyl(1, 1, 24), '#5a3022', [x, 0.55, z - 0.02], [PI / 2, 0, -a], [0.24, 0.05, 0.24]);
       r.on('slot' + i).fx(1, 0);
       const c = hdr(ING_COL[i], 1.6), p = [x * 1.04, 0.55, z * 1.04];
       if (i === 0) { r.add(G.sphere(12, 10), c, [p[0], p[1] - 0.03, p[2]], null, [0.15, 0.16, 0.06]); r.add(G.sphere(8, 6), c, [p[0], p[1] + 0.14, p[2]], null, [0.06, 0.05, 0.05]); }
@@ -440,9 +448,9 @@
       r.on('body');
     }
     // orta kat: krema beyazı + pembe damlalar + çilekler (yüz burada)
-    r.on('mid').fx(0, 0.5).add(lathe('pasT2', tierP(1.45, 1.05, 0.95), 56, 3), vgrad(1.05, 2.0, [[0, PAS.creamD], [0.5, PAS.cream], [1, '#ffffff']]));
-    for (let i = 0; i < 14; i++) { const a = (i + 0.3) / 14 * PI * 2; r.fx(0, 0.8).add(G.capsule(1, 8), PAS.pinkD, [Math.sin(a) * 1.44, 1.84 - (i % 3) * 0.08, Math.cos(a) * 1.44], null, [0.08, 0.14 + (i % 3) * 0.06, 0.06]); }
-    r.fx(0, 0.8).add(G.torus(PI * 2, 0.07, 56), PAS.pinkD, [0, 1.98, 0], [PI / 2, 0, 0], [1.38, 1.38, 1.5]);
+    r.on('mid').fx(0, 0.5).add(lathe('pasT2', tierP(1.45, 1.05, 0.95), 56, 3), vgrad(1.05, 2.0, [[0, PAS.pinkD], [0.5, PAS.pink], [1, PAS.pinkL]]));
+    for (let i = 0; i < 14; i++) { const a = (i + 0.3) / 14 * PI * 2; r.fx(0, 0.8).add(G.capsule(1, 8), PAS.cream, [Math.sin(a) * 1.44, 1.84 - (i % 3) * 0.08, Math.cos(a) * 1.44], null, [0.08, 0.14 + (i % 3) * 0.06, 0.06]); }
+    r.fx(0, 0.8).add(G.torus(PI * 2, 0.07, 56), PAS.cream, [0, 1.98, 0], [PI / 2, 0, 0], [1.38, 1.38, 1.5]);
     for (let i = 0; i < 6; i++) { const a = (i + 0.5) / 6 * PI * 2 + PI; strawberry(r, [Math.sin(a) * 1.25, 1.98, Math.cos(a) * 1.25], 0.4, 0.2); }
     // kollar: krema kolları + kiraz eller
     for (const sd of [1, -1]) {
@@ -452,7 +460,7 @@
       r.fx(0.4, 0).add(G.sphere(8, 6), hdr('#ffffff', 1.3), [sd * 2.02, 1.34, 0.52], null, 0.05);
     }
     // üst kat: çilek sosu kaplı, kenarda krema
-    r.on('top').fx(0, 0.9).add(lathe('pasT3', tierP(1.0, 1.95, 0.8), 48, 3), vgrad(1.95, 2.75, [[0, PAS.pink], [0.6, '#ff8fb0'], [1, PAS.red]]));
+    r.on('top').fx(0, 0.9).add(lathe('pasT3', tierP(1.0, 1.95, 0.8), 48, 3), vgrad(1.95, 2.75, [[0, PAS.creamD], [0.6, PAS.cream], [1, '#ffffff']]));
     for (let i = 0; i < 12; i++) { const a = i / 12 * PI * 2; r.fx(0, 0.6).add(G.sphere(12, 8), PAS.cream, [Math.sin(a) * 0.92, 2.77, Math.cos(a) * 0.92], null, [0.14, 0.12, 0.14]); }
     for (let i = 0; i < 10; i++) { const a = (i + 0.5) / 10 * PI * 2; r.fx(0, 1).add(G.capsule(1, 8), PAS.red, [Math.sin(a) * 1.0, 2.55 - (i % 2) * 0.08, Math.cos(a) * 1.0], null, [0.07, 0.13 + (i % 2) * 0.06, 0.05]); }
     // mum şapka: 5 çizgili mum (fitilli), ortada büyük çilek
@@ -468,10 +476,10 @@
     strawberry(r.fx(0, 0), [0, 2.78, 0], 0.65, 0);
     r.mark('muzzle', [0, 3.0, 0.5]);
     r.fx(0, 0);
-    face(r, [0, 1.5, 0], 1.47, { bone: 'mid', tilt: 0.05, ex: 0.46, ey: 0.08, er: 0.28, iris: '#6a3a2a', skin: PAS.cream, browCol: '#6a3a3a',
+    face(r, [0, 1.5, 0], 1.47, { bone: 'mid', tilt: 0.05, ex: 0.5, ey: 0.1, er: 0.32, iris: '#6a3a2a', skin: PAS.pink, browCol: '#5a2a2a', mouthIn: '#6a1a34',
       browY: 1.4, mouthY: -0.36, mouthW: 0.36, heartY: 0.7, heartX: 1.1, heartS: 0.3, mouthPivot: true, blushCol: '#ff7fa8' });
     return { height: 3.6, glowC: col('#ffd6e8'), dieHop: 0.08, hide: ['flames', 'slot1', 'slot2', 'slot3'],
-      mat: { rough: 0.45, sss: col('#fff0e8').multiplyScalar(0.05), rim: '#fff4fa', rimK: 0.28, rimP: 2.3, wob: 0.01, wobF: 1.2, wobS: 2.6 }, portrait: { cx: 0, cy: 2.0, cz: 0, rad: 2.2, dy: 0.5 } };
+      mat: { rough: 0.5, sss: col('#fff0e8').multiplyScalar(0.03), rim: '#fff4fa', rimK: 0.16, rimP: 2.6, wob: 0.01, wobF: 1.2, wobS: 2.6 }, portrait: { cx: 0, cy: 2.0, cz: 0, rad: 2.2, dy: 0.5 } };
   }
   function animPasta(m, dt, st, s) {
     const B = m.B, ph = bph(st), t = bpt(st), pre = preAggro(s, st, ph, dt);

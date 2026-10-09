@@ -6452,6 +6452,6 @@ const EMODEL = (function (G0) {
   // (HUYSUZ EMODEL.build'i sarar; kayıtlı tipin model() kurucusu make ile kendi Rig modelini kurar). KIT: Rig yardımcıları.
   function register(type, buildFn, animFn, lod) { TYPES[type] = [buildFn, animFn]; if (lod) LOD[type] = lod; }
   const KIT = { G, PI, col, hdr, mixc, rich, vgrad, qz, qy, qb, onEll, lathe, onLathe, extrude, gx, face, crown, cone, softSpike, heartGeo, heartShape,
-    star5Geo, strawberry, gloss, act, bump, bph, bpt, hurtSide, preAggro, texOf, GOLD, seamNormals, creased, fbm3, sN: (n, m) => sN(n, m) };
+    star5Geo, strawberry, gloss, profR, act, bump, bph, bpt, hurtSide, preAggro, texOf, GOLD, seamNormals, creased, fbm3, sN: (n, m) => sN(n, m) };
   return { build, make: build, register, KIT, owl, merchant, babyDragon, sancak, jellyCrown, havuc, serinTas, hole, crystal, warm, stats, TYPES: Object.keys(TYPES), VARIANTS, PROPS: Object.keys(PROPS) };
 })(G);

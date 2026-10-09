@@ -56,10 +56,11 @@ const BOSSDAV = (() => {
         break;
       }
       case 'buhar': case 'toz': {   // yumuşak bulut (buhar: beyaz-mavi, toz: bej-lila)
-        const m = mat(kind, kind === 'buhar' ? { color: '#ffffff', roughness: 1, transparent: true, opacity: 0.62, emissive: '#cfe9ff', emissiveIntensity: 0.35, depthWrite: false }
-          : { color: '#d8cbbf', roughness: 1, transparent: true, opacity: 0.7, emissive: '#b9a7d9', emissiveIntensity: 0.15, depthWrite: false });
-        const P0 = [[0, 0.55, 0, 0.75], [0.6, 0.45, 0.2, 0.55], [-0.55, 0.45, -0.15, 0.6], [0.15, 0.9, -0.3, 0.5], [-0.2, 0.4, 0.55, 0.5], [0.3, 0.35, -0.6, 0.45]];
-        for (const p of P0) { const o = add(sph, m, [p[0], p[1], p[2]], p[3]); o.castShadow = false; }
+        // (yere yakın, yarı saydam yumuşak puflar: kameradan bakınca Feza'yı örtmez)
+        const m = mat(kind, kind === 'buhar' ? { color: '#e4f3ff', roughness: 1, transparent: true, opacity: 0.38, emissive: '#9fcfff', emissiveIntensity: 0.08, depthWrite: false }
+          : { color: '#b9a99c', roughness: 1, transparent: true, opacity: 0.45, emissive: '#8f7fb0', emissiveIntensity: 0.05, depthWrite: false });
+        const P0 = [[0, 0.22, 0, 0.6], [0.62, 0.18, 0.25, 0.45], [-0.58, 0.18, -0.2, 0.5], [0.2, 0.3, -0.5, 0.42], [-0.3, 0.16, 0.55, 0.42], [0.55, 0.15, -0.45, 0.36], [-0.65, 0.14, 0.4, 0.34]];
+        for (const p of P0) { const o = add(sph, m, [p[0], p[1], p[2]], [p[3], p[3] * 0.55, p[3]]); o.castShadow = false; o.renderOrder = 3; }
         break;
       }
       case 'dalga': {   // dönen krema dalgası: uzun, yumuşak krema rulosu (+z boyunca 1 m; scale.z = boy)
@@ -69,7 +70,7 @@ const BOSSDAV = (() => {
         break;
       }
       case 'buz': {   // buz kaydırağı izi (yere serili, yarı saydam)
-        const m = mat('buz', { color: '#c8f0ff', roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.55, emissive: '#9ad8ff', emissiveIntensity: 0.25, depthWrite: false });
+        const m = mat('buz', { color: '#c8f0ff', roughness: 0.08, metalness: 0.1, transparent: true, opacity: 0.32, emissive: '#9ad8ff', emissiveIntensity: 0.1, depthWrite: false });
         const o = add(geo('box', () => new THREE.BoxGeometry(1, 1, 1)), m, [0, 0.03, 0.5], [1, 0.05, 1]); o.castShadow = false; o.receiveShadow = true;
         break;
       }
@@ -195,7 +196,7 @@ const BOSSDAV = (() => {
       const c = W.clouds[i]; c.t += dt;
       const inK = clamp01((c.t - c.at) / 0.35), outK = clamp01((c.at + c.dur - c.t) / 0.8), k = Math.min(inK, outK);
       c.prop.visible = k > 0.01;
-      c.prop.scale.set(c.r * (0.4 + 0.6 * k), c.r * (0.3 + 0.6 * k) * (1 + 0.05 * Math.sin(c.t * 3)), c.r * (0.4 + 0.6 * k));
+      c.prop.scale.set(c.r * (0.4 + 0.6 * k), (0.5 + 0.5 * k) * (1 + 0.08 * Math.sin(c.t * 3)), c.r * (0.4 + 0.6 * k));
       c.prop.rotation.y += dt * 0.25; c.prop.position.set(c.x, 0, c.z);
       if (c.slow && k > 0.5 && !P.dead && sq(P.pos.x - c.x) + sq(P.pos.z - c.z) < sq(c.r * 0.9)) { P.slowT = 0.15; P.slowK = 0.55; if ((c.fxT -= dt) <= 0) { c.fxT = 0.35; A.burst('steam', P.pos.x, 0.8, P.pos.z, { count: 3 }); } }
       if (c.t >= c.at + c.dur) { putProp(c.prop); W.clouds.splice(i, 1); }
@@ -357,7 +358,7 @@ const BOSSDAV = (() => {
       nap(b, S, dt) {
         const t = b.stT;
         if (b.did === 0) { b.did = 1; S.n = 0; S.napCd = 2; sayOne(S, ['supurge_uyudu', 'supurge_uyudu2']); A.sfx('sigh', { x: b.x, z: b.z, pitch: 0.7 }); }
-        b.st.sleep = 1;
+        b.st.sleep = 1; faceTo(b, A.P.pos.x, A.P.pos.z, 1.5, dt);   // (uyurken yüzü Feza'ya döner: horlayan yüzü görsün)
         if ((S.zT = (S.zT || 0) - dt) <= 0) { S.zT = 0.9; A.burst('zzz', b.x + Math.sin(b.face) * b.r * 0.6, b.height * 0.85, b.z + Math.cos(b.face) * b.r * 0.6, {}); A.sfx('sigh', { x: b.x, z: b.z, pitch: 0.55 + 0.1 * Math.sin(t), vol: 0.5 }); }
         if (t >= b.phD) { b.st.sleep = 0; A.ftext(b.x, b.height + 0.4, b.z, 'Hıı? Uyanıktım!', 'word'); A.bossEnd(b, 0.6, 1.0); }
       },
@@ -437,7 +438,7 @@ const BOSSDAV = (() => {
         if (b.did < 3 && t >= at[b.did]) {
           const P = A.P, m = A.muzzle(b), j = b.did === 0 ? 0 : 1.6;
           const a = rnd(0, TAU2), x = P.pos.x + Math.sin(a) * j + (P.pos.x - b.x) * 0.06, z = P.pos.z + Math.cos(a) * j;
-          drop({ b, x, z, r: 1.15, at: 1.15, kind: 'kartopu', from: [m.x, m.y, m.z], h: 2.4, col: '#7fd0ff', dmgK: 0.3, fx: 'ice', ringCol: '#d8f4ff', sfx: 'splat' });
+          drop({ b, x, z, r: 1.15, at: 1.15, kind: 'kartopu', from: [m.x, m.y, m.z], h: 2.4, col: '#5a6bff', dmgK: 0.3, fx: 'ice', ringCol: '#d8f4ff', sfx: 'splat' });
           A.sfx('whoosh', { x: b.x, z: b.z, pitch: 1.3, vol: 0.6 }); b.did++;
         }
         if (t >= b.phD) A.bossEnd(b, 0.8, 1.2);
@@ -449,7 +450,7 @@ const BOSSDAV = (() => {
           b.did = 1; const a = Math.atan2(ux, uz), dx = Math.sin(a), dz = Math.cos(a), rm = A.bossRoom();
           S.len = Math.max(3, Math.min(14, A.laneLen(b.x, b.z, dx, dz, 14, b.r * 0.8, rm)));
           S.x0 = b.x; S.z0 = b.z; S.dx = dx; S.dz = dz; S.hit = false;
-          b.tele = teleLine(b.x, b.z, b.x + dx * (S.len + b.r * 0.5), b.z + dz * (S.len + b.r * 0.5), b.r * 2 + 0.3, 1.4, '#6fc8ff');
+          b.tele = teleLine(b.x, b.z, b.x + dx * (S.len + b.r * 0.5), b.z + dz * (S.len + b.r * 0.5), b.r * 2 + 0.3, 1.4, '#4f6dff');
           const pr = getProp('buz'); pr.position.set(b.x, 0, b.z); pr.rotation.y = a; W.strips.push({ prop: pr, t: 0, dur: 5.5, w: b.r * 2, len: S.len + b.r });
           b.face = a; A.ftext(b.x, b.height + 0.5, b.z, 'Buz kaydırağı!', 'word');
         }
@@ -501,7 +502,7 @@ const BOSSDAV = (() => {
         if (b.did === 0 && t > 0.3) {
           b.did = 1; A.ftext(b.x, b.height + 0.5, b.z, 'Krema halkası!', 'word'); A.sfx('squish', { x: b.x, z: b.z, pitch: 0.8 });
           const top = [b.x, b.height, b.z], a0 = rnd(0, TAU2);
-          for (const [R, n, at, off] of [[b.r + 1.7, 6, 1.3, 0], [b.r + 4.6, 9, 2.2, 0.5]]) {
+          for (const [R, n, at, off] of [[b.r + 1.7, 5, 1.3, 0], [b.r + 4.6, 8, 2.2, 0.5]]) {
             for (let i = 0; i < n; i++) {
               const a = a0 + (i + off) / n * TAU2, x = b.x + Math.sin(a) * R, z = b.z + Math.cos(a) * R;
               drop({ b, x, z, r: 1.05, at, kind: 'krema', from: top, h: 2.5, col: '#ff8fc0', dmgK: 0.25, fx: 'cream', ringCol: '#ffe0ee', sfx: i % 3 ? null : 'splat' });
@@ -632,7 +633,7 @@ const BOSSDAV = (() => {
     }
     const left = (b.hp - amount) / b.maxHp;
     for (let i = 0; i < 2; i++) {
-      if (S.stage === i + 1 && !S.pending && left <= STAGE_AT[i]) { S.pending = i + 2; return Math.max(0, b.hp - Math.round(b.maxHp * STAGE_AT[i])); }
+      if (S.stage === i + 1 && (!S.pending || S.pending === S.stage) && left <= STAGE_AT[i]) { S.pending = i + 2; return Math.max(0, b.hp - Math.round(b.maxHp * STAGE_AT[i])); }
     }
     if (S.pending && S.pending !== S.stage) return 0;
     if (S.stage === 3 && left <= FINISH_AT) { S.tired = true; return Math.max(0, b.hp - Math.round(b.maxHp * FINISH_AT)); }
