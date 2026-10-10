@@ -638,6 +638,37 @@ const STORY = (() => {
     }
   }
 
+  // ───────────────────────── ?ikon: iPad simgesi (1024x1024) ─────────────────────────
+  // Yakın, sıcak kare kompozisyon: ortada kocaman gülen Feza (silahsız), yanında ona sokulmuş Aytuğ Hala, önde dili dışarıda Bilbo,
+  // arkada ada tezgâhında pasta, etrafta birkaç renkli sihirli şeker. Önemli her şey ortadaki %80'de (iOS köşeleri yuvarlar).
+  const ICONP = { feza: [0.08, 0.72], hala: [-0.48, 0.42], halaFace: 0.6, halaPose: 'hug', bilbo: [0.86, 1.0], look: [0.1, 0.95, 0.55], cam: [0.22, 1.45, 4.7] };
+  let iconInit = false;
+  function iconTick(dt) {
+    const g = G_(); if (!g || !TS.K || !g.L || !g.L._storyTitle) return false;
+    TS.t += dt;
+    hideWeapon();
+    if (!TS.hidden) { TS.hidden = true; const grp = TS.K.g.parent; if (grp) for (const c of grp.children) if (c !== TS.K.g && c.isMesh !== undefined) c.visible = false; }
+    const f = ACT.feza, b = ACT.bilbo, h = ACT.hala;
+    Object.assign(f, { x: ICONP.feza[0], z: ICONP.feza[1], y: 0, face: -0.08, s: 1, move: 0, cheer: false, lean: 0 });
+    Object.assign(h, { x: ICONP.hala[0], z: ICONP.hala[1], y: 0, face: ICONP.halaFace ?? 0.75, s: 1, act: 'idle' });
+    const HLq = H_(); if (ICONP.halaPose && HLq && HLq._qa && HLq._qa.pose) try { HLq._qa.pose(ICONP.halaPose, 1); } catch (e) { /* ignore */ }   // Feza'ya sarılır
+    Object.assign(b, { x: ICONP.bilbo[0], z: ICONP.bilbo[1], y: 0, face: -0.85, s: 1, speed: 0.12, bark: 0.45, nose: -0.12, sit: 0, hop: 0, lick: 0, pounce: 0 });
+    const H = g.H, hs = H && H._S;
+    if (hs && !hs.fixed) hs.fixed = (P, face) => { face.happy = 0; face.grin = 1; face.blush = Math.max(face.blush || 0, 0.7); };   // gözler açık, kocaman gülüş
+    FST.cheer = false;
+    poseChars(dt, TS.t);
+    if (!iconInit) {   // birkaç şeker kahramanların çevresinde süzülür (sabit, parıltılı)
+      iconInit = true;
+      const S = TS.sugar;
+      for (let i = 0; i < S.n; i++) S.mode[i] = 5;
+      const spots = [[-1.05, 1.9, 0.5], [1.05, 1.75, 0.7], [-0.75, 0.55, 1.2], [1.2, 0.95, 0.25], [0.55, 2.15, 0.2], [-1.2, 1.25, 0.9], [0.95, 0.4, 1.5], [-0.25, 2.25, 0.35]];
+      spots.forEach((q, k) => { const o = k * 3; S.mode[k] = 7; S.p[o] = q[0]; S.p[o + 1] = q[1]; S.p[o + 2] = q[2]; S.sc[k] = 2.6; S.ph[k] = k * 1.3; });
+    }
+    sugarsStep(TS.sugar, 0, TS.t);
+    g.P.pos.set(origin.x + 0.1, 0, origin.z + 0.4);
+    return true;
+  }
+
   // ───────────────────────── Sinematik altyapı ─────────────────────────
   const CINE = { on: false, kind: '', beats: null, i: -1, t: 0, bt: 0, dur: 0, done: null, skipAll: false, cam: null, w: 0, near: 0.5 };
   const CAM_ = { pos: new THREE.Vector3(), look: new THREE.Vector3(), tpos: new THREE.Vector3(), tlook: new THREE.Vector3(), k: 3, snap: true, fov: 40, tfov: 40 };
@@ -1328,7 +1359,9 @@ const STORY = (() => {
     const ending_ = CINE.on && CINE.kind === 'ending';
     if (!title && !ending_ && !MOM.on) { if (c.near !== 0.5 || c.fov !== 40) restoreNear(); return false; }
     if (MOM.on && !title && !ending_) { momentCamera(dt); return true; }
-    if (title && !CINE.on && !window.__camHold) titleCamera();   // (__camHold: QA yakın çekim)
+    if (title && !CINE.on && typeof ICON !== 'undefined' && ICON) {   // simge kamerası
+      camTo(ICONP.cam[0], ICONP.cam[1], ICONP.cam[2], ICONP.look[0], ICONP.look[1], ICONP.look[2], 3, true); CINE.near = 0.3;
+    } else if (title && !CINE.on && !window.__camHold) titleCamera();   // (__camHold: QA yakın çekim)
     const k = 1 - Math.exp(-CAM_.k * dt);
     CAM_.pos.lerp(CAM_.tpos, CAM_.snap ? 1 : k); CAM_.look.lerp(CAM_.tlook, CAM_.snap ? 1 : k); CAM_.snap = false;
     CAM_.fov += (CAM_.tfov - CAM_.fov) * k;
@@ -1400,7 +1433,7 @@ const STORY = (() => {
   return {
     MALZEME, KAYIP,
     intro, zone, area, ingredient, lostItem, locked, station, ending,
-    buildTitle, titleTick, ownsWorld, playIntro, logo,
+    buildTitle, titleTick, iconTick, ownsWorld, playIntro, logo,
     camera: cameraHook,
     busy: () => CINE.on,
     endingDone: false,
