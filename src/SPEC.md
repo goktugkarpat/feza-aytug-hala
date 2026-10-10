@@ -291,6 +291,14 @@ Feza 2,6 m yaklaşınca kar tümseği açılır ve `GAME.foundLostItem('toka','b
 boss neşelenince havai fişek + konfeti kendiliğinden başlar (STORY.ending'den bağımsız); `ODAB.celebrate()` bir anda büyük kutlama (hikâye ajanı STORY.ending'de çağırabilir).
 Her iki bölümde bir mini oyun köşesi (`L.stations` `{kind:'mini', mini}`): kayıtlı mini oyunlardan bölüme uyan id (`buzPateni`/`paten`…, `sekerYakala`/`pasta`…), yoksa ilki.
 
+### 5. oda: Balkon Bahçesi (src/06z_balkon.js · huysuzlar src/05h_balkon.js · sesler src/02l_balkon.js)
+İsteğe bağlı ödül odası (bölge 5, `malzeme: null`; 06a `isOpen` yalnız malzemeli odaların bosslarını sayar → Pasta kilidi hâlâ 3 malzeme).
+Alanlar: Saksı Ormanı (dev saksılar, sulama kabından damlalar) · Çiçek Tepesi (zıplatan çiçek yatakları `L.balkonPads`, polen) · Kuş Yemi
+Bahçesi (tohumlar, serçeler, rüzgâr çanı) · arena: ahşap bitki standı + kovan. İstasyonlar: `{kind:'mini', mini:'cicekSula'}`, `{kind:'binis'}`.
+Huysuzlar: bahceSalyangozu, ugurBocegi, karinca (elit), tirtil (neşelenince kelebek), altinUgur (nadir); boss `ariKralice` (base kefirdev).
+Kayıp eşya `telefon`. Ödül (boss ilk neşelenişte): `unlockCostume('superkahraman')`, 3 çiçek pasta süsü, çıkartma `balkon_bahce`.
+Merkezdeki 5. kapı: 06z_balkon masa `yerlesim`/`kur`'unu sarar (`kapi_balkon`, son kapının yanına).
+
 ### QA
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
 cheerAll(), hurt(n), down(), info() }`. Python: `scratchpad/qa/hala_qa.py` (sınıf `Hala`, kullanım dosyanın başında), duman testi `hala_smoke.py`.
