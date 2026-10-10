@@ -286,7 +286,7 @@ const HALA = (() => {
   }
   const hairThick = (th, ph) => 0.016 + 0.01 * sstep(0.2, 1.4, Math.abs(th)) * sstep(-0.6, 0.3, ph);
   const capLift = (th, ph) => { const hl = hairline(th); return hairThick(th, ph) * sstep(hl - 0.03, hl + 0.16, ph) + 0.004 * sstep(hl - 0.05, hl, ph) - 0.006; };
-  const BUN_PH = 0.48;
+  const BUN_PH = 0.9;   // yüksek topuz: önden bakınca da başın üstünde görünür
   const BD = dirOf(Math.PI, BUN_PH).normalize(), BE1 = v3(1, 0, 0), BE2 = v3().crossVectors(BD, BE1).normalize();
   const _sa = v3(), _sn = v3();
   function surfAt(d, lift, o) {
@@ -350,25 +350,25 @@ const HALA = (() => {
     return sweep(P, U, t => w * (1 - 0.55 * t), t => w * 0.75 * (1 - 0.55 * t), 6, 1, (t, c) => hairTone(tone, c, 0.7), t => 0.15 + 0.85 * t);
   }
   function bunGeos() {
-    const R0 = surfAt(BD, 0, v3()).sub(HC).length(), C = HC.clone().addScaledVector(BD, R0 + 0.035), out = [];
+    const R0 = surfAt(BD, 0, v3()).sub(HC).length(), C = HC.clone().addScaledVector(BD, R0 + 0.062), out = [];
     const q = qAlign(v3(0, 0, 1), BD);
     // dolgu (boşluk kalmasın)
-    out.push(withAttrs(kitGeo(k => k.add(G.sphere(20), (x, y, z, c) => hairTone(-0.3, c || new THREE.Color()), [C.x, C.y, C.z], q, [0.056, 0.056, 0.042])), null, 0.25));
+    out.push(withAttrs(kitGeo(k => k.add(G.sphere(20), (x, y, z, c) => hairTone(-0.3, c || new THREE.Color()), [C.x, C.y, C.z], q, [0.086, 0.086, 0.064])), null, 0.25));
     // burgulu topuz: 2,3 tur içe doğru küçülen örgü
     const P = [], U = [], N = 90;
     for (let i = 0; i <= N; i++) {
-      const t = i / N, a = t * 2.35 * TAU + 0.4, r = lerp(0.058, 0.01, Math.pow(t, 0.9)), h = lerp(-0.004, 0.034, sstep(0, 1, t)) + 0.012 * Math.sin(t * Math.PI);
+      const t = i / N, a = t * 2.35 * TAU + 0.4, r = lerp(0.088, 0.014, Math.pow(t, 0.9)), h = lerp(-0.006, 0.056, sstep(0, 1, t)) + 0.018 * Math.sin(t * Math.PI);
       P.push(C.clone().addScaledVector(BD, h).addScaledVector(BE1, Math.cos(a) * r).addScaledVector(BE2, Math.sin(a) * r));
       U.push(BD);
     }
-    out.push(sweep(P, U, t => lerp(0.026, 0.012, t), t => lerp(0.021, 0.011, t), 8, 1, (t, c) => hairTone(0.35 * Math.sin(t * 40), c, 0.9), () => 0.3));
+    out.push(sweep(P, U, t => lerp(0.038, 0.017, t), t => lerp(0.031, 0.015, t), 8, 1, (t, c) => hairTone(0.35 * Math.sin(t * 40), c, 0.9), () => 0.3));
     // mercan rengi toka (lastik): topuzun dibinde fırfırlı halka
-    const S = C.clone().addScaledVector(BD, -0.03), CO = 0xe0483f;
+    const S = C.clone().addScaledVector(BD, -0.05), CO = 0xe0483f;
     out.push(withAttrs(kitGeo(k => {
-      k.add(G.torus(TAU, 0.32, 36), CO, [S.x, S.y, S.z], q, [0.05, 0.05, 0.05]);
+      k.add(G.torus(TAU, 0.32, 36), CO, [S.x, S.y, S.z], q, [0.074, 0.074, 0.074]);
       for (let i = 0; i < 14; i++) {
-        const a = i / 14 * TAU, p = S.clone().addScaledVector(BE1, Math.cos(a) * 0.053).addScaledVector(BE2, Math.sin(a) * 0.053);
-        k.add(G.sphere(8, 6), i & 1 ? 0xf05a50 : 0xd9443b, [p.x, p.y, p.z], q, [0.017, 0.017, 0.02]);
+        const a = i / 14 * TAU, p = S.clone().addScaledVector(BE1, Math.cos(a) * 0.08).addScaledVector(BE2, Math.sin(a) * 0.08);
+        k.add(G.sphere(8, 6), i & 1 ? 0xf05a50 : 0xd9443b, [p.x, p.y, p.z], q, [0.026, 0.026, 0.029]);
       }
     }), null, 0.1));
     // topuzdan kaçan iki kıvrık tutam
@@ -687,12 +687,13 @@ const HALA = (() => {
       eye = mix(eye, vec3(1.0), cl);
       // kirpik çizgisi (dış köşeye doğru kalınlaşır) + kanat
       float ly = e.y - lid;
-      float lw = mix(0.09, 0.2, smoothstep(-0.6, 1.0, e.x)) + 0.06 * hzEye.x;
+      float bold = hzBrow.w;
+      float lw = mix(0.09, 0.2, smoothstep(-0.6, 1.0, e.x)) + 0.06 * hzEye.x + 0.13 * bold;
       float lash = smoothstep(-0.06 - aE, -0.06 + aE, ly) * (1.0 - smoothstep(lw - aE, lw + aE, ly)) * (1.0 - smoothstep(0.95, 1.05, abs(e.x)));
       float shut = max(hzEye.x, sqz);
       float wy = mix(0.34, 0.06, shut);
       float wt = clamp((e.x - 0.84) / 0.46, 0.0, 1.0);
-      float wing = hzLine(hzSeg(e, vec2(0.84, wy + 0.04), vec2(1.3, wy + 0.32)), mix(0.085, 0.02, wt), aE);
+      float wing = hzLine(hzSeg(e, vec2(0.84, wy + 0.04), vec2(1.3 + 0.12 * bold, wy + 0.32 + 0.08 * bold)), mix(0.085, 0.02, wt) * (1.0 + 0.9 * bold), aE);
       float lower = hzLine(abs(e.y - lidL - 0.035), 0.03, aE) * smoothstep(1.0, 0.3, abs(e.x - 0.15)) * (1.0 - shut);
       float happy = hzLine(abs(e.y - hy) / sqrt(1.0 + hzSq(1.24 * hx)), 0.14, aE) * (1.0 - smoothstep(0.9, 1.02, abs(e.x)));
       float calm = hzLine(abs(e.y - cy) / sqrt(1.0 + hzSq(0.7 * hx)), 0.12, aE) * (1.0 - smoothstep(0.9, 1.02, abs(e.x)));
@@ -706,7 +707,7 @@ const HALA = (() => {
         float llid = mix(mix(ltop, mix(lcy + 0.02, lhy, cmp) + 0.03, sqz), lbot * 0.85 + 0.05, hzEye.x);
         vec2 p0 = vec2(lx, llid + 0.06), dir = normalize(vec2(0.3 + 0.35 * float(i), 1.0));
         float h = clamp(dot(e - p0, dir) / 0.26, 0.0, 1.0);
-        strands = max(strands, hzLine(length(e - p0 - dir * h * 0.26), mix(0.045, 0.012, h), aE));
+        strands = max(strands, hzLine(length(e - p0 - dir * h * 0.26), mix(0.045, 0.012, h) * (1.0 + 0.8 * hzBrow.w), aE));
       }
       float ow = smoothstep(0.05, 0.35, hzEyeW.x), cw = smoothstep(0.45, 0.9, sqz);
       col = mix(col, lashC, strands * mix(0.85, 0.6, cw));
@@ -721,7 +722,7 @@ const HALA = (() => {
       // kaşlar: kavisli, içte dolgun, dışa doğru incelen
       float bx = e.x;
       float by = 0.25 + 0.045 * (1.0 - hzSq((bx - 0.25) / 1.1)) + hzBrow.x * 0.042 - hzBrow.y * 0.032 * bx;
-      float bw = mix(0.021, 0.0085, smoothstep(-1.0, 1.15, bx));
+      float bw = mix(0.021, 0.0085, smoothstep(-1.0, 1.15, bx)) * (1.0 + 0.35 * bold);
       float brow = hzLine(abs(q.y - by), bw, aa) * (1.0 - smoothstep(0.95, 1.12, abs(bx - 0.1))) * mix(0.75, 1.0, smoothstep(-1.0, -0.7, bx));
       col = mix(col, SRGB(0.2, 0.11, 0.07), brow * 0.95);
       // ağız
@@ -736,7 +737,7 @@ const HALA = (() => {
       float lipUp = exp(-hzSq(m.x / 0.085) - hzSq((m.y - sy - 0.012) / 0.0095)) * (1.0 - 0.4 * exp(-hzSq(m.x / 0.012) - hzSq((m.y - sy - 0.019) / 0.006)));
       float lipLo = exp(-hzSq(m.x / 0.078) - hzSq((m.y - sy + 0.021) / 0.016));
       float dimple = exp(-hzSq((abs(m.x) - 0.128) / 0.01) - hzSq((m.y - 0.032) / 0.012));
-      col = mix(col, lipC, (0.85 * lipLo + 0.7 * lipUp) * cs);
+      col = mix(col, mix(lipC, SRGB(0.9, 0.28, 0.4), bold), clamp((0.85 * lipLo + 0.7 * lipUp) * (1.0 + 0.6 * bold), 0.0, 1.0) * cs);
       col = mix(col, col * 1.18, 0.3 * exp(-hzSq((m.x + 0.015) / 0.025) - hzSq((m.y - sy + 0.024) / 0.006)) * cs);
       col = mix(col, col * SRGB(0.82, 0.62, 0.6), dimple * 0.55 * cs);
       col = mix(col, lineC, smileL * cs);
@@ -751,7 +752,7 @@ const HALA = (() => {
       vec3 gc = mix(inner, SRGB(0.92, 0.45, 0.5), 1.0 - smoothstep(0.03 - aa, 0.03 + aa, length((m - vec2(0.0, gb + 0.016)) / vec2(1.7, 1.0))));
       float tY = gt - 0.017 * mix(0.6, 1.0, hzMouth.z);
       gc = mix(gc, vec3(0.97), smoothstep(tY - aa, tY + aa, m.y));
-      col = mix(col, lipC, gLip * oa);
+      col = mix(col, mix(lipC, SRGB(0.9, 0.28, 0.4), bold), gLip * oa);
       col = mix(col, gc, gI * oa);
       gloss = max(gloss, max(gI * oa * 0.6, lipLo * 0.45 * cs));
     }`;
@@ -1853,15 +1854,19 @@ const HALA = (() => {
     const buf = new Uint8Array(N * N * 4), cv = document.createElement('canvas'); cv.width = cv.height = N;
     const out = {};
     try {
-      idlePose(M.P, 0); M.P[C.kRZ] = 0.12; M.P[C.kRX] = -0.03; M.P[C.kRY] = 0.12; applyPose(M.P);
+      idlePose(M.P, 0); M.P[C.kRZ] = -0.1; M.P[C.kRX] = 0.02; M.P[C.kRY] = 0.16; M.P[C.cRY] = 0.12; applyPose(M.P);
       HU.hzOff.value.set(0, 0, 0); S.held.visible = false;
       root.position.set(0, 0, 0); root.rotation.y = 0; sc.add(root); root.updateMatrixWorld(true);
       S.headC.getWorldPosition(_v);
-      cam.position.set(_v.x + 0.3, _v.y + 0.08, _v.z + 1.62); cam.lookAt(_v.x + 0.01, _v.y - 0.01, _v.z);
+      // 3/4 açı, hafif yukarıdan: topuz ve mercan toka başın arkasında görünsün, kırmızı polar yaka kadrajda
+      const ca = 0.7; cam.fov = 27; cam.updateProjectionMatrix();
+      cam.position.set(_v.x + Math.sin(ca) * 1.6, _v.y + 0.26, _v.z + Math.cos(ca) * 1.6); cam.lookAt(_v.x - 0.04, _v.y + 0.025, _v.z - 0.07);
+      const spark = new THREE.PointLight(0xfff2d0, 1.6, 4, 1.5); spark.position.copy(cam.position).add(v3(0.3, 0.25, 0)); sc.add(spark);
+      const rim = new THREE.DirectionalLight(0xffd6c2, 1.1); rim.position.set(_v.x - 1.5, _v.y + 1.2, _v.z - 1.6); sc.add(rim);
       const g = cv.getContext('2d');
-      for (const [k, mo, eye, ew] of [['smile', [1, 0, 0, 0], [0, 0.15, 0.05, 0], [1, 0, 0]], ['talk', [0, 1, 0.9, 0.6], [0, 0.15, 0.05, 0], [1, 0, 0]],
+      for (const [k, mo, eye, ew] of [['smile', [0.15, 0.85, 0.35, 1], [0, 0.15, 0.05, 0], [1, 0, 0]], ['talk', [0, 1, 0.95, 0.65], [0, 0.15, 0.05, 0], [1, 0, 0]],
         ['blink', [0.3, 0.75, 0.42, 0.9], [0, 0, 0, 0], [0, 1, 0]]]) {
-        U.hzMouth.value.set(...mo); U.hzEye.value.set(...eye); U.hzEyeW.value.set(...ew); U.hzBrow.value.set(0.35, 0, 0.6, 0);
+        U.hzMouth.value.set(...mo); U.hzEye.value.set(eye[0], 0.7, 0.0, 0); U.hzEyeW.value.set(...ew); U.hzBrow.value.set(0.4, 0, 0.75, 1);
         renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(true, true, true);
         renderer.render(sc, cam);
         renderer.readRenderTargetPixels(rt, 0, 0, N, N, buf);
