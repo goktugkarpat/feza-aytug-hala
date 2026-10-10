@@ -1199,20 +1199,50 @@ const AUD = (() => {
     vcur = null; A.current = null;
   }
   window.addEventListener('feza-language-change', () => { stopCur(); VQ.length = 0; clearTimeout(vgap); vgap = null; duck(false); });
+  // ── Konuşma sırası (Dev Ev): her cümlenin bir sınıfı var: hikâye 5 > boss 4 > görev/oda 3 > tanıtım 2 > övgü 1.
+  // Aynı anda birçok sistem konuşmak isterse: yüksek sınıf kuyrukta öne geçer; övgü konuşma varken hiç söylenmez;
+  // tanıtım ancak kuyruk boşsa bekler; yüksek sınıf gelince kuyruktaki övgü/tanıtımlar atılır ve o an çalan övgü/tanıtım kesilir;
+  // düşük sınıflar kısa süre bekleyip bayatlar (eski cümle sonradan çıkmaz). Kuyruk en çok 3.
+  const RANK_RX = [
+    [5, /^(intro_|masa_ilk|masa_donus|oda_(oturma|mutfak|buzdolabi|pasta|balkon)$|gorev_|malzeme_|kayip_|pasta_acildi|pasta_kilitli|son$|son_|kristal$|tekrar$|hos_geldin$|balkon_acildi|hikaye_)/],
+    [4, /^(uykucuSupurge_|dudukluTencere_|dondurmaKrali_|kocaPasta_|ariKralice_|pasta_(asama|kurabiye|dalga|takim)|supurge_|ipucu_|hala_boss|kocaman$|boss_)/],
+    [1, /^(ovgu|hala_ovgu|his_kombo_|his_nese_|his_yildiz|susle_ovgu|hala_hop|hala_dans|dans_|hala_takim_hazir|hala_yaninda|hala_burada)/],
+    [2, /^(ilk_|nadir_|ck_|surpriz_|kostum_|set_tamam|yetenek_|guclendi_|his_yildiz|degnek$|kilic$|sapka$|pelerin$|efsane$|sandik$|seviye)/],
+  ];
+  const RANK_WAIT = [0, 2, 4, 4, 10, 20];   // s: bu kadar bekleyen cümle bayatlar (görev/oda ve altı: 4 s)
+  // aynı anlamdaki cümleler üst üste söylenmez (biri çalarken/beklerken diğeri düşer)
+  const GROUPS = [/^(hala_saril|can_az|iksir_yok)/, /^(ovgu|hala_ovgu|seviye|his_kombo|his_nese)/, /^(hala_yon|hala_kapi|kapi$)/, /^(kayip_|bilbo_buldu|oda_gozluk|odb_toka)/];
+  const groupOf = key => { for (let i = 0; i < GROUPS.length; i++) if (GROUPS[i].test(key)) return i + 1; return 0; };
+  let hushUntil = 0, hushRank = 0;   // kutlama anı: kısa süre yalnız önemli cümleler (A.hush)
+  const rankCache = {};
+  function rankOf(key) {
+    if (rankCache[key]) return rankCache[key];
+    let r = 3;
+    for (const [k, rx] of RANK_RX) if (rx.test(key)) { r = k; break; }
+    return (rankCache[key] = r);
+  }
   function say(key, o) {
     o = o || {};
     const text = voiceText(key);
     if (!text) { if (!warned['L' + key]) { warned['L' + key] = 1; console.warn('AUD.say: unknown line', key); } return 0; }
-    const prio = o.prio ?? 1;
-    const it = { key, text, prio, sub: o.sub !== false, dur: lineDur(key), t: wallNow(), wait: o.wait ?? 8 + 6 * prio };
+    const rank = o.rank ?? rankOf(key), prio = o.prio ?? 1;
+    const it = { key, text, prio, rank, p: rank * 10 + clamp(prio, 0, 9), sub: o.sub !== false, dur: lineDur(key), t: wallNow(), wait: o.wait ?? RANK_WAIT[rank] + prio };
+    if (!o.interrupt && hushUntil > wallNow() && rank < hushRank) return 0;
     const busy = vcur || VQ.length || vgap;
     if (!busy) { startLine(it); return it.dur; }
-    if (o.interrupt) { stopCur(); clearTimeout(vgap); vgap = null; startLine(it); return it.dur; }
-    if (prio <= 0) return 0;
+    if (o.interrupt) { VQ.length = 0; stopCur(); clearTimeout(vgap); vgap = null; startLine(it); return it.dur; }
+    const grp = groupOf(key);
+    if (grp && ((vcur && groupOf(vcur.key) === grp) || VQ.some(q => groupOf(q.key) === grp))) return 0;
+    if (prio <= 0 || rank <= 1) return 0;                        // "ancak sessizken": övgüler ve prio 0 cümleler
     if ((vcur && vcur.key === key) || VQ.some(q => q.key === key)) return 0;
-    let i = VQ.findIndex(q => q.prio < prio); if (i < 0) i = VQ.length;
+    if (rank === 2 && VQ.length) return 0;                       // tanıtım: kuyrukta başka cümle varsa geç
+    if (rank >= 3) for (let i = VQ.length - 1; i >= 0; i--) if (VQ[i].rank <= 2) VQ.splice(i, 1);   // eski düşük öncelikliler düşer
+    if (vcur && vcur.rank <= 2 && rank >= 3 && !VQ.length) {     // çalan övgü/tanıtım, önemli cümleye yer açar
+      stopCur(); clearTimeout(vgap); vgap = null; startLine(it); return it.dur;
+    }
+    let i = VQ.findIndex(q => q.p < it.p); if (i < 0) i = VQ.length;
     VQ.splice(i, 0, it);
-    while (VQ.length > 4) if (VQ.pop() === it) return 0;
+    while (VQ.length > 2) if (VQ.pop() === it) return 0;   // kuyrukta en çok 2 cümle
     let w = vcur ? Math.max(0, vcur.end - wallNow()) : 0;
     for (let j = 0; j < i; j++) w += GAP + VQ[j].dur;
     return w + GAP + it.dur;
@@ -1344,6 +1374,8 @@ const AUD = (() => {
     if (M && A.musicOn) ramp(M.music.gain, musicLevel(), 0.25);
   };
   A.say = say;
+  A.rankOf = rankOf;
+  A.hush = (sec, minRank = 4) => { hushUntil = wallNow() + sec; hushRank = minRank; for (let i = VQ.length - 1; i >= 0; i--) if (VQ[i].rank < minRank) VQ.splice(i, 1); };
   A.speaking = () => !!vcur || VQ.length > 0;
   A.stopVoice = function () { VQ.length = 0; clearTimeout(vgap); vgap = null; stopCur(); duck(false); };
   A.estimate = key => (A.LINES[key] ? lineDur(key) : 0);
