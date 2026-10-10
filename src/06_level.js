@@ -421,7 +421,14 @@ const LEVEL = (function () {
     if (zd && typeof zd.yerlesim === 'function') {
       try { zd.yerlesim(L, { isFloor: (x, z) => isFloor(L, x, z), circleFree: (x, z, r) => circleFree(L, x, z, r), linkDist: (x, z) => linkDist(L, x, z),
         randomFloorNear: (x, z, a, b) => randomFloorNear(L, x, z, a, b), solid: (x, z, r, tag) => { const o = { x, z, r, alive: true, tag: tag || 'zone' }; L.solids.push(o); L._sh = null; return o; },
-        rnd: () => RNG.r(), main: rooms.slice(0, Z.rooms), arena: Z.boss ? rooms[Z.rooms - 1] : null }); }
+        rnd: () => RNG.r(), main: rooms.slice(0, Z.rooms), arena: Z.boss ? rooms[Z.rooms - 1] : null,
+        // kendi yürünür alanını çizen bölüm (merkez masa): fn(x, z) → true = zemin; mesafe/alan tabloları yeniden kurulur
+        regrid(W2, H2, fn) {
+          const g2 = new Uint8Array(W2 * H2);
+          for (let j = 0; j < H2; j++) for (let i = 0; i < W2; i++) if (fn(i + 0.5, j + 0.5)) g2[j * W2 + i] = 1;
+          L.W = W2; L.H = H2; L.grid = g2; L.dWall = chamfer(W2, H2, g2, 0); L._sat = makeSAT(W2, H2, g2);
+          L._linkPts = null; L._sh = null; L._flow = null; L._blk = null;
+        } }); }
       catch (e) { console.warn('LEVEL: ' + Z.id + '.yerlesim', e); }
     }
     return L;

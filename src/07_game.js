@@ -6836,6 +6836,7 @@ const GAME = (() => {
   }
   // ── Koleksiyon ve merkez (masa) durumları ──
   const KOL_OBJ = ['malzemeler', 'kayipEsyalar', 'bossNese', 'cikartmalar', 'kostumler', 'miniOyunlar', 'yetenek'];   // yetenek: {kademe:{id:1..3}, yildiz} (08j_his)
+  const KOL_OBJ = ['malzemeler', 'kayipEsyalar', 'bossNese', 'cikartmalar', 'kostumler', 'miniOyunlar', 'acikSusler'];   // acikSusler: Günün Sürprizi ile açılan pasta süsleri (09h_hub)
   function resetKoleksiyon() {
     for (const k of KOL_OBJ) P[k] = {};
     P.kostum = null; P.bilboAksesuar = { sahip: {}, takili: null }; P.pastaSusleri = []; P.altinSeker = 0; P.gununSurprizi = null; P.area = -1;
