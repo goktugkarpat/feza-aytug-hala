@@ -22,9 +22,9 @@ const MASA = (() => {
   ];
   T.doorList = () => T.doors.filter(d => !d.opt || (typeof ZONE_DEFS !== 'undefined' && ZONE_DEFS[d.zone]));
   T.st = {
-    gardirop: { x: 19.5, z: 23 }, bilbo: { x: 55, z: 24.5 }, album: { x: 18.6, z: 36.4 }, mini: { x: 51, z: 38.6 }, surpriz: { x: 28.5, z: 25.2 },
+    gardirop: { x: 15.9, z: 24 }, bilbo: { x: 55, z: 24.5 }, album: { x: 18.6, z: 36.4 }, mini: { x: 51, z: 38.6 }, surpriz: { x: 28.5, z: 25.2 },
   };
-  T.toys = { sunger: { x: 27.5, z: 32 }, bezelye: { x: 44.5, z: 33 }, muzik: { x: 44.5, z: 21.2 } };
+  T.toys = { sunger: { x: 27.5, z: 32 }, bezelye: { x: 44.5, z: 33 }, muzik: { x: 40.2, z: 21.8 } };
   // ── küçük yardımcılar ──
   const V2 = (x, y) => new THREE.Vector2(x, y);
   const hash = (x, y, z) => { const s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453; return s - Math.floor(s); };
@@ -969,6 +969,43 @@ MASA.kur = function (L, api) {
     } else music.spin.rotation.y += dt * 0.2;
     for (const n2 of notes) if (n2.s.visible) { n2.t += dt; const k = n2.t / 2.2; if (k >= 1) { n2.s.visible = false; continue; } n2.s.position.set(n2.x + Math.sin(n2.t * 3) * 0.4, 3.0 + k * 3.2, T.toys.muzik.z - 0.6); n2.s.material.opacity = Math.sin(k * Math.PI); }
   });
+  // ── Sıradaki kapı: bitmemiş ilk oda (oturma → mutfak → buzdolabı → açıksa Pasta Krallığı → Balkon); yerde parlayan iz + kapı üstünde zıplayan yıldız ──
+  if (!L._title && P) {
+    const done = P.bossNese || {}, open2 = id => typeof BOLUM === 'undefined' || !BOLUM.isOpen || BOLUM.isOpen(id, P);
+    const next = ['oturma', 'mutfak', 'buzdolabi', 'pasta', 'balkon'].find(id => !done[id] && open2(id) && T.doorList().some(d => d.zone === id));
+    const door = next && T.doorList().find(d => d.zone === next);
+    if (door) {
+      const tx2 = door.x, tz2 = T.z0 + 1.6, sx0 = L.start ? L.start.x : T.cx, sz0 = L.start ? L.start.z : 40;
+      const dotT = tx('dot', () => MASA.radialCanvas('rgba(255,236,120,1)', 'rgba(255,200,60,0)'));
+      const dotMat = new THR.MeshBasicMaterial({ map: dotT, transparent: true, blending: THR.AdditiveBlending, depthWrite: false, fog: false });
+      const len = Math.hypot(tx2 - sx0, tz2 - sz0), n = Math.max(2, Math.floor(len / 1.3)), dots = [];
+      // pastanın çevresinden dolaşan yumuşak eğri (pastanın içinden geçmesin)
+      const mx = (sx0 + tx2) / 2, mz = (sz0 + tz2) / 2, dc = Math.hypot(mx - T.cake.x, mz - T.cake.z), push = dc < 6 ? (6 - dc) + 1 : 0, ox = dc > 0.01 ? (mx - T.cake.x) / dc : 1, oz = dc > 0.01 ? (mz - T.cake.z) / dc : 0;
+      for (let i = 1; i < n; i++) {
+        const u = i / n, cxq = mx + ox * push * 1.6, czq = mz + oz * push * 1.6;
+        const x = (1 - u) * (1 - u) * sx0 + 2 * u * (1 - u) * cxq + u * u * tx2, z = (1 - u) * (1 - u) * sz0 + 2 * u * (1 - u) * czq + u * u * tz2;
+        if (Math.hypot(x - T.cake.x, z - T.cake.z) < T.cake.r + 0.6) continue;
+        const m = own(new THR.CircleGeometry(0.42, 16), dotMat, x, 0.14, z, { rx: -Math.PI / 2, recv: false }); m.renderOrder = 3; dots.push({ m, u });
+      }
+      const starT = tx('nextstar', () => MASA.badgeCanvas('⭐', '#ffc83a', '#fff8d8'));
+      const star = new THR.Sprite(new THR.SpriteMaterial({ map: starT, transparent: true, depthWrite: false })); star.scale.set(1.6, 1.6, 1); api.add(star);
+      let tt = 0, off = false;
+      api.anim((dt, fx, fz) => {
+        tt += dt;
+        const near = Math.hypot(fx - tx2, fz - tz2) < 3.2;
+        if (near && !off) off = true;
+        for (const d of dots) { const k = 0.5 + 0.5 * Math.sin(tt * 4 - d.u * 12); d.m.material.opacity = 1; d.m.scale.setScalar((off ? 0 : 0.7 + 0.5 * k)); }
+        star.position.set(tx2, 4.6 + Math.abs(Math.sin(tt * 3.2)) * 0.8, T.z0 - 0.4); star.material.rotation = Math.sin(tt * 2) * 0.15;
+      });
+      const AD = { oturma: 'masa_git_oturma', mutfak: 'masa_git_mutfak', buzdolabi: 'masa_git_buzdolabi', pasta: 'masa_git_pasta', balkon: 'masa_git_balkon' };
+      setTimeout(() => {   // karşılama/pasta cümleleri bittikten sonra, kimse konuşmuyorsa
+        const g = typeof GAME !== 'undefined' && GAME; if (!g || g.state !== 'play' || g.L !== L || off) return;
+        if (typeof AUD !== 'undefined' && AUD.current) { setTimeout(() => { if (GAME.L === L && !off && !(AUD && AUD.current) && typeof HUB !== 'undefined') HUB.say(AD[next], 1); }, 4000); return; }
+        if (typeof HUB !== 'undefined') HUB.say(AD[next], 1);
+        const HL = typeof HALA !== 'undefined' && HALA; if (HL && HL.pointTo) try { HL.pointTo(tx2, tz2); } catch (e) { /* yok */ }
+      }, 6500);
+    }
+  }
   // pasta
   if (L.cakeSpot) CAKE.build(api, L.cakeSpot);
   if (!L._title) setTimeout(() => { if (typeof HUB !== 'undefined' && HUB.warm) HUB.warm(); }, 2500);   // panel resimleri boşta hazırlanır
@@ -1003,6 +1040,12 @@ BOLUM.define('masa', {
       L.start = { x: 32, z: 41.5 };
       L.exit = { x: 3, z: 3 };   // (masanın kendi kapısı kullanılmıyor: 4 oda kapısı var; portal masanın altında gizli)
     }
+    // odadan dönüş: Feza geldiği odanın kapısının önünde başlar (07 P.zone'u generate'ten sonra değiştirir: burada hâlâ eski oda)
+    try {
+      const P = typeof GAME !== 'undefined' && GAME.P, Zs = typeof ZONES !== 'undefined' ? ZONES : null, prev = P && Zs && Zs[P.zone] && Zs[P.zone].id;
+      const d = prev && T.doorList().find(q => q.zone === prev);
+      if (d) { let x = d.x, z = T.z0 + 3.6; if (!api.circleFree(x, z, 0.7)) { const q = api.randomFloorNear(x, z + 1, 0, 2.5); if (q) { x = q.x; z = q.z; } } L.start = { x, z }; }
+    } catch (e) { /* başlangıç noktası */ }
     L.cakeSpot = { x: T.cake.x, z: T.cake.z };
     api.solid(T.cake.x, T.cake.z, T.cake.r, 'pasta');
     const st = L.stations = [];

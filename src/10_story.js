@@ -1244,7 +1244,7 @@ const STORY = (() => {
         if (performance.now() - seen.introAt < 1500) return;
         const fresh = deliverIngredients();
         if (!pastaShown && malzemeCount() >= 3) { pastaShown = true; later(fresh ? 3.2 : 0, pastaScene); return; }
-        if (fresh) { line('masa_donus1', 'Masaya döndük! Bak, pastamız büyüyor.', 3); seen.zone.masa = true; later(4.5, balkonScene); return; }
+        if (fresh) { line('masa_donus1', 'Masaya döndük! Bak, pastamız büyüyor.', 3); seen.zone.masa = true; return; }   // (balkon anı bir sonraki dönüşte: tek cümle)
         if (balkonScene()) { seen.zone.masa = true; return; }
         if (seen.zone.masa) line(pick(['masa_donus1', 'masa_donus2', 'masa_donus3']), 'Masaya döndük!', 2);
         seen.zone.masa = true;
@@ -1266,7 +1266,7 @@ const STORY = (() => {
       if (G_().L !== L) return;
       spawnTrophy(id, P.pos.x + 0.4 * (i - (fresh.length - 1) / 2), 1.0, P.pos.z + 0.6, { h: 1.2, hold: 1.4, s: 1.0, to: { x: cs.x, y: 3.2, z: cs.z } });
     }));
-    later(1.6, () => { if (G_().L === L) moment(3.6 + fresh.length * 0.7, { x: cs.x, z: cs.z, R: 9, H: 4.6 }); });
+    later(1.4, () => { if (G_().L === L) moment(2.4, { x: cs.x, z: cs.z, R: 9, H: 4.6 }); });   // kısa pasta anı, sonra kamera Feza'ya döner
     if (g.storyCheer) later(2.4, () => g.storyCheer(2, true));
     return fresh.length;
   }
