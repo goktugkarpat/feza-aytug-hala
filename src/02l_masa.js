@@ -1,6 +1,12 @@
 /* ── Aytuğ Hala'nın mutfak masası cümleleri (merkez, pasta, süsleme, istasyonlar) ──
    gen_voice.py tüm src/02l_*.js dosyalarını okur (tr-TR-EmelNeural). Kısa, sıcak, ilk ağızdan; "Aa/Oo" yok, İngilizce yok. */
 Object.assign(AUD.LINES, {
+  // sıradaki kapı
+  "masa_git_oturma": "Hadi Oturma Odası'na gidelim! Parlayan izi takip et.",
+  "masa_git_mutfak": "Hadi Mutfak'a gidelim! Parlayan izi takip et.",
+  "masa_git_buzdolabi": "Hadi Buzdolabı'na gidelim! Parlayan izi takip et.",
+  "masa_git_pasta": "Hadi Pasta Krallığı'na gidelim! Pembe kapı seni bekliyor.",
+  "masa_git_balkon": "Hadi Balkon'a gidelim! Çiçekler bizi bekliyor.",
   // oyuncaklar
   "oyuncak_sunger1": "Hop hop! Zıpla Feza!",
   "oyuncak_sunger2": "Sünger yumuşacık, zıpla bakalım!",
