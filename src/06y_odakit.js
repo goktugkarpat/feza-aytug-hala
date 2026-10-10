@@ -409,11 +409,12 @@ const ODAKIT = (() => {
       const g = G_(), P = g && g.P;
       if (BOOST && P) { BOOST.left -= dt; if (BOOST.left <= 0 || P.dead) unboost(); else P.speed = BOOST.base * BOOST.mult; }
       for (const it of list) {
-        if (it.star) { it.star.visible = !it.used || it.repeat; if (it.star.visible) { it.star.position.y = it.starY + Math.sin(t * 3 + it.x) * 0.18; it.star.rotation.y = t * 2.2; } }
+        const quiet = it.line && /bilbo/.test(it.line) && bossQuiet();   // biniş ipucu boss sırasında susar
+        if (it.star) { it.star.visible = (!it.used || it.repeat) && !quiet; if (it.star.visible) { it.star.position.y = it.starY + Math.sin(t * 3 + it.x) * 0.18; it.star.rotation.y = t * 2.2; } }
         if (it.tick) it.tick(dt, t, hx, hz);
         if (!P || !playing()) continue;
         const d = Math.hypot(hx - it.x, hz - it.z);
-        if (it.line && !heard[it.line] && d < it.near && !it.used) {
+        if (it.line && !quiet && !heard[it.line] && d < it.near && !it.used) {
           heard[it.line] = 1; say(it.line, it.prio ?? 2);
           if (it.star && typeof HALA !== 'undefined' && HALA && typeof HALA.pointTo === 'function') { try { HALA.pointTo(it.x, it.z); } catch (e) { /* */ } }   // Aytuğ Hala oyuncağı gösterir
         }
@@ -581,6 +582,12 @@ const ODAKIT = (() => {
     T.add({ x: st.x, z: st.z, r: 0, near: 7, hint: { y: 2.8 }, line, prio: 1, use() {}, tick: (dt, t) => { m.rotation.y = Math.sin(t * 1.5) * 0.12; m.position.y = Math.abs(Math.sin(t * 3)) * 0.12; } });
     return m;
   }
+  // boss uyanıkken ya da Feza boss arenasındayken biniş çağrısı ve halkanın parıltısı susar
+  function bossQuiet() {
+    const g = G_(); if (!g) return false;
+    const b = g.boss; if (b && !b.dead && (b.aggro || b.encounter)) return true;
+    const A = g.L && g.L.areas, a = A && g.P && A[g.P.area]; return !!(a && a.boss);
+  }
   // Bilbo'ya biniş halkası: büyük patili altın disk + nabız gibi atan parlak halka + ışık (istasyon kind 'binis' bunun üstünde)
   function pawPad(api, x, z, sc = 1.5) {
     const key = 'pawPad'; let g = GEOC[key];
@@ -597,7 +604,7 @@ const ODAKIT = (() => {
     const ringG = new THREE.RingGeometry(0.88, 1, 48); ringG.rotateX(-Math.PI / 2); api.dispose(ringG);
     const ring = new THREE.Mesh(ringG, rm); ring.position.set(x, 0.1, z); ring.renderOrder = 3; api.add(ring);
     api.light(x, 2, z, 0xffd27a, 1.8, 6);
-    api.anim(() => { const u = (TIME.t * 0.7) % 1; ring.scale.setScalar(sc * (1.1 + u * 0.9)); rm.opacity = 0.7 * (1 - u); });
+    api.anim(() => { const u = (TIME.t * 0.7) % 1, q = bossQuiet(); ring.visible = !q; ring.scale.setScalar(sc * (1.1 + u * 0.9)); rm.opacity = 0.7 * (1 - u); });
   }
   // Performans: alçak/küçük birleştirilmiş süsler gölge düşürmesin (görünüş aynı: aynı parlak malzeme, 'shinyNS' parçası).
   // api.put'u sarar: malzeme anahtarı verilmemiş ve tepesi hMax'tan alçak her süs → 'shinyNS'. Büyük nesneler gölgede kalır.
