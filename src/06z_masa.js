@@ -402,11 +402,8 @@ const CAKE = (() => {
     const st = typeof GAME !== 'undefined' && GAME.cakeStage ? GAME.cakeStage() : 0;
     const from = S.shown >= 0 && S.shown < st ? S.shown : st;   // yeni malzeme geldiyse eski aşamadan büyüyerek
     S.stage = -1; show(from);
-    if (from !== st) setTimeout(() => grow(st), 1600);
-    else if (!api.L._title) {   // masaya dönüş: Aytuğ Hala karşılar (ilk açılışta hikâye anlatır, burada susar)
-      S.visits = (S.visits || 0) + 1;
-      if (S.visits > 1) setTimeout(() => { const g = typeof GAME !== 'undefined' && GAME; if (g && g.state === 'play' && g.P.zone === 0 && typeof HUB !== 'undefined') HUB.say(['masa_donus1', 'masa_donus2', 'masa_donus3'][S.visits % 3], 2); }, 2200);
-    }
+    // yeni malzeme: hikâye (10_story) malzemeyi pastaya uçurur ve 'masaya döndük' der; pasta, malzeme varınca büyür (karşılama hikâyenin)
+    if (from !== st) setTimeout(() => grow(st), 3300);
     S.shown = st;
     // pastanın çevresinde altın ışıltı (pişmiş ışık havuzu) ve tabak gölgesi
     api.glow(spot.x, spot.z, 5.5, 0xfff0d0, 0.12);
@@ -428,7 +425,7 @@ const CAKE = (() => {
       try { A.sfx('levelup', { vol: 0.8 }); } catch (e) { /* ses yok */ }
       for (let i = 0; i < 3; i++) setTimeout(() => { try { A.burst('confetti', S.spot.x, 2.5 + i, S.spot.z, {}); } catch (e) { /* yok */ } }, i * 220);
     }
-    const key = 'masa_pasta' + n; if (typeof HUB !== 'undefined' && HUB.say) HUB.say(key, 3);
+    const key = 'masa_pasta' + n; if (typeof HUB !== 'undefined' && HUB.say) HUB.say(key, 2);
   }
   // n = 0..4: kaç malzeme geldi
   function setStage(n) { n = Math.max(0, Math.min(4, n | 0)); if (n === S.stage) return; if (S.root) grow(n); S.shown = n; }

@@ -296,7 +296,7 @@
   // ───────── ortak kabuk: giriş → oyun → bitiş ─────────
   function shell(id, cfg) {
     MINIGAME.register(id, {
-      ad: cfg.ad, holdsWorld: true,
+      ad: cfg.ad, holdsWorld: true, yildizlar: cfg.stars ? [1, cfg.stars[0], cfg.stars[1]] : undefined,   // (merkez Mini Oyun Köşesi yıldızları)
       start(ctx) { ctx.data.G = makeG(ctx, cfg); },
       update(dt, ctx) { const G = ctx.data.G; return G ? tick(G, Math.min(Math.max(dt, 0), 0.05)) : 'done'; },
       end(ctx) { const G = ctx.data.G; if (G) cleanup(G); return ctx.score; },
