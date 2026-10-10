@@ -377,7 +377,7 @@ const GAME = (() => {
   }
 
   // ── State ──
-  const xpFor = lvl => 40 + 25 * lvl + 5 * lvl * lvl;
+  const xpFor = lvl => 90 + 30 * lvl + 4 * lvl * lvl;   // Dev Ev: yavaş eğri (ilk oda ~3. seviye, oyun boyu ~10-11; eski 40 + 25l + 5l²)
   const P = {
     pos: new THREE.Vector3(), face: Math.PI, hp: T.baseHp, maxHp: T.baseHp, lvl: 1, xp: 0, xpNext: xpFor(1), gold: 0,
     zoneLevel: null, roundPower: null, shopStock: {}, shopWard: null, heroClass: 'warrior', potions: DIFF.potions, maxPotions: 5, dmg: 8, armor: 0, speed: T.speed, equip: { weapon: null, offhand: null, hat: null, cape: null }, bag: [],
@@ -4480,7 +4480,7 @@ const GAME = (() => {
       e.flashCol = e.boss ? bossFlashCol(o.kind === 'sword') : o.kind === 'sword' ? saberFlashCol() : o.freeze ? '#cfefff' : '#ffffff';
       if (e.m.flash) e.m.flash(e.flash, e.flashCol);
       if (!o.silent) {
-        ftext(x, e.y + e.height + 0.25, z, String(amount), o.crit ? 'crit' : 'dmg');
+        if (o.crit) ftext(x, e.y + e.height + 0.25, z, String(amount), 'crit');   // Dev Ev: 5 yaş için sayı kalabalığı yok, yalnız büyük vuruşta
         if (o.kind && o.kind !== 'sword' && gt - lastSoft > 0.06) { lastSoft = gt; sfx('hitSoft', { x, z, vol: 0.6, pitch: frand(0.9, 1.2) }); }
       }
       if (!e.aggro) setAggro(e);
@@ -5719,7 +5719,7 @@ const GAME = (() => {
     GAME.skills.forEach((s, i) => {
       if (!canUnlock(s, i)) return;
       s.unlocked = true; s.cd = 0;
-      if (announce) { later(0.3 + i * 0.05, () => sfx('unlock')); if (!finale && s.def.line) skillLine(s.def.line); emit('skill', { index: i }); }   // teaches the new button: never dropped
+      if (announce) { skillCalmT = gt + 6; later(0.3 + i * 0.05, () => sfx('unlock')); if (!finale && s.def.line) skillLine(s.def.line); emit('skill', { index: i }); }   // teaches the new button: never dropped
     });
   }
   // The meteor comes with Kral Jöle's cheer (its xp is a level-up): its line must not push the boss's goodbye and the door
@@ -5727,7 +5727,10 @@ const GAME = (() => {
   // next zone's line), then queued as usual.
   // Round 4 QA: a skill won at a mid-zone boss always waits for the next zone (right after its name): in the old zone the
   // portal cut it (stopVoice) and it was never repeated. At prio 3 a full queue drops a chattier line instead of it.
-  const holdSkill = () => gt < storyUntil || gt < skillAt || !!(boss && boss.dead && !boss.final);
+  // Dev Ev: savaşın ortasında yeni yetenek anlatılmaz: yakında (9 m) kızgın huysuz varken en çok 6 s bekler
+  let skillCalmT = -1;
+  const fightNear = () => enemies.some(e => e.aggro && !e.dead && dist2(e.x, e.z, P.pos.x, P.pos.z) < 81);
+  const holdSkill = () => gt < storyUntil || gt < skillAt || !!(boss && boss.dead && !boss.final) || (gt < skillCalmT && fightNear());
   function skillLine(k) {
     if (holdSkill()) { if (skillQ.indexOf(k) < 0) skillQ.push(k); }
     else say(k, 3, { wait: 40 });

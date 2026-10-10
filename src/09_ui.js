@@ -1532,7 +1532,16 @@ const UI = (() => {
   }
 
   // ───────────────────────── HUD refresh ─────────────────────────
+  function skillTick() {
+    const q = S.skillQ; if (!q || !q.length || !M.GAME) return;
+    const g = M.GAME, P = g.P, busy = (g.enemies || []).some(e => e.aggro && !e.dead && (e.x - P.pos.x) ** 2 + (e.z - P.pos.z) ** 2 < 81);
+    if (busy && S.t < q[0].due) return;
+    const d = q.shift(), s = g.skills && g.skills[d.i], def = (s && s.def) || {};
+    showSkill(d.i, true);
+    banner({ kind: 'skill', icon: def.svg || def.icon || '✨', med: true, color: def.color, title: 'Yeni Yetenek!', sub: def.ad || '', rays: true, dur: 2.8 });
+  }
   function hudTick(dt) {
+    if (S.frame % 10 === 0) skillTick();
     if (bBusy && S.bannerEnd && S.t > S.bannerEnd && D.banner.classList.contains('on')) { S.bannerEnd = 0; clearTimeout(bTimer); D.banner.classList.remove('on'); D.banner.classList.add('out'); bTimer = setTimeout(() => { D.banner.classList.remove('out'); nextBanner(); }, 430); }   // (S.hold'da takılı kalmasın)
     const g = M.GAME; if (!g || !S.hud || S.menu) return;   // menus dim the HUD: don't redraw under the blur
     const P = g.P;
@@ -2561,11 +2570,8 @@ const UI = (() => {
       banner({ kind: 'level', icon: '⭐', title: `Seviye ${d.lvl}!`, sub: 'Daha da güçlendin!', rays: true, dur: 2.2 });
       bump(D.lvl, 1.35); portraitSoon(0.2);
     });
-    on('skill', d => {
-      const s = g.skills && g.skills[d.index], def = (s && s.def) || {};
-      showSkill(d.index, true);
-      banner({ kind: 'skill', icon: def.svg || def.icon || '✨', med: true, color: def.color, title: 'Yeni Yetenek!', sub: def.ad || '', rays: true, dur: 2.8 });
-    });
+    // Dev Ev: "Yeni Yetenek!" savaşın ortasında çıkmaz: yakında kızgın huysuz yokken ya da en geç 6 s sonra (skillTick)
+    on('skill', d => { S.skillQ = S.skillQ || []; S.skillQ.push({ i: d.index, due: S.t + 6 }); });
     on('item', d => {
       itemCard(d.item, d.equipped);
       if (d.equipped) portraitSoon(0.2);
