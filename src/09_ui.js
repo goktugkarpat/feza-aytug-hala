@@ -2038,7 +2038,7 @@ const UI = (() => {
   let cTimer = 0, cBusy = false;
   function itemCard(item, equipped) {
     if (!item) return;
-    if (CQ.length > 2) CQ.shift();
+    if (CQ.length > 4) CQ.shift();
     CQ.push({ item, equipped });
     if (!cBusy) nextCard();
   }
@@ -2059,7 +2059,8 @@ const UI = (() => {
   const rarCol = r => { const I = M.ITEMS; return (I && I.RARITY && I.RARITY[r] && I.RARITY[r].color) || RAR[r] || '#fff'; };
   const rarAd = r => { const I = M.ITEMS; return (I && I.RARITY && I.RARITY[r] && I.RARITY[r].ad) || RAR_AD[r] || ''; };
   function nextCard() {
-    if (bBusy && CQ.length) { cBusy = true; clearTimeout(cTimer); cTimer = setTimeout(() => { cBusy = false; nextCard(); }, 350); return; }   // bant açıkken bekle
+    const fight = M.GAME && M.GAME.P && (M.GAME.enemies || []).some(e => e.aggro && !e.dead && (e.x - M.GAME.P.pos.x) ** 2 + (e.z - M.GAME.P.pos.z) ** 2 < 100);   // savaşta kuyrukta bekler
+    if ((bBusy || fight) && CQ.length) { cBusy = true; clearTimeout(cTimer); cTimer = setTimeout(() => { cBusy = false; nextCard(); }, 350); return; }   // bant açıkken bekle
     const o = CQ.shift();
     if (!o) { cBusy = false; return; }
     cBusy = true;
@@ -2576,7 +2577,10 @@ const UI = (() => {
     // Dev Ev: "Yeni Yetenek!" savaşın ortasında çıkmaz: yakında kızgın huysuz yokken ya da en geç 6 s sonra (skillTick)
     on('skill', d => { S.skillQ = S.skillQ || []; S.skillQ.push({ i: d.index, due: S.t + 6 }); });
     on('item', d => {
-      itemCard(d.item, d.equipped);
+      // Dev Ev: sıradan (1-2 yıldız) eşya kartsız, sessizce çantaya (çanta düğmesinde küçük "+")
+      const n = d.item && M.ITEMS && M.ITEMS.stars ? safe('ITEMS.stars', () => M.ITEMS.stars(d.item)) : 3;
+      if (n >= 3) itemCard(d.item, d.equipped);
+      else { D.bagBtn.classList.remove('u-plus'); void D.bagBtn.offsetWidth; D.bagBtn.classList.add('u-plus'); bump(D.bagBtn, 1.25); }
       if (d.equipped) portraitSoon(0.2);
       else if (d.item) { newItems.add(d.item); D.bagBtn.classList.add('has-new'); }
       if (S.menu === 'bag') renderBag();

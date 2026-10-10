@@ -377,7 +377,7 @@ const GAME = (() => {
   }
 
   // ── State ──
-  const xpFor = lvl => 90 + 30 * lvl + 4 * lvl * lvl;   // Dev Ev: yavaş eğri (ilk oda ~3. seviye, oyun boyu ~10-11; eski 40 + 25l + 5l²)
+  const xpFor = lvl => 230 + 75 * lvl + 10 * lvl * lvl;   // Dev Ev: yavaş eğri (ilk oda ~3. seviye, oyun boyu ~10-11; eski 40 + 25l + 5l²)
   const P = {
     pos: new THREE.Vector3(), face: Math.PI, hp: T.baseHp, maxHp: T.baseHp, lvl: 1, xp: 0, xpNext: xpFor(1), gold: 0,
     zoneLevel: null, roundPower: null, shopStock: {}, shopWard: null, heroClass: 'warrior', potions: DIFF.potions, maxPotions: 5, dmg: 8, armor: 0, speed: T.speed, equip: { weapon: null, offhand: null, hat: null, cape: null }, bag: [],
