@@ -146,7 +146,8 @@
       D.trails.push({ x: rm.x, z: rm.z, pts });
     }
     O.clearSpawns(L, api, taken.map(q => ({ x: q.x, z: q.z, r: q.r + 1.5 })));
-    D.mini = O.miniCorner(L, api, room(a3[0]) || room(a2[1]), ['sekerYakala', 'seker', 'pasta', 'krema', 'mum'], taken);
+    D.mini = O.miniCorner(L, api, room(a3[0]) || room(a2[1]), ['kekSusle', 'sekerYakala', 'pasta', 'krema', 'mum'], taken);
+    D.binis = [O.binisStation(L, api, room(a2[0]) || room(a1[1]), 'binisPasta', taken)].filter(Boolean);
     O.gentlePacks(L, 5);
   }
 
@@ -225,6 +226,7 @@
     if (firstRoom(1)) R.zones.push({ x: firstRoom(1).x, z: firstRoom(1).z, r: firstRoom(1).r, enter: () => O.say('odp_orman') });
     if (firstRoom(2)) R.zones.push({ x: firstRoom(2).x, z: firstRoom(2).z, r: firstRoom(2).r, enter: () => O.say('odp_dag') });
     for (const t of D.trails) if (t.pts.length) R.zones.push({ x: t.x, z: t.z, r: 11, enter(z) { if (!z.done) { z.done = true; O.restCoins(t.pts); } } });
+    for (const b of D.binis || []) O.binisLook(B, api, b);
     if (D.mini) O.miniCornerLook(B, api, R, D.mini, { ring: 0xffa8d0, star: 0xff5f9e, line: 'odp_mini', prop: (B2, x, z) => {   // şeker kavanozu
       B2.add('glass', G.cyl(1, 1, 18), C(0xeaf8ff), [x, 0.85, z], null, [0.6, 1.7, 0.6]);
       B2.add('candy', G.cyl(1, 1, 16), C(0xff5f9e), [x, 1.78, z], null, [0.64, 0.16, 0.64]);
@@ -638,7 +640,7 @@
     const rooms = A[2] ? A[2].rooms.map(i => L.rooms[i]).filter(r => r.kind !== 'side') : [];
     for (const rm of rooms) for (let i = 0; i < 3; i++) {
       const x = rm.x + (i - 1) * rm.r * 0.9 + (rnd() - 0.5) * 2, z = rm.z - rm.r - 3 - rnd() * 4, y = 5.5 + rnd() * 2;
-      if (api.isFloor(x, z + 3)) continue;
+      if (api.isFloor(x, z + 3) || api.isFloor(x, z) || api.isFloor(x, z + 6) || L.rooms.some(q => q.kind === 'boss' && Math.hypot(q.x - x, q.z - z) < (q.r || 11) + 6)) continue;
       const c = [0xffc4dc, 0xc8ecff, 0xe2d2ff][i % 3];
       for (let j = 0; j < 6; j++) k.add(G.sphere(11, 8), C(c).lerp(C(0xffffff), (j % 2) * 0.35), [x + (j - 2.5) * 0.7, y + Math.sin(j * 1.7) * 0.3, z + Math.cos(j * 2.1) * 0.4], null, [0.9 + (j % 3) * 0.25, 0.7, 0.8]);
     }
@@ -680,10 +682,10 @@
   function cakeTexture() {
     if (CAKE_TEX) return CAKE_TEX;
     const c = document.createElement('canvas'); c.width = c.height = 1024; const x = c.getContext('2d');
-    const gr = x.createRadialGradient(512, 512, 40, 512, 512, 512); gr.addColorStop(0, '#fff6fa'); gr.addColorStop(0.7, '#ffe2ee'); gr.addColorStop(1, '#ffc8dc');
+    const gr = x.createRadialGradient(512, 512, 40, 512, 512, 512); gr.addColorStop(0, '#9a5636'); gr.addColorStop(0.7, '#7e4128'); gr.addColorStop(1, '#5e2e1c');
     x.fillStyle = gr; x.fillRect(0, 0, 1024, 1024);
     // krema sıkma halkaları
-    for (const [r, col] of [[470, '#ffffff'], [330, '#ffb0cc'], [180, '#ffffff']]) {
+    for (const [r, col] of [[470, '#fff6ee'], [330, '#ff9ec4'], [180, '#fff6ee']]) {
       for (let i = 0; i < Math.round(r / 7); i++) { const a = i / Math.round(r / 7) * TAU; x.fillStyle = col; x.beginPath(); x.arc(512 + Math.cos(a) * r, 512 + Math.sin(a) * r, 16, 0, TAU); x.fill(); x.fillStyle = 'rgba(255,255,255,0.6)'; x.beginPath(); x.arc(512 + Math.cos(a) * r - 4, 512 + Math.sin(a) * r - 5, 5, 0, TAU); x.fill(); }
     }
     // şeker serpintisi
@@ -695,7 +697,7 @@
   let CAKE_MAT = null;
   function cakeArena(B, api, R, L, A, rnd) {
     const r = A.r - 0.8;
-    if (!CAKE_MAT) { CAKE_MAT = rimify(new THREE.MeshStandardMaterial({ map: cakeTexture(), roughness: 0.45, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), 0xffffff, 0.15, 3); CAKE_MAT.userData.keep = true; }
+    if (!CAKE_MAT) { CAKE_MAT = rimify(new THREE.MeshStandardMaterial({ map: cakeTexture(), roughness: 0.28, color: 0xd8c8c0, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }), 0xffffff, 0.15, 3); CAKE_MAT.userData.keep = true; }
     const dg = new THREE.CircleGeometry(1, 72); dg.rotateX(-PI / 2);
     const top = new THREE.Mesh(dg, CAKE_MAT); top.position.set(A.x, 0.03, A.z); top.scale.set(r, 1, r); top.receiveShadow = true; top.renderOrder = 1; api.add(top);
     // pastanın kenarı: kat kat krema bordür + çilekler (yürünmez kenarda; güneyde alçak)
@@ -781,7 +783,7 @@
         }
       }
     });
-    api.glow(A.x, A.z, A.r + 1, 0xffd8e8, 0.2);
+    api.glow(A.x, A.z, A.r + 1, 0xffc890, 0.06);
   }
   function strawberryBig(B, x, y, z, s) {
     B.add('candy', G.sphere(12, 9), C(0xff3b5c), [x, y, z], [PI, 0, 0], [s * 0.85, s, s * 0.85]);

@@ -275,6 +275,7 @@ const ODAB = (() => {
       fx('floatText', x, y + 0.8, z, 'Altın Şeker!', 'gold');
       say(pick(['odb_altin1', 'odb_altin2', 'odb_altin3']), { once: false, gap: 5 });
       if (o.sticker && GAME.giveSticker) GAME.giveSticker(o.sticker, 'gizli');
+      if (typeof HALA !== 'undefined' && HALA.cheer) { try { HALA.cheer(1.4); } catch (e) { /* yok */ } }
       if (o.onGet) o.onGet();
     } };
     R.picks.push(q);
@@ -541,6 +542,26 @@ const ODAB = (() => {
     api.anim(dt => { t += dt; const s = 1 + Math.sin(t * 3) * 0.07; rm.scale.set(s, 1, s); star.rotation.y = Math.sin(t * 1.4) * 0.5; });
     R.zones.push({ x: st.x, z: st.z, r: 5.5, enter: () => say(o.line || 'odb_mini') });
   }
+  // Bilbo'ya binme istasyonu (07 GAME.rideBilbo; UI 'binis' istasyonunda başlatır)
+  function binisStation(L, api, rm, id, taken) {
+    if (!rm) return null;
+    const p = roomSpot(L, api, rm, { r: 1.0, pmin: 2.0, pmax: 7, k: 0.8, taken });
+    if (!p) return null;
+    const st = { id, kind: 'binis', x: p.x, z: p.z, r: 1.6, sure: 16 };
+    (L.stations || (L.stations = [])).push(st); taken.push({ x: p.x, z: p.z, r: 2.2 });
+    return st;
+  }
+  function binisLook(B, api, st) {   // pati izli parlak halka + kemik tabela
+    const k = new Kit(); k.add(G.torus(TAU, 0.1, 36), C(0xffc060, 1.7), [0, 0.05, 0], [PI / 2, 0, 0], [1.25, 1.25, 1.25]);
+    for (let i = 0; i < 4; i++) { const a = i * TAU / 4 + 0.4; k.add(G.sphere(8, 5), C(0xffd890, 1.4), [Math.sin(a) * 0.55, 0.04, Math.cos(a) * 0.55], null, [0.14, 0.02, 0.12]); }
+    k.add(G.sphere(10, 6), C(0xffd890, 1.4), [0, 0.04, 0], null, [0.3, 0.02, 0.26]);
+    const ring = solo(k, 'glow', api); ring.position.set(st.x, 0, st.z);
+    B.add('gloss', G.cyl(1, 1, 8), C(0xffffff), [st.x + 1.3, 0.9, st.z - 0.5], null, [0.06, 1.8, 0.06]);
+    B.add('cream', G.cyl(1, 1, 10), C(0xfff4e0), [st.x + 1.3, 2.0, st.z - 0.5], [0, 0, PI / 2], [0.12, 0.9, 0.12]);
+    for (const sd of [-1, 1]) for (const up of [-1, 1]) B.add('cream', G.sphere(10, 7), C(0xfff4e0), [st.x + 1.3 + sd * 0.45, 2.0 + up * 0.12, st.z - 0.5], null, [0.17, 0.17, 0.17]);
+    api.light(st.x, 1.4, st.z, 0xffc070, 1.3, 5, 0.1);
+    let t = 0; api.anim(dt => { t += dt; const s = 1 + Math.sin(t * 3) * 0.06; ring.scale.set(s, 1, s); });
+  }
   // Nazik gruplar: bir grupta en çok `max` huysuz (fazlası, seçkin olmayanlardan başlayarak çıkar)
   function gentlePacks(L, max = 5) {
     const by = {};
@@ -561,7 +582,7 @@ const ODAB = (() => {
     while (b < 7 && api.isFloor(x - px * b, z - pz * b)) b += 0.25;
     return { a, b };
   }
-  return { riding, get lift() { return riding() ? ACTIVE.lift || 0 : 0; }, mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, decals, fairyLights, clearSpawns, gentlePacks, miniCorner, miniCornerLook, gateDir, corridorHalf, flakeTexture };
+  return { riding, get lift() { return riding() ? ACTIVE.lift || 0 : 0; }, mat, batch, solo, C, A, live, sfx, burst, fx, say, pick, coins, restCoins, goldCandy, goldSugar, rig, sparkles, edge, pathD, clearOf, roomSpot, ring, edgeSpots, floorSpots, mist, decals, fairyLights, clearSpawns, gentlePacks, miniCorner, miniCornerLook, binisStation, binisLook, gateDir, corridorHalf, flakeTexture };
 })();
 
 /* ════════════════════════════ Buzdolabı ════════════════════════════ */
@@ -672,7 +693,7 @@ const ODAB = (() => {
       const rmT = room(a3[1] ?? a3[0]);
       if (rmT) {
         const p = O.roomSpot(L, api, rmT, { r: 0.9, pmin: 2.2, pmax: 7, k: 0.78, taken });
-        if (p) { L.kayipSpot = { x: p.x, z: p.z, id: 'toka', zone: 'buzdolabi' }; taken.push({ x: p.x, z: p.z, r: 1.8 }); }
+        if (p) { L.kayipSpot = { x: p.x, z: p.z, id: 'toka', zone: 'buzdolabi' }; L.lostSpot = { x: p.x, z: p.z, id: 'toka' }; taken.push({ x: p.x, z: p.z, r: 1.8 }); }
       }
       // dondurucu odasında da bir buz kaydırma şeridi (kısa)
       const rm3 = room(a3[0]);
@@ -709,6 +730,7 @@ const ODAB = (() => {
     }
     O.clearSpawns(L, api, taken.map(q => ({ x: q.x, z: q.z, r: q.r + 1.5 })));
     D.mini = O.miniCorner(L, api, room(a1[0]) || R[0], ['buzPateni', 'paten', 'buz', 'dondurma', 'sekerYakala'], taken);
+    D.binis = [O.binisStation(L, api, room(a1[1] ?? a1[0]), 'binisBuz', taken)].filter(Boolean);
     O.gentlePacks(L, 5);
   }
 
@@ -794,7 +816,11 @@ const ODAB = (() => {
     // ── Kar topu + buz duvarı ──
     if (D.ball) snowball(B, api, R, D.ball);
     // ── Tokanın gizli yeri (Bilbo bulur) ──
-    if (L.kayipSpot) tokaMound(api, R, L.kayipSpot);
+    if (L.kayipSpot) {
+      if (typeof BILBO_FUN === 'undefined') tokaMound(api, R, L.kayipSpot);
+      else { const K = L.kayipSpot; R.zones.push({ x: K.x, z: K.z, r: 8, enter: () => { if (!(GAME.P.kayipEsyalar && GAME.P.kayipEsyalar.buzdolabi)) O.say('odb_toka'); } }); }
+    }
+    for (const b of D.binis || []) O.binisLook(B, api, b);
     // ── Şeker dizileri (Feza yaklaşınca belirir) ──
     for (const t of D.trails) if (t.pts.length) R.zones.push({ x: t.x, z: t.z, r: 11, enter(z) { if (!z.done) { z.done = true; O.restCoins(t.pts); } } });
     // ── Buzdolabı lambası: başlangıç odasının kuzeyinde sıcak beyaz ışık ──
