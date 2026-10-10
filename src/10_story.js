@@ -911,6 +911,9 @@ const STORY = (() => {
     _cv.lerp(_ml, w);
     c.lookAt(_cv); c.updateMatrixWorld();
   }
+  // oyuncu dokununca / sürükleyince hikâye anı kamerası hemen oyuna döner (Feza'nın kontrolü hiç kilitlenmez)
+  addEventListener('pointerdown', e => { if (MOM.on && !(CINE.on) && e.target && e.target.tagName === 'CANVAS') MOM.t = Math.max(MOM.t, MOM.dur - 0.45); }, true);
+  addEventListener('keydown', () => { if (MOM.on && !CINE.on) MOM.t = Math.max(MOM.t, MOM.dur - 0.45); }, true);
   function moment(dur, o = {}) {
     const c = realCam(), g = G_();
     MOM.on = true; MOM.t = 0; MOM.dur = dur; MOM.cx = o.x; MOM.cz = o.z; MOM.R = o.R; MOM.H = o.H;
@@ -1225,7 +1228,7 @@ const STORY = (() => {
     const b = line('masa_ilk2', null, 2);
     seen.cakeIds = malzemeIds();
     const g = G_(), L = g && g.L, cs = L && L.cakeSpot;
-    if (cs) later(0.9, () => { if (G_().L === L) moment(Math.max(3.5, a + 0.4), { x: cs.x, z: cs.z, R: 10, H: 5.2 }); });
+    if (cs) later(0.6, () => { if (G_().L === L) moment(2.8, { x: cs.x, z: cs.z, R: 10, H: 5.2 }); });
     return Math.max(a, b);
   }
   function hushChatter(sec, rank) { const A = A_(); if (A && A.hush) try { A.hush(sec, rank); } catch (e) { /* ignore */ } }
