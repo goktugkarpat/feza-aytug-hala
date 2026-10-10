@@ -17,10 +17,10 @@
   // ── Geometriler (her kurulumda yeni; süse birleşince atılır) ──
   function potGeo(THREE) {   // kiremit saksı: dışa açılan gövde, kalın kenar, toprak
     const pts = [[0, 0], [0.7, 0], [0.74, 0.04], [0.86, 0.86], [0.98, 0.9], [1.0, 1.0], [0.97, 1.08], [0.84, 1.06], [0.83, 0.98], [0, 0.98]].map(p => new THREE.Vector2(p[0], p[1]));
-    return new THREE.LatheGeometry(pts, 28);
+    return new THREE.LatheGeometry(pts, 16);
   }
   function leafGeo(THREE) {   // kalp biçimli dev yaprak: ortasından hafif kıvrık, ucu sivri; +z yönüne uzanır, sapı orijinde
-    const g = new THREE.SphereGeometry(1, 18, 10), p = g.attributes.position;
+    const g = new THREE.SphereGeometry(1, 10, 6), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) {
       let x = p.getX(i), y = p.getY(i), z = p.getZ(i);
       const u = (z + 1) / 2;                                   // 0 sap → 1 uç
@@ -32,7 +32,7 @@
     g.computeVertexNormals(); return g;
   }
   function petalGeo(THREE) {   // yassı, ucu yuvarlak taç yaprağı (orijinden +z'ye)
-    const g = new THREE.SphereGeometry(1, 12, 8), p = g.attributes.position;
+    const g = new THREE.SphereGeometry(1, 8, 5), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) {
       const x = p.getX(i), y = p.getY(i), z = p.getZ(i), u = (z + 1) / 2;
       p.setXYZ(i, x * 0.22 * (0.55 + 0.6 * Math.sin(u * PI * 0.85)), y * 0.04 + 0.12 * u * u, u);
@@ -40,7 +40,7 @@
     g.computeVertexNormals(); return g;
   }
   function seedGeo(THREE) {   // ayçiçeği çekirdeği: damla biçimli yassı tohum
-    const g = new THREE.SphereGeometry(1, 16, 10), p = g.attributes.position;
+    const g = new THREE.SphereGeometry(1, 8, 6), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); p.setXYZ(i, x * 0.6 * (0.7 + 0.3 * z), y * 0.32 + 0.05, z * 0.85); }
     g.computeVertexNormals(); return g;
   }
@@ -111,11 +111,12 @@
 
     kur(L, api) {
       const THREE = api.THREE, rnd = api.rnd, B = L._b;
+      if (typeof ODAKIT !== 'undefined' && ODAKIT.lowShadow) ODAKIT.lowShadow(api);   // (performans: alçak süsler gölge düşürmez)
       api.dreamEdge();
       if (api.floor && api.floor.material && api.floor.material.userData.u && api.floor.material.userData.u.uDream) api.floor.material.userData.u.uDream.value = 0;   // banyo düşü zemini değil: dışarısı çiçek yatağı
       const pot = api.tmp(potGeo(THREE)), leaf = api.tmp(leafGeo(THREE)), petal = api.tmp(petalGeo(THREE)), seed = api.tmp(seedGeo(THREE));
-      const sph = api.tmp(new THREE.SphereGeometry(1, 14, 10)), cyl = api.tmp(new THREE.CylinderGeometry(1, 1, 1, 14)), cone = api.tmp(new THREE.ConeGeometry(1, 1, 12));
-      const tor = api.tmp(new THREE.TorusGeometry(1, 0.18, 8, 28));
+      const sph = api.tmp(new THREE.SphereGeometry(1, 10, 7)), cyl = api.tmp(new THREE.CylinderGeometry(1, 1, 1, 10)), cone = api.tmp(new THREE.ConeGeometry(1, 1, 8));
+      const tor = api.tmp(new THREE.TorusGeometry(1, 0.18, 6, 18));
       const POT = [0xd9774a, 0xe08a5a, 0xc8673e, 0x5aa8d8, 0xf2c94c, 0xf08aa8];
       const GREEN = [0x4fae4a, 0x63c25a, 0x3f9a46, 0x78cc5e];
       const out = (x, z, m) => !api.isFloor(x, z) && api.linkDist(x, z) > m;

@@ -25,7 +25,7 @@ const MUTFAK = (() => {
     return k.build();
   });
   const flourGeo = () => C('mkFlour', () => {
-    const k = new Kit(), h = G.hemi(22);
+    const k = new Kit(), h = G.hemi(12);
     k.add(h, (x, y) => new THREE.Color().setHSL(0.11, 0.25, 0.9 + Math.min(0.08, y * 0.03)), [0, 0, 0], null, [3, 1.8, 2.6]);
     for (let j = 0; j < 6; j++) { const a = j * 1.05; k.add(h, 0xfbf7ee, [Math.cos(a) * 2.3, 0, Math.sin(a) * 2], null, [1.1, 0.5 + (j % 3) * 0.2, 1]); }
     k.add(G.sphere(10, 6), 0xffffff, [0, 1.75, 0], null, [0.6, 0.18, 0.55]);
@@ -57,7 +57,7 @@ const MUTFAK = (() => {
     return k.build();
   });
   const jarGeo = i => C('mkJar' + (i % 5), () => {
-    const k = new Kit(), cy = G.cyl(1, 1, 24);
+    const k = new Kit(), cy = G.cyl(1, 1, 14);
     const [fill, lid] = [[0xf6d36a, 0xe0533d], [0xe88a3a, 0x3f7cc4], [0x9a4a2e, 0xf2b134], [0xfbf7ee, 0x4caf7d], [0xe8cfa0, 0x8e6cc4]][i % 5];
     k.add(cy, 0xe6f3f8, [0, 1.5, 0], null, [1.25, 3, 1.25]);
     k.add(cy, (x, y, z) => new THREE.Color(fill).multiplyScalar(0.85 + 0.3 * K.hash(Math.floor(x * 6), Math.floor(y * 6), Math.floor(z * 6))), [0, 1.1, 0], null, [1.2, 2.2, 1.2]);
@@ -67,7 +67,7 @@ const MUTFAK = (() => {
     return k.build();
   });
   const spiceGeo = i => C('mkSpice' + (i % 4), () => {
-    const k = new Kit(), cy = G.cyl(1, 1, 20), [fill, lid] = [[0xd23b2a, 0xf2f2f2], [0xf2b134, 0xd23b2a], [0x3b3330, 0x2f9a5a], [0x7cbf5a, 0xf4a63a]][i % 4];
+    const k = new Kit(), cy = G.cyl(1, 1, 12), [fill, lid] = [[0xd23b2a, 0xf2f2f2], [0xf2b134, 0xd23b2a], [0x3b3330, 0x2f9a5a], [0x7cbf5a, 0xf4a63a]][i % 4];
     k.add(cy, 0xeaf4f6, [0, 1.1, 0], null, [0.7, 2.2, 0.7]); k.add(cy, fill, [0, 0.8, 0], null, [0.66, 1.6, 0.66]);
     k.add(cy, lid, [0, 2.35, 0], null, [0.74, 0.3, 0.74]);
     for (let j = 0; j < 5; j++) { const a = j * TAU / 5; k.add(cy, 0x444444, [Math.sin(a) * 0.32, 2.51, Math.cos(a) * 0.32], null, [0.06, 0.02, 0.06]); }
@@ -102,7 +102,7 @@ const MUTFAK = (() => {
     return k.build();
   });
   const tomatoGeo = () => C('mkTomato', () => {
-    const k = new Kit(); k.add(G.sphere(22, 16), 0xe2412c, [0, 1, 0], null, [1.05, 0.95, 1.05]); k.add(G.sphere(10, 8), 0xff9a86, [-0.4, 1.5, 0.5], null, [0.2, 0.12, 0.12]);
+    const k = new Kit(); k.add(G.sphere(12, 9), 0xe2412c, [0, 1, 0], null, [1.05, 0.95, 1.05]); k.add(G.sphere(10, 8), 0xff9a86, [-0.4, 1.5, 0.5], null, [0.2, 0.12, 0.12]);
     for (let j = 0; j < 5; j++) { const a = j * TAU / 5; k.add(G.sphere(8, 4), 0x4f9a3a, [Math.sin(a) * 0.32, 1.93, Math.cos(a) * 0.32], [0, a, 0.3], [0.32, 0.05, 0.12]); }
     k.add(G.cyl(1, 1, 6), 0x4f8a3a, [0, 2.1, 0], null, [0.07, 0.35, 0.07]); return k.build();
   });
@@ -112,18 +112,18 @@ const MUTFAK = (() => {
     return k.build();
   });
   const breadGeo = () => C('mkBread', () => {
-    const k = new Kit(); k.add(G.sphere(24, 14), (x, y) => new THREE.Color().setHSL(0.08, 0.6, 0.36 + Math.min(0.18, y * 0.08)), [0, 0.9, 0], null, [2.6, 1.2, 1.4]);
+    const k = new Kit(); k.add(G.sphere(14, 8), (x, y) => new THREE.Color().setHSL(0.08, 0.6, 0.36 + Math.min(0.18, y * 0.08)), [0, 0.9, 0], null, [2.6, 1.2, 1.4]);
     for (let j = 0; j < 3; j++) k.add(G.sphere(12, 6), 0xf0d29a, [(j - 1) * 1.2, 2.02, 0], [0, 0.6, 0], [0.45, 0.06, 0.9]);
     return k.build();
   });
   const plateGeo = () => C('mkPlate', () => {
-    const k = new Kit(), cy = G.cyl(1, 0.85, 32);
-    for (let j = 0; j < 4; j++) { k.add(cy, 0xfbfbf8, [0, 0.16 + j * 0.3, 0], null, [2.3, 0.26, 2.3]); k.add(G.torus(TAU, 0.05, 32), 0x4f8fdc, [0, 0.3 + j * 0.3, 0], [Math.PI / 2, 0, 0], [2.0, 2.0, 1]); }
+    const k = new Kit(), cy = G.cyl(1, 0.85, 18);
+    for (let j = 0; j < 4; j++) { k.add(cy, 0xfbfbf8, [0, 0.16 + j * 0.3, 0], null, [2.3, 0.26, 2.3]); k.add(G.torus(TAU, 0.05, 18), 0x4f8fdc, [0, 0.3 + j * 0.3, 0], [Math.PI / 2, 0, 0], [2.0, 2.0, 1]); }
     return k.build();
   });
   const mugGeo = i => C('mkMug' + (i % 3), () => {
     const k = new Kit(), c = [0xf28a9a, 0x7fc8f0, 0xf6d04d][i % 3];
-    k.add(G.cyl(1, 1, 24), c, [0, 1.1, 0], null, [1.1, 2.2, 1.1]); k.add(G.cyl(1, 1, 24), 0x6a4630, [0, 2.15, 0], null, [0.95, 0.06, 0.95]);
+    k.add(G.cyl(1, 1, 14), c, [0, 1.1, 0], null, [1.1, 2.2, 1.1]); k.add(G.cyl(1, 1, 24), 0x6a4630, [0, 2.15, 0], null, [0.95, 0.06, 0.95]);
     k.add(G.torus(TAU, 0.16, 16), c, [1.2, 1.1, 0], null, [0.55, 0.62, 0.8]);
     k.add(G.sphere(10, 8), 0xffffff, [0, 1.2, 1.08], null, [0.35, 0.3, 0.05]); return k.build();
   });
@@ -170,6 +170,7 @@ const MUTFAK = (() => {
 
   // ── görsel kurulum ──
   function kur(L, api) {
+    K.lowShadow(api);
     const rnd = api.rnd, A = L.areas || [], a1 = A[0], a2 = A[1], a3 = A[2], ar = A[3], R = i => L.rooms[i];
     const sinkQ = a2 ? K.bbox(L, a2.rooms, 5) : null, cupQ = a3 ? K.bbox(L, a3.rooms, 4) : null, stoveQ = ar ? K.bbox(L, ar.rooms, 4.5) : null;
     K.floor(L, api, { mats: [{ tex: 'counter', size: 6, rough: 0.32 }, { tex: 'steel', size: 4, rough: 0.28 }, { tex: 'shelf', size: 6, rough: 0.5 }],
@@ -320,7 +321,7 @@ const MUTFAK = (() => {
     for (const ri of L.areas[1].rooms) {   // çelikte su damlaları (süs, üstünden geçilir)
       const r0 = L.rooms[ri];
       for (let k = 0; k < 16; k++) { const a = rnd() * TAU, d = Math.sqrt(rnd()) * r0.r, x = r0.x + Math.sin(a) * d, z = r0.z + Math.cos(a) * d, s2 = 0.18 + rnd() * 0.3;
-        if (!K.isF(L, x, z)) continue; api.put(G.hemi(12), x, 0, z, s2, s2 * 0.55, s2 * 0.85, 0x9fd4f2); api.put(G.sphere(6, 4), x - s2 * 0.3, s2 * 0.45, z - s2 * 0.2, s2 * 0.18, s2 * 0.1, s2 * 0.14, 0xffffff); }
+        if (!K.isF(L, x, z)) continue; api.put(G.hemi(8), x, 0, z, s2, s2 * 0.55, s2 * 0.85, 0x9fd4f2); api.put(G.sphere(6, 4), x - s2 * 0.3, s2 * 0.45, z - s2 * 0.2, s2 * 0.18, s2 * 0.1, s2 * 0.14, 0xffffff); }
     }
     if (!p) return;
     const sx = p.x, sz = p.z, steel = 0xc4ccd5;

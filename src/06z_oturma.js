@@ -212,6 +212,7 @@ const OTURMA = (() => {
 
   // ── görsel kurulum ──
   function kur(L, api) {
+    K.lowShadow(api);
     const rnd = api.rnd, A = L.areas || [], a1 = A[0], a2 = A[1], a3 = A[2], ar = A[3];
     const R = i => L.rooms[i];
     const rug1 = a1 ? bbox(L, mainOf(L, a1), 6.5) : null, rugA = ar ? bbox(L, ar.rooms, 5) : null;
@@ -606,7 +607,7 @@ const OTURMA = (() => {
     const balls = [];
     for (let i = 0; i < 10; i++) {
       const q = K.inRoom(L, api, big, i * TAU / 10 + 0.3, 0.72, 0.6);
-      const m = new THREE.Mesh(dustGeo(), K.vmat(0.95)); m.position.set(q.x, 0, q.z); m.scale.setScalar(0.7); m.visible = false; m.castShadow = true; api.add(m);
+      const m = new THREE.Mesh(dustGeo(), K.vmat(0.95)); m.position.set(q.x, 0, q.z); m.scale.setScalar(0.7); m.visible = false; m.castShadow = false; api.add(m);
       balls.push({ m, x: q.x, z: q.z, on: false });
     }
     let race = 0, got = 0, goldGiven = false, endAt = null;

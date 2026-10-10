@@ -468,7 +468,7 @@ const ODAKIT = (() => {
   }
   // Gizli hazine: yürünür kenarın dışında yarı gömülü dev nesne; yaklaşınca zıplar, döner, şeker saçar
   function treasure(api, T, x, z, geo, o = {}) {
-    const m = mesh(api, geo, x, o.y ?? 0.15, z, o.rough ?? 0.4);
+    const m = mesh(api, geo, x, o.y ?? 0.15, z, o.rough ?? 0.4, !!o.cast);
     m.scale.setScalar(o.sc || 1); m.rotation.set(o.tilt ?? 0.35, Math.random() * TAU, 0.2);
     let pop = -1; const y0 = m.position.y;
     return T.add({ x, z, r: o.r || 2.4, hint: { y: o.hintY || 1.9 }, line: o.line || null, near: 6, once: true,
@@ -599,7 +599,24 @@ const ODAKIT = (() => {
     api.light(x, 2, z, 0xffd27a, 1.8, 6);
     api.anim(() => { const u = (TIME.t * 0.7) % 1; ring.scale.setScalar(sc * (1.1 + u * 0.9)); rm.opacity = 0.7 * (1 - u); });
   }
-  const K_ = { tex, carpetColor, pawPad, fill, outRect, scatter, gatePosts, miniStation, miniBox, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
+  // Performans: alçak/küçük birleştirilmiş süsler gölge düşürmesin (görünüş aynı: aynı parlak malzeme, 'shinyNS' parçası).
+  // api.put'u sarar: malzeme anahtarı verilmemiş ve tepesi hMax'tan alçak her süs → 'shinyNS'. Büyük nesneler gölgede kalır.
+  function lowShadow(api, hMax = 1.7) {
+    if (api._lowSh) return api; api._lowSh = true;
+    const put0 = api.put;
+    api.put = function (geo, x, y, z, sx = 1, sy = sx, sz = sx, color, yaw, rx, rz, matKey) {
+      const sMax = Math.max(Math.abs(sx), Math.abs(sy), Math.abs(sz));
+      if (geo === G.sphere() && sMax < 0.9) geo = G.sphere(10, 7);   // küçük toplar/köpükler: daha az üçgen
+      if (!matKey) {
+        const bb = geo.boundingBox || (geo.computeBoundingBox(), geo.boundingBox), s = Math.max(Math.abs(sx), Math.abs(sy), Math.abs(sz));
+        const top = y + (rx || rz ? Math.max(bb.max.x, bb.max.y, bb.max.z) * s : bb.max.y * Math.abs(sy));
+        matKey = top < hMax ? 'shinyNS' : 'shiny';
+      }
+      return put0.call(api, geo, x, y, z, sx, sy, sz, color, yaw, rx, rz, matKey);
+    };
+    return api;
+  }
+  const K_ = { tex, carpetColor, pawPad, lowShadow, fill, outRect, scatter, gatePosts, miniStation, miniBox, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
     say, sfx, burst, ring, sugar, playing, heroY, sticker, toys, hash, sm, keepG, GEOC, last: null };
   return K_;
 })();
