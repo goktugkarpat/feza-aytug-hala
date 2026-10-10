@@ -182,6 +182,7 @@ const OTURMA = (() => {
       keep.push(sp);
     }
     L.spawns.length = 0; L.spawns.push(...keep);
+    for (const sp of L.spawns) if (!api.circleFree(sp.x, sp.z, 1.0)) { const q = api.randomFloorNear(sp.x, sp.z, 0.5, 4); if (q && api.circleFree(q.x, q.z, 1.0)) { sp.x = q.x; sp.z = q.z; } }   // (Feza'nın ulaşamayacağı sıkışık yerde doğmasın)
     // Aytuğ Hala'nın gözlüğü: koltuk altında (3. alanın yan odası ya da son odası)
     const a3 = A[2];
     if (a3) {

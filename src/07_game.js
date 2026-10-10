@@ -6943,7 +6943,7 @@ const GAME = (() => {
   // Test kancaları (QA): bir düşman doğur, Feza'yı bir yere koy
   function spawnEnemy(type, x, z, o = {}) {
     if (!L) return null;
-    const e = makeEnemy({ type, x, z, elite: !!o.elite, pack: o.boss ? 'boss' : 'qa', face: 0 });
+    const e = makeEnemy({ type, x, z, elite: !!o.elite, pack: o.pack || (o.boss ? 'boss' : 'qa'), room: o.room, face: 0 });
     if (o.boss) { boss = GAME.boss = e; }
     return e;
   }
