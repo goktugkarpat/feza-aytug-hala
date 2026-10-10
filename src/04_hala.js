@@ -2,7 +2,8 @@
    Genel ad: HALA (kancalar: src/SPEC.md › "Dev Ev API" › HALA).
    Model: Feza ile aynı teknik — tek iskelet (16 kemik) + üç SkinnedMesh (ten, polar ceket, tayt+terlik); yüz (göz, kirpik,
    kaş, ağız, allık) ten gölgelendiricisinde baş koordinatından çizilir (her yakınlıkta keskin, ek çizim yok). Saç başa bağlı
-   ayrı bir ağ: kafaya oturan kabuk + topuza doğru dalgalı tutamlar + topuz + şakaklarda kıvrık tutamlar (yaylı ikincil hareket).
+   ayrı ağlar: omuza dökülen gür, sıkı kıvırcık bukleli saç (bukle tümsekli başlık + yaylı burgu bukleler, ikincil hareket),
+   siyah desenli bandana (arkada düğüm) ve başın tepesinde güneş gözlüğü.
    Polar ceket: koddan üretilen tüylü kumaş dokusu (renk + normal), fermuar, dik yaka, manşet ve etek ribanaları, kalp arması.
    Davranış: Feza'yı yanında ve hafif arkasında takip, Pasta Topu, sarılma (can), kaldırma, Polar Kalkan, yol gösterme,
    alkış/övgü, Takım Hamlesi (el ele zıplama), dans, havaya atıp tutma (HALA.boost). Hala hasar almaz. */
@@ -275,130 +276,227 @@ const HALA = (() => {
     });
   }
 
-  // ── Saç: kabuk (topuza doğru taranmış) + dalgalı tutamlar + topuz + kıvrık tutamlar ──
+  // ── Saç (gerçek Aytuğ Hala'nın fotoğrafındaki gibi): omuza dökülen gür, sıkı kıvırcık bukleler, siyah desenli bandana,
+  //    bandananın üstünde, başın tepesinde güneş gözlüğü ──
+  // Hacim: başı saran tek bir "başlık" yüzeyi (azimut a: 0 ön, ±π arka — headSurf'ün th'si; yükselim φ, HC'den). Üstte kafa + kalınlık,
+  // altta dikey dökülüp uca doğru kabaran perde. Yüzeye yüzlerce yuvarlak bukle tümseği (hafif sarmal oluklu) oyulur; tepeler açık
+  // kestane, aralar koyu → kıvırcık doku ışıkta parlar. Alt kenarda ve yüzün iki yanında yaylı burgu bukleler (aFlex uca doğru artar:
+  // yürürken/koşarken zıplar). Hepsi tek ağ = tek çizim; bandana (+ düğüm, uçlar) ve gözlük ayrı birer küçük ağ.
   const dirOf = (th, ph) => v3(Math.sin(th) * Math.cos(ph), Math.sin(ph), Math.cos(th) * Math.cos(ph));
-  const thOf = d => Math.atan2(d.x, d.z), phOf = d => Math.asin(clamp(d.y, -1, 1));
-  const HL_A = [0, 0.4, 0.8, 1.2, 1.4, 1.6, 1.8, 2.1, 2.6, Math.PI], HL_P = [0.53, 0.5, 0.38, 0.17, 0.04, 0.2, 0.14, -0.34, -0.56, -0.62];
-  function hairline(th) {
-    const a = Math.abs(th);
-    for (let i = 1; i < HL_A.length; i++) if (a <= HL_A[i]) { const t = sstep(0, 1, (a - HL_A[i - 1]) / (HL_A[i] - HL_A[i - 1])); return lerp(HL_P[i - 1], HL_P[i], t); }
-    return HL_P[HL_P.length - 1];
-  }
-  const hairThick = (th, ph) => 0.016 + 0.01 * sstep(0.2, 1.4, Math.abs(th)) * sstep(-0.6, 0.3, ph);
-  const capLift = (th, ph) => { const hl = hairline(th); return hairThick(th, ph) * sstep(hl - 0.03, hl + 0.16, ph) + 0.004 * sstep(hl - 0.05, hl, ph) - 0.006; };
-  const BUN_PH = 0.9;   // yüksek topuz: önden bakınca da başın üstünde görünür
-  const BD = dirOf(Math.PI, BUN_PH).normalize(), BE1 = v3(1, 0, 0), BE2 = v3().crossVectors(BD, BE1).normalize();
-  const _sa = v3(), _sn = v3();
+  const _sa = v3(), _sn = v3(), _sb = v3();
   function surfAt(d, lift, o) {
-    const th = thOf(d), ph = phOf(d);
+    const th = Math.atan2(d.x, d.z), ph = Math.asin(clamp(d.y, -1, 1));
     headSurf(th, ph, o); headNormal(th, ph, _sn);
     return o.addScaledVector(_sn, lift);
   }
-  const bunDir = (a, b) => _sa.copy(BD).multiplyScalar(Math.cos(a)).addScaledVector(BE1, Math.sin(a) * Math.cos(b)).addScaledVector(BE2, Math.sin(a) * Math.sin(b)).clone();
-  const HAIR = 0x4a2716, HAIR_HI = 0x74442a, HAIR_LO = 0x2c150b;
-  function hairTone(t, c, k) { return c.set(HAIR).lerp(new THREE.Color(t > 0 ? HAIR_HI : HAIR_LO), Math.abs(t) * (k ?? 1)); }
-  // Kabuk ızgarası saç çizgisine hizalı: v = 0 topuz, v = 1 tam saç çizgisi (kenar pürüzsüz, incelerek tene oturur)
-  const AH = (() => {
+  const HAIR_CRE = new THREE.Color(0x160a05), HAIR_MID = new THREE.Color(0x371c12), HAIR_CR = new THREE.Color(0x63361f), HAIR_AUB = new THREE.Color(0x8c4626);
+  const headR = (a, ph) => headSurf(a, ph, _sb).sub(HC).length();
+  const sideOf = a => Math.abs(a) / Math.PI;    // 0 ön … 1 arka
+  // bandana orta çizgisi (yükselim, radyan) ve yarı genişliği: alından geçer, kulakların üstünden arkaya iner
+  const bandPh = a => { const s = sideOf(a); return lerp(0.5, 0.34, sstep(0.0, 0.5, s)) - 0.3 * sstep(0.5, 1.0, s); };
+  const bandW = a => lerp(0.13, 0.085, sstep(0.25, 1.0, sideOf(a)));
+  const smax = (a, b, k) => { const h = clamp(0.5 + 0.5 * (a - b) / k, 0, 1); return lerp(b, a, h) + k * h * (1 - h); };
+  function hoodR(a, ph) {
+    const s = sideOf(a), fr = 1 - sstep(0.17, 0.32, s);
+    let T = lerp(0.036, lerp(0.085, 0.095, sstep(0.5, 1, s)), sstep(0.12, 0.5, s)) * (0.62 + 0.38 * Math.cos(ph));
+    T *= lerp(1, 0.1 + 0.9 * sstep(bandPh(a) + bandW(a) * 0.5, bandPh(a) + bandW(a) + 0.2, ph), fr);   // önde bandananın altına incelir
+    let r = headR(a, ph) + T;
+    if (ph < 0.2) {   // perde: başın altına dikey dökülür, uca doğru kabarır
+      const rf = lerp(0.222, 0.295, sstep(0.3, 0.85, s));
+      const y = HC.y + rf * Math.tan(Math.max(ph, -1.3));
+      r = smax(r, (rf + 0.055 * sstep(0.17, -0.03, y)) / Math.max(0.25, Math.cos(ph)), 0.03);
+    }
+    return r;
+  }
+  const yBot = a => lerp(0.08, -0.022, sstep(0.3, 0.72, sideOf(a)));
+  const PHMIN = (() => {   // alt kenarın yükselimi (azimuta göre, 256 örnek)
     const N = 256, out = new Float32Array(N + 1);
-    const inside = (a, b) => { const d = bunDir(a, b); return phOf(d) >= hairline(thOf(d)); };
     for (let i = 0; i <= N; i++) {
-      const b = i / N * TAU; let a = 0.02;
-      while (a < Math.PI * 0.985 && inside(a, b)) a += 0.01;
-      let lo = a - 0.01, hi = a; for (let k = 0; k < 12; k++) { const m = (lo + hi) / 2; if (inside(m, b)) lo = m; else hi = m; }
-      out[i] = lo;
+      const a = -Math.PI + i / N * TAU, yb = yBot(a); let lo = -1.35, hi = 0.45;
+      for (let k = 0; k < 30; k++) { const m = (lo + hi) / 2; if (HC.y + hoodR(a, m) * Math.sin(m) > yb) hi = m; else lo = m; }
+      out[i] = (lo + hi) / 2;
     }
-    return u => { const f = ((u % 1) + 1) % 1 * N, i = Math.floor(f), t = f - i; return lerp(out[i], out[Math.min(N, i + 1)], t); };
+    return a => { const f = (a + Math.PI) / TAU * N, i = clamp(Math.floor(f), 0, N - 1), t = f - i; return lerp(out[i], out[i + 1], t); };
   })();
-  function hairCapGeo() {
-    const g = paramGeo((u, v, o) => {
-      const d = bunDir(AH(u) * v, u * TAU), th = thOf(d), ph = phOf(d);
-      surfAt(d, hairThick(th, ph) * (1 - sstep(0.8, 1.0, v)) + 0.0013 + 0.004 * (1 - sstep(0.9, 1.0, v)), o);
-    }, 80, 36, HC, true);
-    const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 14, uv.getY(i) * 3);
-    const R = mulberry32(5);
-    const ns = []; for (let i = 0; i < 9; i++) ns.push([R() * TAU, 3 + R() * 9, R() * 0.5]);
-    return withAttrs(g, (x, y, z, c) => {
-      const a = Math.atan2(x - HC.x, z - HC.z); let t = 0;
-      for (const n of ns) t += Math.sin(a * n[1] + n[0]) * n[2];
-      const d = _sa.set(x - HC.x, y - HC.y, z - HC.z).normalize(), edge = 1 - sstep(0.0, 0.14, phOf(d) - hairline(thOf(d)));
-      return hairTone(clamp(t * 0.5 + 0.08 * (y - HC.y) * 10, -1, 1) * 0.6 * (1 - edge) - 0.55 * edge, c);
-    }, 0);
+  const phEnd = a => lerp(bandPh(a), PHMIN(a), sstep(0.235, 0.43, sideOf(a)));   // önde bandananın altında biter, yanlarda omza iner
+  const hoodN = (a, ph, o) => { const k = ph < 0 ? lerp(1, 0.25, sstep(0, -0.6, ph)) : 1; return o.set(Math.sin(a) * Math.cos(ph), Math.sin(ph) * k, Math.cos(a) * Math.cos(ph)).normalize(); };
+  const GD_PH = 0.97, GD = dirOf(0, GD_PH);   // güneş gözlüğü: başın tepesinde, bandananın hemen arkasında
+  // bukle tümsekleri: taban yüzeyinde Poisson dağılımı (bandana ve gözlüğün altında yok)
+  let CURLS = null;
+  function curlField() {
+    if (CURLS) return CURLS;
+    const R = mulberry32(77), out = [], MIN = 0.045, p = v3(), n = v3();
+    for (let i = 0; i < 7000; i++) {
+      const a = -Math.PI + R() * TAU, pe = phEnd(a), ph = lerp(Math.PI / 2, pe - 0.05, Math.sqrt(R()));
+      if (Math.abs(ph - bandPh(a)) < bandW(a) + 0.03) continue;
+      const d = dirOf(a, ph);
+      if (d.angleTo(GD) < 0.26) continue;
+      p.copy(d).multiplyScalar(hoodR(a, ph)).add(HC);
+      let ok = true; for (const c of out) if (c.p.distanceToSquared(p) < MIN * MIN) { ok = false; break; }
+      if (!ok) continue;
+      hoodN(a, ph, n);
+      const t1 = v3().crossVectors(n, Math.abs(n.y) > 0.9 ? v3(1, 0, 0) : v3(0, 1, 0)).normalize(), t2 = v3().crossVectors(n, t1);
+      const r = (0.032 + R() * 0.01) * (1 + 0.1 * sstep(0.1, -0.02, p.y));
+      out.push({ p: p.clone(), r, R2: sq(r * 1.32), t1, t2, ph: R() * TAU, sp: R() < 0.5 ? -1 : 1 });
+    }
+    return (CURLS = out);
   }
-  // topuza doğru uzanan dalgalı tutam: ön saç çizgisinden başlar, yanal S dalgasıyla topuza gider
-  function waveLock(th0, ph0, w, lift0, tone, phase, amp, endF = 0.9) {
-    const d0 = dirOf(th0, ph0).normalize(), N = 9, P = [], U = [];
-    const side = v3().crossVectors(d0, BD); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
-    for (let i = 0; i <= N; i++) {
-      const f = i / N * endF;
-      const d = d0.clone().lerp(BD, f).normalize().addScaledVector(side, amp * Math.sin(f * Math.PI * 2.4 + phase) * (1 - f * 0.8)).normalize();
-      const th = thOf(d), ph = phOf(d);
-      const lift = (hairThick(th, ph) + 0.001) * sstep(0.0, 0.3, f) - 0.002 + (lift0 * Math.sin(Math.min(1, f * 1.25) * Math.PI * 0.85) + 0.006 * Math.sin(f * Math.PI)) * sstep(0.05, 0.4, f);
-      P.push(surfAt(d, lift, v3())); U.push(headNormal(th, ph, v3()));
+  const _hinf = { h: 0, k: 0 };
+  function hoodPt(u, v, o, info) {
+    const a = -Math.PI + u * TAU, pe = phEnd(a), ph = lerp(Math.PI / 2, pe, Math.pow(v, 0.92));
+    const d = dirOf(a, ph);
+    o.copy(d).multiplyScalar(hoodR(a, ph)).add(HC);
+    const L = curlField();
+    let best = 0, kk = 0;
+    for (let i = 0; i < L.length; i++) {
+      const c = L[i], dx = o.x - c.p.x, dy = o.y - c.p.y, dz = o.z - c.p.z, d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 >= c.R2) continue;
+      const q = d2 / c.R2, rr = Math.sqrt(q);
+      const th = Math.atan2(dx * c.t2.x + dy * c.t2.y + dz * c.t2.z, dx * c.t1.x + dy * c.t1.y + dz * c.t1.z);
+      const sw = 1 + 0.2 * Math.sin(2 * th * c.sp - 9 * rr + c.ph) * sstep(0.12, 0.45, rr);   // sarmal bukle oluğu
+      const h = c.r * 0.8 * Math.sqrt(1 - q) * sw;
+      if (h > best) { best = h; kk = Math.sqrt(1 - q) * (0.75 + 1.5 * (sw - 1)); }
     }
-    const pts = curvePts(P, 16), ups = pts.map((p, i) => U[Math.min(U.length - 1, Math.round(i / 16 * N))]);
-    return sweep(pts, ups, t => w * (0.3 + 0.7 * sstep(0, 0.25, t)) * (1 - 0.75 * t * t), t => 0.0085 * (0.25 + 0.75 * sstep(0, 0.2, t)) * (1 - 0.6 * t * t), 8, 0.4,
-      (t, c) => hairTone(tone + 0.25 * Math.sin(t * 9 + phase), c, 0.8), null);
+    const band = sstep(bandW(a) * 0.85, bandW(a) * 1.3, Math.abs(ph - bandPh(a)));
+    const gl = 1 - 0.8 * (1 - sstep(0.2, 0.33, d.angleTo(GD)));
+    const h = best * band * gl;
+    o.addScaledVector(hoodN(a, ph, _sn), h - 0.003);
+    if (info) { info.h = h; info.k = kk * band * gl; info.ph = ph; info.a = a; }
+    return o;
   }
-  // kıvrık tutam: P0'dan P1'e sarmal (yaylı: aFlex uca doğru artar)
-  function curlLock(P0, P1, out, r0, turns, w, tone) {
-    const ax = v3().subVectors(P1, P0), t1 = v3().crossVectors(ax, out).normalize(), o1 = out.clone().normalize(), N = 40, P = [], U = [];
-    for (let i = 0; i <= N; i++) {
-      const f = i / N, a = f * turns * TAU, r = r0 * (0.35 + 0.65 * sstep(0, 0.25, f)) * (1 - 0.35 * f);
-      P.push(P0.clone().addScaledVector(ax, f).addScaledVector(o1, Math.cos(a) * r).addScaledVector(t1, Math.sin(a) * r));
-      U.push(o1);
+  function hoodGeo() {
+    const NU = 128, NV = 46;
+    const g = paramGeo((u, v, o) => hoodPt(u, v, o), NU, NV, HC, true);
+    const n = g.attributes.position.count, col = new Float32Array(n * 3), fl = new Float32Array(n), P = g.attributes.position, c = new THREE.Color();
+    for (let j = 0, k = 0; j <= NV; j++) for (let i = 0; i <= NU; i++, k++) {
+      hoodPt(i / NU, j / NV, _sa, _hinf);
+      const y = P.getY(k), crest = _hinf.k;
+      c.copy(HAIR_CRE).lerp(HAIR_MID, sstep(0.0, 0.35, crest)).lerp(HAIR_CR, sstep(0.4, 1.0, crest));
+      c.lerp(HAIR_AUB, (0.12 + 0.45 * sstep(0.2, -0.02, y)) * sstep(0.35, 1.0, crest));     // uçlara doğru kızıl-kestane ışıltı
+      col[k * 3] = c.r; col[k * 3 + 1] = c.g; col[k * 3 + 2] = c.b;
+      fl[k] = 0.95 * sstep(0.2, -0.03, y);
     }
-    return sweep(P, U, t => w * (1 - 0.55 * t), t => w * 0.75 * (1 - 0.55 * t), 6, 1, (t, c) => hairTone(tone, c, 0.7), t => 0.15 + 0.85 * t);
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.setAttribute('aFlex', new THREE.BufferAttribute(fl, 1));
+    g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(n * 2), 2));   // uv = 0: tel normal dokusu ve tel parlaması yok, bukleler kendi parlar
+    return g;
   }
-  function bunGeos() {
-    const R0 = surfAt(BD, 0, v3()).sub(HC).length(), C = HC.clone().addScaledVector(BD, R0 + 0.062), out = [];
-    const q = qAlign(v3(0, 0, 1), BD);
-    // dolgu (boşluk kalmasın)
-    out.push(withAttrs(kitGeo(k => k.add(G.sphere(20), (x, y, z, c) => hairTone(-0.3, c || new THREE.Color()), [C.x, C.y, C.z], q, [0.086, 0.086, 0.064])), null, 0.25));
-    // burgulu topuz: 2,3 tur içe doğru küçülen örgü
-    const P = [], U = [], N = 90;
+  // burgu bukle: P0'dan 'down' yönünde sarkar, uca doğru yaylanır
+  function ringlet(P0, down, out, L, r0, turns, w, tone, M = 6) {
+    const ax = down.clone().normalize(), o1 = out.clone().addScaledVector(ax, -out.dot(ax)).normalize(), t1 = v3().crossVectors(ax, o1);
+    const N = Math.round(11 * turns), P = [], U = [], ph0 = tone * 9;
     for (let i = 0; i <= N; i++) {
-      const t = i / N, a = t * 2.35 * TAU + 0.4, r = lerp(0.088, 0.014, Math.pow(t, 0.9)), h = lerp(-0.006, 0.056, sstep(0, 1, t)) + 0.018 * Math.sin(t * Math.PI);
-      P.push(C.clone().addScaledVector(BD, h).addScaledVector(BE1, Math.cos(a) * r).addScaledVector(BE2, Math.sin(a) * r));
-      U.push(BD);
+      const f = i / N, an = f * turns * TAU + ph0, r = r0 * (0.45 + 0.55 * sstep(0, 0.2, f)) * (1 - 0.25 * f);
+      const rad = v3().addScaledVector(o1, Math.cos(an)).addScaledVector(t1, Math.sin(an));
+      P.push(P0.clone().addScaledVector(ax, L * f).addScaledVector(rad, r)); U.push(rad);
     }
-    out.push(sweep(P, U, t => lerp(0.038, 0.017, t), t => lerp(0.031, 0.015, t), 8, 1, (t, c) => hairTone(0.35 * Math.sin(t * 40), c, 0.9), () => 0.3));
-    // mercan rengi toka (lastik): topuzun dibinde fırfırlı halka
-    const S = C.clone().addScaledVector(BD, -0.05), CO = 0xe0483f;
-    out.push(withAttrs(kitGeo(k => {
-      k.add(G.torus(TAU, 0.32, 36), CO, [S.x, S.y, S.z], q, [0.074, 0.074, 0.074]);
-      for (let i = 0; i < 14; i++) {
-        const a = i / 14 * TAU, p = S.clone().addScaledVector(BE1, Math.cos(a) * 0.08).addScaledVector(BE2, Math.sin(a) * 0.08);
-        k.add(G.sphere(8, 6), i & 1 ? 0xf05a50 : 0xd9443b, [p.x, p.y, p.z], q, [0.026, 0.026, 0.029]);
-      }
-    }), null, 0.1));
-    // topuzdan kaçan iki kıvrık tutam
-    for (const s of [-1, 1]) {
-      const a0 = C.clone().addScaledVector(BE1, s * 0.045).addScaledVector(BD, -0.01);
-      const a1 = a0.clone().addScaledVector(BE1, s * 0.02).add(v3(0, -0.075, -0.01));
-      out.push(curlLock(a0, a1, BE1.clone().multiplyScalar(s).addScaledVector(BD, 0.5), 0.011, 1.6, 0.0055, -0.1));
-    }
-    return out;
+    const c0 = new THREE.Color();
+    return sweep(P, U, t => w * (1 - 0.3 * t), t => w * (1 - 0.3 * t), M, 1,
+      (t, c) => c.copy(HAIR_MID).lerp(HAIR_CR, 0.45 + 0.35 * Math.sin(t * turns * TAU + ph0 + 1.2)).lerp(HAIR_AUB, 0.15 + 0.4 * t + 0.1 * tone), t => 0.35 + 0.65 * t);
   }
   function hairGeo() {
-    const parts = [hairCapGeo()];
-    const R = mulberry32(31);
-    // ön ve yanlar: yumuşak dalgalar topuza doğru (sol tarafta hafif yan ayrılmış dolgun dalga)
-    const ths = [-2.3, -1.95, -1.6, -1.3, -1.02, -0.75, -0.5, -0.27, -0.06, 0.16, 0.38, 0.62, 0.88, 1.15, 1.42, 1.72, 2.05, 2.4];
-    ths.forEach((th, i) => {
-      const hl = hairline(th), front = sstep(1.6, 0.2, Math.abs(th));
-      parts.push(waveLock(th, hl + 0.07, 0.036 + 0.006 * front, 0.006 + 0.012 * front, (R() - 0.5) * 0.9, R() * TAU, 0.07 + 0.05 * front));
-    });
-    // arka/ense: aşağıdan topuza doğru
-    for (const th of [-2.75, -3.05, 2.75, 3.08, 2.95, -2.9]) parts.push(waveLock(th, hairline(th) - 0.04, 0.036, 0.004, (R() - 0.5) * 0.8, R() * TAU, 0.05, 0.85));
-    // yandan taranmış kabarık ön dalga (sağ şakaktan alna kıvrılır)
-    parts.push(waveLock(-0.42, 0.47, 0.05, 0.026, 0.25, 0.6, 0.16, 0.85));
-    parts.push(waveLock(0.1, 0.51, 0.044, 0.02, 0.1, 2.2, 0.12, 0.85));
-    // şakaklarda yüzü çerçeveleyen kıvrık tutamlar
-    for (const s of [-1, 1]) {
-      const n0 = surfAt(dirOf(s * 2.45, -0.42), 0.01, v3()), n1 = n0.clone().add(v3(s * 0.008, -0.065, -0.012));
-      parts.push(curlLock(n0, n1, dirOf(s * 2.45, -0.5), 0.0085, 1.5, 0.0068, 0));
+    const parts = [hoodGeo()];
+    const R = mulberry32(31), p = v3(), n = v3();
+    // alt kenar boyunca omuza dökülen burgu bukleler + yüzün iki yanında çerçeve bukleler
+    const spec = [];
+    for (const a of [1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 2.98]) for (const s of [-1, 1]) spec.push([s * (a + (R() - 0.5) * 0.08), 0.1 + R() * 0.035, 0.07]);
+    spec.push([Math.PI, 0.11, 0.07]);
+    for (const s of [-1, 1]) { spec.push([s * 1.2, 0.1, 0.35]); spec.push([s * 1.33, 0.12, 0.22]); }
+    for (const [a, L, up] of spec) {
+      const ph = phEnd(a) + up;
+      p.copy(dirOf(a, ph)).multiplyScalar(hoodR(a, ph) - 0.006).add(HC);
+      const out = v3(Math.sin(a), 0, Math.cos(a));
+      const front = Math.abs(a) < 1.4;
+      const down = v3(0, -1, 0).addScaledVector(out, front ? 0.12 : 0.3);
+      parts.push(ringlet(p.clone().addScaledVector(out, 0.012), down, out, L, 0.017 + R() * 0.004, 1.9 + R() * 0.6, 0.0125 + R() * 0.002, R()));
     }
-    for (const g of bunGeos()) parts.push(g);
+    // perdenin üstünden fışkıran kısa burgu bukleler (yandan/arkadan bakınca da kıvırcık okunsun)
+    for (const c of curlField()) {
+      const a = Math.atan2(c.p.x - HC.x, c.p.z - HC.z);
+      if (c.p.y > 0.2 || sideOf(a) < 0.36 || R() < 0.35) continue;
+      const out = v3(Math.sin(a), 0, Math.cos(a)), down = v3(0, -1, 0).addScaledVector(out, 0.55);
+      parts.push(ringlet(c.p.clone().addScaledVector(out, c.r * 0.45), down, out, 0.05 + R() * 0.025, 0.0125 + R() * 0.003, 1.3 + R() * 0.5, 0.0098 + R() * 0.0015, R(), 5));
+    }
+    return concat(parts.map(g => withAttrs(g, null, 0)));
+  }
+  // ── Bandana: siyah, beyaz küçük çiçek/nokta desenli; alından geçer, arkada fiyonk düğüm + iki uç ──
+  let BANDTEX = null;
+  function bandTex() {
+    if (BANDTEX) return BANDTEX;
+    const W = 128, H = 64, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d');
+    g.fillStyle = '#16131a'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#f3ede4'; g.strokeStyle = '#f3ede4';
+    g.fillRect(0, 3, W, 2); g.fillRect(0, H - 5, W, 2);                          // kenar şeritleri
+    for (let x = 2; x < W; x += 8) { g.beginPath(); g.arc(x, 9, 1.1, 0, TAU); g.fill(); g.beginPath(); g.arc(x + 4, H - 9, 1.1, 0, TAU); g.fill(); }
+    const flower = (cx, cy, r) => {                                                // küçük beş yapraklı çiçek
+      for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; g.beginPath(); g.ellipse(cx + Math.cos(a) * r, cy + Math.sin(a) * r, r * 0.75, r * 0.5, a, 0, TAU); g.fill(); }
+      g.fillStyle = '#16131a'; g.beginPath(); g.arc(cx, cy, r * 0.45, 0, TAU); g.fill(); g.fillStyle = '#f3ede4';
+    };
+    for (let i = 0; i < 4; i++) { flower(16 + i * 32, 24, 3.6); flower(i * 32, 41, 3.6); }
+    for (let i = 0; i < 8; i++) { g.beginPath(); g.arc(8 + i * 16, 33, 1.2, 0, TAU); g.fill(); }
+    for (let i = 0; i < 4; i++) {                                                  // minik şal (paisley) damlaları
+      g.beginPath(); g.ellipse(32 * i + 4, 18, 2.6, 1.5, -0.6, 0, TAU); g.fill(); g.beginPath(); g.ellipse(32 * i + 21, 47, 2.6, 1.5, 0.6, 0, TAU); g.fill();
+    }
+    const t = new THREE.CanvasTexture(cv);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = ANISO; t.needsUpdate = true;
+    return (BANDTEX = keep(t));
+  }
+  const bandRad = (a, ph) => lerp(headR(a, ph) + 0.0075, hoodR(a, ph) + 0.0015, sstep(0.15, 0.3, sideOf(a)));
+  function bandanaGeo() {
+    const A0 = -Math.PI + 0.3, A1 = Math.PI - 0.3, N = 84, P = [], U = [], n = v3();
+    for (let i = 0; i <= N; i++) {
+      const a = lerp(A0, A1, i / N), ph = bandPh(a);
+      P.push(dirOf(a, ph).multiplyScalar(bandRad(a, ph)).add(HC)); U.push(hoodN(a, Math.max(ph, 0.05), v3()));
+    }
+    let len = 0; for (let i = 1; i <= N; i++) len += P[i].distanceTo(P[i - 1]);
+    const band = sweep(P, U, t => { const a = lerp(A0, A1, t); return bandW(a) * bandRad(a, bandPh(a)) * (1 - 0.25 * sstep(0.8, 1, sideOf(a))); }, () => 0.0042, 10, 0.5, (t, c) => c.set(0xffffff), null);
+    const uv = band.attributes.uv; for (let i = 0; i < uv.count; i++) { const k = uv.getX(i), t = uv.getY(i) / 4; uv.setXY(i, t * len / 0.06, k * 2); }
+    // arkada düğüm: iki küçük fiyonk kanadı + ortada düğüm + aşağı sarkan iki uç (yaylı)
+    const a = Math.PI, ph = bandPh(a), K = dirOf(a, ph).multiplyScalar(bandRad(a, ph) + 0.009).add(HC);
+    const nn = hoodN(a, ph, v3()), X = v3(1, 0, 0), Y = v3().crossVectors(nn, X).normalize();
+    const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(X, Y, nn));
+    const knot = kitGeo(k => {
+      k.push([K.x, K.y, K.z], q);
+      for (const s of [-1, 1]) k.add(G.sphere(14, 10), 0xffffff, [s * 0.022, 0.002, 0], [0, 0, s * 0.3], [0.025, 0.016, 0.011]);
+      k.add(G.sphere(12, 9), 0xffffff, [0, 0, 0.004], 0, [0.012, 0.013, 0.01]);
+      k.pop();
+    });
+    const tails = [];
+    for (const s of [-1, 1]) {
+      const TP = [], TU = [];
+      for (let i = 0; i <= 10; i++) { const f = i / 10; TP.push(K.clone().addScaledVector(X, s * (0.006 + 0.022 * f)).add(v3(0, -0.085 * f, 0)).addScaledVector(nn, 0.003 + 0.012 * Math.sin(f * Math.PI * 0.8))); TU.push(nn); }
+      const tg = sweep(TP, TU, t => 0.0125 * (1 - 0.15 * t) + 0.004 * sstep(0.85, 1, t), () => 0.0028, 8, 0.6, (t, c) => c.set(0xffffff), t => 0.25 + 0.75 * t);
+      const tuv = tg.attributes.uv; for (let i = 0; i < tuv.count; i++) { const k = tuv.getX(i), t = tuv.getY(i) / 4; tuv.setXY(i, t * 1.4 + s * 0.3, k * 2); }
+      tails.push(tg);
+    }
+    return concat([band, withAttrs(knot, null, 0.15), ...tails].map(g => withAttrs(g, null, 0)));
+  }
+  // ── Güneş gözlüğü (başın tepesinde): koyu çerçeve, hafif yansımalı kahve camlar, saçın içine giren saplar ──
+  function glassesGeo() {
+    const C0 = GD.clone().multiplyScalar(hoodR(0, GD_PH) + 0.008).add(HC);
+    const Z = GD.clone(), X = v3(1, 0, 0), Y = v3().crossVectors(Z, X).normalize();
+    const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(X, Y, Z));
+    const FR = 0x17110f, LENS = 0x3b2621, parts = [];
+    parts.push(kitGeo(k => {
+      k.push([C0.x, C0.y, C0.z], q);
+      for (const s of [-1, 1]) {
+        k.push([s * 0.041, 0, 0], [0, s * 0.18, s * -0.06]);
+        k.add(G.sphere(20, 12), LENS, [0, 0, 0.0005], 0, [0.0335, 0.0265, 0.0065]);
+        k.add(G.torus(TAU, 0.2, 30), FR, [0, 0, 0.001], 0, [0.0355, 0.0285, 0.03]);
+        k.pop();
+      }
+      k.add(G.torus(Math.PI, 0.32, 10), FR, [0, 0.008, 0.0045], [0, 0, 0], [0.009, 0.008, 0.012]);   // köprü
+      k.pop();
+    }));
+    for (const s of [-1, 1]) {   // saplar: menteşeden saçın içine, başın yanlarına doğru
+      const h0 = v3(s * 0.076, 0.004, 0.001).applyQuaternion(q).add(C0), P = [h0], U = [GD.clone()];
+      for (let i = 1; i <= 9; i++) {
+        const f = i / 9, a = s * lerp(0.42, 1.45, f), ph = lerp(GD_PH - 0.12, 0.66, f);
+        P.push(dirOf(a, ph).multiplyScalar(hoodR(a, ph) + 0.006 - 0.01 * f).add(HC)); U.push(hoodN(a, ph, v3()));
+      }
+      parts.push(sweep(curvePts(P, 18), curvePts(U, 18), () => 0.0036, () => 0.0026, 6, 1, (t, c) => c.set(FR), null));
+    }
     return concat(parts.map(g => withAttrs(g, null, 0)));
   }
   // saç teli normal dokusu (bir kez, 128²)
@@ -611,8 +709,8 @@ const HALA = (() => {
         k.add(G.sphere(8, 6), 0xc8352d, [x0, 0.084, 0.102], 0, [0.006, 0.006, 0.006]);
       }), bone: ft });
     }
-    BODY = { skin: mergeSkinned(skin, true), coat: mergeSkinned(coat), knit: mergeSkinned(knit), hair: hairGeo() };
-    BODY.ms = Math.round(performance.now() - t0);
+    BODY = { skin: mergeSkinned(skin, true), coat: mergeSkinned(coat), knit: mergeSkinned(knit), hair: hairGeo(), band: bandanaGeo(), glasses: glassesGeo() };
+    BODY.ms = Math.round(performance.now() - t0); S.buildMs = BODY.ms;
     return BODY;
   }
   // altın küpeler (baş kemiği uzayında) ve fermuar çekeceği (göğüs kemiği uzayında)
@@ -822,10 +920,11 @@ const HALA = (() => {
     return rimify(m, 0x9fb0ff, 0.16, 2.4);
   }
   function makeHairMat(flexU) {
-    const m = stencil(vcMat({ roughness: 0.46, normalMap: strandTex(), normalScale: V2(0.65, 0.65), envMapIntensity: 0.6 }));
+    const m = stencil(vcMat({ roughness: 0.48, normalMap: strandTex(), normalScale: V2(0.5, 0.5), envMapIntensity: 0.6, side: THREE.DoubleSide }));
     const vp = sh => { Object.assign(sh.uniforms, flexU); sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aFlex; uniform vec3 hzOff;').replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed += hzOff * aFlex;'); };
     m.onBeforeCompile = sh => {
       vp(sh);
+      sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\nif (!gl_FrontFacing) diffuseColor.rgb *= 0.3;');
       sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', `float hzF = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
           outgoingLight += vec3(1.0, 0.78, 0.6) * pow(hzF, 3.0) * 0.14;
           // saç parlaklık bandı (Kajiya-Kay benzeri): tel yönü = doku v yönü, ekran türevlerinden
@@ -849,10 +948,37 @@ const HALA = (() => {
           ${KNEE}
           #include <opaque_fragment>`);
     };
-    m.customProgramCacheKey = () => 'halaHair2';
+    m.customProgramCacheKey = () => 'halaHair3';
     const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
     d.onBeforeCompile = vp; d.customProgramCacheKey = () => 'halaHairD';
     m.userData.depth = d;
+    return m;
+  }
+  function makeBandMat(flexU) {   // pamuklu bandana: desen dokusu, yumuşak kumaş parıltısı, uçlar saçla birlikte yaylanır
+    const m = stencil(vcMat({ map: bandTex(), roughness: 0.78, envMapIntensity: 0.5 }));
+    const vp = sh => { Object.assign(sh.uniforms, flexU); sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aFlex; uniform vec3 hzOff;').replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed += hzOff * aFlex;'); };
+    m.onBeforeCompile = sh => {
+      vp(sh);
+      sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', `float hzF = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
+          outgoingLight += vec3(0.55, 0.5, 0.62) * pow(hzF, 2.5) * 0.22;
+          #include <opaque_fragment>`);
+    };
+    m.customProgramCacheKey = () => 'halaBand1';
+    const d = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+    d.onBeforeCompile = vp; d.customProgramCacheKey = () => 'halaBandD';
+    m.userData.depth = d;
+    return m;
+  }
+  function makeGlassMat() {   // parlak çerçeve + hafif yansımalı camlar (gökyüzü şeridi + kenar parıltısı)
+    const m = stencil(vcMat({ roughness: 0.12, metalness: 0.25, envMapIntensity: 1.8 }));
+    m.onBeforeCompile = sh => {
+      sh.fragmentShader = sh.fragmentShader.replace('#include <opaque_fragment>', `float hzF = 1.0 - saturate(dot(normal, normalize(vViewPosition)));
+          vec3 hzR = reflect(-normalize(vViewPosition), normal);
+          float hzS = smoothstep(0.55, 0.95, sin(hzR.x * 4.0 + hzR.y * 6.0 + 0.6));
+          outgoingLight += vec3(0.82, 0.9, 1.0) * (pow(hzF, 2.0) * 0.4 + hzS * 0.32 * smoothstep(0.15, 0.6, normal.z));
+          #include <opaque_fragment>`);
+    };
+    m.customProgramCacheKey = () => 'halaGlass1';
     return m;
   }
   let GOLD = null;
@@ -934,6 +1060,8 @@ const HALA = (() => {
     const B = {}; BONES.forEach((b, i) => { B[b[0]] = bones[i]; });
     const hair = new THREE.Mesh(body.hair, hairMat); hair.castShadow = true; hair.frustumCulled = false; hair.customDepthMaterial = hairMat.userData.depth;
     B.head.add(hair);
+    const band = new THREE.Mesh(body.band, makeBandMat(HU)); band.castShadow = true; band.frustumCulled = false; band.customDepthMaterial = band.material.userData.depth; B.head.add(band);
+    const glasses = new THREE.Mesh(body.glasses, makeGlassMat()); glasses.frustumCulled = false; B.head.add(glasses);
     const ear = new THREE.Mesh(keep(earringGeo()), goldMat()); ear.frustumCulled = false; B.head.add(ear);
     const zip = new THREE.Mesh(keep(zipPullGeo()), goldMat()); zip.frustumCulled = false; zip.castShadow = false; B.chest.add(zip);
     const headC = new THREE.Object3D(); headC.position.copy(HC); B.head.add(headC);
@@ -1182,11 +1310,12 @@ const HALA = (() => {
       if (acc.lengthSq() > 900) acc.setLength(30);
       S.B.head.getWorldQuaternion(_q).invert(); acc.applyQuaternion(_q);
       const tz = -0.012 * run;
-      M.hVel.x += (-(M.hOff.x) * 120 - M.hVel.x * 7 - acc.x * 0.35) * dt;
-      M.hVel.y += (-(M.hOff.y) * 120 - M.hVel.y * 7 - acc.y * 0.35) * dt;
-      M.hVel.z += (-(M.hOff.z - tz) * 120 - M.hVel.z * 7 - acc.z * 0.35) * dt;
+      // kıvırcık bukleler: daha yumuşak, daha az sönümlü yay → adımlarda hafifçe zıplar
+      M.hVel.x += (-(M.hOff.x) * 95 - M.hVel.x * 5 - acc.x * 0.4) * dt;
+      M.hVel.y += (-(M.hOff.y) * 95 - M.hVel.y * 4.5 - acc.y * 0.45) * dt;
+      M.hVel.z += (-(M.hOff.z - tz) * 95 - M.hVel.z * 5 - acc.z * 0.4) * dt;
       M.hOff.addScaledVector(M.hVel, dt);
-      if (M.hOff.length() > 0.04) M.hOff.setLength(0.04);
+      if (M.hOff.length() > 0.045) M.hOff.setLength(0.045);
     }
     HU.hzOff.value.copy(M.hOff);
     const jump = S.y > 0.02 ? 1 : 0;
@@ -1858,7 +1987,7 @@ const HALA = (() => {
       HU.hzOff.value.set(0, 0, 0); S.held.visible = false;
       root.position.set(0, 0, 0); root.rotation.y = 0; sc.add(root); root.updateMatrixWorld(true);
       S.headC.getWorldPosition(_v);
-      // 3/4 açı, hafif yukarıdan: topuz ve mercan toka başın arkasında görünsün, kırmızı polar yaka kadrajda
+      // 3/4 açı, hafif yukarıdan: kıvırcık saç, bandana ve tepedeki gözlük görünsün, kırmızı polar yaka kadrajda
       const ca = 0.7; cam.fov = 27; cam.updateProjectionMatrix();
       cam.position.set(_v.x + Math.sin(ca) * 1.6, _v.y + 0.26, _v.z + Math.cos(ca) * 1.6); cam.lookAt(_v.x - 0.04, _v.y + 0.025, _v.z - 0.07);
       const spark = new THREE.PointLight(0xfff2d0, 1.6, 4, 1.5); spark.position.copy(cam.position).add(v3(0.3, 0.25, 0)); sc.add(spark);
