@@ -97,7 +97,7 @@ const GAME = (() => {
   const DIFF = {
     // Both modes scale from the chapter's entry level. Normal has shorter boss fights,
     // faster wand swings and a stronger reward for playing a boss's bonus game.
-    normal: { bossLength: 1, wandSwing: 0.5, bonusHit: 1.25 },
+    normal: { bossLength: 0.65, wandSwing: 0.5, bonusHit: 1.25 },   // 0.65: bosses ~1/3 shorter so a 5-year-old does not get bored (family request)
     // Repeat adventures use a saved start-of-round reference, never the currently equipped item.
     repeat: { health: [105, 120, 140, 185, 250, 310, 370, 440], pressure: 0.06, maxPressureRounds: 5 },
     hp: 3.4,            // normal enemy hp (was 2.6; zone 0 jelly: ~6 sword hits at the start)
@@ -175,7 +175,7 @@ const GAME = (() => {
     xp: 1.1,            // xp per enemy (level pace stays about the same although fights are longer)
     heart: 0.1,         // a heart heals this fraction of max hp (was 0.12)
     heartDrop: 0.65,    // heart drop chances × this (was 0.75)
-    potions: 2,         // potions at the start of a new game (max stays 5)
+    potions: 5,         // potions at the start of a new game (max 5; family request)
     regenFight: 0.012, regenCalm: 0.05,   // hp fraction per second, T.regenDelay s after the last hit (was 0.02 / 0.05)
   };
   // ── Treasure (parent: "too many items, the bag fills up with the same or similar things") ──

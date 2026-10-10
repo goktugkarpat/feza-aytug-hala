@@ -27,7 +27,7 @@ Anlatıcı Aytuğ Hala'nın kendisi. Bütün yaratıklar sevimli ve güler yüzl
   (Feza'nın çevresinde dönen tahta kaşıklar) ve **Şeker Yağmuru** (gökten renkli şekerler). Her biri **yıldız şekerle** üç kademe güçlenir
   (mor yıldız düğmesi). Yıldız şeker mini oyunlardan, seviye atlamaktan ve bosslardan gelir.
 - **Takım Hamlesi:** Sağ alttaki **Takım** düğmesi dolunca parlar. Basınca Feza ve Aytuğ Hala el ele zıplar; etraftaki bütün huysuzlar neşelenir.
-- **Can:** Sol alttaki kırmızı top Feza'nın canıdır. Yanındaki iksirle doldurulur. Kaybetmek yok: Feza yorulup düşerse Aytuğ Hala
+- **Can:** Sol alttaki kırmızı top Feza'nın canıdır. Yanındaki iksirle doldurulur; Feza 5 iksirle başlar (en fazla 5 taşır), huysuzlardan ara sıra yenisi düşer. Kaybetmek yok: Feza yorulup düşerse Aytuğ Hala
   koşup elinden tutar ve onu kaldırır; bölüm baştan başlamaz.
 - **Hazineler:** Sandıklardan ve oyuncaklardan ev temalı eşyalar çıkar. Daha güçlüsü bulununca Feza hemen giyer; 🎒 çantadan istediğin silahı,
   şapkayı ve pelerini seçebilirsin. Sıradan eşyalar sessizce çantaya girer, özel eşyalar savaş bitince kartla gösterilir.
@@ -129,7 +129,7 @@ Odalardaki hediye kutularından ve masadaki Mini Oyun Köşesi'nden oynanır. He
   sıradan huysuzlar benzer sayıda vuruşta neşelenir, elitler ve bosslar biraz daha dayanıklıdır, huysuzların vuruşu Feza'nın canına göre ayarlıdır.
 - Oda içinde seviye atlamak ya da daha güçlü eşya takmak huysuzları yeniden büyütmez; bulunan güçlenmeler gerçekten işe yarar.
 - Denge, 5 yaşındaki bir çocuk gibi oynayan (geç tepki veren, ıskalayan, kaçmayan) bir bilgisayar oyuncusuyla 1, 3, 5, 8 ve 12. seviyelerde ölçülerek ayarlandı:
-  huysuz başına 3–4 vuruş, boss başına yaklaşık 1 dakika; Feza'nın canı ara sıra heyecanlı biçimde azalır ama neredeyse hiç düşmez.
+  huysuz başına 3–4 vuruş, boss başına yaklaşık 40 saniye; Feza'nın canı ara sıra heyecanlı biçimde azalır ama neredeyse hiç düşmez.
 - Seviye atlamak giderek uzar: ilk oda yaklaşık 2. seviyede biter, bütün oyun 8–10. seviyeler civarındadır.
 
 ## Mola ve kayıt
