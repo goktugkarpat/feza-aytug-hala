@@ -40,10 +40,10 @@ const BILBO_FUN = (() => {
   function setRide(on, secs, c) {
     if (!c || !c.P) return false;
     if (!on) { if (ride) endRide(c, false); return true; }
-    if (c.state !== 'play' || c.P.dead || !c.Bilbo) return false;
+    if (c.state !== 'play' || c.P.dead || !c.Bilbo || bossNow()) return false;   // boss savaşında binilmez
     abortDig(c, 2);
     if (ride) { ride.dur = Math.max(ride.dur - ride.t, secs || 14); ride.t = 0; return true; }
-    ride = { t: 0, dur: secs || 14, puff: 0, end: 0 };
+    ride = { t: 0, dur: secs || 14, puff: 0, end: 0, area: c.P.area };
     c.P.rideMul = RIDE.mul; if (c.recalcStats) c.recalcStats();
     if (c.Bilbo.clearActions) c.Bilbo.clearActions();
     sfx(c, 'bilboBark', { x: c.P.pos.x, z: c.P.pos.z, vol: 1, pitch: 1.1 }); sfx(c, 'whoosh', { vol: .6 });
@@ -54,7 +54,10 @@ const BILBO_FUN = (() => {
     sayLine(c, 'bilbo_bin', 2);
     return true;
   }
-  function endRide(c, quiet) {
+  // boss uyanık mı / Feza boss arenasında mı (biniş orada kendiliğinden biter)
+  function bossNow() { const b = typeof GAME !== 'undefined' && GAME ? GAME.boss : null; return !!(b && !b.dead && (b.aggro || b.encounter)); }
+  function inArena(c) { const A = c.L && c.L.areas, a = A && c.P && A[c.P.area]; return !!(a && a.boss); }
+  function endRide(c, quiet, silent) {
     if (!ride) return;
     ride = null;
     if (c.P) { c.P.rideMul = 1; if (c.recalcStats) c.recalcStats(); }
@@ -67,12 +70,19 @@ const BILBO_FUN = (() => {
     }
     c.pos.x = x; c.pos.z = z;
     if (c.follow && P) c.follow.reset(P.pos, x, z, f);
-    if (!quiet) { burst(c, 'dust', x, .15, z, { count: 8 }); sfx(c, 'pop', { vol: .5 }); sayLine(c, 'bilbo_in', 1); }
+    if (!quiet) {   // sevimli iniş: Feza hop diye yere atlar, toz + yıldız
+      burst(c, 'dust', x, .15, z, { count: 8 }); sfx(c, 'pop', { vol: .5 });
+      if (P) { burst(c, 'star', P.pos.x, 1.2, P.pos.z, { count: 6, color: '#ffe680' }); if (c.ftext) c.ftext(P.pos.x, 2.2, P.pos.z, 'Hop!', 'word'); express(c, 'sevinc', 1.2); }
+      if (!silent) sayLine(c, 'bilbo_in', 1);
+    }
   }
   function rideStep(dt, c) {
     const P = c.P;
     ride.t += dt;
     if (P.dead || c.state !== 'play' || ride.t >= ride.dur) { endRide(c, c.state !== 'play'); return null; }
+    // boss arenası / boss uyanınca ya da başka bir alana geçince biniş biter (boss cümleleriyle üst üste konuşmasın: sessiz iniş)
+    if (bossNow() || inArena(c)) { endRide(c, false, true); return null; }
+    if (ride.area !== P.area) { if (ride.area === undefined || ride.area < 0) ride.area = P.area; else { endRide(c, false, false); return null; } }
     const f = P.face, back = .10 * (c.scale || .78);
     OUT.x = P.pos.x + Math.sin(f) * back; OUT.z = P.pos.z + Math.cos(f) * back; OUT.face = f; OUT.hop = 0;
     OUT.speed = Math.min(8, Math.max(0, c.heroVel || measured) / (c.scale || .78) * .8);
