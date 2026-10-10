@@ -267,6 +267,14 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
     rgba(255, 90, 110, 0.3) calc(var(--k) * 15px) calc(var(--k) * 18px), rgba(255, 255, 255, 0) calc(var(--k) * 18px) calc(var(--k) * 34px));
   animation: u-lance 3.2s linear infinite; }
 @keyframes u-lance { from { transform: translateX(calc(var(--k) * -37.52px)); } to { transform: translateX(0); } }   /* 34 px / sin 115°: one stripe period */
+/* Pasta yoruldu (src/05c_boss_davranis.js #ui.boss-team): Takım düğmesi kocaman parlar; ortada büyük T işareti + ok (.u-takim-isaret) */
+#ui.boss-team .u-team { transform: scale(1.45); z-index: 40; box-shadow: 0 0 0 calc(var(--k) * 5px) #fff3a0, 0 0 calc(var(--k) * 40px) calc(var(--k) * 14px) #ff7fb0; }
+.u-takim-isaret { position: fixed; z-index: 60; display: flex; align-items: center; gap: 14px; padding: 14px 26px; border-radius: 40px; pointer-events: auto; cursor: pointer;
+  font: 900 44px/1 system-ui, sans-serif; color: #fff; background: linear-gradient(180deg, #ff7fb0, #e8407e); border: 5px solid #fff3a0;
+  box-shadow: 0 10px 30px rgba(120, 0, 60, 0.45); animation: uTakimZipla 0.7s ease-in-out infinite alternate; transform-origin: 50% 50%; }
+.u-takim-isaret b { display: inline-grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: #fff3a0; color: #c02a64; font-size: 46px; }
+.u-takim-ok { position: fixed; z-index: 60; pointer-events: none; font: 900 72px/1 system-ui, sans-serif; color: #fff3a0; text-shadow: 0 4px 0 #c02a64, 0 0 18px #ff7fb0; }
+@keyframes uTakimZipla { from { transform: scale(1); } to { transform: scale(1.1); } }
 /* Dev Ev bossları (src/05b_bosslar.js): kendi renkleri + dolguda kıpır kıpır desen (süpürge: toz kabarcıkları, tencere: puantiye,
    dondurma: renkli şeker, pasta: krema şeritleri) */
 .u-boss[data-b="uykucuSupurge"] { --bf1: #d8e0ff; --bf2: #8ea4ec; --bf3: #5d6fd0; --bn1: #f2f4ff; --bn2: #b9c7ff; --bno: #1c2468; --bi1: #e4e9ff; --bi2: #6a7ed8; }
@@ -324,7 +332,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 @keyframes u-pipjoy { 0%, 100% { transform: translateY(0) scale(1) rotate(0deg); } 40% { transform: translateY(calc(var(--k) * -7px)) scale(1.18) rotate(-10deg); } 70% { transform: translateY(0) scale(0.95) rotate(6deg); } }
 
 /* subtitles: centred in the gap between the orb and the skill arc (JS adds .subhi when that gap is too narrow) */
-.u-sub { position: absolute; z-index: 25; pointer-events: none; left: calc(var(--padL) + var(--k) * 300px); right: calc(var(--padR) + var(--k) * 290px); margin: 0 auto; width: -webkit-fit-content; width: fit-content;
+.u-sub { position: absolute; z-index: 25; pointer-events: none; left: calc(var(--padL) + var(--k) * 300px); right: calc(var(--padR) + var(--k) * 425px);   /* (425: Takım düğmesinin solunda biter) */ margin: 0 auto; width: -webkit-fit-content; width: fit-content;
   bottom: calc(var(--padB) + var(--k) * 8px); transform: translateY(20px); opacity: 0; transition: opacity 0.25s, transform 0.3s cubic-bezier(.2, 1.4, .4, 1);
   display: flex; align-items: center; gap: calc(var(--k) * 12px); padding: calc(var(--k) * 12px) calc(var(--k) * 20px) calc(var(--k) * 12px) calc(var(--k) * 12px);
   border-radius: calc(var(--k) * 26px); background: linear-gradient(180deg, rgba(40, 18, 84, 0.86), rgba(22, 9, 52, 0.88));
