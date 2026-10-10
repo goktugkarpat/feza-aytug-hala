@@ -3051,6 +3051,7 @@ const UI = (() => {
     return Math.max(0, (Math.PI / 2 + k * Math.PI) / 7.5 - hs.t);
   };
   function ikonTick(dt) {
+    if (typeof STORY !== 'undefined' && STORY.iconTick && safe('STORY.iconTick', () => STORY.iconTick(dt))) return;   // Dev Ev: mutfakta Feza + Hala + Bilbo
     const g = M.GAME, H = g && g.H; if (!H) return;
     g.P.face = CAMV.yaw - 0.28;
     H.root.position.copy(g.P.pos); H.root.rotation.y = g.P.face;
