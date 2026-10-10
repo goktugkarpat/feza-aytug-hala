@@ -172,11 +172,7 @@ const MUTFAK = (() => {
     if (a1) tezgah(L, api, T, a1, rnd);
     if (a3) dolap(L, api, T, a3, cupQ, rnd);
     if (ar) ocak(L, api, T, ar, stoveQ, rnd);
-    // alan girişlerinde Aytuğ Hala'nın kısa sözü
-    [[a2, 'mut_lavabo_gir'], [a3, 'mut_dolap_gir'], [ar, 'mut_arena_gir']].forEach(([a, line]) => {
-      if (!a) return; const rm = R(a.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r * 0.8, hint: false, line, prio: 1, use() {} });
-    });
-    if (a1) { const rm = R(a1.rooms[1] ?? a1.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r, hint: false, line: 'mut_tezgah_gir', prio: 1, use() {} }); }
+    // (alan girişi cümleleri hikâyede: STORY.area → alan_mutfak_N)
     if (L._mkMini) K.miniBox(api, T, L._mkMini, 'mut_mini_ipucu');
     K.edge(L, api, (x, z) => (inRect(stoveQ, x, z) ? 0x7fb8a6 : inRect(cupQ, x, z) ? 0xb9cdb0 : inRect(sinkQ, x, z) ? 0x8f9aa8 : 0xe6c89a), 0.1);
   }

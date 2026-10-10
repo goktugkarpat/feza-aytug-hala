@@ -418,6 +418,7 @@ const ODAKIT = (() => {
         if (inside && !it.inside && t - it.last > it.cd && !(it.once && it.used) && !ride && !(it.can && !it.can())) {
           it.last = t; it.used++;
           try { it.use(T, it); } catch (e) { console.warn('ODAKIT oyuncak', e); }
+          if (it.used === 1 && it.star && typeof HALA !== 'undefined' && HALA && !HALA.busy) { try { if (it.dance && HALA.dance) HALA.dance(it.dance); else if (HALA.cheer) HALA.cheer(1.4); } catch (e) { /* */ } }   // Aytuğ Hala sevinir
         }
         it.inside = inside;
       }

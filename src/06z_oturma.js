@@ -291,10 +291,7 @@ const OTURMA = (() => {
     if (a2) kitaplik(L, api, T, mainOf(L, a2), rnd, occ2);
     // ── Alan 3 · Koltuk Altı ──
     if (a3) koltuk(L, api, T, a3, sofa, rnd, occR);
-    // her alanın girişinde Aytuğ Hala'nın kısa sözü (ilk yaklaşmada)
-    [[a1, 'oda_hali_gir'], [a2, 'oda_kitap_gir'], [a3, 'oda_koltuk_gir'], [ar, 'oda_arena_gir']].forEach(([a, line], k) => {
-      if (!a || !k) return; const rm = R(a.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r * 0.8, hint: false, line, prio: 1, use() {} });
-    });
+    // (alan girişi cümleleri hikâyede: STORY.area → alan_oturma_N)
     if (L._otMini) K.miniBox(api, T, L._otMini, 'oda_mini_ipucu');
     // kuzey duvarı (gri-mavi) + süpürgelik + priz, arenanın arkasında; çıkış kapısı
     duvar(L, api);
@@ -367,7 +364,7 @@ const OTURMA = (() => {
       for (let st = 0; st < 4; st++) { const blx = W / 2 + 1.4 + st * 0.15, blz = D / 2 + 1.6 - st * 1.0, t3 = 0.55; const [wx, wz] = F(blx, blz); for (let l = 0; l <= st; l++) { if (K.isF(L, wx, wz)) break; putL(bookGeo(st + l * 3), blx, l * t3 + t3 / 2, blz, t3, 3.2, 2.2, Math.PI / 2 + (l % 2 ? 0.06 : -0.04), 0, Math.PI / 2); } }
       const [sbx, sbz] = F(0, fz + 1);
       let on = 0, press = 0;
-      T.add({ x: q.x, z: q.z, r: 2.3, hint: { y: 1.6 }, line: 'oda_kumanda_ipucu', near: 8, cd: 4, repeat: true,
+      T.add({ x: q.x, z: q.z, r: 2.3, hint: { y: 1.6 }, line: 'oda_kumanda_ipucu', near: 8, cd: 4, repeat: true, dance: 6,
         can: () => on <= 0,
         use: () => { on = 14; press = 0.35; tv.on(true); K.sfx('click', { x: q.x, z: q.z }); K.sfx('unlock', { x: q.x, z: q.z, vol: 0.6 }); K.say('oda_tv_ac'); K.sticker('oturma_tv');
           K.burst('star', sbx, 3, sbz); K.sugar(GAME.P.pos.x, GAME.P.pos.z, 8, 5); },
