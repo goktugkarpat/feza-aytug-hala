@@ -245,6 +245,8 @@ const ODAKIT = (() => {
     const m = new THREE.Mesh(g, mat);
     m.scale.set(o.w, o.h, o.d); m.position.set(o.x, o.h / 2 - 0.01, o.z); m.rotation.y = o.yaw || 0; m.receiveShadow = true; m.name = 'odakit-slab';
     api.add(m);
+    // Build-time route stamps follow raised rugs / boards instead of falling beneath them.
+    (L._routeSurfaces || (L._routeSurfaces = [])).push({ x: o.x, z: o.z, w: o.w, d: o.d, h: o.h - 0.01, yaw: o.yaw || 0 });
     return m;
   }
 

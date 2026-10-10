@@ -294,8 +294,13 @@ const FX = (() => {
   // Scratch particle for presets (reset by P(); no allocations). Burst origin/scale apply to every emitted particle.
   const sp = {};
   let bx = 0, by = 0, bz = 0, bk = 1;
+  // Decoration has a time-based allowance, independent of the display refresh rate.
+  // Real projectiles, attack warnings and character animation never use this budget.
+  let particleCredit = 96, celebration = false;
+  const CALM = { hit: 0.55, crit: 0.65, cheer: 0.5, heal: 0.6, sparkle: 0.6, confetti: 0.45,
+    milk: 0.6, cream: 0.6, yogurt: 0.6, splash: 0.6, fizz: 0.6, kefir: 0.6, magic: 0.7 };
   function P(add, shape, x, y, z) {
-    sp.add = add; sp.shape = shape; sp.x = x; sp.y = y; sp.z = z; sp.vx = 0; sp.vy = 0; sp.vz = 0;
+    sp.important = false; sp.add = add; sp.shape = shape; sp.x = x; sp.y = y; sp.z = z; sp.vx = 0; sp.vy = 0; sp.vz = 0;
     sp.life = 1; sp.size = 0.3; sp.size1 = undefined; sp.color = C.W1; sp.color1 = undefined; sp.alpha = 1;
     sp.grav = 0; sp.drag = 0; sp.rot = Math.random() * TAU; sp.spin = 0; sp.pop = 0; sp.fade = 1; sp.flick = 0; sp.bounce = 0;
     sp.orbit = 0; sp.ox = undefined; sp.oz = undefined; sp.wob = 0; sp.stretch = 1; sp.delay = 0; sp.phase = undefined; sp.glow = 1; sp.soft = 0;
@@ -303,15 +308,23 @@ const FX = (() => {
   }
   function emitRaw(p) {
     const S = p.add === false || p.add === 0 ? SN : SA;
-    const i = S.n < S.cap ? S.n++ : (Math.random() * S.cap) | 0;
+    // Keep a small part of the additive pool for a shooter's warning orb.
+    // Important cues use the same draw call and stay legible when decorations are busy.
+    const important = !!p.important;
+    const limit = S === SA && !important && !celebration ? S.cap - 32 : S.cap;
+    if (S.n >= limit || (!important && !celebration && particleCredit < 1)) return;
+    if (!important && !celebration) particleCredit--;
+    const i = S.n++;
     const d = S.d, o = i * ST, k = bk;
     d[o + PX] = bx + (p.x - bx) * k; d[o + PY] = by + (p.y - by) * k; d[o + PZ] = bz + (p.z - bz) * k;
     d[o + VX] = (p.vx || 0) * k; d[o + VY] = (p.vy || 0) * k; d[o + VZ] = (p.vz || 0) * k;
     d[o + AGE] = -(p.delay || 0); d[o + LIFE] = p.life > 0 ? p.life : 1;
-    const s0 = (p.size ?? 0.3) * k; d[o + S0] = s0; d[o + S1] = p.size1 == null ? s0 : p.size1 * k;
+    const halo = !important && S === SA && (p.shape || 0) === SH.GLOW;
+    const softK = halo ? 0.78 : 1;
+    const s0 = (p.size ?? 0.3) * k * softK; d[o + S0] = s0; d[o + S1] = p.size1 == null ? s0 : p.size1 * k * softK;
     const g = p.glow || 1, c0 = lin(p.color ?? C.W1), c1 = p.color1 == null ? c0 : lin(p.color1);
     d[o + R0] = c0[0] * g; d[o + G0] = c0[1] * g; d[o + B0] = c0[2] * g; d[o + R1] = c1[0] * g; d[o + G1] = c1[1] * g; d[o + B1] = c1[2] * g;
-    d[o + AL] = p.alpha ?? 1; d[o + GRV] = (p.grav || 0) * k; d[o + DRG] = p.drag || 0;
+    d[o + AL] = (p.alpha ?? 1) * (halo ? 0.65 : 1); d[o + GRV] = (p.grav || 0) * k; d[o + DRG] = p.drag || 0;
     d[o + ROT] = p.rot ?? Math.random() * TAU; d[o + SPN] = p.spin || 0; d[o + SHP] = (p.shape || 0) + (p.soft ? 64 : 0);
     d[o + POP] = p.pop || 0; d[o + FAD] = p.fade || 1; d[o + FLK] = p.flick || 0; d[o + BNC] = p.bounce || 0;
     d[o + OX] = bx + ((p.ox ?? p.x) - bx) * k; d[o + OZ] = bz + ((p.oz ?? p.z) - bz) * k; d[o + ORB] = p.orbit || 0;
@@ -1219,8 +1232,12 @@ const FX = (() => {
     if (!f) { if (warnedKind !== kind) { warnedKind = kind; console.warn('FX.burst: unknown kind', kind); } f = B.sparkle; }
     y = y ?? 0;
     bx = x; by = y; bz = z; bk = o.scale || 1;
-    f(x, y, z, o, o.count ? o.count / (MAIN[kind] || 8) : 1);
-    bk = 1;
+    const load = SA.n + SN.n;
+    const density = load < 320 ? 1 : load < 560 ? 0.7 : 0.45;
+    celebration = kind === 'levelup';
+    f(x, y, z, o, (o.count ? o.count / (MAIN[kind] || 8) : 1) *
+      (celebration ? 1 : (CALM[kind] || 0.8) * density));
+    celebration = false; bk = 1;
   }
   function emit(p) {
     if (!ready) init();
@@ -2966,7 +2983,7 @@ const FX = (() => {
     } catch (e) { /* keep default */ }
     updScale();
     RESIZE_HOOKS.push(updScale);
-    SN = makeSys(1000, false); SA = makeSys(2000, true);
+    SN = makeSys(320, false); SA = makeSys(640, true);
     QUAD = quadGeo(); SLASH_GEO = slashGeo(); BEAM_GEO = beamGeo(); STAR_GEO = starGeo();
     ICE_GEO = iceGeo(); ROCK_GEO = rockGeo(); EMBER_GEO = emberGeo(); SIMIT_GEO = simitGeo(); SHOE_GEO = shoeGeo(); HEART_GEO = heartGeo();
     SHADOW_GEO = keep(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2));
@@ -3005,6 +3022,7 @@ const FX = (() => {
     if (!ready) return;
     dt = Math.min(Math.max(dt || 0, 0), 0.1);
     clock += dt; uTime.value = clock;
+    particleCredit = Math.min(96, particleCredit + dt * 540);
     for (const k in STEP) {
       const f = STEP[k], items = pools[k].items;
       for (let i = 0; i < items.length; i++) if (items[i].on) f(items[i], dt);
@@ -3018,6 +3036,7 @@ const FX = (() => {
   function clear() {
     if (!ready) return;
     SA.n = 0; SN.n = 0; SA.geo.setDrawRange(0, 0); SN.geo.setDrawRange(0, 0);
+    particleCredit = 96; celebration = false;
     for (const k in pools) for (const it of pools[k].items) if (it.on) release(it);
     for (const t of TXT) { t.on = false; t.el.style.visibility = 'hidden'; }
     for (const g of projs) g.userData.fxp.reg = false;

@@ -1122,8 +1122,10 @@ const AUD = (() => {
   }
 
   // ───────────────────────── narrator ─────────────────────────
-  const GAP = 0.3, vbufs = {}, vpend = {}, VQ = [];
+  const GAP = 0.8, vbufs = {}, vpend = {}, VQ = [];
   let vcur = null, vgap = null, ducked = false;
+  let lastVoiceEnd = -1e9, lastChatter = -1e9;
+  const lastSpoken = Object.create(null), lastCategory = Object.create(null);
   const voiceKey = key => 'tr:' + key;   // (yalnız Türkçe)
   const voiceText = key => A.LINES[key] || '';
   const mp3 = key => { const bank = window.VOICE_MP3; return bank && bank[key] || null; };
@@ -1160,6 +1162,9 @@ const AUD = (() => {
   function show(it) { A.current = it.key; if (it.sub) { it.shown = true; sub(it.text, it.key); } }   // current first: onSubtitle may read it
   function startLine(it) {
     vcur = it; clearTimeout(vgap); vgap = null;
+    const started = wallNow();
+    lastSpoken[it.key] = started;
+    if (it.category) { lastCategory[it.category] = started; lastChatter = started; }
     it.end = wallNow() + it.dur;
     const subOnly = () => { if (vcur !== it) return; show(it); it.end = wallNow() + it.dur; it.timer = setTimeout(() => endLine(it), it.dur * 1000); };
     if (ctx && unlocked && A.voiceOn && !document.hidden && !pageAway && mp3(it.key)) {
@@ -1180,7 +1185,7 @@ const AUD = (() => {
     clearTimeout(it.timer);
     if (it.shown) sub(null);
     vcur = null; A.current = null;
-    const now = wallNow();
+    const now = wallNow(); lastVoiceEnd = now;
     for (let i = VQ.length - 1; i >= 0; i--) if (now + GAP - VQ[i].t > VQ[i].wait) VQ.splice(i, 1);   // stale
     if (VQ.length) vgap = setTimeout(nextLine, GAP * 1000);
     else duck(false);
@@ -1196,20 +1201,21 @@ const AUD = (() => {
     clearTimeout(it.timer);
     if (it.src) { it.src.onended = null; try { it.src.stop(); } catch (e) { /* ignore */ } }
     if (it.shown) sub(null);
-    vcur = null; A.current = null;
+    vcur = null; A.current = null; lastVoiceEnd = wallNow();
   }
   window.addEventListener('feza-language-change', () => { stopCur(); VQ.length = 0; clearTimeout(vgap); vgap = null; duck(false); });
   // ── Konuşma sırası (Dev Ev): her cümlenin bir sınıfı var: hikâye 5 > boss 4 > görev/oda 3 > tanıtım 2 > övgü 1.
   // Aynı anda birçok sistem konuşmak isterse: yüksek sınıf kuyrukta öne geçer; övgü konuşma varken hiç söylenmez;
   // tanıtım ancak kuyruk boşsa bekler; yüksek sınıf gelince kuyruktaki övgü/tanıtımlar atılır ve o an çalan övgü/tanıtım kesilir;
-  // düşük sınıflar kısa süre bekleyip bayatlar (eski cümle sonradan çıkmaz). Kuyruk en çok 3.
+  // düşük sınıflar beklemez; önemli cümlelerden sonra oyun bir süre sessiz kalır. Kuyruk en çok 2.
   const RANK_RX = [
     [5, /^(intro_|masa_ilk|masa_donus|oda_(oturma|mutfak|buzdolabi|pasta|balkon)$|gorev_|malzeme_|kayip_|pasta_acildi|pasta_kilitli|son$|son_|kristal$|tekrar$|hos_geldin$|balkon_acildi|hikaye_)/],
-    [4, /^(uykucuSupurge_|dudukluTencere_|dondurmaKrali_|kocaPasta_|uykucuHortum_|pasta_(asama|kurabiye|dalga|takim)|supurge_|ipucu_|hala_boss|kocaman$|boss_)/],
-    [1, /^(ovgu|hala_ovgu|his_kombo_|his_nese_|his_yildiz|susle_ovgu|hala_hop|hala_dans|dans_|hala_takim_hazir|hala_yaninda|hala_burada)/],
-    [2, /^(ilk_|nadir_|ck_|surpriz_|kostum_|set_tamam|yetenek_|guclendi_|his_yildiz|degnek$|kilic$|sapka$|pelerin$|efsane$|sandik$|seviye)/],
+    [4, /^(hala_(saril|kalk|kalkti)|can_az$|iksir_yok$|yoruldu$|uykucuSupurge_|dudukluTencere_|dondurmaKrali_|kocaPasta_|uykucuHortum_|pasta_(asama|kurabiye|dalga|takim)|supurge_|ipucu_|hala_boss|kocaman$|boss_)/],
+    [1, /^(odb_(altin[123]|kay$|kaydirak_(ok|tekrar)$|can_ok$)|odp_(sal_ok$|torba_ok$|mum_ok$)|ovgu|hala_ovgu|his_kombo_|his_nese_|his_yildiz|susle_ovgu|hala_hop|hala_dans|dans_|hala_takim_hazir|hala_yaninda|hala_burada)/],
+    [3, /^yetenek_/],   // yeni düğmenin ilk açıklaması ara sohbet değildir
+    [2, /^(odp_(orman$|dag$|selale$)|odb_isik(?:2|_kapa)?$|alan_|hala_pasta|ilk_|nadir_|ck_|surpriz_|kostum_|set_tamam|guclendi_|his_yildiz|degnek$|kilic$|sapka$|pelerin$|efsane$|sandik$|seviye)/],
   ];
-  const RANK_WAIT = [0, 2, 4, 4, 10, 20];   // s: bu kadar bekleyen cümle bayatlar (görev/oda ve altı: 4 s)
+  const RANK_WAIT = [0, 0, 0, 4, 8, 20];   // s: bu kadar bekleyen cümle bayatlar (görev/oda ve altı: 4 s)
   // aynı anlamdaki cümleler üst üste söylenmez (biri çalarken/beklerken diğeri düşer)
   const GROUPS = [/^(hala_saril|can_az|iksir_yok)/, /^(ovgu|hala_ovgu|seviye|his_kombo|his_nese)/, /^(hala_yon|hala_kapi|kapi$)/, /^(kayip_|bilbo_buldu|oda_gozluk|odb_toka)/];
   const groupOf = key => { for (let i = 0; i < GROUPS.length; i++) if (GROUPS[i].test(key)) return i + 1; return 0; };
@@ -1221,14 +1227,29 @@ const AUD = (() => {
     for (const [k, rx] of RANK_RX) if (rx.test(key)) { r = k; break; }
     return (rankCache[key] = r);
   }
+  // Ara konuşmalar arasında nefes: önemli yönlendirmeler bu aralıklara takılmaz.
+  function chatterCategory(key, rank) {
+    if (rank === 1) return 'praise';
+    if (/^(alan_|hala_pasta|odp_(orman|dag|selale)$|odb_isik(?:2|_kapa)?$)/.test(key)) return 'ambience';
+    return rank === 2 ? 'discovery' : null;
+  }
+  const CHAT_GAP = { praise: 50, ambience: 45, discovery: 28 };
   function say(key, o) {
-    o = o || {};
+    o = typeof o === 'number' ? { prio: o } : o || {};
     const text = voiceText(key);
     if (!text) { if (!warned['L' + key]) { warned['L' + key] = 1; console.warn('AUD.say: unknown line', key); } return 0; }
     const rank = o.rank ?? rankOf(key), prio = o.prio ?? 1;
-    const it = { key, text, prio, rank, p: rank * 10 + clamp(prio, 0, 9), sub: o.sub !== false, dur: lineDur(key), t: wallNow(), wait: o.wait ?? RANK_WAIT[rank] + prio };
+    const now = wallNow(), category = chatterCategory(key, rank);
+    if (!o.interrupt) {
+      // İlk mekanik açıklaması duyulur; aynı saldırının tekrarındaki ses yağmuru susturulur.
+      const repeatGap = rank >= 4 ? 35 : rank === 3 ? 24 : 55;
+      if (!/^(hala_(saril|kalk|kalkti)|can_az$|iksir_yok$|yoruldu$)/.test(key) && now - (lastSpoken[key] ?? -1e9) < repeatGap) return 0;
+      if (category && (now - lastVoiceEnd < 9 || now - lastChatter < 22 || now - (lastCategory[category] ?? -1e9) < CHAT_GAP[category])) return 0;
+    }
+    const it = { key, text, prio, rank, category, p: rank * 10 + clamp(prio, 0, 9), sub: o.sub !== false, dur: lineDur(key), t: wallNow(), wait: o.wait ?? RANK_WAIT[rank] + prio };
     if (!o.interrupt && hushUntil > wallNow() && rank < hushRank) return 0;
     const busy = vcur || VQ.length || vgap;
+    if (category && busy && !o.interrupt) return 0;
     if (!busy) { startLine(it); return it.dur; }
     if (o.interrupt) { VQ.length = 0; stopCur(); clearTimeout(vgap); vgap = null; startLine(it); return it.dur; }
     const grp = groupOf(key);

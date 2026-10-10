@@ -84,7 +84,7 @@
     muzik: 'orman',
     malzeme: null, kayipEsya: 'telefon',
     isik: { fog: [0xd6ecff, 42, 112], hemiSky: 0xf2f8ff, hemiGround: 0xb08a62, hemi: 1.0, sunColor: 0xfff1d2, sun: 2.7, sunOffset: [-14, 28, 12],
-      env: [0xa8d8ff, 0xfff4e0, 0xb88a60, 1.0], bloom: 0.42, exposure: 1.02, sat: 1.1, vig: 0.2 },
+      env: [0xa8d8ff, 0xfff4e0, 0xb88a60, 1.0], bloom: 0.26, exposure: 1.02, sat: 1.1, vig: 0.2 },
     zemin: { tA: 0xf2b089, tB: 0xffd9b8, tC: 0xffe9c8, out: 0x6fa850, outAmt: 0.7, macro: 0xfff2e2 },
     minimap: { zemin: '#efb08a' },
     harita: { ad: 'Balkon Bahçesi', detay: 'Güneşli çiçek bahçesi ve uykucu hortum', renk: '#9be37a', x: 50, y: 74, simge: '🌻' },

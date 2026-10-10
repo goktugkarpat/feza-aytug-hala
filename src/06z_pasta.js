@@ -217,7 +217,7 @@
     }
     floatingClouds(api, L, rnd);
     // peri ışıkları: şeker kamışı direkler arasında rengârenk ampuller (ışıl ışıl)
-    O.fairyLights(B, api, L, { avoid: avoid.concat(edgeList.map(c => ({ x: c.x, z: c.z, r: 1.5 }))), colors: CANDY, k: 2.2, light: 0xffd8ec, wire: 0xffffff, space: 3.8,
+    O.fairyLights(B, api, L, { avoid: avoid.concat(edgeList.map(c => ({ x: c.x, z: c.z, r: 1.5 }))), colors: CANDY, k: 1.15, light: 0xffd8ec, wire: 0xffffff, space: 6.4,
       rooms: new Set(L.rooms.map((r, i) => (r.kind === 'boss' ? -1 : i))),
       post: (B2, x, z, h) => { B2.add('candy', cylH(), stripes(x, z, C(0xff3b5c), C(0xffffff), 2, 6), [x, h / 2, z], null, [0.13, h, 0.13]); B2.add('candy', G.sphere(10, 7), C(0xffd24a), [x, h + 0.1, z], null, [0.2, 0.2, 0.2]); } });
     yield;
@@ -235,7 +235,7 @@
       B2.add('candy', G.cyl(1, 1, 16), C(0xff5f9e), [x, 1.78, z], null, [0.64, 0.16, 0.64]);
       for (let i = 0; i < 14; i++) B2.add('candy', G.sphere(7, 5), C(CANDY[i % CANDY.length]), [x + Math.sin(i * 2.4) * 0.35, 0.25 + (i % 7) * 0.17, z + Math.cos(i * 2.4) * 0.35], null, [0.15, 0.15, 0.15]);
     } });
-    O.sparkles(api, { n: 150, kind: 'dot', colors: [0xff9ac8, 0xffe08a, 0x9ae8ff, 0xd6b0ff, 0xffffff], k: 1.8, size: 0.2, fall: -0.18, y0: 0.2, h: 7 });
+    O.sparkles(api, { n: 48, kind: 'dot', colors: [0xff9ac8, 0xffe08a, 0x9ae8ff, 0xd6b0ff, 0xffffff], k: 1.05, size: 0.13, fall: -0.12, y0: 0.2, h: 7 });
     B.done();
   }
   // zemin: pembe-beyaz krema nehirleri, karamel kenar
@@ -746,12 +746,12 @@
     // kutlama
     const st = { phase: 1, t: 0, fin: false, finT: 0, fwT: 0, ph2: 0, ph3: 0, wasDone: !!(typeof GAME !== 'undefined' && GAME.P && GAME.P.bossNese && GAME.P.bossNese.pasta) };
     R.zones.push({ x: A.x, z: A.z, r: A.r, enter: () => O.say('odp_arena', { gap: 3 }) });
-    // STORY.ending (ya da başka biri) büyük kutlamayı başlatabilir: ODAB.celebrate() → bir anda 6 havai fişek + konfeti, sonra 90 s sürer
+    // STORY.ending (ya da başka biri) büyük kutlamayı başlatabilir: ODAB.celebrate() → üç hafif havai fişek, sonra kısa ve seyrek kutlama
     O.celebrate = () => {
       if (!GAME.L || GAME.L !== L) return false;
       st.fin = true; st.finT = 0; st.phase = 3;
       const P = GAME.P;
-      for (let i = 0; i < 6; i++) setTimeout(() => firework(api, P.pos.x + (Math.random() - 0.5) * 10, 3.8 + Math.random() * 2, P.pos.z - 1 - Math.random() * 6, CANDY[i % CANDY.length]), i * 180);
+      for (let i = 0; i < 3; i++) setTimeout(() => firework(api, P.pos.x + (Math.random() - 0.5) * 10, 3.8 + Math.random() * 2, P.pos.z - 1 - Math.random() * 6, CANDY[i % CANDY.length]), i * 420);
       O.burst('confetti', P.pos.x, 3, P.pos.z, {}); O.burst('hearts', P.pos.x, 2, P.pos.z, {});
       return true;
     };
@@ -766,25 +766,25 @@
       const want = frac <= 0.34 ? 3 : frac <= 0.67 ? 2 : 1;
       if (want > st.phase) {
         st.phase = want;
-        if (want === 2) { O.say('odp_asama2', { gap: 2 }); O.sfx('unlock'); O.burst('confetti', A.x, 5, A.z, {}); }
+        if (want === 2) { O.say('odp_asama2', { gap: 2 }); O.sfx('unlock'); O.burst('confetti', A.x, 3.5, A.z, { count: 8, scale: 0.65 }); }
         if (want === 3) { O.say('odp_asama3', { gap: 2 }); O.sfx('star'); for (const c of candlesA) O.burst('sparkle', c.x, c.h + 0.3, c.z, { count: 6, color: '#ffd080' }); }
       }
       if (st.phase >= 2) {
         st.ph2 = Math.min(1, st.ph2 + dt * 1.5);
         if (ropeMesh) { ropeMesh.visible = true; ropeMesh.scale.y = st.ph2; ropeMesh.position.y = (1 - st.ph2) * 3; }
         orbMesh.visible = true; orbMesh.scale.setScalar(st.ph2); orbMesh.position.y = Math.sin(st.t * 0.8) * 0.3; orbMesh.rotation.y = st.t * 0.08;
-        for (const li of lights2) if (api.B.lights[li]) api.B.lights[li].int = 2.2 * st.ph2;
+        for (const li of lights2) if (api.B.lights[li]) api.B.lights[li].int = 1.15 * st.ph2;
       }
       if (st.phase >= 3) {
         st.ph3 = Math.min(1, st.ph3 + dt * 1.2);
-        setFlames(st.ph3); for (const li of flameLi) { const L0 = LT[li]; if (L0) L0.int = 2.6 * st.ph3; }
+        setFlames(st.ph3); for (const li of flameLi) { const L0 = LT[li]; if (L0) L0.int = 1.3 * st.ph3; }
       }
       // final: Koca Huysuz Pasta neşelendi → şeker ışığı havai fişekleri
       if (frac <= 0 && !st.fin && ((b && b.dead) || nowDone)) { st.fin = true; st.finT = 0; setTimeout(() => O.say('odp_kutlama', { gap: 0 }), 4200); }
       if (st.fin) {
         st.finT += dt;
-        if ((st.fwT -= dt) <= 0 && st.finT < 90) {
-          st.fwT = 0.45 + Math.random() * 0.5;
+        if ((st.fwT -= dt) <= 0 && st.finT < 14) {
+          st.fwT = 1.8 + Math.random() * 0.8;
           const fx0 = P ? P.pos.x : A.x, fz0 = P ? P.pos.z : A.z, x = fx0 + (Math.random() - 0.5) * 12, z = fz0 - 1 - Math.random() * 7, y = 3.6 + Math.random() * 2.2;
           firework(api, x, y, z, CANDY[(Math.random() * CANDY.length) | 0]);
         }
@@ -831,7 +831,7 @@
     muzik: 'kale',
     final: true, malzeme: 'krema', kayipEsya: null,
     isik: { fog: [0xffd6e6, 42, 104], hemiSky: 0xfff4fa, hemiGround: 0xe0a0bc, hemi: 0.58, sunColor: 0xfff0dc, sun: 1.95, sunOffset: [-12, 26, 14],
-      env: [0xffe0f0, 0xfff0e4, 0xd8a8c0, 0.6], bloom: 0.34, exposure: 0.95, sat: 1.16, vig: 0.22, fezaLight: 0, moss: [0xffe0ec, 0], rim: [0xfff0f6, 0.12] },
+      env: [0xffe0f0, 0xfff0e4, 0xd8a8c0, 0.6], bloom: 0.18, exposure: 0.95, sat: 1.04, vig: 0.22, fezaLight: 0, moss: [0xffe0ec, 0], rim: [0xfff0f6, 0.12] },
     zemin: { tA: 0xffdde9, tB: 0xffe4c0, tC: 0xffffff, out: 0xf0a8c0, outAmt: 0.5, macro: 0xfff0f6 },
     minimap: { zemin: '#f6c8d8' },
     harita: { ad: 'Pasta Krallığı', detay: 'Krema nehirleri, çilek ormanı, şeker dağı', renk: '#f4a8c4', x: 22, y: 70, simge: '🎂' },

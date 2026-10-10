@@ -701,7 +701,7 @@ const LEVEL = (function () {
       if (castle && cpRooms.includes(a) && a - 1 >= 2) a--;
       eliteRooms.push(a); if (b !== a) eliteRooms.push(b);
     }
-    const packIn = (ri, n, elite) => {
+    const packIn = (ri, n, elite, xpScale = 1) => {
       const rm = rooms[ri];
       const far = (x, z) => hyp(x - L.start.x, z - L.start.z) > 12;
       let c = null, memCp = 0;
@@ -743,7 +743,7 @@ const LEVEL = (function () {
         if (!p) { if (nearCp && !big && m > 0) spill.push(t); return; }   // no room away from the checkpoint: it joins another pack
         const el = !!elite && !eliteDone && (m === 0 || t === list[0] || m === list.length - 1);
         if (el) eliteDone = true;
-        const sp = { type: el ? list[0] : t, x: p.x, z: p.z, elite: el, pack, room: ri }, vs = Z.variants && Z.variants[sp.type];
+        const sp = { type: el ? list[0] : t, x: p.x, z: p.z, elite: el, pack, room: ri, xpScale }, vs = Z.variants && Z.variants[sp.type];
         if (vs && vs.length) sp.variant = RNG.pick(vs);   // e.g. the volcano's lava jellies (GAME passes it to EMODEL.build)
         L.spawns.push(sp);
         taken.push({ x: p.x, z: p.z, r: big ? 1.5 : 0.8 });
@@ -751,18 +751,18 @@ const LEVEL = (function () {
     };
     for (let k = 1; k < N; k++) {
       if (main[k].kind === 'boss') continue;
-      const n = k === 1 ? 3 : main[k].kind === 'exit' ? RNG.int(4, 6) : RNG.int(3, 6);
-      packIn(k, n, eliteRooms.includes(k));
+      const oldN = k === 1 ? 3 : main[k].kind === 'exit' ? RNG.int(4, 6) : RNG.int(3, 6), n = Math.min(oldN, 4);
+      packIn(k, n, eliteRooms.includes(k), Math.min(1.5, oldN / n));   // calmer groups, comparable experience rewards
     }
-    rooms.forEach((rm, ri) => { if (rm.kind === 'side' && RNG.chance(0.6)) packIn(ri, RNG.int(2, 3), false); });
-    if (spill.length) {   // …so the level keeps its creatures: they join the packs of main rooms far from any checkpoint (smallest first, ≤ 7)
+    rooms.forEach((rm, ri) => { if (rm.kind === 'side' && RNG.chance(0.6)) { const oldN = RNG.int(2, 3); packIn(ri, oldN - 1, false, Math.min(1.5, oldN / (oldN - 1))); } });
+    if (spill.length) {   // …so the level keeps its creatures: they join the packs of main rooms far from any checkpoint (smallest first, ≤ 4)
       const groups = {};
       for (const sp of L.spawns) if (sp.room >= 2 && sp.room < N - 1) (groups[sp.pack] || (groups[sp.pack] = [])).push(sp);
       const hosts = Object.values(groups).filter(g => g.every(q => cpD(q.x, q.z) >= 12));
       for (const t of spill) {
         hosts.sort((a, b) => a.length - b.length);
         for (const g of hosts) {
-          if (g.length >= 7) break;
+          if (g.length >= 4) break;
           const cx = g.reduce((a, q) => a + q.x, 0) / g.length, cz = g.reduce((a, q) => a + q.z, 0) / g.length, rm = rooms[g[0].room];
           let p = null;
           for (let tr = 0; tr < 40 && !p; tr++) {
@@ -770,7 +770,7 @@ const LEVEL = (function () {
             if (dW(x, z) >= 1.5 && inRoom(rm, x, z, 0.8) && free(x, z, 0.7) && hyp(x - L.start.x, z - L.start.z) > 12 && cpD(x, z) >= 12) p = { x, z };
           }
           if (!p) continue;
-          const sp = { type: t, x: p.x, z: p.z, elite: false, pack: g[0].pack, room: g[0].room }, vs = Z.variants && Z.variants[t];
+          const sp = { type: t, x: p.x, z: p.z, elite: false, pack: g[0].pack, room: g[0].room, xpScale: g[0].xpScale || 1 }, vs = Z.variants && Z.variants[t];
           if (vs && vs.length) sp.variant = RNG.pick(vs);
           L.spawns.push(sp); g.push(sp);
           taken.push({ x: p.x, z: p.z, r: 0.8 });
@@ -6399,6 +6399,43 @@ const LEVEL = (function () {
     return api;
   }
 
+  // A quiet toy-like arrow trail. Baked into the existing decor chunks: no lights, animation or per-frame work.
+  function buildRoute(L, api) {
+    const stamps = L._routeMarkers = [];
+    if (!api || L._title || L.Z.hub || !L.path || L.path.length < 2) return;
+    const box = G.box(), surfaces = L._routeSurfaces || [], spacing = 3.6;
+    let until = 1.6;
+    const heightAt = (x, z) => {
+      let y = 0;
+      for (const q of surfaces) {
+        const dx = x - q.x, dz = z - q.z, c = Math.cos(q.yaw), s = Math.sin(q.yaw);
+        if (Math.abs(c * dx - s * dz) <= q.w / 2 && Math.abs(s * dx + c * dz) <= q.d / 2) y = Math.max(y, q.h);
+      }
+      return y;
+    };
+    for (let i = 1; i < L.path.length; i++) {
+      const a = L.path[i - 1], b = L.path[i], dx = b.x - a.x, dz = b.z - a.z, len = hyp(dx, dz);
+      if (len < 0.01) continue;
+      const vx = dx / len, vz = dz / len, yaw = Math.atan2(vx, vz);
+      for (; until < len; until += spacing) {
+        const x = a.x + vx * until, z = a.z + vz * until;
+        if (!api.circleFree(x, z, 0.58) || L.checkpoints.some(q => hyp(q.x - x, q.z - z) < 1.9) ||
+            (L.boss && hyp(L.boss.x - x, L.boss.z - z) < 3.4) ||
+            (L.exit && hyp(L.exit.x - x, L.exit.z - z) < 2.3)) continue;
+        // The whole stamp rests above the highest crossed surface (including rug / board edges).
+        let y = heightAt(x, z);
+        for (const off of [-0.4, 0.4]) y = Math.max(y, heightAt(x + vz * off, z - vx * off), heightAt(x + vx * off, z + vz * off));
+        for (const side of [-1, 1]) {
+          const cx = x + vz * side * 0.16 - vx * 0.03, cz = z - vx * side * 0.16 - vz * 0.03;
+          api.put(box, cx, y + 0.009, cz, 0.18, 0.012, 0.53, 0x467b78, yaw - side * Math.PI / 4, 0, 0, 'decor');
+          api.put(box, cx, y + 0.017, cz, 0.10, 0.012, 0.43, 0xffedbd, yaw - side * Math.PI / 4, 0, 0, 'decor');
+        }
+        stamps.push({ x, z, y, yaw });
+      }
+      until -= len;
+    }
+  }
+
   // build(L): hepsi bir kerede. buildSteps(L): aynı iş, aşama aralarında yield (oda geçişinde karelere bölünür; 07 loadZoneAsync).
   function build(L) {
     if (!L) return L;
@@ -6410,6 +6447,7 @@ const LEVEL = (function () {
     if (!L) return L;
     if (L.group) dispose(L);
     const t0 = performance.now();
+    L._routeSurfaces = [];
     if (texOK() && TEX.ensure) { try { TEX.ensure(L.theme); } catch (e) { console.warn('LEVEL: TEX.ensure', e); } }   // no-op when the UI already did it under the fade
     ensureRes();
     const g = L.group = new THREE.Group(); g.name = 'level'; scene.add(g);
@@ -6476,6 +6514,7 @@ const LEVEL = (function () {
     yield 'props';
     if (zd && typeof zd.kurSon === 'function') { try { zd.kurSon(L, zapi); } catch (e) { console.warn('LEVEL: ' + L.Z.id + '.kurSon', e); } }
     if (zapi && !L._title && !(L.Z && L.Z.hub) && L.areas && typeof ODAKIT !== 'undefined' && ODAKIT.gates) { try { ODAKIT.gates(L, zapi); } catch (e) { console.warn('LEVEL: ODAKIT.gates', e); } }   // (Dev Ev: alan geçitleri huysuzlar neşelenince açılır)
+    buildRoute(L, zapi);
     yield 'gates';
     finishBanners(B); finishSlime(B); finishWindows(B); finishLavafalls(B);
     finishInst(L, B); yield 'inst'; finishDecor(L, B); yield 'decor'; finishPoints(L, B); finishFlames(L, B); buildGlowTex(L, B);

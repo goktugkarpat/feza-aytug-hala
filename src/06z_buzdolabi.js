@@ -844,7 +844,7 @@ const ODAB = (() => {
       for (let i = 0; i < 3; i++) B2.add('candy', G.sphere(6, 4), C(0xff7aa8), [x + 0.29, 0.9 + i * 0.18, z - 0.1 + i * 0.05], null, [0.05, 0.05, 0.05]);
     } });
     // ── Kar tanesi parıltıları ──
-    O.sparkles(api, { n: 170, kind: 'flake', colors: [0xe8f6ff, 0xffffff, 0xcfeaff, 0xfff2d8], k: 1.5, size: 0.3, fall: 0.3 });
+    O.sparkles(api, { n: 64, kind: 'flake', colors: [0xe8f6ff, 0xffffff, 0xcfeaff, 0xfff2d8], k: 1.0, size: 0.2, fall: 0.24 });
     B.done();
   }
 
@@ -1385,7 +1385,7 @@ const ODAB = (() => {
     muzik: 'magara',
     malzeme: 'cilek', kayipEsya: 'toka',
     isik: { fog: [0xc6e3f6, 42, 104], hemiSky: 0xf0faff, hemiGround: 0x9ab8d0, hemi: 0.62, sunColor: 0xfff4e6, sun: 1.9, sunOffset: [-12, 26, 14],
-      env: [0xd6efff, 0xfff0e8, 0x9ab8d0, 0.62], bloom: 0.34, exposure: 0.98, fezaLight: 0, sat: 1.06, vig: 0.2, moss: [0xc7e4f4, 0], rim: [0xf0faff, 0.22] },
+      env: [0xd6efff, 0xfff0e8, 0x9ab8d0, 0.62], bloom: 0.22, exposure: 0.98, fezaLight: 0, sat: 1.06, vig: 0.2, moss: [0xc7e4f4, 0], rim: [0xf0faff, 0.22] },
     zemin: { tA: 0xeaf5fc, tB: 0xdcedf9, tC: 0xf6fbff, out: 0x9cc8e6, outAmt: 0.7, macro: 0xf2f9ff },
     minimap: { zemin: '#cfe8f7' },
     harita: { ad: 'Buzdolabı', detay: 'Buz pisti, jöle tepeleri, dondurma kaydırağı', renk: '#9fd6ef', x: 76, y: 70, simge: '🧊' },

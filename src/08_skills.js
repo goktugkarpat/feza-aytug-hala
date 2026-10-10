@@ -382,7 +382,7 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     let c = null;
     for (let i = 0; i < CIRC.length; i++) if (!CIRC[i].on) { c = CIRC[i]; break; }
     if (!c) return null;
-    c.on = true; c.alpha = 1; c.t = 0; c.dur = dur; c.mode = mode; c.r = r; c.follow = !!follow;
+    c.on = true; c.alpha = mode === 1 ? 1 : 0.65; c.t = 0; c.dur = dur; c.mode = mode; c.r = r; c.follow = !!follow;
     c.u.uCol.value.set(color); c.u.uMode.value = mode; c.u.uA.value = 0; c.u.uRot.value = frand(0, TAU);
     c.mesh.position.set(x, 0.035 + mode * 0.008, z); c.mesh.scale.setScalar(r); c.mesh.visible = true;
     return c;
@@ -512,8 +512,8 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     return true;
   }
   function creamHit(p) {
-    burst('cream', p.x, p.y, p.z, { count: 10 });
-    fxRing(p.x, p.z, { r0: 0.15, r1: 1.0, dur: 0.25, color: '#fff2e2', width: 0.18 });
+    burst('cream', p.x, p.y, p.z, { count: 5 });
+    fxRing(p.x, p.z, { r0: 0.15, r1: 0.72, dur: 0.22, color: '#fff2e2', width: 0.12 });
     sfx('splat', { x: p.x, z: p.z, vol: 0.55, pitch: frand(1.0, 1.3) });
   }
 
@@ -536,7 +536,7 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     SPIN.grp.position.set(c.x, 0, c.z); SPIN.grp.visible = true;
     circle(c.x, c.z, '#ffc98a', 1.6, 0.6, 0, true);
     fxRing(c.x, c.z, { r0: 0.5, r1: 3.2, dur: 0.4, color: '#bff4ff', width: 0.4 });
-    burst('dust', c.x, 0.1, c.z, { count: 14 });
+    burst('dust', c.x, 0.1, c.z, { count: 6 });
     sfx('spin', { x: c.x, z: c.z });
     word(c.x, c.z, 'Fırr!');
     return true;
@@ -546,8 +546,8 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     for (let i = 0; i < list.length; i++) {
       const e = list[i];
       hurt(e, Math.max(1, Math.round((SPIN.mult || 0.6) * sword())), { kb: 0.35, fromX: x, fromZ: z, kind: 'spin' });
-      burst('hit', e.x, eY(e), e.z, { color: '#ffd9a0' });
-      if (SPIN.n % 2 === 0) sfx('bonk', { x: e.x, z: e.z, vol: 0.35, pitch: frand(1.1, 1.5) });   // kaşık "tok!"
+      if (i < 3) burst('hit', e.x, eY(e), e.z, { color: '#ffd9a0', count: 3 });
+      if (i < 2 && SPIN.n % 2 === 0) sfx('bonk', { x: e.x, z: e.z, vol: 0.35, pitch: frand(1.1, 1.5) });   // kaşık "tok!"
     }
     smash(x, z, R);
     SPIN.n++;
@@ -563,9 +563,9 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     const x = P.pos.x, z = P.pos.z;
     SPIN.grp.position.set(x, 0, z);
     const el = SPIN.dur - SPIN.t, a = smooth01(el / 0.18) * smooth01(SPIN.t / 0.35);
-    SPIN.inner.material.uniforms.uA.value = a;
-    SPIN.outer.material.uniforms.uA.value = a * 0.85;
-    SPIN.floor.material.uniforms.uA.value = a;
+    SPIN.inner.material.uniforms.uA.value = a * 0.7;
+    SPIN.outer.material.uniforms.uA.value = a * 0.48;
+    SPIN.floor.material.uniforms.uA.value = a * 0.55;
     SPIN.inner.rotation.y += dt * 9; SPIN.outer.rotation.y += dt * 6; SPIN.floor.rotation.y += dt * 4;
     SPIN.inner.scale.setScalar(0.8 + 0.2 * a); SPIN.outer.scale.set(0.75 + 0.25 * a, 0.6 + 0.4 * a, 0.75 + 0.25 * a);
     SPIN.ang += dt * 16;
@@ -581,11 +581,11 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     if (SPIN.tick <= 0) { SPIN.tick += SPIN_TICK; spinHit(P); }
     SPIN.emitT -= dt;
     while (SPIN.emitT <= 0 && a > 0.2) {   // sparkles and little leaves whirled around Feza
-      SPIN.emitT += 0.028;
+      SPIN.emitT += 0.07;
       const an = frand(0, TAU), r = frand(1.0, 1.9), s = Math.sin(an), co = Math.cos(an);
       orbit(frand(7, 10), x, z);
       puff(x + s * r, frand(0.2, 1.8), z + co * r, s * 1.2, frand(0.6, 1.6), co * 1.2, frand(0.35, 0.5), frand(0.2, 0.32), 0.04,
-        fpick(WIND_COLS), '#7ee0ff', 2, 0, 1.5, 2.4);
+        fpick(WIND_COLS), '#7ee0ff', 2, 0, 1.5, 1.35);
       const k = frand();
       if (k < 0.35) {
         orbit(frand(6, 8.5), x, z);
@@ -691,9 +691,9 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
         m.tail.scale.set(0.42, tl, 0.42);
         m.emitT -= dt;
         while (m.emitT <= 0) {   // sparkly rainbow trail
-          m.emitT += 0.016;
+          m.emitT += 0.045;
           puff(x + frand(-0.2, 0.2), y + frand(-0.2, 0.2), z + frand(-0.2, 0.2), frand(-0.6, 0.6), frand(-0.2, 0.8), frand(-0.6, 0.6),
-            frand(0.35, 0.6), frand(0.25, 0.45), 0, fpick(RAINBOW), '#ffffff', frand() < 0.5 ? 1 : 2, -1, 1.5);
+            frand(0.25, 0.4), frand(0.18, 0.28), 0, m.col, '#ffffff', frand() < 0.5 ? 1 : 2, -1, 1.5);
         }
         if (age >= MET_LAND) meteorBoom(m);
       }
@@ -708,13 +708,12 @@ const { SKILLS, SKILLS_update, SKILLS_clear } = (function () {
     for (let i = 0; i < list.length; i++) if (inSight(sx, sz, list[i]))
       hurt(list[i], Math.max(1, Math.round((MET.mult || 2) * sword())), { kb: 1.2, fromX: x, fromZ: z, kind: 'meteor' });
     smash(x, z, MET.r);
-    fxRing(x, z, { r0: 0.4, r1: MET.r + 0.5, dur: 0.4, color: m.col, width: 0.5 });
-    burst('hit', x, 0.6, z, { color: m.col, scale: 1.4 });
-    burst('sparkle', x, 0.6, z, { color: m.col, count: 14 });
-    burst('confetti', x, 0.9, z, { count: 12 });
-    lightFlash(x, z, m.col, 4, 0.28);
-    shake(0.22);
-    sfx('boom', { vol: 0.8, x, z, pitch: frand(0.9, 1.15) });
+    fxRing(x, z, { r0: 0.4, r1: MET.r + 0.2, dur: 0.3, color: m.col, width: 0.22 });
+    burst('hit', x, 0.6, z, { color: m.col, scale: 0.9, count: 3 });
+    burst('sparkle', x, 0.6, z, { color: m.col, count: 4 });
+    // Only the leading candy lends the scene a little light; later impacts stay local.
+    if (MET.first) { lightFlash(x, z, m.col, 1.5, 0.18); shake(0.07); }
+    sfx('boom', { vol: MET.first ? 0.55 : 0.3, x, z, pitch: frand(1.0, 1.15) });
     if (MET.first) { MET.first = false; word(x, z, 'Şeker!'); }
   }
 

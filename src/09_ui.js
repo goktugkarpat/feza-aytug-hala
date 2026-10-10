@@ -781,8 +781,13 @@ const UI = (() => {
     D.dreamScreen = el('div', 'u-screen u-dream-screen', root);
     D.dreamScreen.setAttribute('role', 'dialog'); D.dreamScreen.setAttribute('aria-modal', 'true'); D.dreamScreen.setAttribute('aria-labelledby', 'dreamTitle');
     const panel = el('div', 'u-dream-panel', D.dreamScreen);
-    el('span', 'u-dream-kicker', panel, 'AYTUĞ HALA’NIN EVİ');
-    const heading = el('h2', 'u-dream-title', panel, 'Dev Ev Haritası'); heading.id = 'dreamTitle';
+    const header = el('div', 'u-dream-header', panel);
+    const titles = el('div', 'u-dream-headings', header);
+    el('span', 'u-dream-kicker', titles, 'AYTUĞ HALA’NIN EVİ');
+    const heading = el('h2', 'u-dream-title', titles, 'Dev Ev Haritası'); heading.id = 'dreamTitle';
+    D.dreamTopClose = el('button', 'u-dream-close u-dream-top-close', header, SVG.close + '<span>Kapat</span>');
+    D.dreamTopClose.setAttribute('aria-label', FEZA_LANG.t('Haritayı kapat'));
+    accessiblePress(D.dreamTopClose, closeDreamMap);
     el('p', 'u-dream-hint', panel, 'Bir odaya dokun. Hadi gidelim!');
     const board = D.dreamBoard = el('div', 'u-dream-board', panel);
     const sky = el('div', 'u-dream-starfield', board);
@@ -808,7 +813,7 @@ const UI = (() => {
     D.dreamScreen.addEventListener('keydown', e => {
       if (e.code === 'Escape') { e.preventDefault(); e.stopPropagation(); closeDreamMap(); }
       if (e.code === 'Tab') {
-        const choices = [...D.dreamPlaces, D.dreamClose], at = choices.indexOf(document.activeElement);
+        const choices = [D.dreamTopClose, ...D.dreamPlaces, D.dreamClose], at = choices.indexOf(document.activeElement);
         e.preventDefault(); e.stopPropagation(); choices[(at + (e.shiftKey ? choices.length - 1 : 1)) % choices.length].focus();
       }
     });
@@ -826,7 +831,8 @@ const UI = (() => {
       const open = !M.GAME || !M.GAME.zoneOpen || M.GAME.zoneOpen(i);   // Pasta Krallığı 3 malzemeyle açılır
       b.classList.toggle('locked', !open); b.setAttribute('aria-disabled', open ? 'false' : 'true');
     });
-    showScreen(D.dreamScreen, true); D.dreamClose.focus({ preventScroll: true });
+    D.dreamScreen.querySelector('.u-dream-panel').scrollTop = 0;
+    showScreen(D.dreamScreen, true); D.dreamTopClose.focus({ preventScroll: true });
   }
   function closeDreamMap() {
     if (S.menu !== 'dream') return;

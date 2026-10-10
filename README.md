@@ -19,7 +19,7 @@ Anlatıcı Aytuğ Hala'nın kendisi. Bütün yaratıklar sevimli ve güler yüzl
 
 - **Başlamak:** Başlıkta büyük **Oyna** düğmesine bas. Kısa bir giriş sahnesi (Bilbo'nun hapşırması ve minicik oluş) gelir; ekrana dokununca
   hızlanır, sağ üstteki **Geç** ile atlanır. Kayıt varsa **Devam Et** kaldığın yerden sürdürür.
-- **Yürümek:** Parmağını ekranda gitmek istediğin yere bas ya da sürükle. Feza parmağının altındaki yere koşar.
+- **Yürümek:** Parmağını ekranda gitmek istediğin yere bas ya da sürükle. Feza parmağının altındaki yere koşar. Bölümlerdeki küçük krem renkli yön işaretleri ana yolu gösterir.
 - **Vurmak:** Bir huysuza dokun: Feza yanına gidip vurur. Yakınına gelen huysuza kendiliğinden de vurur. Sağ alttaki büyük düğme de vurur;
   düğmenin resmi takılı silahı gösterir (tahta kaşık, oklava…). Neşelenen huysuz kocaman gülümser, kalpler saçar ve kaybolur;
   bıraktığı renkli şekerler mıknatısla Feza'ya uçar.

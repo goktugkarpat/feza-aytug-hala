@@ -1359,7 +1359,7 @@ const GAME = (() => {
       r: m.radius || (def.r || 0.5) * sc, height: m.height || (def.height || 1) * sc,
       dmg: levelEnemyDamage(type, def, isBoss, elite),
       speed: Math.min(def.speed || 2.5, T.enemyMaxSpeed) * (elite ? 0.92 : 1) * (1 + Math.min(0.12, 0.03 * P.ng)) * (hard ? HC.speed : 1),
-      xp: (isBoss ? 140 * clamp(bossCfg(type).per / 100, 0.8, 1.5) : (def.xp || 10) * DIFF.xp) * rewardRate() * (elite ? 3 : 1),
+      xp: (isBoss ? 140 * clamp(bossCfg(type).per / 100, 0.8, 1.5) : (def.xp || 10) * DIFF.xp * clamp(Number.isFinite(sp.xpScale) ? sp.xpScale : 1, 1, 1.5)) * rewardRate() * (elite ? 3 : 1),
       gold: (isBoss ? 40 * clamp(bossCfg(type).per / 100, 0.8, 1.5) : (def.gold || 3)) * goldRate() * (elite ? 3 : 1),
       kind: isBoss ? 'boss' : HEAVY[type] ? 'slam' : (def.kind || 'melee'), fly: !!def.fly, hover: def.hover !== undefined ? def.hover : 0.8,
       atkRange: def.atkRange || 1, atkCd: (def.atkCd || 1.7) * DIFF.atkCd * pace * roundCooldown() * (hard ? HC.cd : 1), windup: difficultyWind[hard ? 1 : 0], aggroR: def.aggro || 9,
@@ -1969,10 +1969,10 @@ const GAME = (() => {
   }
   const shape = (name, dflt) => (typeof FX !== 'undefined' && FX && FX.SHAPES && FX.SHAPES[name] !== undefined ? FX.SHAPES[name] : dflt);
   const PT = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, life: 0.4, size: 0.3, size1: 0, color: '#fff', color1: '#fff', alpha: 1, shape: 0, add: true, grav: 0, drag: 0, spin: 0, fade: 1, pop: 0, soft: 0 };
-  function emitP(x, y, z, vx, vy, vz, life, size, size1, color, color1, shape, grav = 0, drag = 0) {
+  function emitP(x, y, z, vx, vy, vz, life, size, size1, color, color1, shape, grav = 0, drag = 0, important = false) {
     if (typeof FX === 'undefined' || !FX.emit) return;
     PT.x = x; PT.y = y; PT.z = z; PT.vx = vx; PT.vy = vy; PT.vz = vz; PT.life = life; PT.size = size; PT.size1 = size1;
-    PT.color = color; PT.color1 = color1; PT.shape = shape; PT.grav = grav; PT.drag = drag; PT.spin = frand(-3, 3);
+    PT.color = color; PT.color1 = color1; PT.shape = shape; PT.grav = grav; PT.drag = drag; PT.spin = frand(-3, 3); PT.important = important;
     fx('emit', PT);
   }
   function muzzle(e) {
@@ -1989,7 +1989,7 @@ const GAME = (() => {
     const m = muzzle(e), kind = (e.def.shot && e.def.shot.kind) || SHOT_KIND[e.type] || 'spore', col = (e.def.shot && e.def.shot.col) || SHOT_COL[kind] || '#fff';
     const a = frand(0, TAU), r = 0.8 * (1 - k * 0.45);
     emitP(m.x + Math.sin(a) * r, m.y + frand(-0.35, 0.35), m.z + Math.cos(a) * r, -Math.sin(a) * r * 3, 0, -Math.cos(a) * r * 3, 0.26, 0.2, 0.06, col, '#ffffff', 2);
-    emitP(m.x, m.y, m.z, 0, 0, 0, 0.07, 0.35 + k * 0.75, 0.3 + k * 0.7, col, '#ffffff', 0);   // growing orb at the mouth
+    emitP(m.x, m.y, m.z, 0, 0, 0, 0.07, 0.35 + k * 0.75, 0.3 + k * 0.7, col, '#ffffff', 0, 0, 0, true);   // growing orb at the mouth: always visible over cosmetic bursts
   }
   function shoot(e) {
     STATS.shots++;
@@ -2739,7 +2739,8 @@ const GAME = (() => {
     if (pd < R + T.heroR * 0.5) hurtPlayer(b.dmg * dmgK, x, z, kb);
   }
   function summonAdds(b, type, n) {
-    n = Math.min(n, Math.max(0, 6 - enemies.filter(e => !e.dead && !e.boss && e.pack === 'bossadds').length));
+    // Two arrivals per wave and four helpers total keep the boss and its warnings readable.
+    n = Math.min(n, 2, Math.max(0, 4 - enemies.filter(e => !e.dead && !e.boss && e.pack === 'bossadds').length));
     let made = 0;
     const rm = bossRoom(), at = [];
     // in front of it first (toward Feza), fanning out; farther rings if a wall or a pillar is in the way
