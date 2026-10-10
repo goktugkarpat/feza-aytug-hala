@@ -434,11 +434,22 @@ const HIS = (() => {
     if (talk) { S.talkT -= dt; if (S.talkT <= 0) { S.talkT = rnd(0.07, 0.15); S.mouth = S.mouth === 0 ? (Math.random() < 0.6 ? 1 : 2) : Math.random() < 0.7 ? 0 : 3 - S.mouth; } m = S.mouth; }
     else S.mouth = 0;
     if (m !== S.lastMouth) { S.lastMouth = m; for (let i = 0; i < 3; i++) D.m[i].setAttribute('opacity', i === m ? '1' : '0'); }
+    // gerçek Aytuğ Hala modelinden rozet (HALA.portrait): bir kez çizilir, SVG'nin yerine geçer
+    if (!S.halaPic && !S.halaPicTried && typeof HALA !== 'undefined' && HALA && HALA.portrait && HALA._S && HALA._S.root && S.t > 0.5) {
+      S.halaPicTried = true;
+      let p = null; try { p = HALA.portrait(); } catch (e) { p = null; }
+      if (p && p.smile) {
+        S.halaPic = {};
+        for (const k of ['smile', 'talk', 'blink']) { const im = el('img', 'his-hala-pic', D.hala); im.src = p[k]; im.alt = ''; im.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:50%;opacity:' + (k === 'smile' ? 1 : 0); S.halaPic[k] = im; const tk = D.hala.querySelector('.his-talk'); if (tk) D.hala.insertBefore(im, tk); }
+        const sv = D.hala.querySelector('svg'); if (sv) sv.style.visibility = 'hidden';
+      }
+    }
     // göz kırpma
     S.blinkT -= dt;
     if (S.blinkT <= 0) { S.blink = 0.13; S.blinkT = rnd(2.4, 5); }
     const b = S.blink > 0; if (b) S.blink -= dt;
     if (b !== S.lastBlink) { S.lastBlink = b; D.eyes.setAttribute('opacity', b ? '0' : '1'); D.lids.setAttribute('opacity', b ? '1' : '0'); }
+    if (S.halaPic) { const k = b && !m ? 'blink' : m ? 'talk' : 'smile'; if (k !== S.halaPicK) { S.halaPicK = k; for (const q in S.halaPic) S.halaPic[q].style.opacity = q === k ? 1 : 0; } }
   }
   function pipsTick() {
     const U = typeof UI !== 'undefined' && UI._D && UI._D.sk; if (!U) return;

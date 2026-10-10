@@ -1354,6 +1354,7 @@ const HALA = (() => {
   function poof(A, x, z) { if (A) { A.burst('sparkle', x, 1.0, z, { color: '#ffd6e2', count: 14 }); A.burst('hearts', x, 1.2, z, { count: 4 }); } }
   function teleportNear(A, P, ox, oz) {
     const tries = [[ox, oz], [-ox, oz], [ox * 0.6, oz - 0.6], [0, -1.3], [1.2, 0], [-1.2, 0], [0, 1.2]];
+    S.tpN = (S.tpN || 0) + 1;
     for (const [dx, dz] of tries) { const x = P.pos.x + dx, z = P.pos.z + dz; if (free(A, x, z)) { poof(A, S.x, S.z); S.x = x; S.z = z; poof(A, x, z); S.stuck = 0; return true; } }
     S.x = P.pos.x + ox; S.z = P.pos.z + oz; return false;
   }
@@ -1378,6 +1379,7 @@ const HALA = (() => {
       let ox = s * 1.15, oz = -0.65;
       const dot = ox * mx + oz * mz;
       if (dot > 0) { ox -= mx * (dot + 0.6); oz -= mz * (dot + 0.6); }   // önüne geçme: hareket yönünün arkasına
+      if (oz > 0.1 && Math.abs(ox) < 1.0) ox = (ox >= 0 ? 1 : -1) * (s > 0 ? 1 : 1) * 1.0;   // kameradan bakınca Feza'nın önünü kapatma: yanda kal
       const l = Math.hypot(ox, oz) || 1, r = clamp(l, 1.1, 1.5);
       return { x: P.pos.x + ox / l * r, z: P.pos.z + oz / l * r };
     };
@@ -1397,6 +1399,11 @@ const HALA = (() => {
     // Feza'nın hızı (yolunu kesmemek için)
     if (dt > 0) { const vx = (P.pos.x - S.fx) / dt, vz = (P.pos.z - S.fz) / dt; if (Math.hypot(vx, vz) < 30) { S.fvx = damp(S.fvx, vx, 8, dt); S.fvz = damp(S.fvz, vz, 8, dt); } }
     const fmoved = Math.hypot(P.pos.x - S.fx, P.pos.z - S.fz); S.fx = P.pos.x; S.fz = P.pos.z;
+    // Feza kalktı (Hala kaldırdı ya da oyun kaldırdı): can en az %60, 2 s kısa koruma (birkaç kare daha denetlenir)
+    if (S.wasDead && !P.dead) S.upGuard = 0.5;
+    S.wasDead = !!P.dead;
+    if (S.upGuard > 0) { S.upGuard -= dt; const min = Math.round((P.maxHp || 100) * 0.6); if (P.hp < min) P.hp = min; if (ctx.api && ctx.api.shield && !S.upShield) { ctx.api.shield(2); S.upShield = true; } }
+    else S.upShield = false;
     if (ctx.L !== S.L) {   // yeni bölüm: Feza'nın yanında başla
       S.L = ctx.L; if (S.act) endAct(); S.side = 1;
       const f = followSpot(P, A); S.x = f.x; S.z = f.z; S.face = P.face || 0; S.vel = 0; S.still = 0; S.prevTele = false;
@@ -1422,6 +1429,21 @@ const HALA = (() => {
     // Feza'yı havada bıraktıysak (yarıda kesilen zıplama/fırlatma) yere indir
     if (S.liftY && !(S.act && (S.act.k === 'team' || S.act.k === 'boost'))) { P.pos.y = 0; if (ctx.H) ctx.H.root.position.y = 0; S.liftY = false; }
     const dF = onScreenDist(P);
+    // Feza sala/kaydırağa/tekneye bindi: Hala kremaya/suya girmez, kenarda bekler; Feza inince yanına gelir
+    S.rideT = fezaRiding() ? (S.rideT || 0) + dt : 0;
+    const riding = S.rideT > 0 && S.rideT < 25 && !P.dead;   // (25 s'den uzun "biniş" eski bölümden kalmış sayılır)
+    if (riding) {
+      if (!S.rideWait) { S.rideWait = true; if (S.act && S.act.k !== 'shield') endAct(); }
+      S.vel = damp(S.vel, 0, 8, dt); faceTo(P.pos.x, P.pos.z, dt, 4);
+      if (!S.act || S.act.k === 'shield') { if (S.act) runAct(S.act, dt, ctx); }
+      piesStep(dt); S.mode = 'bekle'; animate(dt);
+      S.root.position.set(S.x, S.y, S.z); S.root.rotation.y = S.face; S.root.scale.setScalar(HALA_SCALE);
+      return;
+    }
+    if (S.rideWait) {   // indi: uzaksa kalpli parıltıyla yanına gel
+      S.rideWait = false; S.stuck = 0;
+      if (dF > 4) { const f = followSpot(P, A); if (free(A, f.x, f.z)) { poof(A, S.x, S.z); S.x = f.x; S.z = f.z; poof(A, f.x, f.z); } else teleportNear(A, P, S.side * 1.15, -0.65); }
+    }
     if (S.act) runAct(S.act, dt, ctx);
     else if (ctx.title) {
       const f = { x: P.pos.x + 1.0, z: P.pos.z - 0.5 };
@@ -1433,7 +1455,7 @@ const HALA = (() => {
       if (!S.act) {
         const f = followSpot(P, A), d = Math.hypot(f.x - S.x, f.z - S.z);
         const maxS = Math.max(3.2, Math.hypot(S.fvx, S.fvz) + (d > 3 ? 2.2 : 0.6));
-        moveTo(A, f.x, f.z, d > 6 ? 7 : maxS, dt, 0.35);
+        moveTo(A, f.x, f.z, d > 5 ? Math.max(7.5, Math.hypot(S.fvx, S.fvz) + 2.5) : maxS, dt, 0.35);
         if (S.vel < 0.5) faceTo(lerp(P.pos.x, f.x + (f.x - P.pos.x), 0.3), P.pos.z + 2, dt, 3);   // Feza'nın yanında, kameraya dönük
       }
     }
@@ -1449,7 +1471,15 @@ const HALA = (() => {
     S.root.scale.setScalar(HALA_SCALE * tr);
     if (tr < 1) S.root.rotation.y += (1 - tr) * 9;
   }
-  const HALA_SCALE = 1.06;   // Feza ≈ 1,54 m (saçıyla), Hala ≈ 1,95 m
+  const HALA_SCALE = 1.06;
+  function fezaRiding() {
+    try {
+      if (typeof ODAB !== 'undefined' && ODAB && ODAB.riding && ODAB.riding()) return true;
+      const T = typeof ODAKIT !== 'undefined' && ODAKIT && ODAKIT.last;
+      if (T && T.riding && (!T.L || !S.ctx || T.L === S.ctx.L)) return true;
+    } catch (e) { /* yut */ }
+    return false;
+  }   // Feza ≈ 1,54 m (saçıyla), Hala ≈ 1,95 m
   function sayVar2(key, prio) { return say(key, prio); }
   const TEAM_FILL = 1 / 45;   // kendiliğinden dolum (/s); her neşelenen huysuz +0.06, boss +0.3
 
@@ -1732,6 +1762,7 @@ const HALA = (() => {
     S.root = g; (scene_ || scene).add(g);
     shieldMesh();
     animate(0);
+    try { portrait(); } catch (e) { /* arayüz yer tutucuyu kullanır */ }   // yükleme sırasında bir kez çiz (oyun içinde takılma olmasın)
     return g;
   }
   function onFezaHurt(o) {
