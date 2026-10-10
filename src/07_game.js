@@ -6766,6 +6766,8 @@ const GAME = (() => {
       for (const id of BOSSDAV.types()) BOSS_AI[id] = dav;
     } catch (err) { warnOnce('BOSSDAV', err); }
   }
+  // eski tabanlı Dev Ev bossları (ör. Balkon'un Uykucu Hortum'u, base kefirdev) tabanın hamle düzeniyle oynar (yoksa ejderha düzenine düşüyordu)
+  for (const id in ALIAS) if (!BOSS_AI[id] && BOSS_AI[ALIAS[id]]) BOSS_AI[id] = BOSS_AI[ALIAS[id]];
 
   function hala(fn, a, b, c) {
     if (typeof HALA === 'undefined' || !HALA || typeof HALA[fn] !== 'function') return undefined;
