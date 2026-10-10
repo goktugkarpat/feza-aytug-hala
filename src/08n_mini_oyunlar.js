@@ -1871,25 +1871,20 @@
       face(c, 12, 14, 30, 'smile');
     });
   }
-  function drawVisitor(G, c, v, x, y) {
-    const u = G.u, fl = Math.abs(Math.sin(v.t * 22)), dir = Math.cos(v.t * 1.4 + v.ph) > 0 ? 1 : -1;
+  function drawVisitor(G, c, v, x, y) {   // çiçeği açılınca uçup gelen kuşlar: kahverengi serçe ya da renkli minik kuş (böcek yok)
+    const u = G.u, fl = Math.sin(v.t * 18 + v.ph), dir = Math.cos(v.t * 1.4 + v.ph) > 0 ? 1 : -1;
+    const body = v.bird ? '#a8744a' : v.col, belly = v.bird ? '#f6e2c4' : shade(v.col, 0.55), wing = shade(body, -0.25);
     c.save(); c.translate(x, y); c.scale(u * dir, u);
-    if (v.bee) {
-      c.fillStyle = 'rgba(220,240,255,0.85)'; c.strokeStyle = '#7aa0c0'; c.lineWidth = 2;
-      for (const d of [-1, 1]) { c.save(); c.translate(-2, -10); c.scale(1, 0.4 + fl * 0.6); c.beginPath(); c.ellipse(d * 7, -8, 8, 13, d * 0.5, 0, TAU); c.fill(); c.stroke(); c.restore(); }
-      ball(c, 0, 0, 18, 13, '#ffd23f', { stroke: '#8a5a00', line: 2.5 });
-      c.save(); c.beginPath(); c.ellipse(0, 0, 17, 12, 0, 0, TAU); c.clip(); c.fillStyle = '#3a2a10'; c.fillRect(-6, -14, 5, 28); c.fillRect(4, -14, 5, 28); c.restore();
-      c.fillStyle = '#2a140a'; c.beginPath(); c.arc(12, -3, 2.2, 0, TAU); c.fill();
-    } else {
-      const col = v.col;
-      for (const d of [-1, 1]) {
-        c.save(); c.scale(0.25 + fl * 0.75, 1);
-        ball(c, d * 14, -8, 14, 16, col, { stroke: shade(col, -0.45), line: 2.5, gloss: false }); ball(c, d * 11, 10, 10, 11, shade(col, 0.25), { stroke: shade(col, -0.45), line: 2.5, gloss: false });
-        c.fillStyle = 'rgba(255,255,255,0.7)'; c.beginPath(); c.arc(d * 15, -10, 4, 0, TAU); c.fill(); c.restore();
-      }
-      c.fillStyle = '#4a2a5a'; rr(c, -3, -14, 6, 28, 3); c.fill();
-      c.strokeStyle = '#4a2a5a'; c.lineWidth = 1.8; c.beginPath(); c.moveTo(0, -13); c.quadraticCurveTo(-5, -22, -8, -24); c.moveTo(0, -13); c.quadraticCurveTo(5, -22, 8, -24); c.stroke();
-    }
+    c.fillStyle = shade(body, -0.2); c.beginPath(); c.moveTo(-14, -2); c.lineTo(-30, -10 + fl * 2); c.lineTo(-28, 4); c.closePath(); c.fill();   // kuyruk
+    ball(c, 0, 0, 19, 15, body, { stroke: shade(body, -0.5), line: 2.5 });
+    ball(c, 4, 5, 12, 9, belly, { gloss: false });
+    ball(c, 13, -10, 11, 11, body, { stroke: shade(body, -0.5), line: 2.5 });
+    if (v.bird) { c.fillStyle = '#6a4028'; c.beginPath(); c.arc(13, -12, 10, PI * 1.05, PI * 1.95); c.fill(); }
+    c.fillStyle = '#ffb03a'; c.beginPath(); c.moveTo(22, -12); c.lineTo(31, -9); c.lineTo(22, -6); c.closePath(); c.fill();   // gaga
+    c.fillStyle = '#2a140a'; c.beginPath(); c.arc(16, -12, 2.6, 0, TAU); c.fill();
+    c.fillStyle = '#ffffff'; c.beginPath(); c.arc(16.8, -12.9, 0.9, 0, TAU); c.fill();
+    c.fillStyle = 'rgba(255,120,150,0.55)'; c.beginPath(); c.arc(17, -6, 2.6, 0, TAU); c.fill();
+    c.save(); c.translate(-2, -4); c.rotate(-0.4 - fl * 0.7); ball(c, -6, -8, 11, 6, wing, { stroke: shade(wing, -0.45), line: 2, gloss: false }); c.restore();   // kanat
     c.restore();
   }
   shell('cicekSula', {
@@ -2010,7 +2005,7 @@
           blit(c, S.bloom[i], hx, hy - 10 * k, k * 0.95 * pj * Math.min(1, 0.4 + f.h * 0.6), sway + Math.sin(f.bl * 2) * 0.05);
         }
       });
-      // ziyaretçiler (arı, kelebek)
+      // ziyaretçiler (serçe, renkli minik kuş)
       for (const v of st.vis) {
         const P = st.pots[v.i]; if (P.hx === undefined) continue;
         const q = outCubic(Math.min(1, v.t / 1.2)), sx = lerp(v.sx, P.hx, q), sy = lerp(v.sy, P.hy, q);
@@ -2048,7 +2043,7 @@
       sparkles(G, P.hx, P.hy, f.stage === 2 ? 14 : 6, 1.2);
       if (f.stage === 2) {
         sfx('pop', { vol: 0.8 }); sfx('chirp', { vol: 0.6 }); confetti(G, P.hx, P.hy - 20 * u, 22, 0.8); hearts(G, P.hx, P.hy - 40 * u, 3); G.shake = 0.4;
-        st.vis.push({ i, t: 0, ph: rnd(0, TAU), bee: st.vis.length % 2 === 1, col: pick(['#ff7ab8', '#4fb3ff', '#ffb23f', '#b37cff']), sx: R() < 0.5 ? -60 * u : G.W + 60 * u, sy: rnd(G.H * 0.2, G.H * 0.5) });
+        st.vis.push({ i, t: 0, ph: rnd(0, TAU), bird: st.vis.length % 2 === 1, col: pick(['#ff7ab8', '#4fb3ff', '#ffd23f', '#6fd36a']), sx: R() < 0.5 ? -60 * u : G.W + 60 * u, sy: rnd(G.H * 0.2, G.H * 0.5) });
         if (st.fl.every(q => q.stage === 2)) {
           st.celeb = 2.2; sfx('levelup', { vol: 0.8 }); sfx('cheer', { vol: 0.6 }); confetti(G, G.W / 2, G.H * 0.4, 60, 1.3); G.flash = 0.6;
           G.lastCheer = G.time; say(G, 'mini_cicekSula_2', 3);

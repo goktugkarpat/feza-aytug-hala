@@ -1205,7 +1205,7 @@ const AUD = (() => {
   // düşük sınıflar kısa süre bekleyip bayatlar (eski cümle sonradan çıkmaz). Kuyruk en çok 3.
   const RANK_RX = [
     [5, /^(intro_|masa_ilk|masa_donus|oda_(oturma|mutfak|buzdolabi|pasta|balkon)$|gorev_|malzeme_|kayip_|pasta_acildi|pasta_kilitli|son$|son_|kristal$|tekrar$|hos_geldin$|balkon_acildi|hikaye_)/],
-    [4, /^(uykucuSupurge_|dudukluTencere_|dondurmaKrali_|kocaPasta_|ariKralice_|pasta_(asama|kurabiye|dalga|takim)|supurge_|ipucu_|hala_boss|kocaman$|boss_)/],
+    [4, /^(uykucuSupurge_|dudukluTencere_|dondurmaKrali_|kocaPasta_|uykucuHortum_|pasta_(asama|kurabiye|dalga|takim)|supurge_|ipucu_|hala_boss|kocaman$|boss_)/],
     [1, /^(ovgu|hala_ovgu|his_kombo_|his_nese_|his_yildiz|susle_ovgu|hala_hop|hala_dans|dans_|hala_takim_hazir|hala_yaninda|hala_burada)/],
     [2, /^(ilk_|nadir_|ck_|surpriz_|kostum_|set_tamam|yetenek_|guclendi_|his_yildiz|degnek$|kilic$|sapka$|pelerin$|efsane$|sandik$|seviye)/],
   ];

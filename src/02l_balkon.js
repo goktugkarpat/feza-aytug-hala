@@ -5,7 +5,7 @@ Object.assign(AUD.LINES, {
   balkon_a1: 'Burası Saksı Ormanı! Yapraklardan köprüler var, dikkatli yürü.',
   balkon_a2: 'Çiçek Tepesi! Çiçek yataklarına bas, hoplayıp zıpla!',
   balkon_a3: 'Kuş Yemi Bahçesi! Bak bak, minik serçeler bize el sallıyor.',
-  balkon_arena: 'Şşş, Arı Kraliçe uyukluyor. Hadi onu neşelendirelim!',
+  balkon_arena: 'Şşş, koca hortum uyukluyor. Hadi onu neşelendirelim!',
   balkon_kapi: 'Bu kapı balkona açılıyor. Haydi güneşe çıkalım!',
   balkon_odul: 'Süper Kahraman kostümünü kazandın Feza! Gardıroba koydum.',
   balkon_sus: 'Pastamıza güzel çiçekler de ekledim, bak ne şirin!',
@@ -17,15 +17,15 @@ Object.assign(AUD.LINES, {
   kayip_telefon: 'Bilbo telefonumu buldu! Aferin sana Bilbo!',
   bilbo_buldu_telefon: 'Bak bak, Bilbo telefonumu kazıp çıkardı!',
   // huysuzlar (ilk görüş)
-  ilk_salyangoz: 'Bak, bir salyangoz! Kabuğuna saklanıp yuvarlanıyor.',
-  ilk_ugurBocegi: 'Uğur böceği uçuyor! Noktalarına dikkat et.',
-  ilk_karinca: 'Karıncalar sıra sıra yürüyor, ekmek kırıntısı taşıyorlar.',
-  ilk_tirtil: 'Minik bir tırtıl! Neşelenince kelebek olacak, görelim.',
-  ilk_altinUgur: 'Vay, altın bir uğur böceği! Ne nadir bir şey!',
-  // boss: Uykucu Arı Kraliçe
-  ariKralice_giris: 'Arı Kraliçe uyandı ama çok huysuz. Bal damlalarına dikkat!',
-  ariKralice_yarim: 'Bak bak, esniyor! Arı Kraliçe uykusu geldi.',
-  ariKralice_bitti: 'Arı Kraliçe neşelendi! Bize bal teşekkürü gönderiyor!',
+  ilk_saksicik: 'Bak, bir saksıcık! Çiçeğini sallaya sallaya geliyor.',
+  ilk_sulamaKabi: 'Sulama kabı canlanmış! Su damlalarından kaç, serinletir.',
+  ilk_mandal: 'Mandallar zıplıyor! Çıt çıt, ağızlarını açıp kapıyorlar.',
+  ilk_eldiven: 'Bahçe eldivenim canlanmış! Parmaklarını kıpır kıpır oynatıyor.',
+  ilk_altinSaksi: 'Vay, altın bir saksı! Ne nadir bir şey!',
+  // boss: Uykucu Hortum
+  uykucuHortum_giris: 'Hortum uyandı ama çok huysuz. Su fışkırtacak, kenara kaç!',
+  uykucuHortum_yarim: 'Bak bak, esniyor! Hortumun uykusu geldi.',
+  uykucuHortum_bitti: 'Hortum neşelendi! Çiçeklerimizi sulayıp teşekkür ediyor.',
   // mini oyun: çiçek sula
   mini_cicekSula_giris: 'Söylediğim çiçeği sula, bak nasıl kocaman büyüyecek!',
   mini_cicekSula_1: 'Çiçek ne güzel büyüdü!',
