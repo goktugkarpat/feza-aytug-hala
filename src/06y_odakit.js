@@ -106,11 +106,14 @@ const ODAKIT = (() => {
       out[0] = 0xcf * s; out[1] = 0xdf * s; out[2] = 0xc6 * s;
     });
   }
-  // Ocak üstü: retro krem emaye (benekli, parlak), 6 m
+  // Ocak üstü: krem emaye (ince benekler, hafif kabartma baklava deseni, parlak), 6 m
   function stove() {
-    return makeTex('stove', 512, (u, v, out) => {
-      const h = hash(Math.floor(u * 512), Math.floor(v * 512)), s = 0.96 + 0.04 * Math.sin(u * TAU * 2 + Math.sin(v * TAU) * 2) - (h > 0.993 ? 0.12 : 0);
-      out[0] = 0x9f * s; out[1] = 0xd2 * s; out[2] = 0xc2 * s;
+    return makeTex('stove', 1024, (u, v, out) => {
+      const h = hash(Math.floor(u * 1024), Math.floor(v * 1024)), h2 = hash(Math.floor(u * 300), Math.floor(v * 300), 4);
+      const du = (u * 12) % 1, dv = (v * 12) % 1, dia = Math.abs(du - 0.5) + Math.abs(dv - 0.5);   // baklava
+      let s = 0.97 + 0.03 * Math.sin(u * TAU * 2 + Math.sin(v * TAU) * 2) + (dia > 0.47 && dia < 0.5 ? -0.05 : dia < 0.04 ? 0.03 : 0);
+      if (h > 0.996) s -= 0.25; else if (h2 > 0.993) s -= 0.1;
+      out[0] = 0xf4 * s; out[1] = 0xec * s; out[2] = 0xda * s;
     });
   }
   // Kesme tahtası: sıcak kayın, enine şeritler + bıçak çizikleri, 6 m
@@ -578,7 +581,25 @@ const ODAKIT = (() => {
     T.add({ x: st.x, z: st.z, r: 0, near: 7, hint: { y: 2.8 }, line, prio: 1, use() {}, tick: (dt, t) => { m.rotation.y = Math.sin(t * 1.5) * 0.12; m.position.y = Math.abs(Math.sin(t * 3)) * 0.12; } });
     return m;
   }
-  const K_ = { tex, carpetColor, fill, outRect, scatter, gatePosts, miniStation, miniBox, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
+  // Bilbo'ya biniş halkası: büyük patili altın disk + nabız gibi atan parlak halka + ışık (istasyon kind 'binis' bunun üstünde)
+  function pawPad(api, x, z, sc = 1.5) {
+    const key = 'pawPad'; let g = GEOC[key];
+    if (!g) {
+      const k = new Kit(), cy = G.cyl(1, 1, 36);
+      k.add(cy, 0xffd27a, [0, 0, 0], null, [1.45, 0.05, 1.45]); k.add(G.torus(TAU, 0.08, 36), 0xf4a63a, [0, 0.04, 0], [Math.PI / 2, 0, 0], [1.42, 1.42, 0.5]);
+      k.add(cy, 0x7a4a2a, [0, 0.04, 0.22], null, [0.46, 0.02, 0.38]);
+      for (let i = 0; i < 4; i++) { const a = (i - 1.5) * 0.55; k.add(cy, 0x7a4a2a, [Math.sin(a) * 0.68, 0.04, 0.22 - Math.cos(a) * 0.68], null, [0.17, 0.02, 0.21]); }
+      for (let i = 0; i < 10; i++) { const a = i * TAU / 10; k.add(cy, 0x7a4a2a, [Math.sin(a) * 1.18, 0.045, Math.cos(a) * 1.18], null, [0.08, 0.02, 0.1]); }   // kenarda minik pati izleri
+      g = GEOC[key] = keepG(k.build());
+    }
+    api.put(g, x, 0.03, z, sc, 1, sc, null, 0.4);
+    const rm = new THREE.MeshBasicMaterial({ color: 0xffd860, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }); api.dispose(rm);
+    const ringG = new THREE.RingGeometry(0.88, 1, 48); ringG.rotateX(-Math.PI / 2); api.dispose(ringG);
+    const ring = new THREE.Mesh(ringG, rm); ring.position.set(x, 0.1, z); ring.renderOrder = 3; api.add(ring);
+    api.light(x, 2, z, 0xffd27a, 1.8, 6);
+    api.anim(() => { const u = (TIME.t * 0.7) % 1; ring.scale.setScalar(sc * (1.1 + u * 0.9)); rm.opacity = 0.7 * (1 - u); });
+  }
+  const K_ = { tex, carpetColor, pawPad, fill, outRect, scatter, gatePosts, miniStation, miniBox, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
     say, sfx, burst, ring, sugar, playing, heroY, sticker, toys, hash, sm, keepG, GEOC, last: null };
   return K_;
 })();
