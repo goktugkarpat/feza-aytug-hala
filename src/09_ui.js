@@ -490,9 +490,6 @@ const UI = (() => {
     D.boneBtn = el('button', 'u-skill u-bone', pad, '<span class="u-ico">🦴</span><span class="u-cd"></span><span class="u-cdn"></span><span class="u-key">K</span><span class="u-bone-label">Bilbo</span>');
     D.boneBtn.style.setProperty('--x', 0); D.boneBtn.style.setProperty('--y', -265);
     D.boneBtn.setAttribute('aria-label', FEZA_LANG.t('Bilbo’ya kemik at'));
-    D.rideBtn = el('button', 'u-skill u-bone u-ride', pad, '<span class="u-ico">🐕</span><span class="u-cd"></span><span class="u-cdn"></span><span class="u-key">R</span><span class="u-bone-label">Bin!</span>');
-    D.rideBtn.style.setProperty('--x', -150); D.rideBtn.style.setProperty('--y', -235);
-    D.rideBtn.setAttribute('aria-label', 'Bilbo’ya bin');
     D.teamBtn = el('button', 'u-skill u-team', pad, '<span class="u-ico">💞</span><span class="u-team-fill"></span><span class="u-key">T</span><span class="u-bone-label">Takım</span>');
     D.teamBtn.style.setProperty('--x', -265); D.teamBtn.style.setProperty('--y', 0);
     D.teamBtn.setAttribute('aria-label', 'Aytuğ Hala ile Takım Hamlesi');
@@ -936,7 +933,6 @@ const UI = (() => {
   function wireButtons() {
     [D.dreamBtn, D.titleMap, D.pauseMap, D.winMap].forEach(b => accessiblePress(b, openDreamMap));
     accessiblePress(D.boneBtn, throwBone, false);
-    accessiblePress(D.rideBtn, rideNow, false);
     accessiblePress(D.teamBtn, teamMove, false);
     onPress(D.playBtn, () => startGame(false), { menu: true });
     onPress(D.contBtn, () => startGame(true), { menu: true });
@@ -1073,7 +1069,6 @@ const UI = (() => {
       if (!playing()) return;
       if (c === 'Space') { e.preventDefault(); attack(); bump(D.atk, 1.1, true); }
       else if (c === 'KeyK') { e.preventDefault(); throwBone(); }
-      else if (c === 'KeyR') { e.preventDefault(); rideNow(); }
       else if (c === 'KeyT') { e.preventDefault(); teamMove(); }
       else if (/^Digit[1-6]$/.test(c)) { const i = +c.slice(5) - 1, s = D.sk[i]; if (s && s.shown) { const ok = safe('cast', () => M.GAME.input.cast(i)); if (ok) { s.b.classList.remove('new'); bump(s.b, 1.15, true); } } }
       else if (c === 'KeyE') { if (M.GAME.visitMerchant) M.GAME.visitMerchant(); }
@@ -1587,7 +1582,7 @@ const UI = (() => {
     D.boneBtn.classList.toggle('cool', boneCd > 0);
     D.boneBtn.querySelector('.u-cd').style.setProperty('--p', clamp(boneCd / boneMax, 0, 1).toFixed(3));
     D.boneBtn.querySelector('.u-cdn').textContent = FEZA_LANG.t(boneCd > 0.05 ? Math.ceil(boneCd) : '');
-    if (D.rideBtn) {   // Bilbo'ya bin: dolum + boss sırasında soluk
+    if (false && D.rideBtn) {   // (Bin! düğmesi Takım'a katıldı) Bilbo'ya bin: dolum + boss sırasında soluk
       const rc = Math.max(0, Number(g.rideCooldown) || 0), rm = Math.max(1, Number(g.rideCooldownMax) || 1);
       const bossOn = !!(g.boss && !g.boss.dead && (g.boss.aggro || g.boss.encounter));
       D.rideBtn.classList.toggle('cool', rc > 0 || bossOn);

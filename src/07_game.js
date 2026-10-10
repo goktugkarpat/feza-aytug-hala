@@ -6895,6 +6895,14 @@ const GAME = (() => {
     const r = hala('teamMove', { blast: teamBlast, P, H });
     if (r === undefined) teamBlast();
     emit('team', {});
+    // Takım + Bilbo (family request): after the hand-in-hand jump Feza hops onto Bilbo for a while.
+    // BILBO_FUN.ride refuses during a boss fight / in a boss arena, so there the Takım move stays the plain jump.
+    const heldL = L;
+    setTimeout(() => {
+      if (L !== heldL || GAME.state !== 'play' || GAME.paused || P.dead || finale) return;
+      if (typeof BILBO_FUN !== 'undefined' && BILBO_FUN && BILBO_FUN.riding) return;
+      rideBilbo(true, RIDE_SEC);
+    }, 1300);
     return true;
   }
   // Bölüm kilitleri ve sıradaki bölüm (BOLUM.isOpen: pasta 3 malzemeyle açılır)
