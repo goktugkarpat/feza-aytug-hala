@@ -1236,8 +1236,10 @@ const GAME = (() => {
     scene.add(m.root);
     const sc = elite ? 1.4 : 1;
     // Both difficulties use the same entry level, including sleepers and summoned helpers.
-    const hpFor = tough => Math.round(isBoss ? bossHpNow(type, tough)
-      : levelMobHp(type, def, elite, tough));
+    // ENEMY_HP_MUL: every foe (ordinary, elite, boss, summoned helper) has 25 % more health (family request).
+    const ENEMY_HP_MUL = 1.25;
+    const hpFor = tough => Math.round(ENEMY_HP_MUL * (isBoss ? bossHpNow(type, tough)
+      : levelMobHp(type, def, elite, tough)));
     const difficultyHp = [hpFor(false), hpFor(true)], hp = difficultyHp[hard ? 1 : 0];
     const difficultyWind = [Math.max(T.windMin, def.windup || 0.6, 0.85 * learningAid()), Math.max(0.4, (def.windup || 0.6) * HC.wind, 0.7 * learningAid())];
     const e = {
