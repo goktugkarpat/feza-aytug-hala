@@ -9,6 +9,7 @@ HUYSUZ.zone('oturma', { enemies: { tozTavsani: 4, kumanda: 3, corap: 3 }, elites
 const OTURMA = (() => {
   'use strict';
   const K = ODAKIT, C = (key, make) => K.GEOC[key] || (K.GEOC[key] = K.keepG(make()));
+  const BINIS = () => typeof BILBO_FUN !== 'undefined' && !!BILBO_FUN && typeof BILBO_FUN.ride === 'function';
   const PER_AREA = [['tozTavsani'], ['kumanda', 'tozTavsani'], ['corap', 'tozTavsani', 'kumanda']];
 
   // ── kalıcı geometriler ──
@@ -187,9 +188,16 @@ const OTURMA = (() => {
       const side = a3.rooms.find(i => L.rooms[i].kind === 'side'), rm = L.rooms[side ?? a3.rooms[a3.rooms.length - 1]];
       const p = api.randomFloorNear(rm.x, rm.z - rm.r * 0.25, 0, rm.r * 0.45);
       L.kayipEsya = { id: 'gozluk', x: p ? p.x : rm.x, z: p ? p.z : rm.z };
+      L.lostSpot = { x: L.kayipEsya.x, z: L.kayipEsya.z, id: 'gozluk' };   // (Bilbo'nun koklayıp kazdığı yer: 04_bilbo_fun)
+      // Bilbo'ya biniş: patili halka (en geniş koltuk altı odası); Bilbo ajanının istasyonu kind 'binis'
+      const ms = a3.rooms.filter(i => L.rooms[i].kind !== 'side'), big = L.rooms[ms.slice().sort((p1, p2) => L.rooms[p2].r - L.rooms[p1].r)[0]];
+      if (big) {
+        const pp = K.inRoom(L, api, big, Math.PI * 0.75, 0.35, 1.5); L._otPaw = { x: pp.x, z: pp.z, room: big };
+        if (BINIS()) (L.stations = L.stations || []).push({ id: 'binisOturma', kind: 'binis', x: pp.x, z: pp.z, r: 1.6, sure: 14 });
+      }
     }
     // mini oyun hediye kutusu: Halı Ormanı'nın ikinci odasında
-    if (A[0]) { const rm = L.rooms[A[0].rooms[A[0].rooms.length - 1]]; L._otMini = K.miniStation(L, api, rm, ['balonPatlat', 'sekerYagmuru', 'sekerYakala']); }
+    if (A[0]) { const rm = L.rooms[A[0].rooms[A[0].rooms.length - 1]]; L._otMini = K.miniStation(L, api, rm, ['balonPatlat', 'sekerYakala']); }
     // fazladan hazine sandıkları (her alanın ilk odasında, yolun kenarında)
     for (const a of A.slice(0, 3)) {
       const rm = L.rooms[a.rooms[0]];
@@ -283,10 +291,7 @@ const OTURMA = (() => {
     if (a2) kitaplik(L, api, T, mainOf(L, a2), rnd, occ2);
     // ── Alan 3 · Koltuk Altı ──
     if (a3) koltuk(L, api, T, a3, sofa, rnd, occR);
-    // her alanın girişinde Aytuğ Hala'nın kısa sözü (ilk yaklaşmada)
-    [[a1, 'oda_hali_gir'], [a2, 'oda_kitap_gir'], [a3, 'oda_koltuk_gir'], [ar, 'oda_arena_gir']].forEach(([a, line], k) => {
-      if (!a || !k) return; const rm = R(a.rooms[0]); T.add({ x: rm.x, z: rm.z, r: 0, near: rm.r * 0.8, hint: false, line, prio: 1, use() {} });
-    });
+    // (alan girişi cümleleri hikâyede: STORY.area → alan_oturma_N)
     if (L._otMini) K.miniBox(api, T, L._otMini, 'oda_mini_ipucu');
     // kuzey duvarı (gri-mavi) + süpürgelik + priz, arenanın arkasında; çıkış kapısı
     duvar(L, api);
@@ -359,7 +364,7 @@ const OTURMA = (() => {
       for (let st = 0; st < 4; st++) { const blx = W / 2 + 1.4 + st * 0.15, blz = D / 2 + 1.6 - st * 1.0, t3 = 0.55; const [wx, wz] = F(blx, blz); for (let l = 0; l <= st; l++) { if (K.isF(L, wx, wz)) break; putL(bookGeo(st + l * 3), blx, l * t3 + t3 / 2, blz, t3, 3.2, 2.2, Math.PI / 2 + (l % 2 ? 0.06 : -0.04), 0, Math.PI / 2); } }
       const [sbx, sbz] = F(0, fz + 1);
       let on = 0, press = 0;
-      T.add({ x: q.x, z: q.z, r: 2.3, hint: { y: 1.6 }, line: 'oda_kumanda_ipucu', near: 8, cd: 4, repeat: true,
+      T.add({ x: q.x, z: q.z, r: 2.3, hint: { y: 1.6 }, line: 'oda_kumanda_ipucu', near: 8, cd: 4, repeat: true, dance: 6,
         can: () => on <= 0,
         use: () => { on = 14; press = 0.35; tv.on(true); K.sfx('click', { x: q.x, z: q.z }); K.sfx('unlock', { x: q.x, z: q.z, vol: 0.6 }); K.say('oda_tv_ac'); K.sticker('oturma_tv');
           K.burst('star', sbx, 3, sbz); K.sugar(GAME.P.pos.x, GAME.P.pos.z, 8, 5); },
@@ -595,8 +600,8 @@ const OTURMA = (() => {
       });
     }
     // Bilbo ile yarış: patili halkaya basınca 14 s hız; odanın çevresindeki toz yumaklarını topla
-    const big = L.rooms[rooms.slice().sort((p, q) => L.rooms[q].r - L.rooms[p].r)[0]];
-    const pp = K.inRoom(L, api, big, Math.PI * 0.75, 0.35, 1.5);
+    const big = L._otPaw ? L._otPaw.room : L.rooms[rooms.slice().sort((p, q) => L.rooms[q].r - L.rooms[p].r)[0]];
+    const pp = L._otPaw || K.inRoom(L, api, big, Math.PI * 0.75, 0.35, 1.5);
     api.put(pawGeo(), pp.x, 0.03, pp.z, 1, 1, 1, null, 0.4);
     const balls = [];
     for (let i = 0; i < 10; i++) {
@@ -604,19 +609,20 @@ const OTURMA = (() => {
       const m = new THREE.Mesh(dustGeo(), K.vmat(0.95)); m.position.set(q.x, 0, q.z); m.scale.setScalar(0.7); m.visible = false; m.castShadow = true; api.add(m);
       balls.push({ m, x: q.x, z: q.z, on: false });
     }
-    let race = 0, got = 0, goldGiven = false;
+    let race = 0, got = 0, goldGiven = false, endAt = null;
     T.add({ x: pp.x, z: pp.z, r: 1.6, hint: { y: 1.8 }, line: 'oda_bilbo_ipucu', near: 9, cd: 5, repeat: true,
       can: () => race <= 0,
       use: () => {
         race = 14; got = 0; balls.forEach(b => { b.on = true; b.m.visible = true; b.m.scale.setScalar(0.01); });
         K.say('oda_bilbo_yaris'); K.sfx('bilboBark', {}); K.burst('star', pp.x, 1, pp.z); K.sticker('oturma_bilbo');
-        const rideFn = typeof GAME.bilboRide === 'function' ? GAME.bilboRide : typeof BILBO_FOLLOW !== 'undefined' && BILBO_FOLLOW && typeof BILBO_FOLLOW.ride === 'function' ? BILBO_FOLLOW.ride : null;   // (Bilbo ajanının binme kancası)
-        if (rideFn) { try { rideFn({ dur: 14, x: pp.x, z: pp.z }); } catch (e) { /* yer tutucu koşu */ } }
-        T.boost(1.75, 14, () => { race = 0; balls.forEach(b => { b.on = false; b.m.visible = false; }); K.say('oda_bilbo_bitti', 1); });
+        const stop = () => { race = 0; balls.forEach(b => { b.on = false; b.m.visible = false; }); K.say('oda_bilbo_bitti', 1); };
+        if (BINIS() && (L.stations || []).some(st => st.kind === 'binis')) endAt = stop;   // gerçek biniş (UI istasyonu GAME.rideBilbo'yu başlatır)
+        else T.boost(1.75, 14, stop);   // yer tutucu: hızlı koşu
       },
       tick: (dt, t, hx, hz) => {
         if (race <= 0) return;
         race -= dt;
+        if (endAt && race <= 0) { const f = endAt; endAt = null; f(); return; }
         if (GAME.P && Math.random() < dt * 8) K.burst('dust', GAME.P.pos.x, 0.2, GAME.P.pos.z);
         for (const b of balls) {
           if (!b.on) continue;
@@ -630,7 +636,8 @@ const OTURMA = (() => {
       } });
     // Aytuğ Hala'nın gözlüğü: Bilbo'nun kokladığı toz tepeciği; yaklaşınca kazılır
     const ke = L.kayipEsya;
-    if (ke) K.lost(api, T, { zone: 'oturma', id: 'gozluk', x: ke.x, z: ke.z, mound: dustGeo(), item: glassesGeo(), itemScale: 0.9, ipucu: 'oda_gozluk_ipucu', bulundu: 'oda_gozluk', dirt: 'dirt' });
+    if (ke && BINIS()) T.add({ x: ke.x, z: ke.z, r: 0, near: 8, hint: false, line: 'oda_gozluk_ipucu', prio: 1, use() {} });   // (kazma işini Bilbo yapar)
+    else if (ke) K.lost(api, T, { zone: 'oturma', id: 'gozluk', x: ke.x, z: ke.z, mound: dustGeo(), item: glassesGeo(), itemScale: 0.9, ipucu: 'oda_gozluk_ipucu', bulundu: 'oda_gozluk', dirt: 'dirt' });
   }
 
   function duvar(L, api) {
