@@ -274,10 +274,28 @@ const MUTFAK = (() => {
   function lavabo(L, api, T, a2, rnd) {
     const rooms = mainOf(L, a2); let rm = L.rooms[rooms.slice().sort((p, q) => L.rooms[p].z - L.rooms[q].z)[0]];
     let HW = 7.5, HD = 4.6, p = null;
-    for (const sc of [1, 0.85, 0.7]) {
-      for (const ri of rooms.slice().sort((a, b) => L.rooms[a].z - L.rooms[b].z)) { p = K.outRect(L, L.rooms[ri], HW * sc + 0.8, HD * sc + 0.8, 0.2); if (p) { rm = L.rooms[ri]; break; } }
-      if (p) { HW *= sc; HD *= sc; break; }
-    }
+    // yer: oda kenarına bitişik (iskele ve düğme yürünür alanda olsun); önce kuzey, sonra yanlar, en son güney; büyükten küçüğe
+    const edgeInfo = (r0, sx, sz, hw, hd) => {
+      const fdx = r0.x - sx, fdz = r0.z - sz, sideZ = Math.abs(fdx) / hw <= Math.abs(fdz) / hd, sgn = sideZ ? Math.sign(fdz) || 1 : Math.sign(fdx) || 1;
+      const edgeP = (o, d) => (sideZ ? { x: sx + o * hw, z: sz + sgn * (hd + 1.2 + d) } : { x: sx + sgn * (hw + 1.2 + d), z: sz + o * hd });
+      const cs = [];
+      for (let d = 0; d < 6; d += 0.5) for (let o = -0.9; o <= 0.91; o += 0.15) { const q = edgeP(o, d); if (api.circleFree(q.x, q.z, 1.1)) { q.d = d + Math.abs(o) * 2; cs.push(q); } }
+      cs.sort((a, b) => a.d - b.d);
+      return { cands: cs, sideZ, sgn, edgeP };
+    };
+    const cand = rooms.slice().sort((a, b) => L.rooms[a].z - L.rooms[b].z).concat(L.areas[1].rooms.filter(i => L.rooms[i].kind === 'side'));
+    let EI = null;
+    search: for (const dirs of [[Math.PI, Math.PI * 0.8, Math.PI * 1.2], [Math.PI * 0.62, Math.PI * 1.38, Math.PI / 2, Math.PI * 1.5], [Math.PI * 0.25, Math.PI * 1.75, 0]])
+      for (const sc of [1, 0.85, 0.7, 0.58]) for (const ri of cand) for (const a of dirs) {
+        const r0 = L.rooms[ri], hw = HW * sc, hd = HD * sc, sxa = Math.sin(a), sza = Math.cos(a);
+        for (let d = r0.r * 0.5; d < r0.r + 6; d += 0.5) {
+          const x = r0.x + sxa * (d + Math.abs(sxa) * (hw + 0.8)), z = r0.z + sza * (d + Math.abs(sza) * (hd + 0.8));
+          if (!K.rectFree(L, x, z, hw + 0.8, hd + 0.8, 0.2)) continue;
+          const ei = edgeInfo(r0, x, z, hw, hd);
+          if (ei.cands.length && ei.cands.some(q => Math.hypot(q.x - ei.cands[0].x, q.z - ei.cands[0].z) > 3.2)) { p = { x, z }; rm = r0; HW = hw; HD = hd; EI = ei; break search; }
+          break;
+        }
+      }
     // çevrede: deterjan şişeleri, tabak yığınları, kupalar, çatallar, köpük
     K.fill(L, rnd, L.areas[1].rooms, (x, z, maxH, fd, k) => {
       if (p && Math.abs(x - p.x) < HW + 2 && Math.abs(z - p.z) < HD + 2) return;
@@ -314,17 +332,17 @@ const MUTFAK = (() => {
       const fm = new THREE.Mesh(k.build(), K.vmat(0.6)); api.dispose(fm.geometry); fm.position.set(fx, 0.1, fz); api.add(fm); foam.push(fm);
     }
     // krom musluk (lavabonun kuzeyinde) ve su akışı
-    const fz0 = sz - HD - 0.6;
-    api.put(faucetGeo(), sx, 0, fz0, 1, 1, 1, null, 0);
+    // musluk: lavabo odanın kuzeyindeyse arka (kuzey) kenarda; değilse odadan uzak yan kenarda (kameranın önünü kapatmasın)
+    const north = rm.z - sz > Math.abs(rm.x - sx) * HD / HW, fsd = rm.x > sx ? -1 : 1;
+    const fq = north ? { x: sx, z: sz - HD - 0.6, yaw: 0 } : { x: sx + fsd * (HW + 0.6), z: sz, yaw: fsd > 0 ? -Math.PI / 2 : Math.PI / 2 };
+    const nzX = fq.x + Math.sin(fq.yaw) * 3.6, nzZ = fq.z + Math.cos(fq.yaw) * 3.6;   // ağız
+    api.put(faucetGeo(), fq.x, 0, fq.z, 1, 1, 1, null, fq.yaw);
+    const fz0 = nzZ - 3.6;
     const stG = new THREE.CylinderGeometry(0.22, 0.3, 5.1, 12, 1, true); api.dispose(stG);
     const stM = new THREE.MeshStandardMaterial({ color: 0xcfeeff, roughness: 0.05, transparent: true, opacity: 0.65 }); api.dispose(stM);
-    const stream = new THREE.Mesh(stG, stM); stream.position.set(sx, 2.65, fz0 + 3.6); stream.visible = false; api.add(stream);
+    const stream = new THREE.Mesh(stG, stM); stream.position.set(nzX, 2.65, nzZ); stream.visible = false; api.add(stream);
     // musluk düğmesi: lavabonun güney kenarında, yürünür alanda
-    const fdx = rm.x - sx, fdz = rm.z - sz, sideZ = Math.abs(fdx) / HW <= Math.abs(fdz) / HD, sgn = sideZ ? Math.sign(fdz) || 1 : Math.sign(fdx) || 1;
-    const edgeP = (o, d) => (sideZ ? { x: sx + o * HW, z: sz + sgn * (HD + 1.2 + d) } : { x: sx + sgn * (HW + 1.2 + d), z: sz + o * HD });
-    const cands = [];
-    for (let d = 0; d < 8; d += 0.5) for (let o = -0.9; o <= 0.91; o += 0.15) { const q = edgeP(o, d); if (api.circleFree(q.x, q.z, 1.1)) { q.d = d + Math.abs(o) * 2; cands.push(q); } }
-    cands.sort((a, b) => a.d - b.d);
+    const { cands, sideZ, sgn } = EI;
     const bt = cands[0] || null;
     let flow = false, flowT = 0;
     if (bt) {
@@ -339,7 +357,7 @@ const MUTFAK = (() => {
           if (press > 0) { press -= dt; btn.position.y = -Math.sin(Math.max(0, press) / 0.3 * Math.PI) * 0.12; }
           if (flow) {
             flowT += dt; stream.scale.x = stream.scale.z = 1 + Math.sin(t * 30) * 0.06;
-            if (Math.random() < dt * 6) K.burst('bubbles', sx + (Math.random() - 0.5) * 2, 0.3, fz0 + 3.6 + (Math.random() - 0.5) * 2);
+            if (Math.random() < dt * 6) K.burst('bubbles', nzX + (Math.random() - 0.5) * 2, 0.3, nzZ + (Math.random() - 0.5) * 2);
             if (Math.random() < dt * 1.2) K.sfx('bubble', { x: sx, z: sz, vol: 0.4 });
           }
           const g = flow ? Math.min(2.2, 1 + flowT * 0.15) : 1;

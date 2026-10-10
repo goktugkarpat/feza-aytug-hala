@@ -297,55 +297,72 @@ const OTURMA = (() => {
 
   function kitaplik(L, api, T, rooms, rnd, occ) {
     if (!rooms.length) return;
-    const north = rooms.slice().sort((p, q) => L.rooms[p].z - L.rooms[q].z)[0], rm = L.rooms[north];
-    // TV ünitesi: alçak siyah dolap (bölmelerinde kitaplar, video kasetleri), üstünde dev TV
-    const W = 15, D = 4.2, H = 2.2;
-    const p = K.northOf(L, rm.x, rm.z - rm.r - D / 2 - 0.3, W / 2, D / 2, 0.4, 16);
+    // TV ünitesi: alçak siyah dolap (bölmelerinde kitaplar, video kasetleri), üstünde dev TV. Yer: önce odaların kuzeyi
+    // (TV kameraya bakar), sığmazsa yanları; genişlik 15 → 9.5 m. Yerel çerçeve: +z dolabın önü (odaya bakar).
+    const D = 4.2, H = 2.2, order = rooms.slice().sort((p1, p2) => L.rooms[p1].z - L.rooms[p2].z);
+    let pl = null;
+    search: for (const [th, ox, oz] of [[0, 0, -1], [Math.PI / 2, -1, 0], [-Math.PI / 2, 1, 0]]) for (const Wt of [15, 12, 9.5]) for (const ri of order) {
+      const r0 = L.rooms[ri];
+      for (let d = 0.3; d < 14; d += 0.5) {
+        const off = r0.r + D / 2 + d, x = r0.x + ox * off, z = r0.z + oz * off, hw = th ? D / 2 : Wt / 2, hd = th ? Wt / 2 : D / 2;
+        if (K.rectFree(L, x, z, hw, hd, 0.4)) { pl = { x, z, th, W: Wt, rm: r0 }; break search; }
+      }
+    }
+    const W = pl ? pl.W : 15, rm = pl ? pl.rm : L.rooms[order[0]];
+    const p = pl;
+    const toLocal = (x, z) => { const c = Math.cos(pl.th), sn = Math.sin(pl.th), dx = x - pl.x, dz = z - pl.z; return [dx * c - dz * sn, dx * sn + dz * c]; };
     let tv = null;
-    if (p) {
-      const cx = p.x, cz = p.z, fz = cz + D / 2, blk = 0x26272c, blk2 = 0x34363d;
-      api.box(cx, 0.15, cz, W - 0.4, 0.3, D - 0.4, 0x141416);                     // tekmelik
-      api.box(cx, H - 0.12, cz, W, 0.24, D, blk2);                                   // üst tabla
-      api.box(cx, 0.42, cz, W, 0.24, D, blk);                                        // alt tabla
-      api.box(cx, H / 2, cz - D / 2 + 0.1, W, H, 0.2, blk);                          // arka
-      for (const sx of [-1, -1 / 3, 1 / 3, 1]) api.box(cx + sx * (W / 2 - 0.12), H / 2 + 0.15, cz, 0.24, H - 0.3, D, blk);
-      api.box(cx, H + 0.01, cz + D / 2 - 0.05, W, 0.04, 0.1, 0x4a4d56);              // üst kenar parıltısı
-      // bölmeler: sol kitaplar, orta kasetler, sağ kitaplar + yatık yığın
-      const cw = (W - 0.72) / 3, x0 = cx - W / 2 + 0.24;
-      for (let c = 0; c < 3; c++) {
-        const bx = x0 + c * (cw + 0.24), by = 0.54, bh = H - 0.78;
-        if (c === 1) {
-          for (let s = 0; s < 6; s++) api.put(vhsGeo(s), bx + cw / 2, by + 0.16 + s * 0.31, fz - 1.3, 2.2, 0.3, 1.2, null, (s % 2 - 0.5) * 0.08);
-          for (let s = 0; s < 4; s++) api.put(vhsGeo(s + 1), bx + cw - 0.35 - s * 0.32, by + 1.1, fz - 1.4, 2.2, 0.3, 1.2, null, Math.PI / 2, 0, Math.PI / 2);
+    if (pl) {
+      const c = Math.cos(pl.th), sn = Math.sin(pl.th), th = pl.th, cx = pl.x, cz = pl.z;
+      const F = (lx, lz) => [cx + lx * c + lz * sn, cz - lx * sn + lz * c];
+      const bx = (lx, y, lz, w, h, d, col) => { const [x, z] = F(lx, lz); api.box(x, y, z, w, h, d, col, th); };
+      const putL = (geo, lx, y, lz, sx, sy, sz, yawL = 0, rx = 0, rz = 0) => { const [x, z] = F(lx, lz); api.put(geo, x, y, z, sx, sy, sz, null, th + yawL, rx, rz); };
+      const fz = D / 2, blk = 0x26272c, blk2 = 0x34363d;
+      bx(0, 0.15, 0, W - 0.4, 0.3, D - 0.4, 0x141416);                       // tekmelik
+      bx(0, H - 0.12, 0, W, 0.24, D, blk2);                                   // üst tabla
+      bx(0, 0.42, 0, W, 0.24, D, blk);                                        // alt tabla
+      bx(0, H / 2, -D / 2 + 0.1, W, H, 0.2, blk);                             // arka
+      for (const sx of [-1, -1 / 3, 1 / 3, 1]) bx(sx * (W / 2 - 0.12), H / 2 + 0.15, 0, 0.24, H - 0.3, D, blk);
+      bx(0, H + 0.01, D / 2 - 0.05, W, 0.04, 0.1, 0x4a4d56);                  // üst kenar parıltısı
+      // bölmeler: sol kitaplar, orta kasetler, sağ kitaplar
+      const cw = (W - 0.72) / 3, x0 = -W / 2 + 0.24;
+      for (let k = 0; k < 3; k++) {
+        const bxl = x0 + k * (cw + 0.24), by = 0.54, bh = H - 0.78;
+        if (k === 1) {
+          for (let s2 = 0; s2 < 6; s2++) putL(vhsGeo(s2), bxl + cw / 2, by + 0.16 + s2 * 0.31, fz - 1.3, 2.2, 0.3, 1.2, (s2 % 2 - 0.5) * 0.08);
+          for (let s2 = 0; s2 < 4 && cw > 2.6; s2++) putL(vhsGeo(s2 + 1), bxl + cw - 0.35 - s2 * 0.32, by + 1.1, fz - 1.4, 2.2, 0.3, 1.2, Math.PI / 2, 0, Math.PI / 2);
         } else {
-          let x = bx + 0.15;
-          while (x < bx + cw - 0.6) { const th = 0.32 + rnd() * 0.3, h = bh * (0.7 + rnd() * 0.28), i = Math.floor(rnd() * 8); api.put(bookGeo(i), x + th / 2, by + h / 2, fz - 1.25, th, h, 2.1, null); x += th + 0.03; }
+          let x = bxl + 0.15;
+          while (x < bxl + cw - 0.6) { const t2 = 0.32 + rnd() * 0.3, h = bh * (0.7 + rnd() * 0.28), i = Math.floor(rnd() * 8); putL(bookGeo(i), x + t2 / 2, by + h / 2, fz - 1.25, t2, h, 2.1); x += t2 + 0.03; }
         }
       }
       // TV: ayak + çerçeve + ekran (ayrı, oynatılabilir)
-      const sw = 11.5, sh = 6.6, sy = H + 0.55 + sh / 2, sz = cz - 0.2;
-      api.box(cx, H + 0.1, sz, 3.2, 0.12, 1.6, 0x1b1c20); api.box(cx, H + 0.35, sz, 0.6, 0.5, 0.4, 0x1b1c20);
-      api.box(cx, sy, sz, sw + 0.4, sh + 0.4, 0.35, 0x111215);
-      tv = tvScreen(api, cx, sy, sz + 0.18, sw, sh);
+      const sw = Math.min(11.5, W - 2.5), sh = sw * 0.574, sy = H + 0.55 + sh / 2, szl = -0.2;
+      bx(0, H + 0.1, szl, 3.2, 0.12, 1.6, 0x1b1c20); bx(0, H + 0.35, szl, 0.6, 0.5, 0.4, 0x1b1c20);
+      bx(0, sy, szl, sw + 0.4, sh + 0.4, 0.35, 0x111215);
+      { const [x, z] = F(0, szl + 0.18); tv = tvScreen(api, x, sy, z, sw, sh); tv.mesh.rotation.y = th; }
       // kumanda: dolabın önünde, odada; dev kırmızı tuşa basınca TV açılır
-      const q = K.inRoom(L, api, rm, Math.PI, 0.72, 1.6);
-      api.put(remoteGeo(), q.x, 0, q.z, 1, 1, 1, null, 0.15);
-      const pw = K.mesh(api, powerGeo(), q.x + Math.sin(0.15) * -0.95, 0.46, q.z - Math.cos(0.15) * 0.95, 0.35, false);
-      api.solid(q.x, q.z + 0.8, 0.7); api.solid(q.x, q.z - 0.8, 0.7);
-      const lt = { x: cx, y: 3.5, z: fz + 4, col: new THREE.Color(0xffffff), int: 0, dist: 18, fl: 0, ph: 0 }; api.B.lights.push(lt);
+      const q = K.inRoom(L, api, rm, Math.atan2(cx - rm.x, cz - rm.z), 0.72, 1.6), rr = th + 0.15;
+      api.put(remoteGeo(), q.x, 0, q.z, 1, 1, 1, null, rr);
+      const pw = K.mesh(api, powerGeo(), q.x - Math.sin(rr) * 0.95, 0.46, q.z - Math.cos(rr) * 0.95, 0.35, false);
+      api.solid(q.x + Math.sin(rr) * 0.8, q.z + Math.cos(rr) * 0.8, 0.7); api.solid(q.x - Math.sin(rr) * 0.8, q.z - Math.cos(rr) * 0.8, 0.7);
+      const [lx4, lz4] = F(0, fz + 4);
+      const lt = { x: lx4, y: 3.5, z: lz4, col: new THREE.Color(0xffffff), int: 0, dist: 18, fl: 0, ph: 0 }; api.B.lights.push(lt);
       // TV açıkken önündeki parkeye renkli ışık havuzu (yukarıdan bakınca da görünsün)
       const gc = document.createElement('canvas'); gc.width = gc.height = 128; const gx = gc.getContext('2d'), gr = gx.createRadialGradient(64, 64, 4, 64, 64, 64);
       gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.5, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); gx.fillStyle = gr; gx.fillRect(0, 0, 128, 128);
       const gt = new THREE.CanvasTexture(gc); api.dispose(gt);
       const gm = new THREE.MeshBasicMaterial({ map: gt, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0, fog: false }); api.dispose(gm);
-      const pool = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), gm); pool.rotation.x = -Math.PI / 2; pool.scale.set(18, 11, 1); pool.position.set(cx, 0.08, fz + 4.2); pool.renderOrder = 3; api.add(pool); api.dispose(pool.geometry);
+      const pool = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), gm); pool.rotation.order = 'YXZ'; pool.rotation.set(-Math.PI / 2, th, 0); pool.scale.set(18, 11, 1);
+      { const [x, z] = F(0, fz + 4.2); pool.position.set(x, 0.08, z); } pool.renderOrder = 3; api.add(pool); api.dispose(pool.geometry);
       // kitap basamakları: dolabın yanından üstüne çıkan dev kitap merdiveni
-      for (let st = 0; st < 4; st++) { const bx = cx + W / 2 + 1.4 + st * 0.15, bz = cz + D / 2 + 1.6 - st * 1.0, th = 0.55; for (let l = 0; l <= st; l++) { if (K.isF(L, bx, bz)) break; api.put(bookGeo(st + l * 3), bx, l * th + th / 2, bz, th, 3.2, 2.2, null, Math.PI / 2 + (l % 2 ? 0.06 : -0.04), 0, Math.PI / 2); } }
+      for (let st = 0; st < 4; st++) { const blx = W / 2 + 1.4 + st * 0.15, blz = D / 2 + 1.6 - st * 1.0, t3 = 0.55; const [wx, wz] = F(blx, blz); for (let l = 0; l <= st; l++) { if (K.isF(L, wx, wz)) break; putL(bookGeo(st + l * 3), blx, l * t3 + t3 / 2, blz, t3, 3.2, 2.2, Math.PI / 2 + (l % 2 ? 0.06 : -0.04), 0, Math.PI / 2); } }
+      const [sbx, sbz] = F(0, fz + 1);
       let on = 0, press = 0;
       T.add({ x: q.x, z: q.z, r: 2.3, hint: { y: 1.6 }, line: 'oda_kumanda_ipucu', near: 8, cd: 4, repeat: true,
         can: () => on <= 0,
         use: () => { on = 14; press = 0.35; tv.on(true); K.sfx('click', { x: q.x, z: q.z }); K.sfx('unlock', { x: q.x, z: q.z, vol: 0.6 }); K.say('oda_tv_ac'); K.sticker('oturma_tv');
-          K.burst('star', cx, 3, fz + 1); K.sugar(GAME.P.pos.x, GAME.P.pos.z, 8, 5); },
+          K.burst('star', sbx, 3, sbz); K.sugar(GAME.P.pos.x, GAME.P.pos.z, 8, 5); },
         tick: (dt, t, hx, hz) => {
           if (press > 0) { press -= dt; pw.position.y = 0.46 - Math.sin(Math.min(1, press / 0.35) * Math.PI) * 0.1; }
           if (on > 0) {
@@ -362,7 +379,7 @@ const OTURMA = (() => {
     }
     // dolabın çevresi ve odalar boyunca: kitap yığınları, kaset kuleleri, boya kalemleri, oyuncak küpler, toplar (güneyde alçak)
     K.fill(L, rnd, L.areas[1].rooms, (x, z, maxH, fd, k) => {
-      if (p && Math.abs(x - p.x) < W / 2 + 1.2 && Math.abs(z - p.z) < D / 2 + 1.2) return;
+      if (pl) { const [lx, lz] = toLocal(x, z); if (Math.abs(lx) < W / 2 + 1.2 && Math.abs(lz) < D / 2 + 1.2) return; }
       const kind = k % 5;
       if (kind === 0 && maxH > 2.4) {   // kaset kulesi
         const n = Math.min(Math.floor(maxH / 0.3), 5 + Math.floor(rnd() * 7)), y0 = rnd() * TAU;

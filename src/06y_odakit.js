@@ -227,8 +227,8 @@ const ODAKIT = (() => {
     return true;
   }
   // odanın çevresinde (önce kuzey, sonra yanlar) yürünür alanla çakışmayan dikdörtgen yeri
-  function outRect(L, rm, hw, hd, m = 0.3) {
-    for (const a of [Math.PI, Math.PI * 0.8, Math.PI * 1.2, Math.PI * 0.62, Math.PI * 1.38, Math.PI / 2, Math.PI * 1.5]) {
+  function outRect(L, rm, hw, hd, m = 0.3, south = false) {
+    for (const a of [Math.PI, Math.PI * 0.8, Math.PI * 1.2, Math.PI * 0.62, Math.PI * 1.38, Math.PI / 2, Math.PI * 1.5].concat(south ? [Math.PI * 0.25, Math.PI * 1.75, 0] : [])) {
       const sx = Math.sin(a), sz = Math.cos(a);
       for (let d = rm.r * 0.5; d < rm.r + 16; d += 0.5) {
         const x = rm.x + sx * (d + Math.abs(sx) * hw), z = rm.z + sz * (d + Math.abs(sz) * hd);
