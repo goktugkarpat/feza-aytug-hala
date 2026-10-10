@@ -158,7 +158,8 @@ const MUTFAK = (() => {
     }
     K.extraChests(L, api);
     // Bilbo'ya biniş halkası: tezgâhın ikinci odasında (Bilbo ajanının istasyonu kind 'binis')
-    if (A[0] && typeof BILBO_FUN !== 'undefined' && BILBO_FUN && typeof BILBO_FUN.ride === 'function') {
+    // (Biniş halkası kaldırıldı: Feza artık HUD'daki 'Bin!' düğmesiyle istediği an biner.)
+    if (false && A[0] && typeof BILBO_FUN !== 'undefined' && BILBO_FUN && typeof BILBO_FUN.ride === 'function') {
       const ms = mainOf(L, A[0]), rm = L.rooms[ms[ms.length - 1]];
       for (let t = 0; t < 30; t++) {
         const a = api.rnd() * TAU, d = rm.r * (0.3 + api.rnd() * 0.3), x = rm.x + Math.sin(a) * d, z = rm.z + Math.cos(a) * d;

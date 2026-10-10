@@ -730,7 +730,7 @@ const ODAB = (() => {
     }
     O.clearSpawns(L, api, taken.map(q => ({ x: q.x, z: q.z, r: q.r + 1.5 })));
     D.mini = O.miniCorner(L, api, room(a1[0]) || R[0], ['buzPateni', 'paten', 'buz', 'dondurma', 'sekerYakala'], taken);
-    D.binis = [O.binisStation(L, api, room(a1[1] ?? a1[0]), 'binisBuz', taken)].filter(Boolean);
+    D.binis = [];   // biniş halkası kaldırıldı ('Bin!' düğmesi)
     O.gentlePacks(L, 5);
   }
 

@@ -52,7 +52,7 @@ Kırmızı polarlı, gür kıvırcık saçlı, başında siyah desenli bandana v
 
 - **Kemik oyunu:** Sağdaki **kemik** düğmesiyle Feza kemik atar; Bilbo kapıp çiğner, sonra huysuzlara minik lokmalar püskürtür.
 - **Bilbo'ya binmek:** Sağdaki **Bin!** düğmesine basınca Feza Bilbo'nun sırtına biner ve 15 saniye hızlı koşar (binerken vurabilir);
-  düğme yaklaşık 25 saniyede yeniden dolar. Odalardaki patili halkalar da bindirir. Boss savaşında binilmez, boss alanına girerken Feza kendiliğinden iner.
+  düğme yaklaşık 25 saniyede yeniden dolar. Oturma Odası'ndaki patili halka ise bir yarış başlatır: Bilbo'yla koşup 10 toz yumağı toplayana altın şeker. Boss savaşında binilmez, boss alanına girerken Feza kendiliğinden iner.
 - **Kayıp eşyalar:** Her odada Aytuğ Hala'nın bir eşyası kaybolmuştur (gözlük, anahtar, toka, telefon). Bilbo koklayıp havlar, kazar ve eşyayı çıkarır.
 - **Aksesuarlar:** Kırmızı tasma, mavi puantiyeli bandana, parti şapkası, güneş gözlüğü ve minik pelerin.
 
@@ -81,7 +81,7 @@ Kalan huysuzlar Feza'ya doğru gelir, yerde bir ok en yakınını gösterir. Bos
 
 1. **Oturma Odası** (malzeme: **un**): zikzak desenli dev halı ormanı, balık sırtı parke, kitap ve video kaseti kuleleri, dev televizyon.
    Kumandanın kırmızı tuşuna basınca TV'de çizgi film oynar; dik duran kitaplar domino gibi devrilir, kaset şeridi uzayıp şeker saçar.
-   Koltuk altında Bilbo'ya binilir; Hala'nın **gözlüğü** burada. Huysuzlar: toz tavşanları, kumandalar, tek çoraplar, boya kalemleri ve
+   Koltuk altında Bilbo'yla toz yumağı yarışı var; Hala'nın **gözlüğü** burada. Huysuzlar: toz tavşanları, kumandalar, tek çoraplar, boya kalemleri ve
    vurulunca ikiye bölünen yastıkçıklar. Boss: **Uykucu Süpürge**.
 2. **Mutfak** (malzeme: **yumurta**): tezgâh tepeleri, un dağları, lavabo gölü ve dolap içi. Bulaşık süngerinde zıplanır, tereyağında kayılır,
    musluk açılıp kapanır, yoğurt kabı teknesiyle göl turu yapılır; dolabın kapağı gizli geçidi açar. Hala'nın **anahtarı** burada.

@@ -147,7 +147,7 @@
     }
     O.clearSpawns(L, api, taken.map(q => ({ x: q.x, z: q.z, r: q.r + 1.5 })));
     D.mini = O.miniCorner(L, api, room(a3[0]) || room(a2[1]), ['kekSusle', 'sekerYakala', 'pasta', 'krema', 'mum'], taken);
-    D.binis = [O.binisStation(L, api, room(a2[0]) || room(a1[1]), 'binisPasta', taken)].filter(Boolean);
+    D.binis = [];   // biniş halkası kaldırıldı ('Bin!' düğmesi)
     O.gentlePacks(L, 5);
   }
 

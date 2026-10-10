@@ -96,7 +96,7 @@
       const st = L.stations = L.stations || [];
       const r2 = room(1, 1), r3 = room(2, 0);
       const s1 = spot(r2, 3, 2); if (s1) st.push({ id: 'cicekSula', kind: 'mini', mini: 'cicekSula', x: s1.x, z: s1.z, r: 1.5 });
-      const s2 = spot(r3, -3, 2); if (s2) st.push({ id: 'binisBalkon', kind: 'binis', x: s2.x, z: s2.z, r: 1.6, sure: 16 });
+      // biniş halkası kaldırıldı ('Bin!' düğmesi)
       // zıplatan çiçek yatakları: Çiçek Tepesi'nin odalarında 3'er tane (yürünür zeminde; katı değil, üstüne basılır)
       L.balkonPads = [];
       for (const k of [0, 1]) {
