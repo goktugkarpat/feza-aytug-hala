@@ -153,9 +153,10 @@ const MUTFAK = (() => {
       const side = a3.rooms.find(i => L.rooms[i].kind === 'side'), rm = L.rooms[side ?? a3.rooms[a3.rooms.length - 1]];
       const p = api.randomFloorNear(rm.x, rm.z - rm.r * 0.25, 0, rm.r * 0.45);
       L.kayipEsya = { id: 'anahtar', x: p ? p.x : rm.x, z: p ? p.z : rm.z };
+      L.lostSpot = { x: L.kayipEsya.x, z: L.kayipEsya.z, id: 'anahtar' };   // (Bilbo kazar: 04_bilbo_fun)
     }
     K.extraChests(L, api);
-    if (A[1]) { const ms = mainOf(L, A[1]), rm = L.rooms[ms[ms.length - 1]]; L._mkMini = K.miniStation(L, api, rm, ['tencereKapak', 'tencereKapaklari', 'kapakMuzik', 'sekerYakala']); }
+    if (A[1]) { const ms = mainOf(L, A[1]), rm = L.rooms[ms[ms.length - 1]]; L._mkMini = K.miniStation(L, api, rm, ['tencereMuzik', 'tencereKapak', 'sekerYakala']); }
   }
 
   // ── görsel kurulum ──
@@ -453,7 +454,8 @@ const MUTFAK = (() => {
     if (cs) K.treasure(api, T, cs.x, cs.z, candyJarGeo(), { y: 0, tilt: 0.05, sc: 0.9, hintY: 4.4, say: 'mut_kavanoz', gold: 14, n: 8, sticker: 'mutfak_kavanoz' });
     // Aytuğ Hala'nın anahtarı: un tozu tümseğinin altında
     const ke = L.kayipEsya;
-    if (ke) K.lost(api, T, { zone: 'mutfak', id: 'anahtar', x: ke.x, z: ke.z, mound: moundGeo(), item: keyGeo(), itemScale: 0.8, ipucu: 'mut_anahtar_ipucu', bulundu: 'mut_anahtar', dirt: 'smoke' });
+    if (ke && typeof BILBO_FUN !== 'undefined' && BILBO_FUN) T.add({ x: ke.x, z: ke.z, r: 0, near: 8, hint: false, line: 'mut_anahtar_ipucu', prio: 1, use() {} });
+    else if (ke) K.lost(api, T, { zone: 'mutfak', id: 'anahtar', x: ke.x, z: ke.z, mound: moundGeo(), item: keyGeo(), itemScale: 0.8, ipucu: 'mut_anahtar_ipucu', bulundu: 'mut_anahtar', dirt: 'smoke' });
     for (const ri of a3.rooms) { const rr = L.rooms[ri]; api.light(rr.x, 3, rr.z, 0xffd9a0, 2, 10); }
   }
   const whiskGeo = () => C('mkWhisk', () => {   // dik duran dev çırpma teli (sapı aşağıda)
