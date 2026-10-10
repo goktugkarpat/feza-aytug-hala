@@ -111,6 +111,25 @@ malzeme yuvası, mumlar `dying`de yanar). Pasta: %66 ve %33'te 'shock' (komik te
 - `HALA.pointTo(x, z)` — bölüme girince yolun ilerisini, boss neşelenince kapıyı gösterir. `HALA.say(lineKey)`.
 Hala hasar almaz, düşmanlar onu hedeflemez. UI: sağ altta saldırı düğmesinin solunda **Takım** düğmesi (`.u-team`, CSS `--fill` 0..1,
 `.ready` parlar, klavye T) → `GAME.teamMove()`.
+Aytuğ Hala'nın ek API'si (karakter ajanı, src/04_hala.js; sesli cümleleri `src/02l_hala.js`, anahtarlar `hala_*`):
+- `HALA.boost(x, z, o?)` — **havaya atıp tutma / zıplama yardımı**: Hala Feza'nın yanına gelir, çömelip onu (x, z)'ye doğru yay çizerek
+  fırlatır (Feza havadayken dokunulmaz). Hedefsiz `HALA.boost()` = havaya atıp tutar. `o = { h: tepe yüksekliği m (vars. 2 + 0,12·mesafe),
+  dur: uçuş s, onLand(), sessiz: true (cümle söyleme) }`. Başladıysa true. Bölüm tasarımcısı yüksek yer/karşı kıyı için istasyondan çağırır,
+  ör. `GAME.on('station', s => { if (s.id === 'raf_ust') HALA.boost(s.hx, s.hz); })`. Dünya düz (y = 0); inilecek yer yürünür olmalı.
+- `HALA.dance(s = 5.5)` (bölüm sonu/hikâye dansı; yakındaki Feza da kollarını sallar), `HALA.cheer(s)` (sevinç zıplaması),
+  `HALA.wave(x?, z?, s)` (o yöne el sallar), `HALA.goTo(x, z, { face, hold: s (vars. 30), speed, then() })` (hikâye için bir yere yürüyüp
+  bekler; `HALA.release()` takibe döndürür), `HALA.expr('mutlu' | 'saskin' | 'sevgi' | 'merak' | 'uzgun', s)` (yüz ifadesi),
+  `HALA.busy` (şu anki eylem adı ya da null: 'throw' | 'hug' | 'lift' | 'point' | 'clap' | 'cheer' | 'shield' | 'team' | 'boost' | 'dance' |
+  'pet' (Bilbo'yu sever) | 'wave' | 'goto').
+- `HALA.portrait()` → `{ smile, talk, blink }` (256² yuvarlak rozet dataURL'leri; ilk çağrı ~0,5 s sürer — yükleme ekranında çağır,
+  sonra önbellekten). Arayüz "sol üstte Hala'nın yüzü konuşurken ağzı oynar" için `AUD.current` varken smile ↔ talk değiştirebilir.
+- Kendiliğinden yaptıkları: Feza'nın yanında/hafif arkasında takip (yolunu kesmez, takılırsa kalpli parıltıyla yanına ışınlanır); savaşta
+  4–7 s'de bir **Pasta Topu** (yay çizer, krema+konfeti patlaması, Feza'nın vuruşunun ~%45'i; huysuzu ASLA tek başına neşelendirmez,
+  son dokunuş hep Feza'nın); can < %35 → koşup diz çöküp **sarılır** (Feza ona döner, kollarını boynuna dolar; 3×%14 can, 22 s bekleme);
+  boss vuruş işareti (b.tele / windup) → **Polar Kalkan** (2,6 s, 14 s bekleme); Feza yorulunca koşar, diz çöker, elinden tutup kaldırır;
+  Feza 14 s kıpırdamazsa yolu (L.path) gösterir; huysuz neşelenince ara sıra alkış ve çeşitli övgü; boss neşelenince sevinç + dans.
+- Feza'ya dokunuş: kucaklama/el ele/havada kollar için `GAME.H.bones` (armL/R, foreL/R) Feza'nın kendi pozundan sonra aynı karede
+  döndürülür; zıplamalarda `P.pos.y` geçici olarak > 0 olur (bitince 0).
 
 ### Hikâye (STORY, src/10_story.js)
 `STORY.intro({zone})` → s (yeni oyun) · `STORY.zone({index,id})` · `STORY.area(areaObj)` · `STORY.ingredient(id)` (boss neşelendikten 2,5 s sonra) ·
