@@ -1,6 +1,11 @@
 /* ── Aytuğ Hala'nın Oturma Odası ve Mutfak cümleleri (oyuncaklar, alanlar, sürprizler) ──
    gen_voice.py bu dosyayı da okur (tr-TR-EmelNeural). Kullananlar: src/06z_oturma.js, src/06z_mutfak.js. */
 Object.assign(AUD.LINES, {
+  // Alan geçidi (bütün odalar): huysuzlar neşelenince açılır
+  kapi_kapali_1: 'Önce şu huysuzları güldürelim, sonra yol açılır!',
+  kapi_kapali_2: 'Şeker çit kapalı. Huysuzlar neşelenince açılacak!',
+  kapi_kapali_3: 'Birkaç huysuz daha kaldı. Ok onları gösteriyor!',
+  kapi_acildi: 'Yaşasın, yol açıldı! Hadi devam edelim!',
   // Oturma Odası · Halı Ormanı
   oda_hali_gir: 'Bak bak, halının tüyleri orman gibi kocaman olmuş!',
   oda_hazine_ipucu: 'Şurada parlayan bir şey var. Yanına git bakalım!',

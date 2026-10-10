@@ -273,6 +273,7 @@ ekran konfeti yağmuru. Olaylar: `starCandy {count, add}`, `skillTier {id, tier}
 - `L.kayipEsya = { id, x, z }` (yerlesim): kayıp eşyanın yeri. Feza yaklaşınca tümsek kazılır → `GAME.foundLostItem(id, bölüm)`.
   Bilbo ajanı için kanca: varsa `GAME.bilboDig(x, z, id)` çağrılır (Bilbo koşup kazsın). Bilbo yarışı: varsa `GAME.bilboRide({ dur, x, z })`
   (yoksa yer tutucu: 14 s hızlı koşu + toz yumağı toplama).
+- **Alan geçitleri (bütün odalar)**: `ODAKIT.gates(L, api)` (06_level build, kurSon'dan sonra; hub/başlık hariç). Alan k'nın çıkışı (`L.areas[k+1].gate`) o alanın huysuzlarının %70'i neşelenince açılır (`ODAKIT.gateCheer(e)` 07_game neşelenmede çağırır; sayım `e.room` ile). Kapalıyken şeker çit (katı `L.solids` tag 'kapi'), kalan sayı rozeti, yaklaşınca `kapi_kapali_1..3` + `HALA.pointTo`, `GAME.wakeRooms(odalar)` kalanları uyandırıp Feza'ya yollar, yerde ok; açılınca konfeti + `kapi_acildi`. Durum: `ODAKIT.gateState`. `GAME.roomEnemies(odalar)`.
 - `GAME.dropSugar(x, z, gold, n)` (07_game, küçük ek): oyuncaklar/hazineler şeker saçar.
 - Çıkartmalar (gizli): `oturma_hazine, oturma_tv, oturma_domino, oturma_kaset, oturma_bilbo, mutfak_hazine, mutfak_sunger, mutfak_tereyag,
   mutfak_un, mutfak_musluk, mutfak_tekne, mutfak_kapak, mutfak_baharat, mutfak_kavanoz`. Altın şeker: oturma son gizli hazine + Bilbo

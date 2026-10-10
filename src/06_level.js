@@ -6456,6 +6456,7 @@ const LEVEL = (function () {
     finishSigns(L, B);
     buildProps(L, B);
     if (zd && typeof zd.kurSon === 'function') { try { zd.kurSon(L, zapi); } catch (e) { console.warn('LEVEL: ' + L.Z.id + '.kurSon', e); } }
+    if (zapi && !L._title && !(L.Z && L.Z.hub) && L.areas && typeof ODAKIT !== 'undefined' && ODAKIT.gates) { try { ODAKIT.gates(L, zapi); } catch (e) { console.warn('LEVEL: ODAKIT.gates', e); } }   // (Dev Ev: alan geçitleri huysuzlar neşelenince açılır)
     finishBanners(B); finishSlime(B); finishWindows(B); finishLavafalls(B);
     finishInst(L, B); finishDecor(L, B); finishPoints(L, B); finishFlames(L, B); buildGlowTex(L, B);
     lap('finish', tp);
