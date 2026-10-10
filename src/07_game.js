@@ -882,6 +882,17 @@ const GAME = (() => {
     try { return !!BILBO_FUN.ride(!!on, seconds, bilboCtx()); } catch (err) { warnOnce('rideBilbo', err); return false; }
   }
   function bilboSneeze() { return !!funCall('sneeze', bilboCtx()); }
+  // "Bilbo'ya bin" button (Feza loves riding): RIDE_SEC of riding, then RIDE_CD before the next ride.
+  // BILBO_FUN.ride itself refuses in a boss arena / while a boss is awake and ends the ride there.
+  const RIDE_SEC = 15, RIDE_CD = 25;
+  let rideReadyAt = 0;
+  function rideButton() {
+    if (GAME.state !== 'play' || GAME.paused || P.dead || finale || gt < storyUntil || gt < rideReadyAt) return false;
+    if (typeof BILBO_FUN !== 'undefined' && BILBO_FUN && BILBO_FUN.riding) return false;
+    const ok = rideBilbo(true, RIDE_SEC);
+    if (ok) rideReadyAt = gt + RIDE_SEC + RIDE_CD;
+    return ok;
+  }
   function bone() {
     if(!Bilbo || GAME.state!=='play' || GAME.paused || P.dead || finale || merchantNear() || gt<storyUntil || gt<boneAt || Bilbo.isFetching() || funCall('busy'))return false;
     const targets=enemies.filter(e=>!e.dead && !hidden(e) && inView(e.x,e.z) && dist2(e.x,e.z,bilboPos.x,bilboPos.z)<sq(8+e.r) && los(bilboPos.x,bilboPos.z,e.x,e.z)).sort((a,b)=>dist2(a.x,a.z,bilboPos.x,bilboPos.z)-dist2(b.x,b.z,bilboPos.x,bilboPos.z)).slice(0,5);
@@ -7024,7 +7035,7 @@ const GAME = (() => {
 
   const GAME = {
     revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API, recalcStats,
-    rideBilbo, bilboSneeze,
+    rideBilbo, bilboSneeze, rideButton,
     revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API,
     _victory: () => victory(),   // QA: final sahnesini doğrudan başlat
     storyCheer(sec = 2, bark = true) { C.cheerT = Math.max(C.cheerT, sec); if (bark) bilboBark = 1.3; },   // Dev Ev: STORY kutlaması (Feza sevinir, Bilbo havlar)
@@ -7043,7 +7054,7 @@ const GAME = (() => {
     get difficulty() { return hard ? 'hard' : 'normal'; }, setDifficulty,
     merchantInfo, merchantNear, merchantWard, visitMerchant, buyMerchant,
     mapUnlocked, travelTo, loadZoneAsync, loading: false, loadT: LOADT, bone,
-    get boneCooldown(){return Math.max(0,boneAt-gt);}, get boneCooldownMax(){return BONE_CD;},
+    get boneCooldown(){return Math.max(0,boneAt-gt);}, get boneCooldownMax(){return BONE_CD;}, get rideCooldown(){return Math.max(0,rideReadyAt-gt);}, get rideCooldownMax(){return RIDE_SEC+RIDE_CD;},
     init, newGame, continueGame, hasSave: () => !!readSave(), save, clearSave,
     loadZone, update, titleUpdate, input, equipSlot, equip: item => equip(item), unequip, drinkPotion, addItem, cast,
     on, emit, enemiesNear, nearestEnemy, damage, spawnProjectile, hitBreakables, heroDamageNow, hurtPlayer, heal,

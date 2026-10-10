@@ -32,7 +32,7 @@ Anlatıcı Aytuğ Hala'nın kendisi. Bütün yaratıklar sevimli ve güler yüzl
 - **Hazineler:** Sandıklardan ve oyuncaklardan ev temalı eşyalar çıkar. Daha güçlüsü bulununca Feza hemen giyer; 🎒 çantadan istediğin silahı,
   şapkayı ve pelerini seçebilirsin. Sıradan eşyalar sessizce çantaya girer, özel eşyalar savaş bitince kartla gösterilir.
 - **Okumak gerekmez:** Bütün yönergeleri Aytuğ Hala sesle söyler; sol üstte konuşurken ağzı oynayan Hala yüzü görünür.
-- **Klavye (yedek):** WASD / oklar yürür, **Boşluk** vurur, **1–2–3** yetenekler, **Q** iksir, **K** Bilbo'ya kemik, **T** Takım Hamlesi,
+- **Klavye (yedek):** WASD / oklar yürür, **Boşluk** vurur, **1–2–3** yetenekler, **Q** iksir, **K** Bilbo'ya kemik, **R** Bilbo'ya bin, **T** Takım Hamlesi,
   **Y** yetenek güçlendirme, **B** çanta, **M** harita, **Esc** mola.
 
 ## Aytuğ Hala
@@ -51,7 +51,8 @@ Kırmızı polarlı, gür kıvırcık saçlı, başında siyah desenli bandana v
 Çikolata renkli Labrador Bilbo Feza'yı takip eder, yakındaki huysuzlara havlar ve ara sıra zıplayıp onları sakinleştirir.
 
 - **Kemik oyunu:** Sağdaki **kemik** düğmesiyle Feza kemik atar; Bilbo kapıp çiğner, sonra huysuzlara minik lokmalar püskürtür.
-- **Bilbo'ya binmek:** Odalardaki patili halkaya gelince Feza Bilbo'nun sırtına biner ve hızlı koşar. Boss alanına girerken kendiliğinden iner.
+- **Bilbo'ya binmek:** Sağdaki **Bin!** düğmesine basınca Feza Bilbo'nun sırtına biner ve 15 saniye hızlı koşar (binerken vurabilir);
+  düğme yaklaşık 25 saniyede yeniden dolar. Odalardaki patili halkalar da bindirir. Boss savaşında binilmez, boss alanına girerken Feza kendiliğinden iner.
 - **Kayıp eşyalar:** Her odada Aytuğ Hala'nın bir eşyası kaybolmuştur (gözlük, anahtar, toka, telefon). Bilbo koklayıp havlar, kazar ve eşyayı çıkarır.
 - **Aksesuarlar:** Kırmızı tasma, mavi puantiyeli bandana, parti şapkası, güneş gözlüğü ve minik pelerin.
 
