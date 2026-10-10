@@ -1223,6 +1223,15 @@ const GAME = (() => {
   }
   const levelHealth = () => T.baseHp + 12 * (entryLevel() - 1);
   const learningAid = () => clamp((8 - entryLevel()) / 7, 0, 1);
+  // Dev Ev denge (SPEC › "Denge doğrulaması (Dev Ev)", 5 yaş çocuk botu): bütün can/hasar ayarları burada.
+  // ENEMY_HP_MUL: every foe (ordinary, elite, boss, summoned helper) has 25 % more health (family request).
+  // SMALL_MOB_HP_MUL: ordinary (not elite, not boss) foes get more on top (family request; kid-bot check).
+  // ELITE_HP_MUL: elites on top of their own ×1.8, so a "Kocaman" one stays clearly sturdier than the small ones.
+  // DEV_BOSS_HP: bosses without a BOSSDAV hpK (05c) get the same length as the others (Balkon's Uykucu Hortum).
+  // MOB_HIT_K / BOSS_HIT_K: incoming hits as a share of level health × this (Normal and Zor alike).
+  const ENEMY_HP_MUL = 1.25, SMALL_MOB_HP_MUL = 1.2, ELITE_HP_MUL = 1;
+  const DEV_BOSS_HP = { uykucuHortum: 1 };
+  const MOB_HIT_K = 1, BOSS_HIT_K = 1;
   // Chapter order must not decide combat strength. Size a creature by its role and captured player level.
   const LEVEL_ROLES = {
     melee:  { hits: 4, hp: 28, damage: 0.060, dmg: 8 },
@@ -1250,7 +1259,7 @@ const GAME = (() => {
     const variety = clamp((isBoss ? cfg.dmg : def.dmg || role.dmg) / (isBoss ? 20 : role.dmg), 0.85, 1.15);
     const eliteDmg = 1.25;
     // Final Normal damage is a readable share of level health. Apply the existing Hard factors separately.
-    return levelHealth() * fraction * variety * roundPressure() / DIFF.damageTaken.normal
+    return levelHealth() * fraction * variety * roundPressure() / DIFF.damageTaken.normal * (isBoss ? BOSS_HIT_K : MOB_HIT_K)
       * (elite ? eliteDmg : 1) * (hard ? (isBoss ? HC.bossDmg : HC.dmg) : 1);
   }
 
@@ -1267,7 +1276,8 @@ const GAME = (() => {
     const c = bossCfg(type), magic = P.heroClass === 'hybrid' && !DIFF.boss[type];
     const power = levelDamage(magic) * (magic ? DIFF.bossHybridK : 1);
     const per = Math.min(c.per, 80);
-    return Math.max(1, Math.round(per * power * roundPressure() * (tough ? HC.bossHp : DIFF.normal.bossLength)));
+    // (Dev Ev: ENEMY_HP_MUL is part of the boss's own size, so the first-aggro resize keeps it too)
+    return Math.max(1, Math.round(per * power * roundPressure() * (tough ? HC.bossHp : DIFF.normal.bossLength) * ENEMY_HP_MUL * (DEV_BOSS_HP[type] || 1)));
   };
   // Variant of a creature: LEVEL's spawn.variant, else one of the zone's (ZONES[i].variants, e.g. lava jellies), else a random colour.
   function variantFor(type, sp) {
@@ -1291,11 +1301,9 @@ const GAME = (() => {
     scene.add(m.root);
     const sc = elite ? 1.4 : 1;
     // Both difficulties use the same entry level, including sleepers and summoned helpers.
-    // ENEMY_HP_MUL: every foe (ordinary, elite, boss, summoned helper) has 25 % more health (family request).
-    // SMALL_MOB_HP_MUL: ordinary (not elite, not boss) foes get another 20 % on top (family request).
-    const ENEMY_HP_MUL = 1.25, SMALL_MOB_HP_MUL = 1.2;
-    const hpFor = tough => Math.round(ENEMY_HP_MUL * (isBoss ? bossHpNow(type, tough)
-      : levelMobHp(type, def, elite, tough) * (elite ? 1 : SMALL_MOB_HP_MUL)));
+    // (ENEMY_HP_MUL / SMALL_MOB_HP_MUL / ELITE_HP_MUL: see LEVEL_ROLES; bossHpNow already holds ENEMY_HP_MUL)
+    const hpFor = tough => Math.round(isBoss ? bossHpNow(type, tough)
+      : ENEMY_HP_MUL * levelMobHp(type, def, elite, tough) * (elite ? ELITE_HP_MUL : SMALL_MOB_HP_MUL));
     const difficultyHp = [hpFor(false), hpFor(true)], hp = difficultyHp[hard ? 1 : 0];
     const difficultyWind = [Math.max(T.windMin, def.windup || 0.6, 0.85 * learningAid()), Math.max(0.4, (def.windup || 0.6) * HC.wind, 0.7 * learningAid())];
     const e = {
