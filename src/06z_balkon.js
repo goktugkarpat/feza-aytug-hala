@@ -383,7 +383,7 @@
     const k0 = M.kur;
     M.kur = function (L, api) {
       if (k0) k0.call(this, L, api);
-      const s = (L.stations || []).find(q => q.id === 'kapi_balkon'); if (!s) return;
+      const s = (L.stations || []).find(q => q.id === 'kapi_balkon'); if (!s || s.masa) return;   // (masa kendi tarzında çizdiyse)
       // yeşil balkon kapısı: camlı üst panel, çiçekli saksı yanında, güneş ışığı süzülür
       api.box(s.x, 1.6, s.z - 1.2, 2.2, 3.2, 0.25, 0x7fcf6a);
       api.box(s.x, 2.2, s.z - 1.05, 1.5, 1.4, 0.06, 0xcff0ff);
