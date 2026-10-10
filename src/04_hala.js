@@ -426,15 +426,15 @@ const HALA = (() => {
     const W = 128, H = 64, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const g = cv.getContext('2d');
     g.fillStyle = '#16131a'; g.fillRect(0, 0, W, H);
-    g.fillStyle = '#f3ede4'; g.strokeStyle = '#f3ede4';
-    g.fillRect(0, 3, W, 2); g.fillRect(0, H - 5, W, 2);                          // kenar şeritleri
-    for (let x = 2; x < W; x += 8) { g.beginPath(); g.arc(x, 9, 1.1, 0, TAU); g.fill(); g.beginPath(); g.arc(x + 4, H - 9, 1.1, 0, TAU); g.fill(); }
+    g.fillStyle = '#e8e0d4'; g.strokeStyle = '#e8e0d4';
+    g.fillRect(0, 4, W, 1.5); g.fillRect(0, H - 5.5, W, 1.5);                      // kenar şeritleri
+    for (let x = 4; x < W; x += 16) { g.beginPath(); g.arc(x, 10, 1, 0, TAU); g.fill(); g.beginPath(); g.arc(x + 8, H - 10, 1, 0, TAU); g.fill(); }
     const flower = (cx, cy, r) => {                                                // küçük beş yapraklı çiçek
       for (let i = 0; i < 5; i++) { const a = i / 5 * TAU; g.beginPath(); g.ellipse(cx + Math.cos(a) * r, cy + Math.sin(a) * r, r * 0.75, r * 0.5, a, 0, TAU); g.fill(); }
-      g.fillStyle = '#16131a'; g.beginPath(); g.arc(cx, cy, r * 0.45, 0, TAU); g.fill(); g.fillStyle = '#f3ede4';
+      g.fillStyle = '#16131a'; g.beginPath(); g.arc(cx, cy, r * 0.45, 0, TAU); g.fill(); g.fillStyle = '#e8e0d4';
     };
-    for (let i = 0; i < 4; i++) { flower(16 + i * 32, 24, 3.6); flower(i * 32, 41, 3.6); }
-    for (let i = 0; i < 8; i++) { g.beginPath(); g.arc(8 + i * 16, 33, 1.2, 0, TAU); g.fill(); }
+    for (let i = 0; i < 4; i++) { flower(16 + i * 32, 24, 3.2); flower(i * 32, 41, 3.2); }
+    for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(8 + i * 32, 33, 1.1, 0, TAU); g.fill(); }
     for (let i = 0; i < 4; i++) {                                                  // minik şal (paisley) damlaları
       g.beginPath(); g.ellipse(32 * i + 4, 18, 2.6, 1.5, -0.6, 0, TAU); g.fill(); g.beginPath(); g.ellipse(32 * i + 21, 47, 2.6, 1.5, 0.6, 0, TAU); g.fill();
     }
@@ -1989,7 +1989,7 @@ const HALA = (() => {
       S.headC.getWorldPosition(_v);
       // 3/4 açı, hafif yukarıdan: kıvırcık saç, bandana ve tepedeki gözlük görünsün, kırmızı polar yaka kadrajda
       const ca = 0.7; cam.fov = 27; cam.updateProjectionMatrix();
-      cam.position.set(_v.x + Math.sin(ca) * 1.6, _v.y + 0.26, _v.z + Math.cos(ca) * 1.6); cam.lookAt(_v.x - 0.04, _v.y + 0.025, _v.z - 0.07);
+      cam.position.set(_v.x + Math.sin(ca) * 1.72, _v.y + 0.3, _v.z + Math.cos(ca) * 1.72); cam.lookAt(_v.x - 0.04, _v.y + 0.045, _v.z - 0.07);
       const spark = new THREE.PointLight(0xfff2d0, 1.6, 4, 1.5); spark.position.copy(cam.position).add(v3(0.3, 0.25, 0)); sc.add(spark);
       const rim = new THREE.DirectionalLight(0xffd6c2, 1.1); rim.position.set(_v.x - 1.5, _v.y + 1.2, _v.z - 1.6); sc.add(rim);
       const g = cv.getContext('2d');
