@@ -605,6 +605,8 @@ const ODAKIT = (() => {
     if (api._lowSh) return api; api._lowSh = true;
     const put0 = api.put;
     api.put = function (geo, x, y, z, sx = 1, sy = sx, sz = sx, color, yaw, rx, rz, matKey) {
+      const sMax = Math.max(Math.abs(sx), Math.abs(sy), Math.abs(sz));
+      if (geo === G.sphere() && sMax < 0.9) geo = G.sphere(10, 7);   // küçük toplar/köpükler: daha az üçgen
       if (!matKey) {
         const bb = geo.boundingBox || (geo.computeBoundingBox(), geo.boundingBox), s = Math.max(Math.abs(sx), Math.abs(sy), Math.abs(sz));
         const top = y + (rx || rz ? Math.max(bb.max.x, bb.max.y, bb.max.z) * s : bb.max.y * Math.abs(sy));
