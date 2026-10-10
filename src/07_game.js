@@ -993,6 +993,7 @@ const GAME = (() => {
     if (!title) populate();
     yield 'yerlestir';
     yield* warmZone(i, title, async);   // the UI's loading fade still covers the screen
+    if (!title && zdef(i).hub && typeof HUB !== 'undefined' && HUB.warmSteps) { try { yield* HUB.warmSteps(async); } catch (err) { warnOnce('HUB.warmSteps', err); } }   // masa: panel resimlerinin pahalı ilk çizimi perde arkasında
     GAME.state = title ? 'title' : 'play';
     emit('zone', { index: i, name: zdef(i).ad, title });
     if (!title) enterZoneStory(i, o.introDelay || 0);
