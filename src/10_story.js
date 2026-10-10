@@ -1014,6 +1014,7 @@ const STORY = (() => {
           origin = { x: P.pos.x, z: P.pos.z }; ACT.worldMode = true;
           camTo(0.6, 3.0, 8.4, 0, 1.8, -3, 1.5, true); camTo(0.4, 2.6, 7.2, 0, 1.9, -3.2, 1.2);
           burst('hearts', P.pos.x, 2, P.pos.z, { count: 16 });
+          if (typeof ODAB !== 'undefined' && ODAB.celebrate) { try { ODAB.celebrate(); } catch (e) { /* ignore */ } }   // Pasta Krallığı'nın havai fişekleri bizimle aynı anda
           if (!END.cake) { END.cake = happyCake(); scene.add(END.cake); }
           END.cake.position.set(P.pos.x + 0.3, 0, P.pos.z - 5.2); END.cake.scale.setScalar(0.9); END.cake.visible = true;
         },
@@ -1055,7 +1056,7 @@ const STORY = (() => {
           Object.assign(h, { x: 0.3, z: -1.75, y: HALA_STEP, face: -0.55, act: 'mum', s: 1 });
           Object.assign(f, { x: 0.45, z: -0.05, face: -2.3, s: 1, cheer: false });
           Object.assign(b, { x: 1.2, z: 0.35, face: -2.0, s: 1, nose: 0, sit: 1 });
-          camTo(-1.55, 1.9, 2.3, -0.15, 1.35, -0.95, 2, true);
+          camTo(-1.45, 2.05, 2.9, 0.0, 1.55, -1.0, 2, true);
           END.lit = 0;
         },
         tick(u, dt, t) {
@@ -1065,7 +1066,7 @@ const STORY = (() => {
           END.lit = n;
         } },
       { key: 'son_ufle', min: 3.2, enter() {
-          camTo(-1.35, 1.7, 0.95, -0.45, 1.5, -0.8, 2);
+          camTo(-1.2, 1.85, 1.6, -0.2, 1.6, -1.0, 2);
           for (const c of END.K.candles) { c.on = true; c.f.visible = true; }
           const bt = ov && ov.querySelector('.st-blow'); if (bt) bt.classList.remove('st-hide');
           CINE.wait = 'blow'; END.blowT = 0;
@@ -1076,7 +1077,7 @@ const STORY = (() => {
         } },
       { key: 'son_4', min: 3.6, enter() {
           const dl = END.K.dollop; if (dl) { dl.visible = true; dl.position.set(0.52, 0, 0.5); dl.scale.setScalar(1.5); burst('sparkle', origin.x + 0.52, 0.3, origin.z + 0.5, { count: 8 }); }
-          camTo(-0.1, 1.55, 4.3, 0.55, 0.5, 0.35, 2, true);
+          camTo(-0.1, 1.9, 4.6, 0.45, 0.85, 0.0, 2, true);
           Object.assign(b, { x: 1.28, z: 0.5, face: -Math.PI / 2, sit: 0, nose: 1, lick: 1, y: 0 });
           Object.assign(f, { x: -0.55, z: 0.1, face: 0.9 });
           f.cheer = true; h.act = 'alkis';
@@ -1088,7 +1089,7 @@ const STORY = (() => {
           Object.assign(f, { x: -0.25, z: 0.5, face: -1.45, cheer: false });
           Object.assign(b, { x: 0.95, z: 0.35, face: -1.2, lick: 0, nose: 0, y: 0, sit: 1 });
           if (END.K.dollop) END.K.dollop.visible = false;
-          camTo(-0.45, 1.55, 3.0, -0.5, 1.0, 0.45, 2);
+          camTo(-0.45, 1.8, 3.5, -0.5, 1.2, 0.45, 2);
           burst('hearts', origin.x - 0.65, 1.6, origin.z + 0.3, { count: 14 });
         } },
       { min: 10, final: true, enter() {   // jenerik
@@ -1196,9 +1197,13 @@ const STORY = (() => {
     if (cs) later(0.9, () => { if (G_().L === L) moment(Math.max(3.5, a + 0.4), { x: cs.x, z: cs.z, R: 10, H: 5.2 }); });
     return Math.max(a, b);
   }
+  function hushChatter(sec, rank) { const A = A_(); if (A && A.hush) try { A.hush(sec, rank); } catch (e) { /* ignore */ } }
+  // boss neşelenince: birkaç saniye yalnız boss ve hikâye cümleleri (kutlamada 10 cümlelik kuyruk birikmesin)
+  if (typeof GAME !== 'undefined' && GAME.on) GAME.on('happy', d => { if (d && d.boss) hushChatter(6, 4); });
   function malzemeIds() { const g = G_(); const m = g && g.P && g.P.malzemeler; return m ? Object.keys(m).filter(k => m[k]) : []; }
   function malzemeCount() { const g = G_(); const m = g && g.P && g.P.malzemeler; return m ? Object.keys(m).filter(k => m[k]).length : 0; }
   function zone(o) {
+    hushChatter(2.5, 3);   // oda girişi: ilk anda yalnız hikâye/görev cümleleri (yetenek, övgü düşer)
     restoreXray();   // başlıktan (Devam Et / harita) oyuna geçiş
     if (!seen.cakeIds) seen.cakeIds = malzemeIds();   // kayıttan devam: zaten pastadaki malzemeler yeniden uçmasın
     const id = o && o.id; if (!id) return;
@@ -1208,7 +1213,8 @@ const STORY = (() => {
         if (performance.now() - seen.introAt < 1500) return;
         const fresh = deliverIngredients();
         if (!pastaShown && malzemeCount() >= 3) { pastaShown = true; later(fresh ? 3.2 : 0, pastaScene); return; }
-        if (fresh) { line('masa_donus1', 'Masaya döndük! Bak, pastamız büyüyor.', 3); seen.zone.masa = true; return; }
+        if (fresh) { line('masa_donus1', 'Masaya döndük! Bak, pastamız büyüyor.', 3); seen.zone.masa = true; later(4.5, balkonScene); return; }
+        if (balkonScene()) { seen.zone.masa = true; return; }
         if (seen.zone.masa) line(pick(['masa_donus1', 'masa_donus2', 'masa_donus3']), 'Masaya döndük!', 2);
         seen.zone.masa = true;
       });
@@ -1233,6 +1239,19 @@ const STORY = (() => {
     if (g.storyCheer) later(2.4, () => g.storyCheer(2, true));
     return fresh.length;
   }
+  // Balkon Bahçesi (isteğe bağlı oda): ilk oda bitip masaya dönünce bir kez "balkon kapısı da açık" anı
+  function balkonScene() {
+    const g = G_(), L = g && g.L, P = g && g.P;
+    if (seen.balkon || !L || !P || !P.bossNese || !Object.keys(P.bossNese).some(k => P.bossNese[k])) return false;
+    const st = L.stations && L.stations.find(s => s.id === 'kapi_balkon'); if (!st) return false;
+    if (P.bossNese.balkon) { seen.balkon = true; return false; }
+    seen.balkon = true;
+    line('balkon_acildi', 'Bak bak, balkon kapısı da açık!', 3);
+    moment(Math.max(3.5, lineLen('balkon_acildi') + 0.8), { x: st.x, z: st.z, R: 8.5, H: 3.8 });
+    for (let i = 0; i < 3; i++) later(0.5 + i * 0.8, () => burst('sparkle', st.x, 1.6, st.z, { count: 16, color: '#ffe36a' }));
+    const HL = H_(); if (HL && HL.pointTo) try { HL.pointTo(st.x, st.z); } catch (e) { /* ignore */ }
+    return true;
+  }
   function pastaScene() {   // Pasta Krallığı açıldı: masadaki pembe kapıya kamera gider, kıvılcımlar
     const g = G_(), L = g && g.L;
     const st = L && L.stations && L.stations.find(s => s.id === 'kapi_pasta');
@@ -1254,6 +1273,7 @@ const STORY = (() => {
     if (a.index === 0 && !seen.zone['_a' + zid]) { seen.zone['_a' + zid] = 1; }   // ilk alan: oda girişi zaten konuştu; yine de kısa söyle
     // bölüm ajanı kendi alan cümlesini söylüyorsa (aynı anda) bizimki düşer: öncelik 0 = konuşma varken söylenmez
     const key = 'alan_' + zid + '_' + (a.index + 1);
+    if (!hasLine(key) && hasLine(zid + '_a' + (a.index + 1))) return;   // bölümün kendi alan cümleleri var (ör. balkon_a1)
     later(0.3, () => { if (speaking()) return; if (hasLine(key)) line(key, null, 0); else line(a.index & 1 ? 'alan_genel2' : 'alan_genel1', null, 0); });
   }
   function ingredient(id) {

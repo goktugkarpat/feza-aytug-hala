@@ -59,6 +59,7 @@ Object.assign(AUD.LINES, {
   // ── Pasta Krallığı ──
   pasta_kilitli: 'Pasta Krallığı için önce üç malzemeyi bulalım!',
   pasta_acildi: 'Üç malzeme tamam! Pasta Krallığı açıldı, bak bak!',
+  balkon_acildi: 'Bak bak, balkon kapısı da açık! Güneşte çiçeklerle oynayalım mı?',
   pasta_acildi2: 'Pembe kapıya gidelim. Son macera bizi bekliyor!',
   // ── Final ──
   son_1: 'Koca Pasta neşelendi! Bak bak, büyü çözülüyor!',

@@ -6046,8 +6046,10 @@ const GAME = (() => {
     // 'kristal' was never heard). Not said when he is touching it already (its subtitle would flash for one frame).
     if (k >= 1 && !crystal.ready && !storyTalking(true)) {
       crystal.ready = true;
-      if (dist2(crystal.x, crystal.z, P.pos.x, P.pos.z) > 2.4 * 2.4) say('kristal', 3);
+      hala('pointTo', crystal.x, crystal.z);   // (yedek) Hala parlayan şeker yıldızını gösterir
     }
+    // Dev Ev: final töreni kendiliğinden başlar (Feza'nın yıldıza yürümesi gerekmez): yıldız yükselip kutlama bitince
+    if (GAME.state === 'play' && !P.dead && crystal.t >= 1.9 && (crystal.ready || crystal.t > 5)) { victory(); return; }
     if (Math.random() < dt * 10) emitP(crystal.x + frand(-1, 1), frand(0.3, 2.5), crystal.z + frand(-1, 1), 0, frand(0.5, 1.2), 0, 1, 0.3, 0, '#ff9ae0', '#ffffff', 2);
   }
   function victory() {
