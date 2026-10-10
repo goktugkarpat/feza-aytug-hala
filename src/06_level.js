@@ -1855,7 +1855,8 @@ const LEVEL = (function () {
   // kefir moat with yogurt cliffs to the north, and its middle holds the spring: a shallow bubbling kefir pool on the cheese plaza
   // (walkable: the kefir giant stands in it). V.flow (RGBA, 2 px/m): rg = direction, b = speed, a = what flows (0 strawberry milk,
   // 0.5 milk, 1 kefir — continuous, so the linear filter blends neighbours without a false third colour).
-  function dairyField(L) {
+  function dairyField(L) { const it = dairyFieldSteps(L); let r; while (!(r = it.next()).done) { /* tek seferde */ } return r.value; }
+  function* dairyFieldSteps(L) {   // (aralarındaki yield'ler oda geçişinde ayrı karelere düşer)
     const P = MPX, W = L.W, H = L.H, MW = W * P, MH = H * P, n = MW * MH, grid = L.grid, seed = (L.seed & 0xffff) + 53;
     const fl = new Uint8Array(n);
     for (let py = 0; py < MH; py++) { const row = ((py / P) | 0) * W, o = py * MW; for (let px = 0; px < MW; px++) fl[o + px] = grid[row + ((px / P) | 0)]; }
@@ -1894,6 +1895,7 @@ const LEVEL = (function () {
       RN[k] = rivN(x, z); PN[k] = pondN0(x, z); N3[k] = vnoise(x / 3.1, z / 3.1, seed + 4);
       NWX[k] = vnoise(x / 2.3, z / 2.3, seed + 5); NWZ[k] = vnoise(x / 2.3, z / 2.3, seed + 6); NSH[k] = vnoise(x / 2.6, z / 2.6, seed);
     }
+    yield 'field';
     const lat = (F, x, z) => {
       const fx = clamp(x * FP, 0, FW - 0.001), fz = clamp(z * FP, 0, FH - 0.001), a = fx | 0, b = fz | 0, tx = fx - a, tz = fz - b, k = b * (FW + 1) + a;
       return (F[k] * (1 - tx) + F[k + 1] * tx) * (1 - tz) + (F[k + FW + 1] * (1 - tx) + F[k + FW + 2] * tx) * tz;
@@ -1919,6 +1921,7 @@ const LEVEL = (function () {
       hkF[k] = hk; nfF[k] = 1;
     }
     const hkB = boxBlur(hkF, MW, MH, 3), nfB = boxBlur(nfF, MW, MH, 3);
+    yield 'field';
     // The shore follows a blurred floor coverage (not the distance to the 1 m cells), so it runs in soft curves instead of the
     // cells' staircase; its level wobbles a little (0.35–0.85 m off a straight floor edge)
     const flF = new Float32Array(n); for (let k = 0; k < n; k++) flF[k] = fl[k];
@@ -1933,6 +1936,7 @@ const LEVEL = (function () {
       raw[k] = smooth01((lvl - fb[k]) / 0.05 + 0.5) * smooth01((d - 0.28) / 0.1) * (1 - hill);
     }
     const liq = boxBlur(raw, MW, MH, 1);
+    yield 'field';
     for (let k = 0; k < n; k++) if (fl[k]) liq[k] = 0;   // never on walkable floor, even blurred…
     const spring = ar ? { x: ar.x, z: ar.z, r: 2.05 } : null;
     if (spring) {   // …except the spring: a shallow round kefir pool in the middle of the arena
@@ -1977,6 +1981,7 @@ const LEVEL = (function () {
         liq[k] = Math.max(liq[k], smooth01((lv - fb[k]) / 0.05 + 0.5) * smooth01((D[k] / P - 0.02) / 0.1));
       }
     }
+    yield 'field';
     // the current: along the rivers (perpendicular to the noise gradient), round the moat, outward from the spring; kefir in the
     // ponds, the moat and the spring, milk in the rivers
     const F = new Uint8Array(FW * FH * 4);
@@ -6394,7 +6399,14 @@ const LEVEL = (function () {
     return api;
   }
 
+  // build(L): hepsi bir kerede. buildSteps(L): aynı iş, aşama aralarında yield (oda geçişinde karelere bölünür; 07 loadZoneAsync).
   function build(L) {
+    if (!L) return L;
+    const it = buildSteps(L);
+    while (!it.next().done) { /* tek seferde */ }
+    return L;
+  }
+  function* buildSteps(L) {
     if (!L) return L;
     if (L.group) dispose(L);
     const t0 = performance.now();
@@ -6440,25 +6452,33 @@ const LEVEL = (function () {
     const bt = L.buildT = {}, lap = (k, t) => { const n2 = performance.now(); bt[k] = Math.round(n2 - t); return n2; };   // build phases (ms), for tests
     let tp = performance.now();
     L._volc = L.theme === 'volcano' ? volcanoField(L) : null;   // lava / milk + bridges first: the floor mask needs them
-    L._dairy = L.theme === 'dairy' ? dairyField(L) : null;
+    L._dairy = L.theme === 'dairy' ? yield* dairyFieldSteps(L) : null;
     L._town = null;   // (Surlu Şehir çıkarıldı)
     tp = lap('field', tp);
+    yield 'field';
     buildFloor(L, B);
     tp = lap('floor', tp);
+    yield 'floor';
     const zapi = zd ? zoneApi(L, B) : null;
     if (L._title && typeof STORY !== 'undefined' && STORY && typeof STORY.buildTitle === 'function') { try { STORY.buildTitle(L, zapi || zoneApi(L, B)); } catch (e) { console.warn('LEVEL: STORY.buildTitle', e); } }
-    else if (zd && typeof zd.kur === 'function') { try { zd.kur(L, zapi); } catch (e) { console.warn('LEVEL: ' + L.Z.id + '.kur', e); } }
+    else if (zd && typeof zd.kur === 'function') {   // kur bir üreteç döndürebilir (function*): aralarındaki yield'ler ayrı karelere düşer
+      try { const r = zd.kur(L, zapi); if (r && typeof r.next === 'function') { for (let v = r.next(); !v.done; v = r.next()) yield 'kur'; } } catch (e) { console.warn('LEVEL: ' + L.Z.id + '.kur', e); }
+    }
     else if (L.theme === 'forest') buildForest(L, B); else if (L.theme === 'dairy') buildDairy(L, B); else if (L.theme === 'castle') buildCastle(L, B); else buildDream(L, B);   // (Dev Ev: cave / volcano / town çizicileri çıkarıldı)
     if (V) buildVillage(L, B);
     tp = lap('theme', tp);
+    yield 'theme';
     L.fixedProps = fixReach(L, unProp, dropUnreachable);   // build-time rocks / props must not cut off a room, chest or checkpoint
     tp = lap('reach', tp);
+    yield 'reach';
     finishSigns(L, B);
     buildProps(L, B);
+    yield 'props';
     if (zd && typeof zd.kurSon === 'function') { try { zd.kurSon(L, zapi); } catch (e) { console.warn('LEVEL: ' + L.Z.id + '.kurSon', e); } }
     if (zapi && !L._title && !(L.Z && L.Z.hub) && L.areas && typeof ODAKIT !== 'undefined' && ODAKIT.gates) { try { ODAKIT.gates(L, zapi); } catch (e) { console.warn('LEVEL: ODAKIT.gates', e); } }   // (Dev Ev: alan geçitleri huysuzlar neşelenince açılır)
+    yield 'gates';
     finishBanners(B); finishSlime(B); finishWindows(B); finishLavafalls(B);
-    finishInst(L, B); finishDecor(L, B); finishPoints(L, B); finishFlames(L, B); buildGlowTex(L, B);
+    finishInst(L, B); yield 'inst'; finishDecor(L, B); yield 'decor'; finishPoints(L, B); finishFlames(L, B); buildGlowTex(L, B);
     lap('finish', tp);
     for (const t of B.tmpGeo) t.dispose();
     B.tmpGeo.length = 0;
@@ -6547,7 +6567,7 @@ const LEVEL = (function () {
   }
 
   return {
-    generate, build, update, dispose, isFloor, circleFree, move, los, flowTo, flowDir, randomFloorNear,
+    generate, build, buildSteps, update, dispose, isFloor, circleFree, move, los, flowTo, flowDir, randomFloorNear,
     satCount: (L, x0, z0, x1, z1) => satCount(L, x0, z0, x1, z1),
   };
 })();

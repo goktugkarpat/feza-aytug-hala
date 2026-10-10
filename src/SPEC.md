@@ -301,6 +301,20 @@ eldiven (yakın), altinSaksi (nadir); boss `uykucuHortum` (base kefirdev, sarıl
 Kayıp eşya `telefon`. Ödül (boss ilk neşelenişte): `unlockCostume('superkahraman')`, 3 çiçek pasta süsü, çıkartma `balkon_bahce`.
 Merkezdeki 5. kapı: 06z_balkon masa `yerlesim`/`kur`'unu sarar (`kapi_balkon`, son kapının yanına).
 
+### Takılmasız oda geçişi (donma ajanı)
+- `GAME.loadZoneAsync(i, o)` → Promise: `loadZone`'un aynısı (`loadSteps` üreteci) ama aşamalar arasında kare verir (~8 ms bütçe):
+  tema yüzeyleri (`TEX.todo(tema)` → `TEX.ensure(ad)`, kare başına bir), oda dokuları (`ODAKIT.prewarm(ms)`), `LEVEL.generate`,
+  `LEVEL.buildSteps(L)` (build'in üreteç hâli; `L.buildT` aynı), `populate`, `warmZone` (her yeni huysuz modeli ayrı kare,
+  gölgelendiriciler `renderer.compileAsync` ile arka planda, ilk çizim sahnenin 6 diliminde, sonra kıyafet çizimleri), masada
+  `HUB.warmSteps()` (Feza/Bilbo'nun pahalı ilk panel resmi). Yüklenirken `GAME.loading = true`: UI `step()` dünyayı güncellemez/çizmez
+  (perde kapalı, yıldız döner). UI `travelTo`, kapı (`portal`) ve "Devam Et" (`GAME.continueGame({async:true})`) bunu kullanır;
+  `GAME.travelTo(i, {async:true})` Promise döner. `GAME.loadT` = son geçişin `[aşama, ms]` listesi (test).
+- Bölüm `kur(L, api)` bir üreteç döndürebilir (`function*` + `yield;`): her `yield` oda geçişinde ayrı kareye düşer (oturma, mutfak,
+  buzdolabı, pasta böyle). Uzun bir kur'u ~30 ms'lik parçalara böl.
+- Masa panel resimleri (`HUB.warm`) boşta aşama aşama hazırlanır (kur · arka planda derle · doku yükle · çiz+oku+PNG; adım başına bir kare).
+- Ölçüm: long-animation-frame gözlemcisinde `e.scripts` DONDURULMUŞ dizidir; `.sort()` için önce `.slice()` (yoksa
+  "Cannot assign to read only property '0'" hatası ölçüm betiğinden gelir, oyundan değil).
+
 ### QA
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
 cheerAll(), hurt(n), down(), info() }`. Python: `scratchpad/qa/hala_qa.py` (sınıf `Hala`, kullanım dosyanın başında), duman testi `hala_smoke.py`.

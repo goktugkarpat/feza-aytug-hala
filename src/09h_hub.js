@@ -84,26 +84,59 @@ const HUB = (() => {
     return THS;
   }
   // build() → Object3D (ya da {root, dispose}); o.dir: bakış yönü [x,y,z]
+  // thumb(): hepsi bir kerede (panel açıkken eksik kalan resim). thumbSteps(): aynı iş, aşamalara bölünmüş (boşta ısınma:
+  // kur → gölgelendiriciyi arka planda derle → çiz/oku/PNG — her biri ayrı kare, oyun takılmasın).
+  let CAP = null;   // warm(): img*() çağrıları çizmek yerine işi buraya yazar
   function thumb(key, build, o = {}) {
     if (key in TH) return TH[key];
-    TH[key] = null;
-    if (typeof renderer === 'undefined' || !renderer || !renderer.readRenderTargetPixels) return null;
+    if (CAP) { CAP.push([key, build, o]); return 'yakinda'; }
+    const it = thumbSteps(key, build, o, false);
+    let r; while (!(r = it.next()).done) { /* tek seferde */ }
+    return r.value;
+  }
+  function* thumbSteps(key, build, o = {}, async = true) {
+    if (key in TH) return TH[key];
+    if (typeof renderer === 'undefined' || !renderer || !renderer.readRenderTargetPixels) { TH[key] = null; return null; }
     const N = o.n || 192, T = thumbScene();
-    let obj = null, disp = null;
-    const prevRT = renderer.getRenderTarget(), prevCol = renderer.getClearColor(new THREE.Color()), prevA = renderer.getClearAlpha();
-    const rt = new THREE.WebGLRenderTarget(N, N, { samples: 4, colorSpace: THREE.SRGBColorSpace, depthBuffer: true });
+    let obj = null, disp = null, rt = null;
     try {
-      const b = build(); if (!b) return null;
+      const b = build(); if (!b) { TH[key] = null; return null; }
       obj = b.isObject3D ? b : b.root; disp = b.dispose || null;
       obj.traverse(x => { if (x.isMesh) x.frustumCulled = false; });
       T.sc.add(obj); obj.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(obj); if (box.isEmpty()) return null;
+      const box = new THREE.Box3().setFromObject(obj); if (box.isEmpty()) { TH[key] = null; return null; }
       const sph = box.getBoundingSphere(new THREE.Sphere()), dir = new THREE.Vector3(...(o.dir || [0.35, 0.42, 1])).normalize();
       const cam = T.cam, dist = sph.radius * (o.zoom || 1.08) / Math.sin(cam.fov * Math.PI / 360);
       cam.position.copy(sph.center).addScaledVector(dir, dist); cam.near = dist * 0.2; cam.far = dist * 4; cam.updateProjectionMatrix(); cam.lookAt(sph.center);
-      renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(true, true, true);
-      renderer.render(T.sc, cam);
-      const buf = new Uint8Array(N * N * 4); renderer.readRenderTargetPixels(rt, 0, 0, N, N, buf);
+      if (async) {
+        yield 'kur';
+        if (renderer.compileAsync) {   // resmin kendi hedefine bağlıyken derle (çıktı renk uzayı aynı program olsun)
+          rt = new THREE.WebGLRenderTarget(N, N, { samples: 4, colorSpace: THREE.SRGBColorSpace, depthBuffer: true });
+          const prev = renderer.getRenderTarget(); let p = null;
+          try { renderer.setRenderTarget(rt); p = renderer.compileAsync(T.sc, cam); } catch (e) { /* yok */ } finally { renderer.setRenderTarget(prev); }
+          if (p) yield p;
+        }
+        yield 'derle';
+        if (renderer.initTexture) {   // dokular ekran kartına (ilk çizimde yüklenmesin)
+          const seen = new Set();
+          obj.traverse(x => { const ms = x.material ? (Array.isArray(x.material) ? x.material : [x.material]) : [];
+            const up = t => { if (t && t.isTexture && !seen.has(t)) { seen.add(t); try { renderer.initTexture(t); } catch (e) { /* yok */ } } };
+            for (const m of ms) {
+              for (const k in m) up(m[k]);
+              for (const U of [m.uniforms, m.userData && m.userData.u, m.userData && m.userData.ok]) if (U) for (const k in U) up(U[k] && U[k].value);
+            } });
+          yield 'doku';
+        }
+        if (key in TH) return TH[key];   // bu arada panel kendisi çizdi
+      }
+      const prevRT = renderer.getRenderTarget(), prevCol = renderer.getClearColor(new THREE.Color()), prevA = renderer.getClearAlpha();
+      if (!rt) rt = new THREE.WebGLRenderTarget(N, N, { samples: 4, colorSpace: THREE.SRGBColorSpace, depthBuffer: true });
+      const buf = new Uint8Array(N * N * 4);
+      try {
+        renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(true, true, true);
+        renderer.render(T.sc, cam);
+        renderer.readRenderTargetPixels(rt, 0, 0, N, N, buf);
+      } finally { try { renderer.setRenderTarget(prevRT); renderer.setClearColor(prevCol, prevA); } catch (e) { /* yok */ } }
       const c = document.createElement('canvas'); c.width = c.height = N;
       const g = c.getContext('2d'), img = g.createImageData(N, N), d = img.data;
       let cover = 0;
@@ -111,13 +144,12 @@ const HUB = (() => {
         const s = ((N - 1 - y) * N + x) * 4, t = (y * N + x) * 4, a = buf[s + 3], k = a > 0 && a < 255 ? 255 / a : 1;
         d[t] = Math.min(255, buf[s] * k); d[t + 1] = Math.min(255, buf[s + 1] * k); d[t + 2] = Math.min(255, buf[s + 2] * k); d[t + 3] = a; cover += a;
       }
-      if (cover < N * N * 255 * 0.02) return null;
+      if (cover < N * N * 255 * 0.02) { TH[key] = null; return null; }
       g.putImageData(img, 0, 0);
       return (TH[key] = c.toDataURL('image/png'));
-    } catch (e) { console.warn('[HUB] thumb ' + key, e); return null; }
+    } catch (e) { console.warn('[HUB] thumb ' + key, e); TH[key] = null; return null; }
     finally {
-      try { renderer.setRenderTarget(prevRT); renderer.setClearColor(prevCol, prevA); } catch (e) { /* yok */ }
-      rt.dispose();
+      if (rt) rt.dispose();
       if (obj) { T.sc.remove(obj); if (disp) try { disp(); } catch (e) { /* yok */ } else obj.traverse(x => { if (x.geometry && !x.geometry.userData.keep && !x.geometry.userData.cached) x.geometry.dispose(); if (x.material && !x.material.userData.keep) x.material.dispose(); }); }
     }
   }
@@ -705,20 +737,41 @@ const HUB = (() => {
       },
     };
   }
-  // ── Küçük resimleri boşta önceden hazırla (ilk panel açılışı takılmasın): masada, oyun akarken, 150 ms'de bir ──
+  // ── Küçük resimleri boşta önceden hazırla (ilk panel açılışı takılmasın): masada, oyun akarken. Her resim aşamalara bölünür
+  // (model kur · gölgelendirici arka planda derlenir · çiz+oku+PNG); adımlar arasında ~80 ms, kare başına en çok bir adım. ──
   let warmQ = null;
+  const WT = [];   // [resim, aşama, ms] (test)
   function warm() {
     if (warmQ) return;
     warmQ = [].concat(CAKE.ORDER.map(id => () => imgSus(id)), kostumListe().map(k => () => imgKostum(k.id)), aksListe().map(k => () => imgAks(k.id)),
       Object.keys(KAYIP_MODEL).map(id => () => imgKayip(id)));
     const P = PP(); for (const id in P.cikartmalar || {}) if (P.cikartmalar[id].tur !== 'gizli') warmQ.push(() => imgHuysuz(id));
+    let jobs = [], cur = null, waiting = false;
     const tick = () => {
       const g = Gm();
-      if (!warmQ.length) { warmQ = null; return; }
-      if (g && g.state === 'play' && !S.cur && g.P.zone === 0) { const f = warmQ.shift(); try { f(); } catch (e) { /* yok */ } }
-      setTimeout(tick, 150);
+      if (!cur && !jobs.length && !warmQ.length) { warmQ = null; return; }
+      if (!waiting && g && g.state === 'play' && !g.loading && !g.paused && !S.cur && g.P.zone === 0) {
+        if (!cur && !jobs.length) { const f = warmQ.shift(); CAP = []; try { f(); } catch (e) { /* yok */ } jobs = CAP; CAP = null; }
+        if (!cur && jobs.length) { const j = jobs.shift(); cur = thumbSteps(j[0], j[1], j[2], true); cur.key = j[0]; }
+        if (cur) {
+          let r = null; const t0 = performance.now();
+          try { r = cur.next(); } catch (e) { r = { done: true }; }
+          WT.push([cur.key, r.done ? 'ciz' : typeof r.value === 'string' ? r.value : 'derle', Math.round(performance.now() - t0)]);
+          if (r.done) cur = null;
+          else if (r.value && typeof r.value.then === 'function') { waiting = true; r.value.then(() => { waiting = false; }, () => { waiting = false; }); }
+        }
+      }
+      setTimeout(() => requestAnimationFrame(tick), 80);
     };
-    setTimeout(tick, 150);
+    setTimeout(tick, 400);
+  }
+  // Masaya girerken (yükleme perdesi arkasında, 07 loadSteps): Feza'nın ve Bilbo'nun ilk resmi. Bu ikisinin ilk çizimi pahalı
+  // (gölgelendiricilerin ekran kartında ilk kez kurulması); sonraki kostüm/aksesuar resimleri boşta birkaç ms sürer.
+  function* warmSteps(async = true) {
+    for (const f of [() => imgKostum(null), () => imgAks(null)]) {
+      CAP = []; try { f(); } catch (e) { /* yok */ } const js = CAP; CAP = null;
+      for (const j of js) yield* thumbSteps(j[0], j[1], j[2], async);
+    }
   }
   // ── Giriş noktası (UI 'station') ──
   const OPEN = { pasta: openPasta, gardirop: openGardirop, bilbo: openBilbo, album: () => openAlbum(), mini: openMini, surpriz: openSurpriz };
@@ -751,6 +804,6 @@ const HUB = (() => {
     const f = OPEN[id]; if (!f) return;
     try { f(st); } catch (e) { console.warn('[HUB] open ' + id, e); close(true); }
   }
-  return { open, close, say, warm, KOSTUM, AKSESUAR, CIKARTMA, ODALAR, thumb, imgSus, imgHuysuz, imgKostum, imgAks, imgKayip,
+  return { open, close, say, warm, warmSteps, warmT: WT, KOSTUM, AKSESUAR, CIKARTMA, ODALAR, thumb, imgSus, imgHuysuz, imgKostum, imgAks, imgKayip,
     get current() { return S.cur ? S.cur.id : null; }, _S: S, _openAlbum: openAlbum };
 })();
