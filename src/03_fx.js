@@ -1313,14 +1313,14 @@ const FX = (() => {
     });
     return { obj: fxMesh(SLASH_GEO, mat, 22), mat, on: false, gen: 0, t: 0, dur: 0.22 };
   });
-  function slash(x, y, z, face, dir, color = '#fff', radius = 1.9, arc = 2.4) {
+  function slash(x, y, z, face, dir, color = '#fff', radius = 1.9, arc = 2.4, o) {
     if (!ready) init();
     dir = dir < 0 ? -1 : 1;
     const it = acquire('slash', 6), u = it.mat.uniforms, n = vivid(lin(color || '#9fe8ff'));
     u.uA0.value = -dir * arc / 2; u.uArc.value = dir * arc; u.uR1.value = radius; u.uR0.value = radius * 0.65;
     u.uCol.value.setRGB(n[0] * 0.9, n[1] * 0.9, n[2] * 0.9); u.uEdge.value.setRGB(n[0] * 1.8, n[1] * 1.8, n[2] * 1.8);
     u.uHead.value = 0; u.uFade.value = 1;
-    it.obj.position.set(x, y, z); it.obj.rotation.set(0, face, 0.26 * dir, 'YXZ');
+    it.obj.position.set(x, y, z); it.obj.rotation.set(0, face, (o && o.vertical ? 1.4 : 0.26) * dir, 'YXZ');   // o.vertical: yukarıdan aşağı büyük vuruş
     it.dur = 0.24; it.r = radius;
     it.colG = it.colG || [0, 0, 0]; it.colG[0] = n[0] * 2.4; it.colG[1] = n[1] * 2.4; it.colG[2] = n[2] * 2.4;
   }

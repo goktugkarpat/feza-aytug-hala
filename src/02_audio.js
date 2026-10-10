@@ -1309,6 +1309,8 @@ const AUD = (() => {
     return true;
   };
   A.sfx = sfx;
+  // Other modules may add a sound recipe: fn(audioContext, outNode, t, pitch) → length (s); played through A.sfx (same gating/volume).
+  A.defineSfx = (name, fn, vol) => { if (!SFX[name]) SFX[name] = (m, o, t, p) => fn(m.c, o, t, p); if (vol) SVOL[name] = vol; };
   A.setListener = (x, z) => { lx = x; lz = z; };
   A.music = function (name) {
     if (name && !THEMES[name]) { console.warn('AUD.music: unknown theme', name); return; }

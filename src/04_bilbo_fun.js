@@ -8,7 +8,7 @@ const BILBO_FUN = (() => {
   const ease = u => { u = clamp01(u); return u * u * (3 - 2 * u); };
   const dist = (ax, az, bx, bz) => Math.hypot(ax - bx, az - bz);
   const OUT = { x: 0, z: 0, face: 0, speed: 0, hop: 0 };
-  const RIDE = { mul: 1.6, mount: .32 };
+  const RIDE = { mul: 1.25, mount: .32 };   // 5.2 m/s × 1.25 ≈ 6.5 m/s
   const LOST = { notice: 7, calm: 5, sniff: 1.35, dig: 1.7, fly: .75, show: 2.6, giveUp: 7 };
   let ride = null, rideK = 0, lift = 0, lost = null, lastL = null, item = null, timers = [], happyAt = 0, happyOn = false;
   let prevX = 0, prevZ = 0, measured = 0, overriding = false, lastFace = 0, hooked = false, lastC = null;
@@ -339,21 +339,72 @@ const BILBO_FUN = (() => {
     return g;
   }
 
+  // ── Hapşırma sesi: WebAudio ile sentezlenir, AUD.sfx üzerinden çalar (?sessiz / ses kapalıyken hiç çalmaz) ──
+  const noiseBufs = new WeakMap();
+  function noiseBuf(c) {
+    let b = noiseBufs.get(c);
+    if (!b) { b = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; noiseBufs.set(c, b); }
+    return b;
+  }
+  function env(c, o, t, a, hold, rel, vol) {
+    const g = c.createGain(); g.gain.setValueAtTime(.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + a); g.gain.setValueAtTime(vol, t + a + hold);
+    g.gain.exponentialRampToValueAtTime(.0001, t + a + hold + rel); g.connect(o); return g;
+  }
+  // Breathy noise through a band-pass whose centre glides (f0 → f1): the "h", "ş" and the whoosh of air.
+  function hiss(c, o, t, dur, vol, type, f0, f1, q) {
+    const s = c.createBufferSource(); s.buffer = noiseBuf(c);
+    const f = c.createBiquadFilter(); f.type = type; f.Q.value = q || 1;
+    f.frequency.setValueAtTime(f0, t); f.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const g = env(c, o, t, Math.min(.03, dur * .3), dur * .25, dur * .7, vol);
+    s.connect(f); f.connect(g); s.start(t, Math.random() * .5); s.stop(t + dur + .05);
+    s.onended = () => { try { s.disconnect(); f.disconnect(); g.disconnect(); } catch (e) { /* gone */ } };
+  }
+  // A little cartoon voice: a buzzy tone through a vowel formant, pitch gliding f0 → f1.
+  function voice(c, o, t, dur, vol, f0, f1, formant) {
+    const s = c.createOscillator(); s.type = 'sawtooth';
+    s.frequency.setValueAtTime(f0, t); s.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = formant; f.Q.value = 2.2;
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = formant * 2.2;
+    const g = env(c, o, t, .02, dur * .35, dur * .6, vol);
+    s.connect(f); f.connect(lp); lp.connect(g); s.start(t); s.stop(t + dur + .05);
+    s.onended = () => { try { s.disconnect(); f.disconnect(); lp.disconnect(); g.disconnect(); } catch (e) { /* gone */ } };
+  }
+  if (typeof AUD !== 'undefined' && AUD && AUD.defineSfx) {
+    // "ha… ha…": two rising, breathy little inhales (they line up with the model's head bobs, 0.15 s and 0.55 s).
+    AUD.defineSfx('bilboHa', (c, o, t, p) => {
+      for (const [dt, k] of [[.12, 1], [.52, 1.18]]) {
+        hiss(c, o, t + dt, .30, .22 * k, 'bandpass', 900 * p, 1700 * p * k, 1.2);
+        voice(c, o, t + dt + .03, .26, .16 * k, 330 * p * k, 470 * p * k, 900);
+      }
+      return 1.0;
+    }, .9);
+    // "HAPŞU!": a puffed "hap" (pop + voice), a long fizzy "ş", a falling silly "u".
+    AUD.defineSfx('bilboHapsu', (c, o, t, p) => {
+      hiss(c, o, t, .07, .55, 'lowpass', 1800 * p, 600 * p, .7);
+      voice(c, o, t + .01, .13, .38, 560 * p, 430 * p, 950);
+      hiss(c, o, t + .12, .30, .45, 'highpass', 2600 * p, 4200 * p, .8);
+      voice(c, o, t + .30, .28, .26, 330 * p, 190 * p, 420);
+      return .7;
+    }, .8);
+  }
+
   // ── Hapşırma ──
   function sneeze(c) {
     const B = c && c.Bilbo;
     if (!B || !B.sneeze) return false;
     const ok = B.sneeze(p => achoo(c, p));
     if (!ok) return false;
-    sfx(c, 'sigh', { x: c.pos.x, z: c.pos.z, vol: .45, pitch: 1.6 });
-    later(c, .45, () => sfx(c, 'hiccup', { x: c.pos.x, z: c.pos.z, vol: .35, pitch: 1.5 }));
-    later(c, .8, () => sfx(c, 'hiccup', { x: c.pos.x, z: c.pos.z, vol: .45, pitch: 1.35 }));
+    const hasOwn = typeof AUD !== 'undefined' && AUD && AUD.defineSfx;
+    if (hasOwn) sfx(c, 'bilboHa', { x: c.pos.x, z: c.pos.z, vol: .9 });
+    else { sfx(c, 'sigh', { x: c.pos.x, z: c.pos.z, vol: .45, pitch: 1.6 }); later(c, .45, () => sfx(c, 'hiccup', { x: c.pos.x, z: c.pos.z, vol: .35, pitch: 1.5 })); }
     return true;
   }
   function achoo(c, p) {
     const B = c.Bilbo, f = B.root.rotation.y, dx = Math.sin(f), dz = Math.cos(f);
     const x = p.x + dx * .25, y = Math.max(.3, p.y), z = p.z + dz * .25;
-    sfx(c, 'whoosh', { x, z, vol: .9, pitch: .8 }); sfx(c, 'pop', { x, z, vol: .7, pitch: .7 }); sfx(c, 'squish', { x, z, vol: .4, pitch: 1.4 });
+    if (typeof AUD !== 'undefined' && AUD && AUD.defineSfx) sfx(c, 'bilboHapsu', { x, z, vol: 1 }); else sfx(c, 'pop', { x, z, vol: .7, pitch: .7 });
+    sfx(c, 'whoosh', { x, z, vol: .6, pitch: .8 }); sfx(c, 'squish', { x, z, vol: .3, pitch: 1.4 });
     burst(c, 'smoke', x + dx * .4, y, z + dz * .4, { count: 14, color: '#ffffff', scale: 1.3, dir: { x: dx, z: dz } });
     burst(c, 'confetti', x + dx * .6, y + .2, z + dz * .6, { count: 26 });
     burst(c, 'sparkle', x + dx * .8, y + .1, z + dz * .8, { count: 16 });

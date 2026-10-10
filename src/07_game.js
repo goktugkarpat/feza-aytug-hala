@@ -4738,6 +4738,11 @@ const GAME = (() => {
       }
     }
     hitBreakables(px + Math.sin(P.face) * 0.9, pz + Math.cos(P.face) * 0.9, reach * 0.75);
+    if (sw.big) {   // Dev Ev: seriyi bitiren büyük vuruş — zıplayıp yere iner, küçük yer dalgası
+      const gx = px + Math.sin(P.face) * 1.1, gz = pz + Math.cos(P.face) * 1.1;
+      fx('ring', gx, gz, { r0: 0.3, r1: 2.4, dur: 0.4, color: bladeColor(), width: 0.3 }); burst('dust', gx, 0.05, gz, { count: 10 });
+      if (!hits) shake(0.06);
+    }
     if (hits) {
       hitstop = Math.max(hitstop, crits ? 0.06 : 0.045);
       sfx(crits ? 'crit' : 'hit', { pitch: frand(0.92, 1.12) });
@@ -4945,7 +4950,7 @@ const GAME = (() => {
       if (!sw.magic && !sw.slash && k >= 0.2) {
         sw.slash = true;
         // a thin bright energy arc in the blade colour (FX reads the options; older FX just gets the colour)
-        fx('slash', P.pos.x, 0.8, P.pos.z, P.face, sw.dir, bladeColor(), sw.big ? 2.2 : 1.9, sw.big ? 2.9 : 2.4, { saber: true, energy: true, thin: true });
+        fx('slash', P.pos.x, sw.big ? 1.0 : 0.8, P.pos.z, P.face, sw.dir, bladeColor(), sw.big ? 2.2 : 1.9, sw.big ? 2.9 : 2.4, { saber: true, energy: true, thin: true, vertical: !!sw.big });   // Dev Ev: 3. vuruş yukarıdan aşağı
         R.pulse = Math.max(R.pulse || 0, sw.big ? 1 : 0.7);
       }
       if (!sw.hit && k >= T.hitAt) { sw.hit = true; swingHit(sw); }
@@ -6542,7 +6547,7 @@ const GAME = (() => {
     HST.hybrid = P.heroClass === 'hybrid'; HST.magicAttack = !!(C.swing && C.swing.magic);
     HST.move = clamp(C.vel / P.speed, 0, 1);
     HST.attack = C.swing && !C.swing.magic ? clamp(C.swing.t / C.swing.dur, 0, 1) : -1;
-    HST.swingDir = C.swing ? C.swing.dir : C.swingDir;
+    HST.swingDir = C.swing ? C.swing.dir : C.swingDir; HST.big = !!(C.swing && C.swing.big);
     HST.cast = C.swing && C.swing.magic ? clamp(C.swing.t / C.swing.dur, 0, 0.999) : castP >= 0 && castP < 1 ? castP : -1;
     HST.spin = P.spin > 0; HST.hurt = C.hurtT; HST.dead = P.dead; HST.cheer = C.cheerT > 0; HST.idleT = C.idleT;
     HST.sitRead = !!(GAME.state === 'title' && L && L.readingSpot);
@@ -6796,6 +6801,7 @@ const GAME = (() => {
   function teamMove() {
     if (GAME.state !== 'play' || P.dead || GAME.paused) return false;
     if (hala('teamReady') !== true) return false;
+    if (H && H.teamJump) { const hs = typeof HALA !== 'undefined' && HALA && HALA._S, side = hs && Number.isFinite(hs.x) ? Math.sign(Math.cos(P.face) * (hs.x - P.pos.x) - Math.sin(P.face) * (hs.z - P.pos.z)) || 1 : 1; try { H.teamJump(0.95, side); } catch (err) { warnOnce('teamJump', err); } }
     const r = hala('teamMove', { blast: teamBlast, P, H });
     if (r === undefined) teamBlast();
     emit('team', {});

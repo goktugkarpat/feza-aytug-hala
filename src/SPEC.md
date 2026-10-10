@@ -187,6 +187,12 @@ gizler (eşyanın gücü sürer). Kayıttan yüklenince `applyLooks()` (07_game)
 ara sıra sevinç, boss gelince kararlılık, eşya/kayıp eşya/malzeme/altın şekerde şaşkınlık → sevinç, seviye atlayınca göz kırpma, boştayken ara sıra göz kırpma.
 **Binme**: `H.update(dt, { …, ride: 0..1 })` → Bilbo'nun sırtında oturma pozu (bacaklar iki yana, eller öne, gövde öne eğik; vuruş yine yapılır).
 Oyun `H.root.position.y`'yi Bilbo'nun eyer yüksekliğine koyar; poz kasığı köke oturtur.
+**Dövüş**: seri 3 vuruş — sağdan, soldan, 3.'sü (`C.swing.big`, `HST.big`) iki elle yukarıdan aşağı: zıplar, iner, dikey iz (`FX.slash(..., {vertical:true})`) ve yerde küçük dalga + toz.
+Vuruş anında gövde öne atılır; oklava/kepçe gibi silahlar elde döner (`SPIN_W`); değnek sihri eski CAST pozu. Koşarken vuruş bacakları yumuşak karışır.
+**Takım Hamlesi (Feza tarafı)**: `H.teamJump(süre=0.95, taraf)` — çömelme, el ele zıplama (Hala tarafındaki el yana uzanır, öbür kol havada), iniş.
+`GAME.teamMove()` bunu kendisi çağırır (taraf: Hala Feza'nın solundaysa +1); HALA kendi zıplamasını aynı anda yapar (tekrar çağırmak zararsız).
+**Mutlu anlar**: Feza ~9 s boş kalınca sıradan kıpırtılar arasında Bilbo'yu sever (yakınsa; kalpler), sevinçle üç kez zıplar, Hala'ya dönüp el sallar,
+kılıcını başının üstünde döndürüp kahraman pozu verir (parıltı). Binerken Feza'nın x-ray gölgesi gizlenir.
 **Eşya setleri**: silah + şapka + pelerin aynı sete (`ITEMS.setOf(item)`, `ITEMS.SETS[set].renk`) aitse Feza'nın çevresinde setin renginde
 parıltılar döner (`H.setComplete` = set id), Hala `set_tamam` der. **Eşya kaydı** `ITEMS.register / paintCape / clearBases / setStarter / BOSS_GIFT / SETS / KIT`
 (ayrıntı: src/04_feza.js `const ITEMS` üstündeki açıklama; ev temalı eşyalar src/04_esyalar.js'de).
@@ -200,7 +206,7 @@ sit, happy 0..1 (hızlı mutlu kuyruk + arka sallama + dil dışarıda), sniff, 
 `sapka` (Parti Şapkası), `gozluk` (Havalı Gözlük), `pelerin` (Süper Pelerin, koşarken dalgalanır). Kemiklere bağlı küçük mesh'ler; ilk takılışta
 kurulur, saklanır. `GAME.setBilboAccessory(id)` takar; `bilboAcc` olayında Hala `bilbo_<id>` (yoksa `bilbo_aksesuar`) der.
 **Binme**: `GAME.rideBilbo(true, saniye=14)` / `GAME.rideBilbo(false)`. Bölüm tasarımcısı istasyonla başlatır:
-`L.stations.push({ id: 'binis1', kind: 'binis', x, z, r: 1.6, sure: 14 })`. Binerken `P.rideMul = 1.6` (hız), Feza saldırabilir; süre bitince,
+`L.stations.push({ id: 'binis1', kind: 'binis', x, z, r: 1.6, sure: 14 })`. Binerken `P.rideMul = 1.25` (≈ 6,5 m/s), Feza saldırabilir; süre bitince,
 bölüm değişince, Feza düşünce biter. Durum: `BILBO_FUN.riding`, `BILBO_FUN.rideLeft`. Sesler `bilbo_bin`, `bilbo_in`.
 **Kayıp eşya**: bölümün `kayipEsya`'sı (`gozluk`, `anahtar`, `toka`; başka id → hediye kutusu) için yer: `L.lostSpot = {x, z, id?}` (ya da
 `L.lostSpots[0]`; yerlesim'de verilebilir), yoksa ortadaki/sonraki bir ana odada (başlangıç ve boss arenası değil) otomatik seçilir. Merkezde (hub) ve
@@ -208,7 +214,7 @@ bölüm değişince, Feza düşünce biter. Durum: `BILBO_FUN.riding`, `BILBO_FU
 koklar, havlar, kazar (~4-5 s), eşya kavisle Feza'nın yanına düşer → `GAME.foundLostItem(id, bölüm)` (+ `STORY.lostItem`), Hala `bilbo_buldu_<id>`.
 Tehlike gelirse yarıda bırakır, sonra yeniden dener. Durum: `BILBO_FUN.lost` `{x, z, id, phase: wait|go|sniff|dig|pop|done}`.
 **Hapşırma**: `GAME.bilboSneeze()` (dünya efektleri: bulut + konfeti, küçük sarsıntı, öndeki boss olmayan huysuzlar geri savrulup 1,4 s sersemler,
-Hala `bilbo_hapsu`); yalnız görüntü için `GAME.Bilbo.sneeze()`. Hikâye sahneleri kullanabilir.
+Hala `bilbo_hapsu`; sesler `bilboHa` + `bilboHapsu`, WebAudio ile sentez, `AUD.defineSfx(ad, fn(ctx, out, t, pitch), vol)` ile kayıtlı); yalnız görüntü için `GAME.Bilbo.sneeze()`. Hikâye sahneleri kullanabilir.
 
 ### Eşyalar (src/04_esyalar.js)
 `ITEMS.clearBases()` ile eski ışın kılıcı/uzay eşyaları kaldırılır (eski kayıtlar `make` içinde LEGACY'den bulunur), yerine ev eşyaları

@@ -112,7 +112,7 @@ const BILBO = (() => {
       const b = joint(head, 'ear' + side, side * .268, .235, .015); part(b, side < 0 ? earL : earR, EAR); return { b, side, z: 0 };
     });
     const jaw = joint(head, 'jaw', 0, -.12, .26);
-    ell(jaw, 0x5b2a2d, [0, -.065, .20], [.178, .032, .17], wetMat);
+    ell(jaw, 0x7a3a40, [0, -.062, .205], [.150, .028, .158], wetMat);   // inside the mouth, tucked inside the lower lip
     ell(jaw, MUZZLE, [0, -.093, .19], [.195, .055, .177]);
     const tongue = joint(jaw, 'tongue', 0, -.060, .25);
     small(tongue, 0xe07c86, [0, 0, .095], [.068, .020, .13]);
@@ -487,35 +487,37 @@ const BILBO = (() => {
         return { g };
       },
       pelerin() {
-        const g = new THREE.Group(); g.position.set(0, 1.16, .30); body.add(g);   // pivot over the shoulders
-        const red = std(0xe2343f, { roughness: .62, side: THREE.DoubleSide });
-        // Cape draped over the back: v runs neck → tail, u wraps down both flanks (just outside the trunk's ellipse).
-        const geo = own(new THREE.PlaneGeometry(1, 1, 12, 14)), p = geo.attributes.position;
-        for (let i = 0; i < p.count; i++) {
-          const u = p.getX(i) + .5, v = .5 - p.getY(i), z = .30 - v * .76;
-          const rx = .39 + .07 * v * v, ry = .40 - .01 * v, cy = .80 - .03 * v;
-          const ang = (u * 2 - 1) * (.62 + .55 * v) * (1 - .2 * (1 - v));
-          p.setXYZ(i, Math.sin(ang) * rx, cy + Math.cos(ang) * ry - 1.16 + .012 * Math.cos(u * Math.PI * 6) * v, z - .30);
-        }
+        const g = new THREE.Group(); g.position.set(0, 1.16, .24); body.add(g);   // pivot over the shoulders
+        const red = std(0xe2343f, { roughness: .6, side: THREE.DoubleSide });
+        // Cape surface: v runs shoulders → rump, u wraps down both flanks just outside the trunk; soft folds deepen toward the hem.
+        const L = .70;
+        const surf = (u, v, out, lift) => {
+          const ang = (u * 2 - 1) * (.70 + .50 * v) * (1 - .15 * (1 - v));
+          const fold = 1 + (.035 * Math.sin(u * Math.PI * 8 + .4) * v * v) + (out || 0);
+          const rx = (.385 + .07 * v * v) * fold, ry = (.405 - .01 * v) * fold, cy = .80 - .03 * v;
+          const hem = v > .999 ? .035 * Math.max(0, Math.cos(u * Math.PI * 8 + .4)) : 0;   // gently scalloped hem
+          return new THREE.Vector3(Math.sin(ang) * rx, cy + Math.cos(ang) * ry - 1.16 + (lift || 0) - hem * Math.abs(Math.sin(ang)), -v * L);
+        };
+        const geo = own(new THREE.PlaneGeometry(1, 1, 24, 14)), p = geo.attributes.position;
+        for (let i = 0; i < p.count; i++) { const q = surf(p.getX(i) + .5, .5 - p.getY(i)); p.setXYZ(i, q.x, q.y, q.z); }
         geo.computeVertexNormals();
         const cape = new THREE.Group(); g.add(cape);
         add(cape, geo, red);
-        // Golden trim along the neck edge and the hem (same formula as the cloth, a hair outside it).
-        const trim = std(0xffc93c, { roughness: .4, metalness: .3, emissive: 0x6b4a00, emissiveIntensity: .25 });
+        // Golden trim along the shoulder edge and the hem (a hair outside the cloth so it always shows).
+        const trim = std(0xffc93c, { roughness: .35, metalness: .35, emissive: 0x7a5200, emissiveIntensity: .35 });
         for (const v of [0, 1]) {
           const pts = [];
-          for (let k = 0; k <= 10; k++) {
-            const u = k / 10, ang = (u * 2 - 1) * (.62 + .55 * v) * (1 - .2 * (1 - v));
-            const rx = (.39 + .07 * v * v) * 1.015, ry = (.40 - .01 * v) * 1.015, cy = .80 - .03 * v;
-            pts.push(new THREE.Vector3(Math.sin(ang) * rx, cy + Math.cos(ang) * ry - 1.16, -v * .76));
-          }
-          add(cape, own(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 20, .018, 6, false)), trim);
+          for (let k = 0; k <= 24; k++) pts.push(surf(k / 24, v, .03, .006));
+          add(cape, own(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 40, .021, 6, false)), trim);
         }
-        // Yellow star emblem on the back.
-        add(cape, own(new THREE.ShapeGeometry(starShape(.085, .038))),
-          std(0xffd23a, { roughness: .5, emissive: 0x6b4a00, emissiveIntensity: .3, side: THREE.DoubleSide }), [0, .03, -.40], null, [-Math.PI / 2 + .04, 0, 0]);
-        // Gold clasp at the neck.
-        add(g, sph, std(0xffc53d, { metalness: .5, roughness: .3 }), [0, -.005, .01], [.045, .045, .03]);
+        // Big yellow star with a white outline on the middle of the back.
+        const mid = surf(.5, .48, .02, .01);
+        const starG = new THREE.Group(); starG.position.copy(mid); starG.rotation.x = -Math.PI / 2 + .03; cape.add(starG);
+        add(starG, own(new THREE.ShapeGeometry(starShape(.135, .062))), std(0xffffff, { roughness: .6, side: THREE.DoubleSide }), [0, 0, -.002]);
+        add(starG, own(new THREE.ShapeGeometry(starShape(.11, .05))),
+          std(0xffd23a, { roughness: .45, emissive: 0x8a6000, emissiveIntensity: .45, side: THREE.DoubleSide }), [0, 0, .004]);
+        // Gold clasp at the shoulders.
+        add(g, sph, trim, [0, .02, .01], [.05, .05, .035]);
         return { g, cape };
       },
     };
