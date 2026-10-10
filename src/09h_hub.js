@@ -16,7 +16,7 @@ const HUB = (() => {
   const said = {};
   function say(key, prio = 3) {
     if (typeof AUD === 'undefined' || !AUD.LINES || !AUD.LINES[key] || !AUD.say) return 0;
-    try { return AUD.say(key, { prio, interrupt: prio >= 4 }) || 0; } catch (e) { return 0; }
+    try { return AUD.say(key, { prio, interrupt: prio >= 4 || !!S.cur }) || 0; } catch (e) { return 0; }   // panel açıkken eski cümle beklemez
   }
   function sayOnce(key, prio) { if (said[key]) return 0; said[key] = 1; return say(key, prio); }
   let praiseN = 0, lastPraise = '';
@@ -50,9 +50,21 @@ const HUB = (() => {
     { id: 'mutfak', ad: 'Mutfak', ikon: '🍳', renk: '#f0b45a' },
     { id: 'buzdolabi', ad: 'Buzdolabı', ikon: '🧊', renk: '#7fcbe8' },
     { id: 'pasta', ad: 'Pasta Krallığı', ikon: '🎂', renk: '#f28fb4' },
+    { id: 'balkon', ad: 'Balkon Bahçesi', ikon: '🌻', renk: '#7fcf6a', opt: true },
   ];
-  const KAYIP = { gozluk: 'Aytuğ Hala’nın Gözlüğü', anahtar: 'Aytuğ Hala’nın Anahtarı', toka: 'Aytuğ Hala’nın Tokası' };
+  const odalar = () => ODALAR.filter(o => !o.opt || (typeof ZONE_DEFS !== 'undefined' && ZONE_DEFS[o.id]));
+  const KAYIP = { gozluk: 'Aytuğ Hala’nın Gözlüğü', anahtar: 'Aytuğ Hala’nın Anahtarı', toka: 'Aytuğ Hala’nın Tokası', telefon: 'Aytuğ Hala’nın Telefonu' };
+  const KAYIP_IKON = { gozluk: '👓', anahtar: '🔑', toka: '🎀', telefon: '📱' };
   // Gizli / sürpriz çıkartmaları: {id: {ad, ikon}} (bölüm ajanları HUB.CIKARTMA[id] = {ad, ikon} ile ekleyebilir)
+  // Odaların gizli çıkartmaları (bölüm ajanlarının verdiği id'ler; albümde sayfasında adlı/simgeli boş yuva olarak durur)
+  const GIZLI = {
+    oturma: { oturma_hazine: ['Halı Hazinesi', '💰'], oturma_tv: ['Çizgi Film Televizyonu', '📺'], oturma_domino: ['Domino Kitaplar', '📚'], oturma_kaset: ['Uzayan Kaset', '📼'], oturma_bilbo: ['Bilbo Koşusu', '🐕'] },
+    mutfak: { mutfak_hazine: ['Kurabiye Hazinesi', '🍪'], mutfak_sunger: ['Zıplayan Sünger', '🧽'], mutfak_tereyag: ['Tereyağı Kaydırağı', '🧈'], mutfak_un: ['Un Dağı', '🏔️'],
+      mutfak_musluk: ['Musluk Oyunu', '🚰'], mutfak_tekne: ['Kap Tekne', '⛵'], mutfak_kapak: ['Tencere Kapakları', '🥁'], mutfak_baharat: ['Baharat Kuleleri', '🧂'], mutfak_kavanoz: ['Şeker Kavanozu', '🍬'] },
+    buzdolabi: { gizli_jole_altin: ['Altın Jöle', '🟨'], gizli_buz_iglo: ['Buz Evi', '🛖'], gizli_buzdolabi_isigi: ['Buzdolabı Işığı', '💡'], gizli_buz_canlari: ['Buz Çanları', '🔔'], gizli_dondurma_kaydiragi: ['Dondurma Kaydırağı', '🍦'] },
+    pasta: { gizli_krema_sal: ['Krema Salı', '🛶'], gizli_krema_torbasi: ['Krema Torbası', '🎂'], gizli_lolipop_fener: ['Lolipop Fener', '🍭'], gizli_kurabiye_ev: ['Kurabiye Ev', '🏠'], gizli_seker_mum: ['Şeker Mum', '🕯️'], gizli_pamuk_altin: ['Altın Pamuk Şeker', '☁️'] },
+    balkon: { balkon_bahce: ['Balkon Bahçesi', '🌻'] },
+  };
   const CIKARTMA = {
     surpriz_gokkusagi: { ad: 'Gökkuşağı', ikon: '🌈' }, surpriz_yildiz: { ad: 'Parlak Yıldız', ikon: '🌟' }, surpriz_kalp: { ad: 'Kocaman Kalp', ikon: '💖' },
     surpriz_yunikorn: { ad: 'Yunikorn', ikon: '🦄' }, surpriz_roket: { ad: 'Roket', ikon: '🚀' }, surpriz_cicek: { ad: 'Ayçiçeği', ikon: '🌻' },
@@ -301,22 +313,44 @@ const HUB = (() => {
     sayOnce('bilbo_tanit', 3);
   }
   // ── Çıkartma Albümü ──
+  // Huysuz türlerinin hangi odaya ait olduğu: oda listesi (normal + elit + boss + bossun çağırdığı minikler); kalanlar Sürprizler sayfasında
+  function huysuzOdasi() {
+    const map = {};
+    if (typeof HUYSUZ === 'undefined' || !HUYSUZ.forZone) return map;
+    for (const o of odalar()) {
+      const H = HUYSUZ.forZone(o.id); if (!H) continue;
+      for (const t in H.enemies || {}) map[t] = map[t] || o.id;
+      for (const t of H.elites || []) map[t] = map[t] || o.id;
+      if (H.boss) { map[H.boss] = o.id; const bd = HUYSUZ.get(H.boss), add = bd && bd.bossKit && bd.bossKit.add; if (add && !map[add]) map[add] = o.id; }
+    }
+    return map;
+  }
   function albumSayfa(z) {
-    const P = PP(), C = P.cikartmalar || {}, out = [];
-    const H = typeof HUYSUZ !== 'undefined' && HUYSUZ.forZone ? HUYSUZ.forZone(z.id) : null;
-    if (H && H.enemies) for (const t in H.enemies) { const d = HUYSUZ.get && HUYSUZ.get(t); out.push({ id: t, tur: 'huysuz', ad: (d && d.ad) || tr(t), have: !!C[t] }); }
+    const P = PP(), C = P.cikartmalar || {}, out = [], map = huysuzOdasi();
+    const H = typeof HUYSUZ !== 'undefined' && HUYSUZ.forZone ? HUYSUZ.forZone(z.id) : null, eli = new Set((H && H.elites) || []);
+    const ids = Object.keys(map).filter(t => map[t] === z.id && !(H && H.boss === t));
+    for (const t of ids) { const d = HUYSUZ.get && HUYSUZ.get(t); out.push({ id: t, tur: 'huysuz', ad: (d && d.ad) || tr(t), have: !!C[t], etiket: d && (d.nadir || /altin/i.test(t)) ? '✨' : eli.has(t) ? '⭐' : null }); }
     if (H && H.boss) { const d = HUYSUZ.get && HUYSUZ.get(H.boss); out.push({ id: H.boss, tur: 'boss', ad: (d && d.ad) || tr(H.boss), have: !!C[H.boss], big: true }); }
     const zd = typeof ZONE_DEFS !== 'undefined' && ZONE_DEFS[z.id], ky = zd && zd.kayipEsya;
-    if (ky) out.push({ id: 'kayip_' + ky, kayip: ky, tur: 'kayip', ad: KAYIP[ky] || tr(ky), have: !!(P.kayipEsyalar && P.kayipEsyalar[z.id]) });
-    let gz = 0;
-    for (const id in C) { const c = C[id]; if (c && c.tur === 'gizli' && c.bolum === z.id && !out.some(o => o.id === id)) { out.push({ id, tur: 'gizli', ad: (CIKARTMA[id] && CIKARTMA[id].ad) || tr(id), ikon: CIKARTMA[id] && CIKARTMA[id].ikon, have: true }); gz++; } }
-    for (let i = gz; i < 2; i++) out.push({ id: '?' + i, tur: 'gizli', ad: 'Gizli', ikon: '❓', have: false });
+    if (ky) out.push({ id: 'kayip_' + ky, kayip: ky, tur: 'kayip', ad: KAYIP[ky] || tr(ky), ikon: KAYIP_IKON[ky], have: !!(P.kayipEsyalar && P.kayipEsyalar[z.id]) });
+    const GZ = GIZLI[z.id] || {};
+    for (const id in GZ) out.push({ id, tur: 'gizli', ad: GZ[id][0], ikon: GZ[id][1], have: !!C[id] });
+    for (const id in C) { const c = C[id]; if (c && c.tur === 'gizli' && c.bolum === z.id && !out.some(o => o.id === id) && !/^mini_/.test(id)) out.push({ id, tur: 'gizli', ad: (CIKARTMA[id] && CIKARTMA[id].ad) || tr(id), ikon: (CIKARTMA[id] && CIKARTMA[id].ikon) || '⭐', have: true }); }
     return out;
   }
-  function albumOzel() {   // Günün Sürprizi ve masadan gelen çıkartmalar (bölümü olmayanlar)
-    const P = PP(), C = P.cikartmalar || {}, out = [];
-    for (const id in CIKARTMA) out.push({ id, tur: 'gizli', ad: CIKARTMA[id].ad, ikon: CIKARTMA[id].ikon, have: !!C[id] });
-    for (const id in C) if (!(id in CIKARTMA) && C[id] && (C[id].bolum === 'masa' || !ODALAR.some(o => o.id === C[id].bolum))) out.push({ id, tur: 'gizli', ad: tr(id), ikon: '⭐', have: true });
+  function albumOzel() {   // Günün Sürprizi, mini oyun ve odası olmayan çıkartmalar
+    const P = PP(), C = P.cikartmalar || {}, out = [], map = huysuzOdasi(), known = new Set();
+    for (const z in GIZLI) for (const id in GIZLI[z]) known.add(id);
+    for (const id in CIKARTMA) { out.push({ id, tur: 'gizli', ad: CIKARTMA[id].ad, ikon: CIKARTMA[id].ikon, have: !!C[id] }); known.add(id); }
+    const ml = typeof MINIGAME !== 'undefined' ? MINIGAME.list() : [];
+    for (const m of ml) { const d = MINIGAME.get(m) || {}, id = 'mini_' + m; known.add(id); out.push({ id, tur: 'gizli', ad: d.ad || tr(m), ikon: MINI_IKON[m] || '🎮', have: !!C[id] }); }
+    for (const id in C) {
+      if (known.has(id) || map[id]) continue;
+      const c = C[id] || {};
+      if (c.tur === 'huysuz' || c.tur === 'boss') { const d = HUYSUZ.get && HUYSUZ.get(id); out.push({ id, tur: c.tur, ad: (d && d.ad) || tr(id), have: true }); continue; }
+      if (c.tur === 'gizli' && odalar().some(o => o.id === c.bolum)) continue;   // (odasının sayfasında)
+      out.push({ id, tur: 'gizli', ad: tr(id), ikon: '⭐', have: true });
+    }
     return out;
   }
   function seenInit() { if (S.seen) return; S.seen = new Set(Object.keys(PP().cikartmalar || {})); }
@@ -325,7 +359,7 @@ const HUB = (() => {
     const { body, card } = panel('album', 'Çıkartma Albümü', '📒', '#3a7fd8');
     const tabs = el('div', 'hb-tabs', body), page = el('div', 'hb-page', body);
     const P = PP();
-    const pages = ODALAR.map(o => ({ o, list: () => albumSayfa(o) })).concat([{ o: { id: 'ozel', ad: 'Sürprizler', ikon: '🎁', renk: '#ffb36b' }, list: albumOzel }]);
+    const pages = odalar().map(o => ({ o, list: () => albumSayfa(o) })).concat([{ o: { id: 'ozel', ad: 'Sürprizler', ikon: '🎁', renk: '#ffb36b' }, list: albumOzel }]);
     let cur = Math.max(0, Math.min(pages.length - 1, sayfa | 0));
     const show = i => {
       cur = i; tabs.querySelectorAll('button').forEach((b, k) => b.classList.toggle('on', k === i));
@@ -344,9 +378,11 @@ const HUB = (() => {
         if (s.have) { if (img) { const im = el('img', '', pic); im.src = img; im.draggable = false; } else el('div', 'hb-emo', pic, s.ikon || (s.tur === 'boss' ? '👑' : '⭐')); }
         else {   // gri siluet: kazanılmamış
           const sil = s.tur === 'huysuz' || s.tur === 'boss' ? imgHuysuzSil(s.id) : s.tur === 'kayip' ? imgKayip(s.kayip) : null;
-          if (sil) { const im = el('img', 'sil', pic); im.src = sil; im.draggable = false; } else el('div', 'hb-emo sil', pic, '❓');
+          if (sil) { const im = el('img', 'sil', pic); im.src = sil; im.draggable = false; } else el('div', 'hb-emo sil', pic, s.ikon || '❓');
         }
         if (s.tur === 'boss') el('div', 'hb-crown', b, '👑');
+        if (s.etiket) el('div', 'hb-etiket', b, s.etiket);
+        el('div', 'hb-sname', b, s.have ? s.ad : '');
         if (isNew) { b.classList.add('yeni'); el('div', 'hb-new', b, '✨'); newAny = true; }
         b.addEventListener('click', () => zoom(s, b, img));
       });
@@ -383,7 +419,8 @@ const HUB = (() => {
     if (d && Array.isArray(d.yildizlar)) return d.yildizlar.filter(v => best >= v).length;
     return best <= 0 ? 0 : best < 10 ? 1 : best < 20 ? 2 : 3;
   }
-  const MINI_IKON = { sekerYakala: '🍬', tencereMuzik: '🥁', buzPateni: '⛸️', balonPatlat: '🎈', kekSusle: '🧁', cicekSula: '🌷' };
+  const MINI_IKON = { sekerYakala: '🍬', tencereMuzik: '🍳', buzPateni: '⛸️', balonPatlat: '🎈', kekSusle: '🧁', cicekSula: '🌷' };
+  const MINI_IKON2 = { sekerYakala: '🧺', tencereMuzik: '🎵', buzPateni: '❄️', balonPatlat: '💥', kekSusle: '🍓', cicekSula: '💧' };
   const MINI_RENK = { sekerYakala: '#ffd6e8', tencereMuzik: '#ffe6b8', buzPateni: '#d6f0ff', balonPatlat: '#ffe0d0', kekSusle: '#f8dcff', cicekSula: '#d8f5d0' };
   function openMini() {
     const { body } = panel('mini', 'Mini Oyunlar', '🎲', '#5ac88a');
@@ -400,6 +437,7 @@ const HUB = (() => {
         setTimeout(() => { if (typeof MINIGAME !== 'undefined') MINIGAME.start(id, { from: 'hub' }); }, 280);
       } });
       if (r && r.kez) el('div', 'hb-best', t, '🏆 ' + (r.enIyi | 0));
+      if (!d.resim && MINI_IKON2[id]) el('div', 'hb-emo2', t.querySelector('.hb-pic'), MINI_IKON2[id]);
     }
     if (!ids.length) el('div', 'hb-empty', grid, '🎲');
     if (!sayOnce('mini_tanit', 3) && !any) say('mini_kilit', 3);
@@ -684,7 +722,27 @@ const HUB = (() => {
   }
   // ── Giriş noktası (UI 'station') ──
   const OPEN = { pasta: openPasta, gardirop: openGardirop, bilbo: openBilbo, album: () => openAlbum(), mini: openMini, surpriz: openSurpriz };
+  // İstemeden açılmasın: Feza istasyonda ~0,6 s durunca açılır (içinden geçip gidince açılmaz). HUB.open(id) (istasyonsuz) hemen açar.
+  let pend = null;
   function open(id, st) {
+    if (st && st.x != null && !st.now) {
+      const g = Gm(); if (!g) return;
+      pend = { id, st, t0: g.time || 0 };
+      const tick = () => {
+        const q = pend; if (!q || q.st !== st) return;
+        const G2 = Gm(), P = G2.P, r = (st.r || 1.6) + 0.3;
+        if (G2.state !== 'play' || P.dead || Math.hypot(P.pos.x - st.x, P.pos.z - st.z) > r) { pend = null; return; }
+        if (q.px != null && Math.hypot(P.pos.x - q.px, P.pos.z - q.pz) > 0.12) q.t0 = G2.time || 0;   // hâlâ yürüyor: saymaya baştan
+        q.px = P.pos.x; q.pz = P.pos.z;
+        if ((G2.time || 0) - q.t0 >= 0.6 || G2.paused) { pend = null; if (!G2.paused) openNow(id, st); return; }
+        setTimeout(tick, 60);
+      };
+      setTimeout(tick, 60);
+      return;
+    }
+    openNow(id, st);
+  }
+  function openNow(id, st) {
     if (S.cur || S.closing) return;
     const g = Gm(); if (!g || g.state !== 'play' || g.P.dead) return;
     if (typeof UI !== 'undefined' && (UI.menu || UI.mode !== 'play')) return;

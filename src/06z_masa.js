@@ -12,15 +12,17 @@ const MASA = (() => {
   // ── Yerleşim (metre): masanın yürünür üstü, kenarlar, kapılar, istasyonlar ──
   const T = { W: 72, H: 62, x0: 14, x1: 58, z0: 15, z1: 45, edge: 1.6, cx: 36, cz: 30 };   // yürünür dikdörtgen; görünen masa 1,6 m daha geniş
   T.top = { x0: T.x0 - T.edge, x1: T.x1 + T.edge, z0: T.z0 - T.edge, z1: T.z1 + T.edge };
-  T.cake = { x: 36, z: 28.5, r: 3.3 };
-  T.doors = [   // kuzey kenarda, kameraya bakan 4 kapı (soldan sağa)
-    { zone: 'oturma', x: 23, col: 0x8fb0d8, col2: 0xdfeaf7, ikon: '🛋️', ramp: 'kurdele' },
-    { zone: 'mutfak', x: 31.5, col: 0xf0b45a, col2: 0xfff0d2, ikon: '🍳', ramp: 'kasik' },
-    { zone: 'buzdolabi', x: 40.5, col: 0x7fcbe8, col2: 0xe6f7ff, ikon: '🧊', ramp: 'cubuk' },
-    { zone: 'pasta', x: 49, col: 0xf28fb4, col2: 0xffe6f0, ikon: '🎂', ramp: 'seker' },
+  T.cake = { x: 36, z: 28.5, r: 3.55 };
+  T.doors = [   // kuzey kenarda, kameraya bakan kapılar (soldan sağa); Balkon tanımlıysa 5. kapı (yerleşimde eklenir)
+    { zone: 'oturma', x: 19, col: 0x8fb0d8, col2: 0xdfeaf7, ikon: '🛋️', ramp: 'kurdele' },
+    { zone: 'mutfak', x: 27.5, col: 0xf0b45a, col2: 0xfff0d2, ikon: '🍳', ramp: 'kasik' },
+    { zone: 'buzdolabi', x: 36, col: 0x7fcbe8, col2: 0xe6f7ff, ikon: '🧊', ramp: 'cubuk' },
+    { zone: 'pasta', x: 44.5, col: 0xf28fb4, col2: 0xffe6f0, ikon: '🎂', ramp: 'seker' },
+    { zone: 'balkon', x: 53, col: 0x7fcf6a, col2: 0xe8f8d8, ikon: '🌻', ramp: 'kurdele', opt: true },
   ];
+  T.doorList = () => T.doors.filter(d => !d.opt || (typeof ZONE_DEFS !== 'undefined' && ZONE_DEFS[d.zone]));
   T.st = {
-    gardirop: { x: 19.5, z: 23 }, bilbo: { x: 52.5, z: 23 }, album: { x: 18.6, z: 36.4 }, mini: { x: 51, z: 38.6 }, surpriz: { x: 28.5, z: 25.2 },
+    gardirop: { x: 19.5, z: 23 }, bilbo: { x: 55, z: 24.5 }, album: { x: 18.6, z: 36.4 }, mini: { x: 51, z: 38.6 }, surpriz: { x: 28.5, z: 25.2 },
   };
   T.toys = { sunger: { x: 27.5, z: 32 }, bezelye: { x: 44.5, z: 33 }, muzik: { x: 44.5, z: 21.2 } };
   // ── küçük yardımcılar ──
@@ -295,9 +297,11 @@ const CAKE = (() => {
     stand.add(lathe('stand2', sp, 64), (x, y, z) => { const r = Math.hypot(x, z); return r > 3.22 ? C(0xe6c46a) : r > 2.72 && r < 2.98 && y > 0.49 ? C(0xffb3cc) : C(0xfffcf8); });
     g.add(mesh(stand, M.porc));
     if (stage === 0) {   // boş tabak + kalıp halkası + biraz un
-      const ring = new THREE.Mesh(geos.ring || (geos.ring = keepG(new THREE.CylinderGeometry(2.5, 2.5, 1.0, 56, 1, true))), M.metal);
-      ring.material.side = THREE.DoubleSide; ring.position.y = Y0 + 0.5; ring.castShadow = true; g.add(ring);
-      const k = new Kit(); k.add(G.cyl(1, 1, 40), 0xfff8ee, [0, Y0 + 0.02, 0], null, [2.45, 0.04, 2.45]);
+      const ring = new THREE.Mesh(geos.ring2 || (geos.ring2 = keepG(new THREE.CylinderGeometry(2.05, 2.05, 0.6, 56, 1, true))), M.metal);
+      M.metal.color.set(0xeef1f5); M.metal.metalness = 0.55; M.metal.roughness = 0.35;
+      ring.material.side = THREE.DoubleSide; ring.position.y = Y0 + 0.3; ring.castShadow = true; g.add(ring);
+      const lip = new THREE.Mesh(G.torus(TAU2, 0.06, 56), M.metal); lip.rotation.x = Math.PI / 2; lip.scale.setScalar(2.05); lip.position.y = Y0 + 0.6; g.add(lip);   // yumuşak yuvarlak kenar
+      const k = new Kit(); k.add(G.cyl(1, 1, 40), 0xfff8ee, [0, Y0 + 0.02, 0], null, [2.0, 0.04, 2.0]);
       for (let i = 0; i < 9; i++) { const a = i * 0.7, r = 0.6 + (i % 3) * 0.5; k.add(G.sphere(10, 8), 0xffffff, [Math.sin(a) * r, Y0 + 0.04, Math.cos(a) * r], null, [0.35, 0.06, 0.3]); }
       const fm = mesh(k, M.crumb, false); g.add(fm); surf.push(fm);
     }
@@ -353,7 +357,7 @@ const CAKE = (() => {
     const deco = new THREE.Group(); deco.name = 'susler'; g.add(deco);
     const model = { group: g, R, y0: Y0, top, stage, surf, deco, M, decoMeshes: [] };
     model.setDecos = list => setDecos(model, list);
-    model.dispose = () => { g.traverse(x => { if (x.geometry && !x.geometry.userData.keep) x.geometry.dispose(); }); for (const k in M) M[k].dispose(); };
+    model.dispose = () => { g.traverse(x => { if (x.geometry && !x.geometry.userData.keep && !x.geometry.userData.cached) x.geometry.dispose(); }); for (const k in M) M[k].dispose(); };
     return model;
   }
   // (a, h) ↔ yüzey noktası
@@ -694,6 +698,14 @@ MASA.kur = function (L, api) {
       for (let i = 0; i < 3; i++) { const x = 40 + i * 70; g.fillStyle = '#e8b878'; g.beginPath(); g.moveTo(x - 16, 180); g.lineTo(x + 16, 180); g.lineTo(x, 216); g.fill(); g.fillStyle = ['#ffd6e4', '#fff3c4', '#c8f0d8'][i]; g.beginPath(); g.arc(x, 172, 20, 0, 6.283); g.fill(); }
       F('#a8e0ff', 30, 250, 60, 60, 10); F('#d0f0ff', 110, 262, 50, 48, 10); F('#a8e0ff', 180, 256, 52, 54, 10);
       g.fillStyle = '#fff'; for (let k = 0; k < 18; k++) { const x = Math.random() * 256, y = Math.random() * 384; g.fillRect(x, y, 3, 3); }
+    } else if (zone === 'balkon') {
+      g.fillStyle = grad('#8fd0ff', '#e8f6ff', 0, 260); g.fillRect(0, 0, 256, 260);
+      g.fillStyle = '#fff6c0'; g.beginPath(); g.arc(196, 60, 26, 0, 6.283); g.fill();
+      F('#c97a4a', 0, 250, 256, 134); for (let i = 0; i < 6; i++) F(i % 2 ? '#d98a58' : '#bf6e40', i * 44, 250, 40, 134, 2);
+      for (let i = 0; i < 7; i++) F('#ffffff', 6 + i * 36, 170, 10, 80, 4); F('#ffffff', 0, 166, 256, 10, 4);
+      for (const [x, c] of [[50, '#ffd23f'], [128, '#ff7aa8'], [206, '#ffffff']]) { F('#d4825a', x - 26, 270, 52, 50, 10); g.fillStyle = '#5aa85e'; g.fillRect(x - 3, 200, 6, 72);
+        for (let k = 0; k < 8; k++) { const a = k * 0.785; g.fillStyle = c; g.beginPath(); g.ellipse(x + Math.cos(a) * 16, 196 + Math.sin(a) * 16, 11, 6, a, 0, 6.283); g.fill(); } g.fillStyle = '#c87a1a'; g.beginPath(); g.arc(x, 196, 9, 0, 6.283); g.fill(); }
+      g.fillStyle = '#ffe14a'; g.beginPath(); g.ellipse(170, 120, 10, 7, 0, 0, 6.283); g.fill(); g.fillStyle = '#2a2a2a'; g.fillRect(166, 114, 3, 12); g.fillRect(172, 114, 3, 12);
     } else {
       g.fillStyle = grad('#ffd0e4', '#fff1f6'); g.fillRect(0, 0, 256, 384);
       g.fillStyle = '#ffe7a8'; g.beginPath(); g.arc(196, 70, 30, 0, 6.283); g.fill();
@@ -709,7 +721,7 @@ MASA.kur = function (L, api) {
   const doorZ = T.z0 - 0.9, open = id => typeof BOLUM === 'undefined' || !BOLUM.isOpen || BOLUM.isOpen(id, P);
   const doorAnims = [];
   const DK = new Kit();
-  for (const d of T.doors) {
+  for (const d of T.doorList()) {
     const fr = own(frameGeo, new THR.MeshStandardMaterial({ color: d.col, roughness: 0.38 }), d.x, 0, doorZ - 0.35, { cast: true });
     const isOpen = open(d.zone), done = P && P.bossNese && P.bossNese[d.zone];
     // kapı aralığı: içerisi odanın ışıyan rengi (açık) ya da kapalı kapı kanadı (kilitli)
@@ -856,7 +868,7 @@ MASA.kur = function (L, api) {
     const m = own(new THR.PlaneGeometry(3.6, 3.6), new THR.MeshBasicMaterial({ map: ringT, color: col, transparent: true, blending: THR.AdditiveBlending, depthWrite: false, fog: false }), S[id].x, 0.22, S[id].z, { rx: -Math.PI / 2, recv: false });
     m.renderOrder = 2; rings.push(m);
   }
-  for (const d of T.doors) { const m = own(new THR.PlaneGeometry(3.4, 3.4), new THR.MeshBasicMaterial({ map: ringT, color: d.col, transparent: true, blending: THR.AdditiveBlending, depthWrite: false, fog: false }), d.x, 0.12, T.z0 + 1.6, { rx: -Math.PI / 2, recv: false }); m.renderOrder = 2; rings.push(m); }
+  for (const d of T.doorList()) { const m = own(new THR.PlaneGeometry(3.4, 3.4), new THR.MeshBasicMaterial({ map: ringT, color: d.col, transparent: true, blending: THR.AdditiveBlending, depthWrite: false, fog: false }), d.x, 0.12, T.z0 + 1.6, { rx: -Math.PI / 2, recv: false }); m.renderOrder = 2; rings.push(m); }
   // ── 8) Oyuncaklar: zıplatan sünger, yuvarlanan bezelye + şeker top, müzik kutusu ──
   const toyMat = new THR.MeshStandardMaterial({ vertexColors: true, roughness: 0.5 });
   const sponge = (() => { const k = new Kit(), x = 0, z = 0;
@@ -995,7 +1007,7 @@ BOLUM.define('masa', {
     api.solid(T.cake.x, T.cake.z, T.cake.r, 'pasta');
     const st = L.stations = [];
     const put = (id, kind, x, z, o) => st.push(Object.assign({ id, kind, x, z, r: 1.6 }, o));
-    for (const d of T.doors) put('kapi_' + d.zone, 'kapi', d.x, T.z0 + 1.6, { zone: d.zone, r: 1.5 });
+    for (const d of T.doorList()) put('kapi_' + d.zone, 'kapi', d.x, T.z0 + 1.6, { zone: d.zone, r: 1.5, masa: true });
     put('pasta', 'pasta', T.cake.x, T.cake.z, { r: T.cake.r + 0.65 });   // pastaya değince süsleme açılır
     for (const id of ['gardirop', 'bilbo', 'album', 'mini', 'surpriz']) put(id, id, T.st[id].x, T.st[id].z, { r: id === 'surpriz' ? 1.5 : 1.7 });
     // istasyon nesnelerinin katı gövdeleri (Feza önüne gelir, içine girmez)

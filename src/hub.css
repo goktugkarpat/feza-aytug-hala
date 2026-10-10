@@ -197,3 +197,14 @@ body.hb-deco-body #ui { opacity: 0 !important; pointer-events: none !important; 
   .hb-tile { min-height: 170px; }
   .hb-emo { font-size: 70px; }
 }
+
+.hb-sname { position: absolute; left: 4px; right: 4px; bottom: 4px; text-align: center; font-weight: 800; font-size: 14px; line-height: 1.05; color: #6a3a24;
+  text-shadow: 0 1px 0 #fff, 0 0 4px #fff; pointer-events: none; z-index: 2; }
+.hb-etiket { position: absolute; top: -12px; left: -8px; font-size: 30px; z-index: 3; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+.hb-stk:not(.have) .hb-etiket { filter: grayscale(1) opacity(.45); }
+.hb-sgrid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)) !important; gap: 14px !important; }
+.hb-stk .hb-spic { height: 78% !important; }
+
+.hb-pic { position: relative; }
+.hb-emo2 { position: absolute; right: 2%; bottom: 4%; font-size: 58px; line-height: 1; filter: drop-shadow(0 4px 3px rgba(80, 30, 10, 0.25)); transform: rotate(10deg); }
+.hb-stk.big { grid-column: auto !important; aspect-ratio: 1 !important; min-height: 0 !important; }
