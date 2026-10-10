@@ -4532,6 +4532,7 @@ const GAME = (() => {
     }
     dying.push(e);
     hala('onCheer', { type: e.type, x: e.x, z: e.z, boss: !!e.boss, elite: !!e.elite });
+    if (typeof ODAKIT !== 'undefined' && ODAKIT.gateCheer) { try { ODAKIT.gateCheer(e); } catch (err) { warnOnce('ODAKIT.gateCheer', err); } }   // (alan geçidi sayacı)
     giveSticker(e.type, e.boss ? 'boss' : 'huysuz');
     if (e.boss) bossCheered(e);
     const cy = e.y + e.height * 0.7;
@@ -6954,7 +6955,14 @@ const GAME = (() => {
     revive, teamMove, teamBlast, zoneOpen, nextZoneIndex, foundLostItem, spawnEnemy, teleport, isT, ALIAS, halaApi: HALA_API,
     _victory: () => victory(),   // QA: final sahnesini doğrudan başlat
     storyCheer(sec = 2, bark = true) { C.cheerT = Math.max(C.cheerT, sec); if (bark) bilboBark = 1.3; },   // Dev Ev: STORY kutlaması (Feza sevinir, Bilbo havlar)
-    dropSugar: (x, z, gold = 8, n) => spawnCoins(x, z, gold, n),   // (Dev Ev: odalardaki oyuncaklar/hazineler şeker saçar)
+    dropSugar: (x, z, gold = 8, n) => spawnCoins(x, z, gold, n),
+    // Dev Ev alan geçidi: bu odalardaki uyuyan huysuzları uyandır, hepsi Feza'ya gelsin
+    wakeRooms(rooms) {
+      const set = new Set(rooms);
+      for (let i = sleepers.length - 1; i >= 0; i--) { const s = sleepers[i]; if (set.has(s.room)) { sleepers.splice(i, 1); makeEnemy(s); } }
+      for (const e of enemies) if (!e.dead && !e.boss && set.has(e.room)) { e.homeX = P.pos.x; e.homeZ = P.pos.z; setAggro(e, false); }
+    },
+    roomEnemies(rooms) { const set = new Set(rooms), out = []; for (const e of enemies) if (!e.dead && !e.boss && set.has(e.room)) out.push(e); for (const s of sleepers) if (set.has(s.room)) out.push(s); return out; },   // (Dev Ev: odalardaki oyuncaklar/hazineler şeker saçar)
     giveSticker, addGoldSugar, unlockCostume, setCostume, unlockBilboAccessory, setBilboAccessory, addCakeDecoration, cakeStage, dailySurprise,
     miniResult, unlockMinigame, startMinigame: (id, o) => (typeof MINIGAME !== 'undefined' && MINIGAME ? MINIGAME.start(id, o) : false),
     get teamCharge() { const v = typeof HALA !== 'undefined' && HALA ? HALA.charge : 0; return typeof v === 'number' ? v : 0; },

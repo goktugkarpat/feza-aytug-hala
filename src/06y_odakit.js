@@ -616,7 +616,110 @@ const ODAKIT = (() => {
     };
     return api;
   }
-  const K_ = { tex, carpetColor, pawPad, lowShadow, fill, outRect, scatter, gatePosts, miniStation, miniBox, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
+
+  // ── Alan geçitleri (BÜTÜN odalar; 06_level build çağırır): bir alanın çıkışı, o alanın huysuzlarının %70'i neşelenince açılır ──
+  // Kapalıyken koridorda renkli şeker çit + kurdele + kalan huysuz rozeti; Feza yaklaşınca Aytuğ Hala söyler, kalan huysuzlar uyanıp
+  // Feza'ya gelir, yerde ok onları gösterir. Açılınca çit yere iner, konfeti, "Yol açıldı!". Boss arenası da son alan temizlenince açılır.
+  const GATE_K = 0.7;
+  let GS = null;   // şu anki bölümün geçit durumu
+  const isBossT = t => typeof EDEF !== 'undefined' && EDEF && EDEF[t] && EDEF[t].kind === 'boss';
+  function badgeTex(n) {
+    const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+    g.fillStyle = '#ff7eb6'; g.beginPath(); g.arc(64, 64, 60, 0, TAU); g.fill(); g.lineWidth = 7; g.strokeStyle = '#fff'; g.stroke();
+    g.fillStyle = '#b28dff'; g.beginPath(); g.ellipse(40, 70, 22, 20, 0, 0, TAU); g.fill();   // küçük huysuz yüzü (sevimli, somurtkan)
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(33, 66, 6, 0, TAU); g.arc(47, 66, 6, 0, TAU); g.fill();
+    g.fillStyle = '#222'; g.beginPath(); g.arc(34, 67, 3, 0, TAU); g.arc(48, 67, 3, 0, TAU); g.fill();
+    g.strokeStyle = '#5a2a7a'; g.lineWidth = 3; g.beginPath(); g.arc(40, 84, 6, Math.PI + 0.4, -0.4); g.stroke();
+    g.fillStyle = '#fff'; g.font = '900 64px "Avenir Next", system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineWidth = 8; g.strokeStyle = '#a0305a'; g.strokeText(String(n), 88, 68); g.fillText(String(n), 88, 68);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  }
+  function gates(L, api) {
+    GS = null;
+    const A = L.areas; if (!A || A.length < 2) return;
+    const areaOf = {}; A.forEach((a, k) => a.rooms.forEach(ri => { areaOf[ri] = k; }));
+    const total = A.map(() => 0); for (const sp of L.spawns || []) { const k = areaOf[sp.room]; if (k !== undefined && !isBossT(sp.type)) total[k]++; }
+    const st = GS = { L, areaOf, total, cheered: A.map(() => 0), gates: [], t: 0 };
+    const post = G.cyl(1, 1, 12), ball = G.sphere(12, 8);
+    for (let k = 1; k < A.length; k++) {
+      const g = A[k].gate; if (!g) continue;
+      const prev = k - 1, need = Math.ceil(total[prev] * GATE_K);
+      const [dx, dz] = gateDir(L, g), nx = -dz, nz = dx;
+      const grp = new THREE.Group(); grp.position.set(g.x, 0, g.z); grp.rotation.y = Math.atan2(nx, nz) - Math.PI / 2; api.add(grp);   // yerel x: koridor enine
+      const kit = new Kit(), solids = [];
+      let lo = 0, hi = 0;
+      for (let o = 0; o <= 7; o += 0.5) { if (isF(L, g.x + nx * o, g.z + nz * o)) hi = o; else break; }
+      for (let o = 0; o <= 7; o += 0.5) { if (isF(L, g.x - nx * o, g.z - nz * o)) lo = o; else break; }
+      const w0 = -lo - 0.5, w1 = hi + 0.5;
+      const cols = [0xff6b9a, 0x6bc4ff, 0xffd34a, 0x7ee08a, 0xb28dff];
+      let pi = 0;
+      for (let o = w0; o <= w1 + 0.01; o += 0.9, pi++) {   // şeker baston direkler (çizgili), tepede top
+        const c = cols[pi % cols.length];
+        for (let b = 0; b < 6; b++) kit.add(post, b % 2 ? 0xffffff : c, [o, 0.22 + b * 0.36, 0], null, [0.2, 0.36, 0.2]);
+        kit.add(ball, c, [o, 2.45, 0], null, 0.3);
+        const sx = g.x + nx * o, sz = g.z + nz * o;
+        if (isF(L, sx, sz) || isF(L, sx + dx * 0.4, sz + dz * 0.4) || isF(L, sx - dx * 0.4, sz - dz * 0.4)) { const so = { x: sx, z: sz, r: 0.6, alive: true, tag: 'kapi' }; L.solids.push(so); solids.push(so); }
+      }
+      kit.add(G.box(), 0xff8fc0, [(w0 + w1) / 2, 1.5, 0.12], null, [w1 - w0, 0.3, 0.06]); kit.add(G.box(), 0xffe066, [(w0 + w1) / 2, 0.9, 0.12], null, [w1 - w0, 0.2, 0.05]);   // kurdeleler
+      kit.add(G.torus(TAU, 0.18, 16), 0xff6b9a, [(w0 + w1) / 2 - 0.4, 1.5, 0.2], [0, 0, 0.6], [0.4, 0.3, 0.3]); kit.add(G.torus(TAU, 0.18, 16), 0xff6b9a, [(w0 + w1) / 2 + 0.4, 1.5, 0.2], [0, 0, -0.6], [0.4, 0.3, 0.3]);   // fiyonk
+      const fence = new THREE.Mesh(kit.build(), vmat(0.35)); fence.castShadow = true; grp.add(fence); api.dispose(fence.geometry);
+      const bm = new THREE.SpriteMaterial({ map: badgeTex(need), transparent: true, depthWrite: false, fog: false }); api.dispose(bm);
+      const badge = new THREE.Sprite(bm); badge.scale.setScalar(1.7); badge.position.set((w0 + w1) / 2, 3.4, 0); grp.add(badge);
+      L._sh = null;
+      const gt = { k, prev, need, g, grp, fence, badge, bm, solids, open: need <= 0, anim: 0, shown: need, lastSay: -99, lastWake: -99, sayI: 0 };
+      if (gt.open) { grp.visible = false; for (const so of solids) so.alive = false; }
+      st.gates.push(gt);
+    }
+    // yerde ok: kalan huysuzu gösterir
+    const sh = new THREE.Shape(); sh.moveTo(0, 1.1); sh.lineTo(0.7, 0.2); sh.lineTo(0.28, 0.2); sh.lineTo(0.28, -0.8); sh.lineTo(-0.28, -0.8); sh.lineTo(-0.28, 0.2); sh.lineTo(-0.7, 0.2); sh.closePath();
+    const ag = new THREE.ShapeGeometry(sh); ag.rotateX(-Math.PI / 2); api.dispose(ag);
+    const am = new THREE.MeshBasicMaterial({ color: 0xffd23a, transparent: true, opacity: 0.85, depthWrite: false, fog: false }); api.dispose(am);
+    const arrow = new THREE.Mesh(ag, am); arrow.visible = false; arrow.renderOrder = 4; api.add(arrow);
+    api.anim((dt, hx, hz) => gateTick(dt, hx, hz, arrow));
+  }
+  function gateCheer(e) {
+    const st = GS; if (!st || e.boss || e.room === undefined) return;
+    const g0 = G_(); if (!g0 || g0.L !== st.L) return;
+    const k = st.areaOf[e.room]; if (k === undefined) return;
+    st.cheered[k]++;
+  }
+  function nearestLeft(g0, area, hx, hz) {
+    if (!g0.roomEnemies) return null;
+    let best = null, bd = 1e9;
+    for (const e of g0.roomEnemies(area.rooms)) { const d = Math.hypot(e.x - hx, e.z - hz); if (d < bd) { bd = d; best = e; } }
+    return best;
+  }
+  function gateTick(dt, hx, hz, arrow) {
+    const st = GS, g0 = G_(); if (!st || !g0 || g0.L !== st.L) return;
+    st.t += dt; arrow.visible = false;
+    const P = g0.P, A = st.L.areas;
+    for (const gt of st.gates) {
+      if (gt.open) { if (gt.anim < 1 && gt.grp.visible) { gt.anim = Math.min(1, gt.anim + dt * 1.6); gt.grp.position.y = -gt.anim * 2.8; gt.grp.scale.setScalar(1 - gt.anim * 0.3); if (gt.anim >= 1) gt.grp.visible = false; } continue; }
+      let left = Math.max(0, gt.need - st.cheered[gt.prev]);
+      if (left > 0 && Math.hypot(hx - gt.g.x, hz - gt.g.z) < 10 && g0.roomEnemies && !g0.roomEnemies(A[gt.prev].rooms).length) left = 0;   // (alanda huysuz kalmadıysa yine de açılır)
+      if (left !== gt.shown) { gt.shown = left; gt.bm.map.dispose(); gt.bm.map = badgeTex(left); gt.bm.needsUpdate = true; }
+      gt.badge.position.y = 3.4 + Math.sin(st.t * 3) * 0.12;
+      if (left <= 0) {   // yol açıldı!
+        gt.open = true; for (const so of gt.solids) so.alive = false; st.L._sh = null;
+        burst('confetti', gt.g.x, 2, gt.g.z); burst('star', gt.g.x, 2.5, gt.g.z); ring(gt.g.x, gt.g.z, 4, '#ffd36a'); sfx('unlock', { x: gt.g.x, z: gt.g.z }); sfx('cheer', { x: gt.g.x, z: gt.g.z, vol: 0.7 });
+        say('kapi_acildi', 3);
+        if (typeof HALA !== 'undefined' && HALA && HALA.cheer) { try { HALA.cheer(1.5); } catch (e) { /* */ } }
+        continue;
+      }
+      const d = Math.hypot(hx - gt.g.x, hz - gt.g.z), here = (P.area ?? -1) === gt.prev;
+      if (d < 7 && st.t - gt.lastSay > 9 && playing()) {
+        gt.lastSay = st.t; say('kapi_kapali_' + (1 + (gt.sayI++ % 3)), 2);
+        const q = nearestLeft(g0, A[gt.prev], hx, hz);
+        if (q && typeof HALA !== 'undefined' && HALA && HALA.pointTo) { try { HALA.pointTo(q.x, q.z); } catch (e) { /* */ } }
+      }
+      if ((d < 10 || (here && left <= 3)) && st.t - gt.lastWake > 3 && g0.wakeRooms) { gt.lastWake = st.t; try { g0.wakeRooms(A[gt.prev].rooms); } catch (e) { /* */ } }
+      if (here || d < 12) {   // ok: Feza'nın ayağının dibinde, en yakın kalan huysuza doğru
+        const q = nearestLeft(g0, A[gt.prev], hx, hz);
+        if (q && Math.hypot(q.x - hx, q.z - hz) > 5) { arrow.visible = true; arrow.position.set(hx, 0.07, hz); arrow.rotation.y = Math.atan2(q.x - hx, q.z - hz) + Math.PI; arrow.scale.setScalar(1 + Math.sin(st.t * 6) * 0.08); }
+      }
+    }
+  }
+  const K_ = { gates, gateCheer, get gateState() { return GS; }, tex, carpetColor, pawPad, lowShadow, fill, outRect, scatter, gatePosts, miniStation, miniBox, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
     say, sfx, burst, ring, sugar, playing, heroY, sticker, toys, hash, sm, keepG, GEOC, last: null };
   return K_;
 })();
