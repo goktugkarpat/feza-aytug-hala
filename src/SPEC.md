@@ -279,6 +279,17 @@ ekran konfeti yağmuru. Olaylar: `starCandy {count, add}`, `skillTier {id, tier}
   yarışında 10/10, mutfak baharat sırrı.
 - Oda içi mini oyun istasyonu (`kind:'mini'`): oturma 1. alan (tercih: balonPatlat › sekerYagmuru › sekerYakala), mutfak 2. alan
   (tencereKapak › tencereKapaklari › kapakMuzik › sekerYakala).
+### Buzdolabı + Pasta Krallığı (odalar B: src/06z_buzdolabi.js, src/06z_pasta.js, sesler src/02l_odalarB.js)
+Ortak araç `ODAB` (06z_buzdolabi.js'te; pasta da kullanır): birleştirilmiş çizim (`batch`), malzemeler (`mat('ice'|'jelly'|'cream'|'candy'|…)`),
+hareket düzeni (`rig`: zıplatan tepecik, buzda kayma, kaydırak/sal yolculuğu — Feza'yı LEVEL.update'te `GAME.P.pos` + `GAME.H.root` ile taşır),
+`goldSugar` (altın şeker → `GAME.addGoldSugar` + çıkartma), `coins` (GAME.coins'e şeker fışkırtır), `edgeSpots` (yürünür alanın kıyısı).
+Diğer ajanlar için: `ODAB.riding()` → Feza şu an zıplıyor / kayıyor / salda (Hala ve Bilbo beklesin), `ODAB.lift` (Feza'nın yüksekliği).
+`L.kayipSpot = {x, z, id:'toka', zone}` (Buzdolabı, 3. alan): Bilbo ajanı kendi kazmasını kurarsa `L.kayipSpot._bilbo = true` yapar; yoksa
+Feza 2,6 m yaklaşınca kar tümseği açılır ve `GAME.foundLostItem('toka','buzdolabi')`. Gizli çıkartmalar: `gizli_jole_altin`, `gizli_buz_iglo`,
+`gizli_buzdolabi_isigi`, `gizli_buz_canlari`, `gizli_dondurma_kaydiragi`, `gizli_krema_sal`, `gizli_krema_torbasi`, `gizli_lolipop_fener`, `gizli_kurabiye_ev`,
+`gizli_seker_mum`, `gizli_pamuk_altin`. Pasta arenası `GAME.boss` canına göre süslenir (≤%67 süs ipleri + ışık balonları, ≤%34 mumlar yanar),
+boss neşelenince havai fişek + konfeti kendiliğinden başlar (STORY.ending'den bağımsız); `ODAB.celebrate()` bir anda büyük kutlama (hikâye ajanı STORY.ending'de çağırabilir).
+Her iki bölümde bir mini oyun köşesi (`L.stations` `{kind:'mini', mini}`): kayıtlı mini oyunlardan bölüme uyan id (`buzPateni`/`paten`…, `sekerYakala`/`pasta`…), yoksa ilki.
 
 ### QA
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
