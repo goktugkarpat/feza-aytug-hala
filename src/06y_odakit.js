@@ -14,16 +14,29 @@ const ODAKIT = (() => {
   const hex3 = h => [(h >> 16 & 255), (h >> 8 & 255), (h & 255)];
 
   // ── doku üretimi (piksel piksel, döşenebilir) ──
-  function makeTex(key, size, fn) {
+  // Parça parça da üretilebilir (TEXJ: yarım kalan iş; prewarm(ms) her çağrıda birkaç satır): ilk oda ziyaretinde donma olmasın.
+  const TEXJ = {};
+  let BUDGET = Infinity;
+  function makeTex(key, size, fn, budget = BUDGET) {
     if (TEXC[key]) return TEXC[key];
-    const c = document.createElement('canvas'); c.width = c.height = size;
-    const g = c.getContext('2d'), img = g.createImageData(size, size), d = img.data, px = [0, 0, 0];
-    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-      fn((x + 0.5) / size, (y + 0.5) / size, px);
-      const o = (y * size + x) * 4;
-      d[o] = px[0] < 0 ? 0 : px[0] > 255 ? 255 : px[0]; d[o + 1] = px[1] < 0 ? 0 : px[1] > 255 ? 255 : px[1]; d[o + 2] = px[2] < 0 ? 0 : px[2] > 255 ? 255 : px[2]; d[o + 3] = 255;
+    let j = TEXJ[key];
+    if (!j) {
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      const g = c.getContext('2d'), img = g.createImageData(size, size);
+      j = TEXJ[key] = { c, g, img, y: 0 };
     }
-    g.putImageData(img, 0, 0);
+    const d = j.img.data, px = [0, 0, 0], t0 = performance.now();
+    for (; j.y < size; j.y++) {
+      const y = j.y;
+      for (let x = 0; x < size; x++) {
+        fn((x + 0.5) / size, (y + 0.5) / size, px);
+        const o = (y * size + x) * 4;
+        d[o] = px[0] < 0 ? 0 : px[0] > 255 ? 255 : px[0]; d[o + 1] = px[1] < 0 ? 0 : px[1] > 255 ? 255 : px[1]; d[o + 2] = px[2] < 0 ? 0 : px[2] > 255 ? 255 : px[2]; d[o + 3] = 255;
+      }
+      if ((y & 7) === 7 && performance.now() - t0 > budget) { j.y++; return null; }
+    }
+    const c = j.c, g = j.g; delete TEXJ[key];
+    g.putImageData(j.img, 0, 0);
     const t = new THREE.CanvasTexture(c);
     t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = typeof ANISO !== 'undefined' ? ANISO : 4;
     t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.needsUpdate = true;
@@ -129,6 +142,33 @@ const ODAKIT = (() => {
   }
   const TEX_BY = { parquet, carpet, counter, steel, shelf, stove, board };
   const tex = n => TEX_BY[n]();
+  // Dokuları ms bütçesiyle parça parça üret (+ ekran kartına yükle); hepsi hazırsa true. 07 loadZoneAsync ve boşta çalışan döngü çağırır.
+  const UPL = {};
+  function prewarm(ms = 6) {
+    const t0 = performance.now();
+    for (const n in TEX_BY) {
+      if (!TEXC[n]) {
+        BUDGET = Math.max(1, ms - (performance.now() - t0));
+        try { TEX_BY[n](); } finally { BUDGET = Infinity; }
+        if (!TEXC[n] || performance.now() - t0 > ms) return false;
+      }
+      if (!UPL[n]) {
+        UPL[n] = true;
+        if (typeof renderer !== 'undefined' && renderer && renderer.initTexture) { try { renderer.initTexture(TEXC[n]); } catch (e) { /* ilk çizimde yüklenir */ } }
+        if (performance.now() - t0 > ms) return false;
+      }
+    }
+    return true;
+  }
+  // boşta (başlık / masa / oyun): kare başına ~3 ms, hepsi bitince durur
+  if (typeof requestAnimationFrame === 'function') {
+    const idle = () => {
+      const g = typeof GAME !== 'undefined' ? GAME : null;
+      if (g && g.loading) { requestAnimationFrame(idle); return; }
+      if (!prewarm(3)) requestAnimationFrame(idle);
+    };
+    setTimeout(() => requestAnimationFrame(idle), 2500);
+  }
 
   // ── Zemin: 3 doku (yerleşim dokusunun R/B kanalı karışımı), G = yürünür alan, A = loşluk ──
   // o = { mats: [{ tex: 'parquet', size: 13.4, rough: 0.55 }, …(en çok 3)], region(x, z) → [w1, w2, loş] (0..1), out: [r, g, b] dış çarpanı }
@@ -783,7 +823,7 @@ const ODAKIT = (() => {
       }
     }
   }
-  const K_ = { gates, gateCheer, get gateState() { return GS; }, tex, carpetColor, pawPad, lowShadow, fill, outRect, scatter, gatePosts, miniStation, miniBox, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
+  const K_ = { gates, gateCheer, get gateState() { return GS; }, tex, prewarm, carpetColor, pawPad, lowShadow, fill, outRect, scatter, gatePosts, miniStation, miniBox, lost, treasure, rimSpots, gateDir, bbox, gentle, extraChests, archGeo, floor, slab, edge, rectFree, northOf, floorNorth, floorDist, inRoom, isF, tufts, vmat, mesh, starGeo,
     say, sfx, burst, ring, sugar, playing, heroY, sticker, toys, hash, sm, keepG, GEOC, last: null };
   return K_;
 })();

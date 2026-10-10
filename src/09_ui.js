@@ -852,9 +852,9 @@ const UI = (() => {
     S.busy = true;
     try {
       await fade(1, 0.4, 'load');
-      aud('stopVoice'); ensureTex(index);
+      aud('stopVoice'); if (!g.loadZoneAsync) ensureTex(index);   // (GAME yüzeyleri kare kare kendisi üretir)
       clearBanners(); clearCards(); hideBoss(); S.cine = null;
-      const ok = await g.travelTo(index, options);
+      const ok = await g.travelTo(index, Object.assign({}, options, { async: true }));   // oda karelere bölünerek kurulur (perde arkasında)
       if (ok === false) { fade(0, 0.4, null); return; }
       showScreen(D.dreamScreen, false); showScreen(D.choice, false); showScreen(D.win, false); showScreen(D.pause, false); showScreen(D.shop, false); showScreen(D.bagS, false);
       S.dreamChoiceIndex = null; S.choiceFrom = 'title';
@@ -2554,9 +2554,10 @@ const UI = (() => {
         await fade(1, 0.8, 'load');
         clearBanners(); clearCards(); hideBoss(); S.cine = null; stopHint();
         const nz = g.nextZoneIndex ? g.nextZoneIndex() : (g.P.zone | 0) + 1;
-        ensureTex(nz);
+        if (!g.loadZoneAsync) ensureTex(nz);
         aud('stopVoice');   // the old zone's boss 'bitti' / 'kapi' lines must not talk about a door in the new zone
-        safe('loadZone', () => g.loadZone(nz));
+        if (g.loadZoneAsync) { try { await g.loadZoneAsync(nz); } catch (e) { warn('loadZoneAsync', e); } }
+        else safe('loadZone', () => g.loadZone(nz));
         renderNow(); await frames(2);
         fade(0, 0.7, null);
       } finally { S.busy = false; }
@@ -3135,6 +3136,7 @@ const UI = (() => {
   }
   // One frame; every module call is isolated so a failing module never stops the loop (no per-frame closures).
   function step(dt, raw, render) {
+    if (M.GAME && M.GAME.loading) return;   // oda karelere bölünerek kuruluyor (perde kapalı): dünya beklesin
     S.frame++; S.t += dt;
     // Explicit inactive frames clear the sampling window: menus, loading and title time cannot count as smooth play.
     try { perfTick(raw, S.mode === 'play' && !S.paused && !S.busy && M.GAME && M.GAME.state === 'play'); } catch (e) { warn('perfTick', e); }

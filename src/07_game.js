@@ -195,7 +195,7 @@ const GAME = (() => {
   function mapUnlocked() { return true; }
   function travelTo(index, o = {}) {
     const Z = zones();
-    if (!Z || !Number.isInteger(index) || index < 0 || index >= Z.length || GAME.state === 'transition') return false;
+    if (!Z || !Number.isInteger(index) || index < 0 || index >= Z.length || GAME.state === 'transition' || GAME.loading) return false;
     if (!zoneOpen(index)) { story('locked', { index, id: Z[index].id }); return false; }
     if (GAME.state === 'title') {
       const saved = readSave();
@@ -208,6 +208,7 @@ const GAME = (() => {
     }
     if (P.dead) { P.hp = P.maxHp; C.lastHurt = gt - 99; }
     GAME.paused = false; aud('stopVoice'); C.keyX = C.keyZ = 0;
+    if (o.async) return loadZoneAsync(index).then(() => true);   // UI: yükleme perdesi arkasında karelere bölünmüş
     loadZone(index);
     return true;
   }
@@ -926,6 +927,36 @@ const GAME = (() => {
     return true;
   }
   function loadZone(i, o = {}) {
+    const it = loadSteps(i, o, false);
+    let r; while (!(r = it.next()).done) { /* tek seferde */ }
+    return r.value;
+  }
+  // Oda geçişi karelere bölünmüş (UI'nin yükleme perdesi arkasında): her aşama ~10 ms bütçeyle, aralarda tarayıcı bir kare çizer
+  // (dönen yıldız akar). Bitince L döner. GAME.loading iken UI dünyayı güncellemez/çizmez.
+  const nextFrame = () => new Promise(res => { let done = false; const go = () => { if (!done) { done = true; res(); } };
+    requestAnimationFrame(() => setTimeout(go, 0)); setTimeout(go, 120); });
+  const LOADT = [];   // son geçişin aşama süreleri [ad, ms] (test)
+  async function loadZoneAsync(i, o = {}) {
+    if (GAME.loading) return null;
+    GAME.loading = true; LOADT.length = 0;
+    const it = loadSteps(i, o, true);
+    let t = performance.now(), a = t, r;
+    try {
+      while (!(r = it.next()).done) {
+        const v = r.value, n = performance.now();
+        LOADT.push([typeof v === 'string' ? v : 'bekle', Math.round(n - a)]);
+        if (v && typeof v.then === 'function') { try { await v; } catch (err) { warnOnce('loadZoneAsync bekle', err); } t = a = performance.now(); continue; }
+        a = n;
+        if (n - t > 8) { await nextFrame(); t = a = performance.now(); }
+      }
+      return r.value;
+    } catch (err) {
+      warnOnce('loadZoneAsync', err);
+      GAME.loading = false;
+      return loadZone(i, o);   // yedek: tek seferde
+    } finally { GAME.loading = false; }
+  }
+  function* loadSteps(i, o = {}, async = false) {
     if (!inited) init();
     const Z = zones();
     i = clamp(i | 0, 0, Z ? Z.length - 1 : 0);
@@ -935,9 +966,14 @@ const GAME = (() => {
     L = GAME.L = null;
     const seed = Q.has('tohum') ? ((parseInt(Q.get('tohum'), 10) || 1) + i * 7919) >>> 0 : (Math.random() * 4294967295) >>> 0;
     if (hasLevel()) {
+      yield 'temizle';
+      if (typeof ODAKIT !== 'undefined' && ODAKIT.prewarm) while (!ODAKIT.prewarm(async ? 8 : 1e9)) yield 'doku';   // oda dokuları (bir kez)
+      if (typeof TEX !== 'undefined' && TEX.todo && TEX.ensure) { const th = Z[i] && Z[i].theme; for (const k of th ? TEX.todo(th) : []) { TEX.ensure(k); yield 'tex:' + k; } }   // tema yüzeyleri, kare başına bir
       L = LEVEL.generate(i, seed);
       L._title = title;
-      LEVEL.build(L);
+      yield 'uret';
+      if (async && LEVEL.buildSteps) { const bs = LEVEL.buildSteps(L); let b; while (!(b = bs.next()).done) yield 'kur:' + b.value; }
+      else LEVEL.build(L);
       GAME.L = L;
       fezaLightBase();   // the theme's own hero light (LEVEL.build set it); the lightsaber tint is added on top every frame
       if (!R.warmed) { R.warmed = true; fx('warm'); }   // compile lit FX materials once, with real scene lights
@@ -955,7 +991,8 @@ const GAME = (() => {
     P.dead = false; C.deadT = 0; C.invuln = 1;
     if (L) L._title = title;
     if (!title) populate();
-    warmZone(i, title);   // the UI's loading fade still covers the screen
+    yield 'yerlestir';
+    yield* warmZone(i, title, async);   // the UI's loading fade still covers the screen
     GAME.state = title ? 'title' : 'play';
     emit('zone', { index: i, name: zdef(i).ad, title });
     if (!title) enterZoneStory(i, o.introDelay || 0);
@@ -965,7 +1002,7 @@ const GAME = (() => {
   // bars, item models, projectiles, telegraphs, skill meshes), so no shader compile / first-draw stall hits mid-fight.
   // compile() alone is not enough on ANGLE/Metal: the pipeline is only created at the first real draw.
   const WARM_E = {};   // one live enemy instance per type(+elite): keeps their programs alive (EMODEL does the same)
-  function warmZone(i, title) {
+  function* warmZone(i, title, async = false) {
     if (typeof renderer === 'undefined' || !renderer || !L) return;
     const t0 = performance.now();
     const Z = zdef(i), types = new Set(Object.keys(Z.enemies || {})), elites = new Set(Z.elites || []);
@@ -979,12 +1016,13 @@ const GAME = (() => {
     const hasE = typeof EMODEL !== 'undefined' && EMODEL && EMODEL.build;
     const propName = { tac: 'jellyCrown', havuc: 'havuc', serintas: 'serinTas', avla: 'hole' }[bt ? bossKit(bt).bonus : ''];   // (Round 6 bonus props)
     if (hasE && EMODEL.warm) { try { EMODEL.warm([...types].concat(propName && EMODEL.PROPS && EMODEL.PROPS.includes(propName) ? [propName] : []), false); } catch (err) { warnOnce('EMODEL.warm', err); } }   // geometry caches
+    yield 'emodel';
     if (hasE) for (const t of types) for (const el of [false, true]) {
       if (el && !elites.has(t)) continue;
       const vl = vars[t] ? [...vars[t]] : [VARIANTS[t] ? VARIANTS[t][0] : undefined];
       for (const variant of vl) {
         const k = t + (variant ? ':' + variant : '') + (el ? '*' : '');
-        if (!WARM_E[k]) { try { WARM_E[k] = EMODEL.build(t, { variant, elite: el }); } catch (err) { warnOnce('warm ' + k, err); } }
+        if (!WARM_E[k]) { try { WARM_E[k] = EMODEL.build(t, { variant, elite: el }); } catch (err) { warnOnce('warm ' + k, err); } yield 'model:' + k; }
         if (WARM_E[k] && WARM_E[k].root) tmp.add(WARM_E[k].root);
       }
     }
@@ -1062,14 +1100,19 @@ const GAME = (() => {
     // the sun's shadow box used to compile mid-game, usually as a boss arena came into view).
     const lvlCull = [];
     if (L.group) L.group.traverse(o => { if ((o.isMesh || o.isPoints || o.isSprite) && o.frustumCulled) { lvlCull.push(o); o.frustumCulled = false; } });
+    yield 'hazir';
+    // async: gölgelendiriciler arka planda derlenir (KHR_parallel_shader_compile; ana iş parçacığı donmaz), sonra her çizim ayrı kare
+    if (async && renderer.compileAsync) { let p = null; try { p = renderer.compileAsync(scene, camera); } catch (err) { warnOnce('warm compileAsync', err); } if (p) yield p; }
     try {
-      renderer.compile(scene, camera);   // everything in the level too (ignores frustum culling)
-      renderer.setRenderTarget(typeof POST !== 'undefined' && POST.on && typeof rtMain !== 'undefined' && rtMain ? rtMain : null);
-      combos.forEach((eq, n) => {
+      if (!async || !renderer.compileAsync) renderer.compile(scene, camera);   // everything in the level too (ignores frustum culling)
+      for (let n = 0; n < combos.length; n++) {
+        const eq = combos[n];
         if (eq) { try { H.setEquip(eq); dressed = true; } catch (err) { warnOnce('warm equip', err); } }
+        renderer.setRenderTarget(typeof POST !== 'undefined' && POST.on && typeof rtMain !== 'undefined' && rtMain ? rtMain : null);
         renderer.render(scene, camera);  // a real draw (shadow pass included)
         if (n === 0) for (const o of lvlCull) o.frustumCulled = true;   // the outfit draws: the usual culled view
-      });
+        if (async) yield 'ciz' + n;
+      }
     } catch (err) { warnOnce('warm render', err); }
     for (const o of lvlCull) o.frustumCulled = true;
     renderer.setRenderTarget(prevT);
@@ -6969,7 +7012,7 @@ const GAME = (() => {
     P, H: null, enemies, L: null, state: 'title', paused: false, skills: [], boss: null, time: 0,
     get difficulty() { return hard ? 'hard' : 'normal'; }, setDifficulty,
     merchantInfo, merchantNear, merchantWard, visitMerchant, buyMerchant,
-    mapUnlocked, travelTo, bone,
+    mapUnlocked, travelTo, loadZoneAsync, loading: false, loadT: LOADT, bone,
     get boneCooldown(){return Math.max(0,boneAt-gt);}, get boneCooldownMax(){return BONE_CD;},
     init, newGame, continueGame, hasSave: () => !!readSave(), save, clearSave,
     loadZone, update, titleUpdate, input, equipSlot, equip: item => equip(item), unequip, drinkPotion, addItem, cast,

@@ -6394,7 +6394,14 @@ const LEVEL = (function () {
     return api;
   }
 
+  // build(L): hepsi bir kerede. buildSteps(L): aynı iş, aşama aralarında yield (oda geçişinde karelere bölünür; 07 loadZoneAsync).
   function build(L) {
+    if (!L) return L;
+    const it = buildSteps(L);
+    while (!it.next().done) { /* tek seferde */ }
+    return L;
+  }
+  function* buildSteps(L) {
     if (!L) return L;
     if (L.group) dispose(L);
     const t0 = performance.now();
@@ -6443,22 +6450,28 @@ const LEVEL = (function () {
     L._dairy = L.theme === 'dairy' ? dairyField(L) : null;
     L._town = null;   // (Surlu Şehir çıkarıldı)
     tp = lap('field', tp);
+    yield 'field';
     buildFloor(L, B);
     tp = lap('floor', tp);
+    yield 'floor';
     const zapi = zd ? zoneApi(L, B) : null;
     if (L._title && typeof STORY !== 'undefined' && STORY && typeof STORY.buildTitle === 'function') { try { STORY.buildTitle(L, zapi || zoneApi(L, B)); } catch (e) { console.warn('LEVEL: STORY.buildTitle', e); } }
     else if (zd && typeof zd.kur === 'function') { try { zd.kur(L, zapi); } catch (e) { console.warn('LEVEL: ' + L.Z.id + '.kur', e); } }
     else if (L.theme === 'forest') buildForest(L, B); else if (L.theme === 'dairy') buildDairy(L, B); else if (L.theme === 'castle') buildCastle(L, B); else buildDream(L, B);   // (Dev Ev: cave / volcano / town çizicileri çıkarıldı)
     if (V) buildVillage(L, B);
     tp = lap('theme', tp);
+    yield 'theme';
     L.fixedProps = fixReach(L, unProp, dropUnreachable);   // build-time rocks / props must not cut off a room, chest or checkpoint
     tp = lap('reach', tp);
+    yield 'reach';
     finishSigns(L, B);
     buildProps(L, B);
+    yield 'props';
     if (zd && typeof zd.kurSon === 'function') { try { zd.kurSon(L, zapi); } catch (e) { console.warn('LEVEL: ' + L.Z.id + '.kurSon', e); } }
     if (zapi && !L._title && !(L.Z && L.Z.hub) && L.areas && typeof ODAKIT !== 'undefined' && ODAKIT.gates) { try { ODAKIT.gates(L, zapi); } catch (e) { console.warn('LEVEL: ODAKIT.gates', e); } }   // (Dev Ev: alan geçitleri huysuzlar neşelenince açılır)
+    yield 'gates';
     finishBanners(B); finishSlime(B); finishWindows(B); finishLavafalls(B);
-    finishInst(L, B); finishDecor(L, B); finishPoints(L, B); finishFlames(L, B); buildGlowTex(L, B);
+    finishInst(L, B); yield 'inst'; finishDecor(L, B); yield 'decor'; finishPoints(L, B); finishFlames(L, B); buildGlowTex(L, B);
     lap('finish', tp);
     for (const t of B.tmpGeo) t.dispose();
     B.tmpGeo.length = 0;
@@ -6547,7 +6560,7 @@ const LEVEL = (function () {
   }
 
   return {
-    generate, build, update, dispose, isFloor, circleFree, move, los, flowTo, flowDir, randomFloorNear,
+    generate, build, buildSteps, update, dispose, isFloor, circleFree, move, los, flowTo, flowDir, randomFloorNear,
     satCount: (L, x0, z0, x1, z1) => satCount(L, x0, z0, x1, z1),
   };
 })();

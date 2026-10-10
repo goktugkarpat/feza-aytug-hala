@@ -1553,7 +1553,9 @@ const TEX = (function () {
       if (moon) {
         let basin = 0, rim = 0, litRim = 0;
         for (const c of basins) {
-          const dx0 = Math.abs(x - c.x), dy0 = Math.abs(y - c.y), dx = Math.min(dx0, S - dx0), dy = Math.min(dy0, S - dy0), d = Math.hypot(dx, dy) / c.r;
+          const dx0 = Math.abs(x - c.x), dy0 = Math.abs(y - c.y), dx = Math.min(dx0, S - dx0), dy = Math.min(dy0, S - dy0);
+          if (dx > c.r * 1.7 || dy > c.r * 1.7) continue;   // uzak çukur: katkısı sıfır (ring < 1e-5) — 10 kat hızlı
+          const d = Math.hypot(dx, dy) / c.r;
           const ring = Math.exp(-Math.pow((d - 1.02) / .17, 2));
           const signedX = x - c.x > S / 2 ? x - c.x - S : x - c.x < -S / 2 ? x - c.x + S : x - c.x;
           basin = Math.max(basin, 1 - ss(.18, .98, d)); rim = Math.max(rim, ring);
@@ -1698,6 +1700,8 @@ const TEX = (function () {
     },
     // Names of surfaces whose pixels are not generated yet.
     pending: () => Object.keys(PEND),
+    // a theme's surfaces still to generate (07 loadZoneAsync makes them one per frame: TEX.ensure(name))
+    todo: theme => (typeof theme === 'number' ? listOf(themeOf(theme)) : listOf(theme)).filter(k => PEND[k]),
     // Free a zone theme's surfaces (same arguments as ensure; no argument / 'all' = every kefir/cave/volcano/town/castle surface): GPU
     // textures + pixels go, the surfaces become pending again (TEX.ensure or their next use makes them again, ~0.1–0.3 s under the
     // fade). For zones behind the player (≈ 12 MB each on the GPU). Don't call it for the zone on screen (its next frame would make
