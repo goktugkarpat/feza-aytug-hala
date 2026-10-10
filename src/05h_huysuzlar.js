@@ -1312,13 +1312,15 @@
   HUYSUZ.zone('pasta', { enemies: { sekerleme: 3, cilekcik: 4, kremaTopu: 3, kurabiyeAdam: 2.5, marshmallow: 2.5, altinCilek: 0.3 }, elites: ['kremaTopu'] });
 
   // Nadir huysuz neşelenince: çıkartma "gizli" sayılır, altın şeker + şeker yağmuru + Hala'nın sevinci
-  let saidRare = 0;
+  let saidRare = 0, confT = [];
   function hook() {
     if (typeof GAME === 'undefined' || !GAME || !GAME.on) { setTimeout(hook, 250); return; }
     GAME.on('happy', e => {
       if (!e || !HUYSUZ.get(e.type) || e.boss) return;
-      // her neşelenen ev eşyası: minik şeker / konfeti serpintisi (kalpleri GAME saçar)
-      if (typeof FX !== 'undefined' && FX && FX.burst) { try { FX.burst('confetti', e.x, 0.9, e.z, { scale: e.elite ? 1.1 : 0.7 }); } catch (err) { /* yok say */ } }
+      // elit ya da nadir huysuz neşelenince konfeti serpintisi (normallerde GAME'in kalp + parıltısı yeter; iPad performansı).
+      // Aynı anda en çok 4 konfeti patlaması (hepsi bir anda neşelenince birikmesin).
+      const now = performance.now(); confT = confT.filter(t => now - t < 1200);
+      if ((e.elite || RARE[e.type]) && confT.length < 4 && typeof FX !== 'undefined' && FX && FX.burst) { confT.push(now); try { FX.burst('confetti', e.x, 0.9, e.z, { scale: e.elite ? 1.1 : 0.7 }); } catch (err) { /* yok say */ } }
       // Yastıkçık neşelenince "pıt" diye ikiye bölünür: iki minik yastık (onlar bölünmez)
       if (e.type === 'yastikcik' && GAME.spawnEnemy) {
         setTimeout(() => { try { for (const sd of [-1, 1]) GAME.spawnEnemy('minikYastik', e.x + sd * 0.55, e.z + 0.1, {}); if (FX && FX.burst) FX.burst('confetti', e.x, 0.6, e.z, { scale: 0.8 }); } catch (err) { console.warn('[huysuzlar] yastık', err); } }, 450);
