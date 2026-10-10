@@ -87,7 +87,7 @@
       env: [0xa8d8ff, 0xfff4e0, 0xb88a60, 1.0], bloom: 0.42, exposure: 1.02, sat: 1.1, vig: 0.2 },
     zemin: { tA: 0xf2b089, tB: 0xffd9b8, tC: 0xffe9c8, out: 0x6fa850, outAmt: 0.7, macro: 0xfff2e2 },
     minimap: { zemin: '#efb08a' },
-    harita: { ad: 'Balkon Bahçesi', detay: 'Güneşli çiçek bahçesi ve uykucu arılar', renk: '#9be37a', x: 50, y: 74, simge: '🌻' },
+    harita: { ad: 'Balkon Bahçesi', detay: 'Güneşli çiçek bahçesi ve uykucu hortum', renk: '#9be37a', x: 50, y: 74, simge: '🌻' },
 
     // saf veri: istasyonlar (mini oyun + Bilbo binişi), zıplatan çiçek yatakları, sulama kabı, serçeler, rüzgâr çanı yerleri
     yerlesim(L, api) {
@@ -199,11 +199,28 @@
         const tab = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.12, 48), new THREE.MeshStandardMaterial({ color: 0xc89060, roughness: 0.55, polygonOffset: true, polygonOffsetFactor: -2 }));
         tab.position.set(am.x, 0.02, am.z); tab.receiveShadow = true; api.add(tab);
         for (let i = 0; i < 6; i++) { const ring = new THREE.Mesh(new THREE.TorusGeometry(R * (0.25 + i * 0.13), 0.025, 4, 64), new THREE.MeshStandardMaterial({ color: 0xa87048, roughness: 0.7 })); ring.rotation.x = PI / 2; ring.position.set(am.x, 0.085, am.z); api.add(ring); }   // ahşap halkaları
-        // kovan biçimli bal kabı ve dev çiçekler arenanın kuzeyinde
-        const hx = am.x, hz = am.z - R - 2.5;
-        for (let i = 0; i < 5; i++) api.put(tor, hx, 0.6 + i * 0.75, hz, 1.9 - i * 0.28, 1.9 - i * 0.28, 1.9 - i * 0.28, 0xf6c14a, 0, PI / 2);
-        api.put(sph, hx, 0.4, hz, 1.9, 2.2, 1.9, 0xf2b43a);
-        api.put(sph, hx, 1.5, hz + 1.55, 0.45, 0.45, 0.2, 0x5a3410);   // kovan kapısı
+        // arenanın kuzeyinde bahçe köşesi: dev hortum makarası (yeşil hortum sarılı tambur, kırmızı yan diskler, kollu), yanında
+        // yatık sulama kabı ve üst üste saksılar (böcek / kovan yok)
+        const hx = am.x - 2.5, hz = am.z - R - 2.8;
+        for (const sd of [-1, 1]) {
+          api.put(cyl, hx + sd * 1.7, 2.4, hz, 2.3, 0.25, 2.3, 0xe8504a, 0, 0, PI / 2);             // yan disk
+          api.put(cyl, hx + sd * 1.86, 2.4, hz, 0.5, 0.12, 0.5, 0xffc83a, 0, 0, PI / 2);            // göbek
+          api.put(cyl, hx + sd * 1.7, 1.0, hz + 0.9, 0.12, 2.2, 0.12, 0xd04440, 0, 0.5, 0);           // ayak
+          api.put(cyl, hx + sd * 1.7, 1.0, hz - 0.9, 0.12, 2.2, 0.12, 0xd04440, 0, -0.5, 0);
+        }
+        for (let i = 0; i < 6; i++) api.put(tor, hx - 1.35 + i * 0.54, 2.4, hz, 1.55, 1.55, 1.55, i & 1 ? 0x4fc25a : 0x3fae4c, PI / 2, 0);   // sarılı hortum
+        api.put(cyl, hx + 2.1, 2.4, hz, 0.12, 0.6, 0.12, 0xb0b8c8, 0, 0, PI / 2); api.put(sph, hx + 2.4, 2.0, hz, 0.22, 0.45, 0.22, 0xffc83a);   // kol
+        api.put(tor, hx + 0.6, 0.18, hz + 2.4, 1.0, 1.0, 1.0, 0x4fc25a, 0, PI / 2);                  // yere sarkan hortum halkası
+        api.put(cyl, hx + 1.4, 0.2, hz + 3.2, 0.2, 0.9, 0.2, 0xffc83a, 0, 0.4, PI / 2);             // fıskiye ucu
+        // yatık dev sulama kabı
+        const wx = am.x + 4.2, wz = am.z - R - 2.2;
+        api.put(cyl, wx, 1.2, wz, 1.2, 2.4, 1.2, 0x4faee8, 0, 0, PI / 2 - 0.15); api.put(sph, wx - 1.2, 1.35, wz, 0.5, 1.2, 1.2, 0x4faee8);
+        api.put(cyl, wx + 1.8, 1.6, wz + 0.6, 0.2, 2.2, 0.2, 0x4faee8, 0.3, 0, -1.2);
+        api.put(sph, wx + 2.8, 2.0, wz + 1.0, 0.42, 0.2, 0.42, 0x8fd0ff);
+        api.put(tor, wx, 2.5, wz, 0.9, 0.9, 0.9, 0x3a8ad0, 0, 0, 0.15);
+        // üst üste saksılar
+        for (let i = 0; i < 3; i++) api.put(pot, am.x + 7.6, i * 0.75, am.z - R - 1.2, 1.1 - i * 0.1, 0.75, 1.1 - i * 0.1, POT[i], i);
+        flower(am.x + 7.6, am.z - R - 1.2, 1.4, 3.4, 'gerbera');
       }
       // ── sulama kabı (Saksı Ormanı): dev mavi kap, ağzından su damlaları süzülür ──
       const can = L.balkonCan;

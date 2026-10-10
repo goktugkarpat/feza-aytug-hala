@@ -328,7 +328,7 @@
     for (let i = 0; i < 4; i++) B['blink' + i].scale.setScalar(on[i] ? 1 : 0.0001);
     boing(s, st, dt, B.body);
   }
-  // ── Tek Çorap: eşini kaybetmiş çizgili çorap; tırtıl gibi kıvrılarak gelir, geriye esneyip "şap" diye vurur ──
+  // ── Tek Çorap: eşini kaybetmiş çizgili çorap; yay gibi kıvrılarak gelir, geriye esneyip "şap" diye vurur ──
   function sockCols(o) {
     if (o.rare) return { band: y => rainbowAt(y * 2.6), toe: col('#ffffff'), cuff: col('#ffffff') };
     const A = col('#ff6b78'), B2 = col('#fff4e8'), C2 = col('#3cc4c0');
@@ -363,7 +363,7 @@
     const B = m.B;
     if (s.mv > 0.03) s.walk += dt * (5 + 4 * s.mv);
     const k = Math.min(1, s.mv * 1.4), ph = s.walk;
-    // tırtıl gibi: üst kısım öne-arkaya kıvrılır, gövde ezilip uzar
+    // yay gibi: üst kısım öne-arkaya kıvrılır, gövde ezilip uzar
     let bend = Math.sin(ph) * 0.35 * k + Math.sin(s.t * 1.7 + s.ph) * 0.06, sy = 1 + Math.cos(ph) * 0.08 * k + 0.02 * breath(s);
     B.top.rotation.z = Math.sin(s.t * 1.3 + s.ph) * 0.08;
     if (st.windup >= 0) { const w = sm(st.windup * 1.4); bend = lerp(bend, -0.75, w); sy *= 1 + 0.1 * w; B.top.rotation.z += Math.sin(s.t * 45) * 0.05 * w; }

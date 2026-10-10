@@ -295,8 +295,9 @@ Her iki bölümde bir mini oyun köşesi (`L.stations` `{kind:'mini', mini}`): k
 ### 5. oda: Balkon Bahçesi (src/06z_balkon.js · huysuzlar src/05h_balkon.js · sesler src/02l_balkon.js)
 İsteğe bağlı ödül odası (bölge 5, `malzeme: null`; 06a `isOpen` yalnız malzemeli odaların bosslarını sayar → Pasta kilidi hâlâ 3 malzeme).
 Alanlar: Saksı Ormanı (dev saksılar, sulama kabından damlalar) · Çiçek Tepesi (zıplatan çiçek yatakları `L.balkonPads`, polen) · Kuş Yemi
-Bahçesi (tohumlar, serçeler, rüzgâr çanı) · arena: ahşap bitki standı + kovan. İstasyonlar: `{kind:'mini', mini:'cicekSula'}`, `{kind:'binis'}`.
-Huysuzlar: bahceSalyangozu, ugurBocegi, karinca (elit), tirtil (neşelenince kelebek), altinUgur (nadir); boss `ariKralice` (base kefirdev).
+Bahçesi (tohumlar, serçeler, rüzgâr çanı) · arena: ahşap bitki standı + hortum makarası, sulama kabı, saksılar. İstasyonlar: `{kind:'mini', mini:'cicekSula'}`, `{kind:'binis'}`.
+Huysuzlar (canlanmış bahçe eşyaları; oyunda HİÇ böcek/karınca yok): saksicik (yuvarlanır), sulamaKabi (su damlası atar), mandal (elit, zıplar),
+eldiven (yakın), altinSaksi (nadir); boss `uykucuHortum` (base kefirdev, sarılı bahçe hortumu: su püskürtür, damla atar, hoplar).
 Kayıp eşya `telefon`. Ödül (boss ilk neşelenişte): `unlockCostume('superkahraman')`, 3 çiçek pasta süsü, çıkartma `balkon_bahce`.
 Merkezdeki 5. kapı: 06z_balkon masa `yerlesim`/`kur`'unu sarar (`kapi_balkon`, son kapının yanına).
 
