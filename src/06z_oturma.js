@@ -212,7 +212,7 @@ const OTURMA = (() => {
   }
 
   // ── görsel kurulum ──
-  function kur(L, api) {
+  function* kur(L, api) {   // üreteç: yield'ler oda geçişinde ayrı karelere düşer (06_level buildSteps)
     K.lowShadow(api);
     const rnd = api.rnd, A = L.areas || [], a1 = A[0], a2 = A[1], a3 = A[2], ar = A[3];
     const R = i => L.rooms[i];
@@ -220,6 +220,7 @@ const OTURMA = (() => {
     const sofa = a3 ? bbox(L, a3.rooms, 3.5) : null;
     const shadeAt = (x, z) => { if (!sofa) return 0; const d = Math.min(x - sofa.x0, sofa.x1 - x, z - sofa.z0, sofa.z1 - z); return Math.max(0, Math.min(1, d / 3)); };
     K.floor(L, api, { mats: [{ tex: 'parquet', size: 13.4, rough: 0.42 }], region: (x, z) => [0, 0, shadeAt(x, z)], out: [0.46, 0.45, 0.5], shadeColor: [0.52, 0.44, 0.38] });
+    yield;
     // halılar (kalın: 12 cm), saçaklar, lifler
     const rugs = [rug1, rugA].filter(Boolean);
     for (const q of rugs) {
@@ -268,6 +269,7 @@ const OTURMA = (() => {
       K.treasure(api, T, s.x, s.z, treasureGeo(kind), { y: 0.2, sc, rough: kind === 'para' ? 0.3 : 0.4, line: firstTr ? 'oda_hazine_ipucu' : null, say: i ? null : kind === 'para' ? 'oda_para_bul' : 'oda_hazine_bul', sticker: 'oturma_hazine', gs: i === trPlan.length - 1 });
       firstTr = false;
     });
+    yield;
     // geçit köprüleri: kitap köprüsü (1→2), boyama kitabı (2→3)
     const bridge = (g, ci) => {   // yere yatırılmış dev kitap: kapaklar, sayfa bloğu (kenarlarda sayfa çizgileri), sırt, kapakta güneş resmi
       if (!g) return;
@@ -291,6 +293,7 @@ const OTURMA = (() => {
     // ── Alan 2 · Kitaplık Dağı ──
     const occR = (x, z) => rugs.some(q => inRect(q, x, z)), occ2 = (x, z) => occR(x, z) || (sofa && inRect(sofa, x, z));
     if (a2) kitaplik(L, api, T, mainOf(L, a2), rnd, occ2);
+    yield;
     // ── Alan 3 · Koltuk Altı ──
     if (a3) koltuk(L, api, T, a3, sofa, rnd, occR);
     // (alan girişi cümleleri hikâyede: STORY.area → alan_oturma_N)
@@ -675,5 +678,5 @@ BOLUM.define('oturma', {
   minimap: { zemin: '#c9a06a' },
   harita: { ad: 'Oturma Odası', detay: 'Halı ormanı, kitaplık dağı ve koltuk altı', renk: '#9fb4cf', x: 22, y: 34, simge: '🛋️' },
   yerlesim(L, api) { OTURMA.yerlesim(L, api); },
-  kur(L, api) { OTURMA.kur(L, api); },
+  kur(L, api) { return OTURMA.kur(L, api); },
 });

@@ -6456,7 +6456,9 @@ const LEVEL = (function () {
     yield 'floor';
     const zapi = zd ? zoneApi(L, B) : null;
     if (L._title && typeof STORY !== 'undefined' && STORY && typeof STORY.buildTitle === 'function') { try { STORY.buildTitle(L, zapi || zoneApi(L, B)); } catch (e) { console.warn('LEVEL: STORY.buildTitle', e); } }
-    else if (zd && typeof zd.kur === 'function') { try { zd.kur(L, zapi); } catch (e) { console.warn('LEVEL: ' + L.Z.id + '.kur', e); } }
+    else if (zd && typeof zd.kur === 'function') {   // kur bir üreteç döndürebilir (function*): aralarındaki yield'ler ayrı karelere düşer
+      try { const r = zd.kur(L, zapi); if (r && typeof r.next === 'function') { for (let v = r.next(); !v.done; v = r.next()) yield 'kur'; } } catch (e) { console.warn('LEVEL: ' + L.Z.id + '.kur', e); }
+    }
     else if (L.theme === 'forest') buildForest(L, B); else if (L.theme === 'dairy') buildDairy(L, B); else if (L.theme === 'castle') buildCastle(L, B); else buildDream(L, B);   // (Dev Ev: cave / volcano / town çizicileri çıkarıldı)
     if (V) buildVillage(L, B);
     tp = lap('theme', tp);

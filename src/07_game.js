@@ -1106,6 +1106,17 @@ const GAME = (() => {
     if (async && renderer.compileAsync) { let p = null; try { p = renderer.compileAsync(scene, camera); } catch (err) { warnOnce('warm compileAsync', err); } if (p) yield p; }
     try {
       if (!async || !renderer.compileAsync) renderer.compile(scene, camera);   // everything in the level too (ignores frustum culling)
+      if (async) {   // ilk çizim (doku/geometri yükleme, ekran kartında boru hattı kurulumu) parça parça: her karede sahnenin bir dilimi
+        const parts = tmp.children.concat(L.group ? L.group.children : []), vis = parts.map(o => o.visible), per = Math.max(1, Math.ceil(parts.length / 6));
+        renderer.setRenderTarget(typeof POST !== 'undefined' && POST.on && typeof rtMain !== 'undefined' && rtMain ? rtMain : null);
+        try {
+          for (let s0 = 0; s0 < parts.length; s0 += per) {
+            for (let n = 0; n < parts.length; n++) parts[n].visible = vis[n] && n >= s0 && n < s0 + per;
+            renderer.render(scene, camera);
+            yield 'dilim' + (s0 / per);
+          }
+        } finally { for (let n = 0; n < parts.length; n++) parts[n].visible = vis[n]; }
+      }
       for (let n = 0; n < combos.length; n++) {
         const eq = combos[n];
         if (eq) { try { H.setEquip(eq); dressed = true; } catch (err) { warnOnce('warm equip', err); } }

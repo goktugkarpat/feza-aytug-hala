@@ -735,7 +735,7 @@ const ODAB = (() => {
   }
 
   // ── Görsel kurulum ──
-  function kur(L, api) {
+  function* kur(L, api) {   // üreteç: yield'ler oda geçişinde ayrı karelere düşer (06_level buildSteps)
     const D = L.odb || { ice: [], pads: [], gold: [], trails: [], taken: [] };
     const B = O.batch(api), rnd = api.rnd, R = O.rig(api, L);
     if (api.floor && api.floor.material && api.floor.material.userData && api.floor.material.userData.u) {
@@ -758,6 +758,7 @@ const ODAB = (() => {
       }
       api.glow(rm.x, rm.z, rm.r * 0.95, ar === 1 ? 0xffe2ee : 0xe4f6ff, 0.1);
     });
+    yield;
     // ── Kıyı süsleri: yürünür alanın hemen kenarında (ekranda görünür), alana göre ──
     const avoid = (D.taken || []).map(q => ({ x: q.x, z: q.z, r: q.r * 0.6 })).concat((L.areas || []).filter(a => a.gate).map(a => ({ x: a.gate.x, z: a.gate.z, r: 4.5 })));
     if (L.exit) avoid.push({ x: L.exit.x, z: L.exit.z, r: 5 });
@@ -788,6 +789,7 @@ const ODAB = (() => {
       B.add('glow', G.box(), C(0xffffff, 1.2), [x - w * 0.3, 3.4, z + 0.09], [0, 0, 0.35], [0.12, 5.2, 0.01]);
       B.add('glow', G.box(), C(0xffffff, 1.0), [x - w * 0.22, 3.2, z + 0.09], [0, 0, 0.35], [0.05, 4.4, 0.01]);
     }
+    yield;
     // ── Geçitler: buz kemerleri ──
     (L.areas || []).forEach((a, k) => { if (k && a.gate) (a.boss ? freezerDoor : iceArch)(B, api, L, k); });
     // ── Buz pistleri ──
@@ -811,6 +813,7 @@ const ODAB = (() => {
       O.goldSugar(api, R, g.x, g.y, g.z, { sticker: g.sticker, r: g.high ? 1.5 : 1.1, dy: g.high ? 1.2 : 1.4 });
       if (g.high) R.zones.push({ x: g.x, z: g.z, r: 5.5, enter: () => O.say('odb_jole_altin') });
     }
+    yield;
     // ── Kaydırak ──
     if (D.slide) slide(B, api, R, D.slide);
     // ── Kar topu + buz duvarı ──

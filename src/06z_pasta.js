@@ -152,7 +152,7 @@
   }
 
   // ── Görsel kurulum ──
-  function kur(L, api) {
+  function* kur(L, api) {   // üreteç: yield'ler oda geçişinde ayrı karelere düşer (06_level buildSteps)
     const D = L.odp || { lanterns: [], houses: [], candles: [], pads: [], gold: [], trails: [], taken: [] };
     const B = O.batch(api), rnd = api.rnd, R = O.rig(api, L);
     tintFloor(api);
@@ -187,11 +187,13 @@
     }
     for (const f of O.floorSpots(L, api, 55, { avoid })) floorCandy(B, f.x, f.z, areaOf(f.room), rnd);
     O.decals(api, L, 'kalp', 16, 2.4, { avoid }); O.decals(api, L, 'girdap', 14, 2.2, { avoid, opacity: 0.85 });
+    yield;
     // geçitler: şeker kamışı kemerleri + kurabiye köprü
     (L.areas || []).forEach((a, k) => { if (k && a.gate) candyArch(B, api, L, k); });
     // ── Krema Nehri: bisküvi sal ──
     if (D.raft) raft(B, api, R, D.raft);
     if (D.bag) pipingBag(B, api, R, D.bag);
+    yield;
     // ── Çilek Ormanı: fenerler, kurabiye evleri ──
     if (D.lanterns.length) lanterns(B, api, R, D.lanterns);
     D.houses.forEach((h, i) => cookieHouse(B, api, R, h, i));
@@ -218,6 +220,7 @@
     O.fairyLights(B, api, L, { avoid: avoid.concat(edgeList.map(c => ({ x: c.x, z: c.z, r: 1.5 }))), colors: CANDY, k: 2.2, light: 0xffd8ec, wire: 0xffffff, space: 3.8,
       rooms: new Set(L.rooms.map((r, i) => (r.kind === 'boss' ? -1 : i))),
       post: (B2, x, z, h) => { B2.add('candy', cylH(), stripes(x, z, C(0xff3b5c), C(0xffffff), 2, 6), [x, h / 2, z], null, [0.13, h, 0.13]); B2.add('candy', G.sphere(10, 7), C(0xffd24a), [x, h + 0.1, z], null, [0.2, 0.2, 0.2]); } });
+    yield;
     // ── Arena: dev pasta ──
     if (D.arena) cakeArena(B, api, R, L, D.arena, rnd);
     // ── alan ipuçları (ilk odalarına girince) ──
