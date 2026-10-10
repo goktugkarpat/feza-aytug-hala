@@ -2,7 +2,7 @@
 // Dosya eklenirse CORE listesine ekle; önemli değişiklikte CACHE sürümünü artır.
 const CACHE = 'feza-aytug-hala-v2-gece';
 const SRC = ['00_i18n', '00_core', '01_textures', '02_audio', '02l_huysuz', '02l_feza', '02l_his', '02l_mini', '02l_boss', '02l_hikaye', '02l_masa', '02l_odalarA', '02l_balkon', '02l_hala', '02l_odalarB', '03_fx', '04_feza', '04_esyalar', '04_bilbo', '04_bilbo_follow', '04_bilbo_fun', '04_hala', '05_enemies', '05a_huysuz_kayit', '05h_huysuzlar', '05b_bosslar', '05c_boss_davranis', '05h_balkon', '06a_bolum_kayit', '06y_odakit', '06z_oturma', '06z_mutfak', '06z_buzdolabi', '06z_pasta', '06z_masa', '06z_balkon', '06_level', '07_game', '08_skills', '08m_minigame', '08j_his', '08n_mini_oyunlar', '10_story', '09_ui', '09h_hub'];
-const CORE = ['./', './index.html', './vendor/three.js', './sesler.js', './bilbo-ses.js', './assets/audio/bilbo-hav-hav.mp3', './manifest.webmanifest', './src/ui.css',
+const CORE = ['./', './index.html', './vendor/three.js', './sesler.js', './bilbo-ses.js', './assets/audio/bilbo-hav-hav.mp3', './manifest.webmanifest', './src/ui.css', './src/hub.css',
   ...SRC.map(n => './src/' + n + '.js')];
 const ICONS = ['./icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];   // optional: a missing icon must not stop the install
 const FRESH = /(\/|index\.html)$/;   // sayfa önce ağ, diğer dosyalar önce önbellek
