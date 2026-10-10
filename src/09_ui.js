@@ -2307,14 +2307,17 @@ const UI = (() => {
         if (!so.noIntro && !Q.has('girissiz') && typeof STORY !== 'undefined' && STORY.playIntro && g.L && g.L._storyTitle) {
           showScreen(D.title, false); setMode('intro');
           try { await STORY.playIntro(); } catch (e) { warn('STORY.playIntro', e); }
-          await fade(1, 0.35, 'load'); ensureTex(0);
-          newGameWithIntro(g, { heroClass: heroClass === 'hybrid' ? 'hybrid' : heroClass === 'wizard' ? 'wizard' : 'warrior', plus: false });
+          await fade(1, 0.35, 'load');
+          await newGameWithIntro(g, { heroClass: heroClass === 'hybrid' ? 'hybrid' : heroClass === 'wizard' ? 'wizard' : 'warrior', plus: false });
           setMode('play'); refreshAllSkills(); portraitSoon(0);
           renderNow(); await frames(2); fade(0, 0.6, null); startHint();
           return;
         }
-        newGameWithIntro(g, { heroClass: heroClass === 'hybrid' ? 'hybrid' : heroClass === 'wizard' ? 'wizard' : 'warrior', plus: false });
+        showScreen(D.title, false);
+        await fade(1, 0.35, 'load');
+        await newGameWithIntro(g, { heroClass: heroClass === 'hybrid' ? 'hybrid' : heroClass === 'wizard' ? 'wizard' : 'warrior', plus: false });
         setMode('play'); refreshAllSkills(); portraitSoon(0);
+        renderNow(); await frames(2);
         // Baştan Başla while Feza napped: the nap's dim layer takes the touches — lift it, or he could not walk at all
         if (D.fade.style.pointerEvents === 'auto' || parseFloat(D.fade.style.opacity) > 0) fade(0, 0.35, null);
         startHint();   // The recorded story and the dream begin without another confirmation screen.
@@ -2324,7 +2327,7 @@ const UI = (() => {
   // GAME.newGame() says giris1/giris2 itself; only say them here if it didn't (keeps the lines from doubling).
   function newGameWithIntro(g, o) {   // Dev Ev: giriş hikâyesini GAME.newGame() → STORY.intro() anlatır
     S.cheered = 0;
-    safe('newGame', () => g.newGame(o));
+    return g.newGame({ ...o, async: true });
   }
   function restartAll() {
     if (!M.GAME || S.busy) return;
@@ -2388,7 +2391,7 @@ const UI = (() => {
       // (GAME stops everything else just before it says 'son')
       const A = M.AUD;
       if (!(A && A.current === 'son')) aud('stopVoice');
-      newGameWithIntro(g);   // state 'end' → GAME makes it a new game+
+      await newGameWithIntro(g);   // state 'end' → GAME makes it a new game+
       setMode('play'); refreshAllSkills(); portraitSoon(0);
       renderNow(); await frames(2);
       fade(0, 0.7, null);

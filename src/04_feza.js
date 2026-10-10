@@ -3081,7 +3081,9 @@ const { FEZA, ITEMS } = (function () {
     if (!BAKE.drawn) return;   // wait for the first real frame (no work in synchronous pre-rolls)
     if (!BAKE.started) warm();
     if (BAKE.pend.length) checkPending();
-    if (BAKE.warmQ.length || BAKE.cur) { warmStep(H); return; }
+    // The loader drains shader/model warm-up. Never compile unseen equipment
+    // in a combat frame; pictures of already prepared items still bake below.
+    if (BAKE.warmQ.length || BAKE.cur) return;
     if (BAKE.drawn === BAKE.last || renderer.getContext().isContextLost()) return;   // one step per drawn frame
     // calm: not in the middle of a swing and no creature after him (a card for the ground may go on anyway: asynchronous only)
     const calm = () => !(st.attack >= 0 || st.cast >= 0 || st.spin || st.hurt > 0.05) && !chased();
@@ -3102,6 +3104,27 @@ const { FEZA, ITEMS } = (function () {
       if (Array.isArray(E)) for (const e of E) if (e && e.aggro && !e.dead) return true;
     } catch (e) { /* optional */ }
     return false;
+  }
+  function* warmSteps(H, async = true) {
+    if (!H || !H.root) return;
+    warm();
+    const target = typeof POST !== 'undefined' && POST.on && typeof rtMain !== 'undefined' ? rtMain : null;
+    while (BAKE.warmQ.length || BAKE.cur) {
+      warmStep(H);
+      if (!BAKE.cur) continue;
+      yield 'equipment-model';
+      const previous = renderer.getRenderTarget();
+      let pending = null;
+      try {
+        renderer.setRenderTarget(target);
+        if (async && renderer.compileAsync) pending = renderer.compileAsync(scene, camera);
+        else renderer.compile(scene, camera);
+      } finally { renderer.setRenderTarget(previous); }
+      if (pending) yield pending;
+      try { renderer.setRenderTarget(target); renderer.render(scene, camera); }
+      finally { renderer.setRenderTarget(previous); }
+      yield 'equipment-draw';
+    }
   }
   // Explicit hooks: FEZA.warm() starts the warm-up early; ITEMS.prebake(n) makes up to n queued pictures right now
   // (e.g. when the bag opens) and returns how many are still waiting.
@@ -3356,7 +3379,7 @@ const { FEZA, ITEMS } = (function () {
     // never shows fewer stars (parent: a stronger castle drop with fewer stars than a shiny forest one confused Feza).
     stars: it => { const p = it ? it.power || 0 : 0; return p >= 34 ? 5 : p >= 24 ? 4 : p >= 16 ? 3 : p >= 10 ? 2 : 1; },
   };
-  const FEZA = { create, portrait, warm, COSTUMES, costumeBonus: id => (id && COSTUMES[id] ? COSTUMES[id].bonus : null) || null,
+  const FEZA = { create, portrait, warm, warmSteps, COSTUMES, costumeBonus: id => (id && COSTUMES[id] ? COSTUMES[id].bonus : null) || null,
     costumes: () => Object.keys(COSTUMES).map(id => ({ id, ad: COSTUMES[id].ad, arti: COSTUMES[id].arti })), bodyStats: () => BODY && { ms: BODY.ms, skinVerts: BODY.skin.attributes.position.count, clothVerts: BODY.cloth.attributes.position.count,
     hairVerts: BODY.hair.attributes.position.count, bake: { warm: BAKE.warmQ.length + (BAKE.cur ? 1 : 0), queue: BAKE.q.length + (RB.pic ? 1 : 0), reading: RB.pic ? 1 : 0, async: !RB.off, thumbs: Object.keys(THUMBS).length, portraits: Object.keys(PORTRAITS).length, portraitKeys: Object.keys(PORTRAITS) } } };
   return { FEZA, ITEMS };

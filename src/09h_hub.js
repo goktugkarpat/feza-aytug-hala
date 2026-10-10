@@ -768,7 +768,13 @@ const HUB = (() => {
   // Masaya girerken (yükleme perdesi arkasında, 07 loadSteps): Feza'nın ve Bilbo'nun ilk resmi. Bu ikisinin ilk çizimi pahalı
   // (gölgelendiricilerin ekran kartında ilk kez kurulması); sonraki kostüm/aksesuar resimleri boşta birkaç ms sürer.
   function* warmSteps(async = true) {
-    for (const f of [() => imgKostum(null), () => imgAks(null)]) {
+    // Prepare station pictures behind the loading curtain, not during play.
+    const pictures = [() => imgKostum(null), () => imgAks(null)]
+      .concat(CAKE.ORDER.map(id => () => imgSus(id)), kostumListe().map(k => () => imgKostum(k.id)),
+        aksListe().map(k => () => imgAks(k.id)), Object.keys(KAYIP_MODEL).map(id => () => imgKayip(id)));
+    const P = PP();
+    for (const id in P.cikartmalar || {}) if (P.cikartmalar[id].tur !== 'gizli') pictures.push(() => imgHuysuz(id));
+    for (const f of pictures) {
       CAP = []; try { f(); } catch (e) { /* yok */ } const js = CAP; CAP = null;
       for (const j of js) yield* thumbSteps(j[0], j[1], j[2], async);
     }

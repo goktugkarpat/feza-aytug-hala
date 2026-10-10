@@ -200,7 +200,10 @@ const GAME = (() => {
     if (GAME.state === 'title') {
       const saved = readSave();
       if (saved) applySave(saved);
-      else { newGame({ plus: false, zone: index, heroClass: o.heroClass, difficulty: o.difficulty }); return true; }
+      else {
+        const started = newGame({ plus: false, zone: index, heroClass: o.heroClass, difficulty: o.difficulty, async: o.async });
+        return o.async ? Promise.resolve(started).then(() => true) : true;
+      }
     } else {
       // A map jump must keep the reward even during the giant's farewell animation.
       if (boss && boss.gift && !boss.gift.looted) giftLoot(boss);
@@ -947,6 +950,26 @@ const GAME = (() => {
   const nextFrame = () => new Promise(res => { let done = false; const go = () => { if (!done) { done = true; res(); } };
     requestAnimationFrame(() => setTimeout(go, 0)); setTimeout(go, 120); });
   const LOADT = [];   // son geçişin aşama süreleri [ad, ms] (test)
+  // Rendering submits work; it does not mean the GPU has finished the warmup.
+  // Poll a fence without blocking so first-play frames do not inherit that queue.
+  async function settleWarmGpu() {
+    if (typeof renderer === 'undefined' || !renderer || !renderer.getContext) return;
+    const gl = renderer.getContext();
+    if (!gl || !gl.fenceSync || !gl.clientWaitSync || gl.isContextLost()) return;
+    let sync = null;
+    const start = performance.now();
+    try {
+      sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+      if (!sync) return;
+      gl.flush();
+      while (!gl.isContextLost() && performance.now() - start < 2000) {
+        const status = gl.clientWaitSync(sync, 0, 0);
+        if (status !== gl.TIMEOUT_EXPIRED) break;
+        await nextFrame();
+      }
+    } catch (err) { warnOnce('GPU warmup wait', err); }
+    finally { if (sync) gl.deleteSync(sync); }
+  }
   async function loadZoneAsync(i, o = {}) {
     if (GAME.loading) return null;
     GAME.loading = true; LOADT.length = 0;
@@ -960,6 +983,15 @@ const GAME = (() => {
         a = n;
         if (n - t > 8) { await nextFrame(); t = a = performance.now(); }
       }
+      // Exercise the full post-processing path too, while the curtain is up.
+      // WarmZone's sliced scene draws alone do not execute bloom/compositing.
+      if (typeof renderFrame === 'function') {
+        renderFrame();
+        await nextFrame();
+      }
+      const gpuStart = performance.now();
+      await settleWarmGpu();
+      LOADT.push(['gpu-ready', Math.round(performance.now() - gpuStart)]);
       return r.value;
     } catch (err) {
       warnOnce('loadZoneAsync', err);
@@ -1004,6 +1036,7 @@ const GAME = (() => {
     if (!title) populate();
     yield 'yerlestir';
     yield* warmZone(i, title, async);   // the UI's loading fade still covers the screen
+    if (!title && typeof FEZA !== 'undefined' && FEZA.warmSteps) yield* FEZA.warmSteps(H, async);
     if (!title && zdef(i).hub && typeof HUB !== 'undefined' && HUB.warmSteps) { try { yield* HUB.warmSteps(async); } catch (err) { warnOnce('HUB.warmSteps', err); } }   // masa: panel resimlerinin pahalı ilk çizimi perde arkasında
     GAME.state = title ? 'title' : 'play';
     emit('zone', { index: i, name: zdef(i).ad, title });
@@ -6520,16 +6553,20 @@ const GAME = (() => {
     const zone = plus ? 0 : clamp(Number.isInteger(o.zone) ? o.zone : 0, 0, zones().length - 1);
     const introDelay = plus ? lineLen('tekrar') + 0.3 : 0.6;
     GAME.paused = false;
-    if (!plus && zone === 0 && useTitleLevel()) startHere(); else loadZone(zone, { introDelay });
-    yolWant = false;
-    if (plus) say('tekrar', 3);
-    else {
-      const w = Number(story('intro', { zone })) || 0;   // Dev Ev: STORY.intro() (src/10_story.js) → s until it ends
-      // (Round 4 QA: the first skill's line could be dropped from AUD's full queue at the start — it waits for the intro)
-      skillAt = Math.max(skillAt, gt + w + 0.6);
-      // (Round 4) the whole journey, once per game: forest, kefir valley, cave, volcano, (Round 5) the walled town, the dragon's castle — at the first
-      // calm moment after giris2 (the owl first if Feza stands at it): see yolculukStep
-      yolWant = false;   // (eski oyunun yolculuk anlatımı: Dev Ev'de yok)
+    // UI starts must yield during scene construction just like room travel does.
+    // Keep the synchronous API for existing deterministic callers.
+    if (!plus && zone === 0 && useTitleLevel()) startHere();
+    else if (o.async) return loadZoneAsync(zone, { introDelay }).then(finishStart);
+    else loadZone(zone, { introDelay });
+    return finishStart();
+    function finishStart() {
+      yolWant = false;
+      if (plus) say('tekrar', 3);
+      else {
+        const w = Number(story('intro', { zone })) || 0;
+        // The first skill must wait for the intro, including asynchronous starts.
+        skillAt = Math.max(skillAt, gt + w + 0.6);
+      }
     }
   }
   function continueGame(o = {}) {   // o.async: kayıtlı oda karelere bölünerek kurulur (Promise döner; UI perde arkasında bekler)
