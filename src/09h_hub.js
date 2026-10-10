@@ -133,10 +133,24 @@ const HUB = (() => {
     toka: k => { k.add(G.capsule(3, 10), 0xff6fa8, [0, 0.5, 0], [0, 0, Math.PI / 2], [0.16, 0.36, 0.1]); for (let i = 0; i < 5; i++) { const a = i * TAU4 / 5; k.add(G.sphere(12, 8), 0xffffff, [Math.sin(a) * 0.3, 0.95 + Math.cos(a) * 0.3, 0.12], null, [0.2, 0.2, 0.08]); } k.add(G.sphere(12, 8), 0xffd23f, [0, 0.95, 0.18], null, [0.16, 0.16, 0.1]); },
   };
   function hashH(a, b) { const s = Math.sin(a * 91.7 + b * 47.3) * 43758.5453; return s - Math.floor(s); }
-  // Feza / Bilbo ajanı isterse gerçek modelle önizleme verir: FEZA.costumeModel(id) / BILBO.accessoryModel(id) → Object3D ya da {root, dispose}
-  const hook = (G2, fn, id) => { try { return typeof G2 !== 'undefined' && G2 && typeof G2[fn] === 'function' ? G2[fn](id) : null; } catch (e) { return null; } };
-  const imgKostum = id => thumb('k_' + (id || '_kendi'), () => (typeof FEZA !== 'undefined' && hook(FEZA, 'costumeModel', id)) || kitObj(KOSTUM_MODEL[id || '_kendi'] || KOSTUM_MODEL._kendi));
-  const imgAks = id => thumb('a_' + (id || '_yok'), () => (typeof BILBO !== 'undefined' && hook(BILBO, 'accessoryModel', id)) || kitObj(AKS_MODEL[id || '_yok'] || AKS_MODEL._yok));
+  // Gerçek modelle önizleme: Feza kostümüyle (FEZA.create + setCostume), Bilbo aksesuarıyla (BILBO.create + setAccessory); olmazsa 3B simge
+  const realFeza = id => () => {
+    if (typeof FEZA === 'undefined' || !FEZA.create) return null;
+    const m = FEZA.create(); if (!m || !m.root) return null;
+    if (m.setCostume) m.setCostume(id || null);
+    if (m.update) try { m.update(0, { move: 0, attack: -1, cast: -1, idleT: 0 }); } catch (e) { /* yok */ }
+    return { root: m.root, dispose: () => { try { if (m.dispose) m.dispose(); } catch (e) { /* yok */ } } };
+  };
+  const realBilbo = id => () => {
+    if (typeof BILBO === 'undefined' || !BILBO.create) return null;
+    const m = BILBO.create(); if (!m || !m.root) return null;
+    if (m.setAccessory) m.setAccessory(id || null);
+    if (m.update) try { m.update(0, { portrait: true }); } catch (e) { /* yok */ }
+    return { root: m.root, dispose: () => { try { if (m.dispose) m.dispose(); } catch (e) { /* yok */ } } };
+  };
+  const ICONK = { superkahraman: 'superKahraman', gunluk: '_kendi' };
+  const imgKostum = id => thumb('kf_' + (id || '_'), realFeza(id), { dir: [0.25, 0.15, 1], zoom: 0.78 }) || thumb('k_' + (id || '_kendi'), () => kitObj(KOSTUM_MODEL[ICONK[id] || id || '_kendi'] || KOSTUM_MODEL._kendi));
+  const imgAks = id => thumb('ab_' + (id || '_'), realBilbo(id), { dir: [0.7, 0.3, 1], zoom: 0.95 }) || thumb('a_' + (id || '_yok'), () => kitObj(AKS_MODEL[id || '_yok'] || AKS_MODEL._yok));
   const imgKayip = id => thumb('ky_' + id, () => kitObj(KAYIP_MODEL[id] || KAYIP_MODEL.anahtar));
   function imgSus(id) {
     return thumb('s_' + id, () => {
@@ -228,9 +242,11 @@ const HUB = (() => {
   }
   const shake = b => { b.classList.remove('hb-shake'); void b.offsetWidth; b.classList.add('hb-shake'); sfx('nope', { vol: 0.6 }); };
   // ── Gardırop ──
+  const RENK = ['#8fc4ff', '#ffe2b8', '#ff9a9a', '#c9d2e4', '#bfe3a8', '#c7c3ff', '#ffd0e8', '#d8f5e2'];
   function kostumListe() {
-    const P = PP(), ids = new Set(KOSTUM.map(k => k.id));
-    const L = KOSTUM.slice();
+    let L = KOSTUM.slice();
+    if (typeof FEZA !== 'undefined' && FEZA.costumes) try { L = FEZA.costumes().map((c, i) => ({ id: c.id === 'gunluk' ? null : c.id, ad: c.ad, arti: c.arti, renk: RENK[i % RENK.length] })); } catch (e) { /* katalog */ }
+    const P = PP(), ids = new Set(L.map(k => k.id));
     for (const id in P.kostumler || {}) if (!ids.has(id)) L.push({ id, ad: tr(id), renk: '#ffe0f0' });
     return L;
   }
@@ -257,7 +273,9 @@ const HUB = (() => {
   }
   // ── Bilbo'nun Köşesi ──
   function aksListe() {
-    const P = PP(), ids = new Set(AKSESUAR.map(k => k.id)), L = AKSESUAR.slice();
+    let L = AKSESUAR.slice();
+    if (typeof BILBO !== 'undefined' && BILBO.ACCESSORIES) L = [AKSESUAR[0]].concat(BILBO.ACCESSORIES.map((a, i) => ({ id: a.id, ad: a.ad, renk: RENK[(i + 1) % RENK.length] })));
+    const P = PP(), ids = new Set(L.map(k => k.id));
     for (const id in (P.bilboAksesuar && P.bilboAksesuar.sahip) || {}) if (!ids.has(id)) L.push({ id, ad: tr(id), renk: '#e0f0ff' });
     return L;
   }
@@ -365,6 +383,8 @@ const HUB = (() => {
     if (d && Array.isArray(d.yildizlar)) return d.yildizlar.filter(v => best >= v).length;
     return best <= 0 ? 0 : best < 10 ? 1 : best < 20 ? 2 : 3;
   }
+  const MINI_IKON = { sekerYakala: '🍬', tencereMuzik: '🥁', buzPateni: '⛸️', balonPatlat: '🎈', kekSusle: '🧁', cicekSula: '🌷' };
+  const MINI_RENK = { sekerYakala: '#ffd6e8', tencereMuzik: '#ffe6b8', buzPateni: '#d6f0ff', balonPatlat: '#ffe0d0', kekSusle: '#f8dcff', cicekSula: '#d8f5d0' };
   function openMini() {
     const { body } = panel('mini', 'Mini Oyunlar', '🎲', '#5ac88a');
     const grid = el('div', 'hb-grid hb-minigrid', body);
@@ -373,7 +393,7 @@ const HUB = (() => {
     for (const id of ids) {
       const d = MINIGAME.get(id) || {}, r = (P.miniOyunlar || {})[id], open = !d.kilitli || (r && r.acik);
       any = any || open;
-      const t = tile(grid, { big: true, ikon: d.ikon || '🎮', img: d.resim || null, ad: d.ad || tr(id), renk: d.renk || '#d8f5e2', locked: !open, stars: open ? miniStars(id, (r && r.enIyi) || 0) : null, onTap: b => {
+      const t = tile(grid, { big: true, ikon: d.ikon || MINI_IKON[id] || '🎮', img: d.resim || null, ad: d.ad || tr(id), renk: d.renk || MINI_RENK[id] || '#d8f5e2', locked: !open, stars: open ? miniStars(id, (r && r.enIyi) || 0) : null, onTap: b => {
         if (!open) { shake(b); say('mini_kilit', 3); return; }
         sfx('star', { vol: 0.8 }); pop(...centerOf(b), 14);
         close(true);
@@ -389,11 +409,11 @@ const HUB = (() => {
     const P = PP(), g = Gm(), R = [];
     const lockedSus = CAKE.ORDER.filter(id => !CAKE.unlocked(P).includes(id));
     if (lockedSus.length) R.push({ w: 3, tur: 'sus', id: lockedSus[0] });
-    const aks = AKSESUAR.filter(a => a.id && !(P.bilboAksesuar && P.bilboAksesuar.sahip && P.bilboAksesuar.sahip[a.id]));
+    const aks = aksListe().filter(a => a.id && !(P.bilboAksesuar && P.bilboAksesuar.sahip && P.bilboAksesuar.sahip[a.id]));
     if (aks.length) R.push({ w: 2, tur: 'bilbo', id: aks[Math.floor(Math.random() * aks.length)].id });
     const st = Object.keys(CIKARTMA).filter(id => !(P.cikartmalar && P.cikartmalar[id]));
     if (st.length) R.push({ w: 2, tur: 'cikartma', id: st[Math.floor(Math.random() * st.length)] });
-    const ko = KOSTUM.filter(k => k.id && !(P.kostumler && P.kostumler[k.id]));
+    const ko = kostumListe().filter(k => k.id && !(P.kostumler && P.kostumler[k.id]));
     if (ko.length && Object.keys(P.kostumler || {}).length < 2) R.push({ w: 1, tur: 'kostum', id: ko[Math.floor(Math.random() * ko.length)].id });
     R.push({ w: 1.5, tur: 'altin', n: 3 });
     let tot = R.reduce((a, r) => a + r.w, 0), x = Math.random() * tot;
@@ -403,8 +423,8 @@ const HUB = (() => {
   function verOdul(r) {
     const P = PP(), g = Gm();
     if (r.tur === 'sus') { if (!P.acikSusler) P.acikSusler = {}; P.acikSusler[r.id] = true; return { img: imgSus(r.id), ad: CAKE.ITEMS[r.id].ad, line: 'surpriz_sus' }; }
-    if (r.tur === 'bilbo') { g.unlockBilboAccessory(r.id); const a = AKSESUAR.find(k => k.id === r.id); return { img: imgAks(r.id), ad: a ? a.ad : tr(r.id), line: 'surpriz_bilbo' }; }
-    if (r.tur === 'kostum') { g.unlockCostume(r.id); const k = KOSTUM.find(q => q.id === r.id); return { img: imgKostum(r.id), ad: k ? k.ad : tr(r.id), line: 'surpriz_kostum' }; }
+    if (r.tur === 'bilbo') { g.unlockBilboAccessory(r.id); const a = aksListe().find(k => k.id === r.id); return { img: imgAks(r.id), ad: a ? a.ad : tr(r.id), line: 'surpriz_bilbo' }; }
+    if (r.tur === 'kostum') { g.unlockCostume(r.id); const k = kostumListe().find(q => q.id === r.id); return { img: imgKostum(r.id), ad: k ? k.ad : tr(r.id), line: 'surpriz_kostum' }; }
     if (r.tur === 'cikartma') { if (!P.cikartmalar) P.cikartmalar = {}; P.cikartmalar[r.id] = { tur: 'gizli', bolum: 'masa' }; g.emit('sticker', { id: r.id, kind: 'gizli' }); return { ikon: CIKARTMA[r.id].ikon, ad: CIKARTMA[r.id].ad, line: 'surpriz_cikartma' }; }
     g.addGoldSugar(r.n || 3); return { ikon: '🍬', ad: 'Altın Şeker ×' + (r.n || 3), line: 'surpriz_altin', gold: true };
   }
@@ -651,7 +671,7 @@ const HUB = (() => {
   let warmQ = null;
   function warm() {
     if (warmQ) return;
-    warmQ = [].concat(CAKE.ORDER.map(id => () => imgSus(id)), KOSTUM.map(k => () => imgKostum(k.id)), AKSESUAR.map(k => () => imgAks(k.id)),
+    warmQ = [].concat(CAKE.ORDER.map(id => () => imgSus(id)), kostumListe().map(k => () => imgKostum(k.id)), aksListe().map(k => () => imgAks(k.id)),
       Object.keys(KAYIP_MODEL).map(id => () => imgKayip(id)));
     const P = PP(); for (const id in P.cikartmalar || {}) if (P.cikartmalar[id].tur !== 'gizli') warmQ.push(() => imgHuysuz(id));
     const tick = () => {
