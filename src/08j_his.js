@@ -321,8 +321,9 @@ const HIS = (() => {
       burst('star', h.x, h.y + 0.4, h.z, { count: 1 });
     }
     if (t - S.lastShake > 0.1 && fxOk('shake')) { S.lastShake = t; FX.shake(0.035 + Math.min(10, c) * 0.004); }
-    if (c >= 3) showCombo(c);
-    const ms = MILESTONE[c];
+    const cele = typeof UI !== 'undefined' && UI._S && UI._S.t < (UI._S.celeUntil || 0);   // boss kutlamasında kombo susar
+    if (c >= 3 && !cele) showCombo(c);
+    const ms = cele ? 0 : MILESTONE[c];
     if (ms) {
       if (G.hitStop) G.hitStop(0.05 + ms * 0.012);
       sfx(ms >= 2 ? 'levelup' : 'unlock', { vol: 0.55, pitch: 1 + ms * 0.05 });
@@ -378,7 +379,8 @@ const HIS = (() => {
   }
   function onSkill(o) {
     const s = skillList()[o.index]; if (!s) return;
-    S.lvlQ.push({ kind: 'skill', def: s.def });
+    // (09_ui artık kendi "Yeni Yetenek!" bandını gösteriyor: ikinci bir kart açılmaz)
+    if (typeof UI === 'undefined' || !UI._D || !UI._D.banner) S.lvlQ.push({ kind: 'skill', def: s.def });
   }
   function cardTick(dt) {
     if (S.card) {
@@ -389,6 +391,7 @@ const HIS = (() => {
     if (S.cardGap > 0) { S.cardGap -= dt; return; }
     const G = g();
     if (!S.lvlQ.length || !G || G.state !== 'play') return;
+    if (S.lvlQ[0].kind === 'skill' && typeof UI !== 'undefined' && UI._D && ((UI._D.banner && UI._D.banner.classList.contains('on')) || (UI._D.card && UI._D.card.classList.contains('on')))) return;   // bant / eşya kartı bitsin, sonra yetenek kartı
     const c = S.card = S.lvlQ.shift();
     if (c.kind === 'lvl') {
       // (09_ui kendi "Seviye N!" yıldızını gösterir: burada yalnız ekran konfetisi + yıldız şeker; sonraki kart 2 s bekler)

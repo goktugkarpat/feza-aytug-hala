@@ -999,7 +999,7 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 @keyframes hisShine { 0% { opacity: 1; transform: rotate(0) scale(0.6); } 100% { opacity: 0; transform: rotate(160deg) scale(1.5); } }
 
 /* Kombo sayacı: büyük, sevimli, renk değiştiren rakamlar */
-.his-combo { --h: 40; position: absolute; right: calc(var(--padR) + var(--k) * 40px); top: 31%; pointer-events: none; display: flex; align-items: center; justify-content: center;
+.his-combo { --h: 40; position: absolute; right: calc(var(--padR) + var(--k) * 150px); top: 40%; pointer-events: none; display: flex; align-items: center; justify-content: center;
   width: calc(var(--k) * 170px); height: calc(var(--k) * 150px); opacity: 0; transform: scale(0.4); transition: opacity 0.35s, transform 0.35s; }
 .his-combo.on { opacity: 1; transform: scale(1); transition: opacity 0.12s, transform 0.2s cubic-bezier(.2, 1.6, .4, 1); }
 .his-cstar { position: absolute; inset: 0; background: radial-gradient(circle, hsl(var(--h) 100% 75% / 0.85) 0 30%, hsl(var(--h) 100% 70% / 0) 62%);
@@ -1105,3 +1105,4 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 /* Büyük vuruş düğmesi: takılı ev eşyasının resmi */
 .u-atk .u-atkimg { position: absolute; inset: 9%; width: 82%; height: 82%; object-fit: contain; pointer-events: none; filter: drop-shadow(0 calc(var(--k) * 4px) calc(var(--k) * 3px) #0006); transform: rotate(-8deg); }
 .u-atk.off .u-atkimg { filter: grayscale(0.6) brightness(0.8); }
+.u-bico svg { width: 82%; height: 82%; display: block; }
