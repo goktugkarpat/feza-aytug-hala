@@ -1686,6 +1686,7 @@ const LEVEL = (function () {
     M.prop = makePropMat();
     M.decor = makeDecorMat(false);
     M.shiny = makeDecorMat(true);
+    M.shinyNS = M.shiny;   // (Dev Ev: aynı parlak süs, gölge düşürmez; uzaktaki parçalar çizilmez — ODAKIT.lowShadow)
     M.glow = makeGlowMat(2.2);
     M.gold = keep(stdMat({ color: 0xffc94a, metalness: 0.95, roughness: 0.28 }));
     M.plaster = keep(stdMat({ map: surf('plaster').map, normalMap: surf('plaster').normalMap, roughness: 0.9, vertexColors: true }));
@@ -2569,7 +2570,7 @@ const LEVEL = (function () {
       mesh.castShadow = !!DEC_CAST[mk];
       mesh.name = sh ? 'shadow-proxy' : 'decor-' + mk;
       B.g.add(mesh);
-      if (mk === 'decor' || mk === 'gloss') { const bs = mesh.geometry.boundingSphere; B.far.push({ o: mesh, x: bs.center.x, z: bs.center.z, r: bs.radius }); }
+      if (mk === 'decor' || mk === 'gloss' || mk === 'shinyNS') { const bs = mesh.geometry.boundingSphere; B.far.push({ o: mesh, x: bs.center.x, z: bs.center.z, r: bs.radius }); }
     }
   }
   // Would a volume (radius cr, heights yb..yt) standing at (x,z) hide any floor from the gameplay camera?

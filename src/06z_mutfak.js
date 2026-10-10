@@ -170,6 +170,7 @@ const MUTFAK = (() => {
 
   // ── görsel kurulum ──
   function kur(L, api) {
+    K.lowShadow(api);
     const rnd = api.rnd, A = L.areas || [], a1 = A[0], a2 = A[1], a3 = A[2], ar = A[3], R = i => L.rooms[i];
     const sinkQ = a2 ? K.bbox(L, a2.rooms, 5) : null, cupQ = a3 ? K.bbox(L, a3.rooms, 4) : null, stoveQ = ar ? K.bbox(L, ar.rooms, 4.5) : null;
     K.floor(L, api, { mats: [{ tex: 'counter', size: 6, rough: 0.32 }, { tex: 'steel', size: 4, rough: 0.28 }, { tex: 'shelf', size: 6, rough: 0.5 }],
