@@ -1229,7 +1229,10 @@ const GAME = (() => {
   // ELITE_HP_MUL: elites on top of their own ×1.8, so a "Kocaman" one stays clearly sturdier than the small ones.
   // DEV_BOSS_HP: bosses without a BOSSDAV hpK (05c) get the same length as the others (Balkon's Uykucu Hortum).
   // MOB_HIT_K / BOSS_HIT_K: incoming hits as a share of level health × this (Normal and Zor alike).
-  const ENEMY_HP_MUL = 1.25, SMALL_MOB_HP_MUL = 1.6, ELITE_HP_MUL = 1.5;
+  const ENEMY_HP_MUL = 1.25, SMALL_MOB_HP_MUL = 1.3, ELITE_HP_MUL = 1.5;
+  // SMALL_HEAVY_HP_MUL: an ordinary (not elite) foe that only counts as 'heavy' because of its slam attack (kaktüs, kaşık, şekerleme)
+  // stays close to the other small ones instead of taking ~2x their hits.
+  const SMALL_HEAVY_HP_MUL = 0.6;
   const DEV_BOSS_HP = { uykucuHortum: 2.2 };
   const MOB_HIT_K = 2.5, BOSS_HIT_K = 2.5;
   // Chapter order must not decide combat strength. Size a creature by its role and captured player level.
@@ -1303,7 +1306,7 @@ const GAME = (() => {
     // Both difficulties use the same entry level, including sleepers and summoned helpers.
     // (ENEMY_HP_MUL / SMALL_MOB_HP_MUL / ELITE_HP_MUL: see LEVEL_ROLES; bossHpNow already holds ENEMY_HP_MUL)
     const hpFor = tough => Math.round(isBoss ? bossHpNow(type, tough)
-      : ENEMY_HP_MUL * levelMobHp(type, def, elite, tough) * (elite ? ELITE_HP_MUL : SMALL_MOB_HP_MUL));
+      : ENEMY_HP_MUL * levelMobHp(type, def, elite, tough) * (elite ? ELITE_HP_MUL : SMALL_MOB_HP_MUL * (levelRole(type, def) === LEVEL_ROLES.heavy ? SMALL_HEAVY_HP_MUL : 1)));
     const difficultyHp = [hpFor(false), hpFor(true)], hp = difficultyHp[hard ? 1 : 0];
     const difficultyWind = [Math.max(T.windMin, def.windup || 0.6, 0.85 * learningAid()), Math.max(0.4, (def.windup || 0.6) * HC.wind, 0.7 * learningAid())];
     const e = {
