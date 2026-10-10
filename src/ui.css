@@ -1110,3 +1110,9 @@ html, body { -webkit-user-select: none; user-select: none; -webkit-touch-callout
 .u-rbtn.u-plus::after { content: "+"; position: absolute; right: -6%; top: -8%; width: 42%; height: 42%; border-radius: 50%; background: #3fd27a; color: #fff;
   font-weight: 900; font-size: calc(var(--k) * 22px); line-height: 1.6; text-align: center; box-shadow: 0 0 0 2px #fff; animation: uPlus 1.6s ease-out both; pointer-events: none; }
 @keyframes uPlus { 0% { transform: scale(0); opacity: 1; } 20% { transform: scale(1.3); } 30% { transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40%); } }
+
+/* Takım düğmesi: Bilbo rozeti (Takım Hamlesi'nden sonra Feza Bilbo'ya biner) */
+.u-team .u-team-bilbo { position: absolute; left: calc(var(--k) * -10px); top: calc(var(--k) * -10px); width: 44%; height: 44%; border-radius: 50%;
+  overflow: hidden; border: calc(var(--k) * 3px) solid #ffe8b9; background: #6b3a1e; box-shadow: 0 calc(var(--k) * 2px) calc(var(--k) * 4px) #0006; pointer-events: none; z-index: 2; }
+.u-team .u-team-bilbo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.u-team.ready .u-team-bilbo { animation: hisShakeIco 0.6s ease-in-out infinite; }

@@ -492,7 +492,7 @@ const UI = (() => {
     D.boneBtn.setAttribute('aria-label', FEZA_LANG.t('Bilbo’ya kemik at'));
     D.teamBtn = el('button', 'u-skill u-team', pad, '<span class="u-ico">💞</span><span class="u-team-fill"></span><span class="u-key">T</span><span class="u-bone-label">Takım</span>');
     D.teamBtn.style.setProperty('--x', -265); D.teamBtn.style.setProperty('--y', 0);
-    D.teamBtn.setAttribute('aria-label', 'Aytuğ Hala ile Takım Hamlesi');
+    D.teamBtn.setAttribute('aria-label', 'Aytuğ Hala ile Takım Hamlesi, sonra Bilbo’ya bin');
     const nSk = clamp((M.SKILLS && M.SKILLS.length) || 3, 1, ARC.length);
     for (let i = 0; i < nSk; i++) {
       const b = el('button', 'u-skill u-hide', pad, `<span class="u-ico"></span><span class="u-cd"></span><span class="u-cdn"></span><span class="u-key">${i + 1}</span>`);
@@ -1761,6 +1761,8 @@ const UI = (() => {
     if (D.bilboFace && !D.bilboFace.firstChild && typeof BILBO !== 'undefined') {
       const bilboUrl = safe('BILBO.portrait', () => BILBO.portrait());
       if (bilboUrl) D.bilboFace.innerHTML = FEZA_LANG.html(`<img src="${bilboUrl}" alt="">`);
+      // Takım düğmesine Bilbo rozeti: Takım Hamlesi'nden sonra Feza Bilbo'ya biner
+      if (bilboUrl && D.teamBtn && !D.teamBtn.querySelector('.u-team-bilbo')) { const b = document.createElement('span'); b.className = 'u-team-bilbo'; b.innerHTML = `<img src="${bilboUrl}" alt="">`; D.teamBtn.appendChild(b); }
     }
     let url = null;
     if (F && F.portrait && g && g.H) url = safe('FEZA.portrait', () => F.portrait(g.H));
