@@ -2283,8 +2283,8 @@ const UI = (() => {
       if (cont) {
         showScreen(D.title, false);
         await fade(1, 0.45, 'load');
-        ensureTex(savedZone());
-        safe('continueGame', () => g.continueGame());
+        if (g.loadZoneAsync) { try { await g.continueGame({ async: true }); } catch (e) { warn('continueGame', e); } }   // oda karelere bölünerek kurulur
+        else { ensureTex(savedZone()); safe('continueGame', () => g.continueGame()); }
         setMode('play'); refreshAllSkills(); portraitSoon(0);
         renderNow(); await frames(2);
         fade(0, 0.6, null);

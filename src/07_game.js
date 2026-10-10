@@ -6507,7 +6507,7 @@ const GAME = (() => {
       yolWant = false;   // (eski oyunun yolculuk anlatımı: Dev Ev'de yok)
     }
   }
-  function continueGame() {
+  function continueGame(o = {}) {   // o.async: kayıtlı oda karelere bölünerek kurulur (Promise döner; UI perde arkasında bekler)
     if (!inited) init();
     const s = readSave();
     if (!s) { GAME.clearSave(); newGame({ plus: false }); return; }
@@ -6516,7 +6516,9 @@ const GAME = (() => {
       GAME.clearSave(); newGame({ plus: false }); return;
     }
     C.playT = 0; C.lastHurt = gt - 99; yolWant = false;
-    if (s.zone === 0 && useTitleLevel()) startHere(s.zoneLevel); else loadZone(s.zone || 0, { level: s.zoneLevel });
+    if (s.zone === 0 && useTitleLevel()) startHere(s.zoneLevel);
+    else if (o.async) return loadZoneAsync(s.zone || 0, { level: s.zoneLevel }).then(() => { say(s.plus ? 'tekrar' : 'hos_geldin', 3); });
+    else loadZone(s.zone || 0, { level: s.zoneLevel });
     say(s.plus ? 'tekrar' : 'hos_geldin', 3);
   }
 

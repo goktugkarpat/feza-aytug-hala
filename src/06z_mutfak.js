@@ -170,7 +170,7 @@ const MUTFAK = (() => {
   }
 
   // ── görsel kurulum ──
-  function kur(L, api) {
+  function* kur(L, api) {   // üreteç: yield'ler oda geçişinde ayrı karelere düşer (06_level buildSteps)
     K.lowShadow(api);
     const rnd = api.rnd, A = L.areas || [], a1 = A[0], a2 = A[1], a3 = A[2], ar = A[3], R = i => L.rooms[i];
     const sinkQ = a2 ? K.bbox(L, a2.rooms, 5) : null, cupQ = a3 ? K.bbox(L, a3.rooms, 4) : null, stoveQ = ar ? K.bbox(L, ar.rooms, 4.5) : null;
@@ -180,11 +180,16 @@ const MUTFAK = (() => {
     if (stoveQ) { const q = stoveQ, cx = (q.x0 + q.x1) / 2, cz = (q.z0 + q.z1) / 2, w = q.x1 - q.x0, d = q.z1 - q.z0;   // çelik çerçeve
       api.box(cx, 0.14, q.z0, w + 0.5, 0.28, 0.5, 0xd8dde4); api.box(cx, 0.14, q.z1, w + 0.5, 0.28, 0.5, 0xd8dde4);
       api.box(q.x0, 0.14, cz, 0.5, 0.28, d, 0xd8dde4); api.box(q.x1, 0.14, cz, 0.5, 0.28, d, 0xd8dde4); }
+    yield;
     const T = K.toys(api);
     L._mkSink = null;
+    yield;
     if (a2) lavabo(L, api, T, a2, rnd);
+    yield;
     if (a1) tezgah(L, api, T, a1, rnd);
+    yield;
     if (a3) dolap(L, api, T, a3, cupQ, rnd);
+    yield;
     if (ar) ocak(L, api, T, ar, stoveQ, rnd);
     // (alan girişi cümleleri hikâyede: STORY.area → alan_mutfak_N)
     if (L._mkMini) K.miniBox(api, T, L._mkMini, 'mut_mini_ipucu');
@@ -550,5 +555,5 @@ BOLUM.define('mutfak', {
   minimap: { zemin: '#efd9b4' },
   harita: { ad: 'Mutfak', detay: 'Tezgâh tepeleri, lavabo gölü ve dolap içi', renk: '#f3d49b', x: 50, y: 30, simge: '🍳' },
   yerlesim(L, api) { MUTFAK.yerlesim(L, api); },
-  kur(L, api) { MUTFAK.kur(L, api); },
+  kur(L, api) { return MUTFAK.kur(L, api); },
 });
