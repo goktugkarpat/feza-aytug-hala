@@ -6,6 +6,11 @@
      mandal       Mandal          çamaşır mandalı; çenesini açıp kapayarak zıplar (base yogurt, 'ziplayan'); elit: pembe, taçlı
      eldiven      Bahçe Eldiveni  parmaklarını kıpırdatır, "pat!" diye dokunur (base goblin, 'yakin')
      altinSaksi   Altın Saksı     nadir: neşelenince "gizli" çıkartma + altın şeker
+     dikenliGul   Dikenli Gül     saksıda kök salmış gül, yumuşak şeker dikenler; diken topu atar, değince "pıt!" kalp (base mantar, 'uzak');
+                                  elit: taçlı Kocaman Dikenli Gül
+     kaktusCicegi Kaktüs Çiçeği   tepesi sarı çiçekli fıçı kaktüs; takla atıp yuvarlanır, zıplayıp iner, yerde diken halkası (base goblin, 'agir')
+     kaktus       Kaktüs          kolları yukarı klasik kaktüs (Feza'nın sevdiği); kollarını açıp diken toplarını saçar ('agir'); elit: şapkalı
+     gokkusagiGul Gökkuşağı Gül   nadir: gökkuşağı yapraklı; neşelenince "gizli" çıkartma + altın şeker
      uykucuHortum Uykucu Hortum   boss (base kefirdev): sarılı bahçe hortumu; esner, fıskiyeden su püskürtür, su damlası atar, hoplar
    Biçim: src/SPEC.md › "Dev Ev API" › Huysuz kaydı. Sesler: src/02l_balkon.js. */
 (() => {
@@ -765,6 +770,349 @@
     else B.sleepE.scale.setScalar(0.0001);
   }
 
+  // ════════════════ DİKENLİ GÜL (+ elit Kocaman Dikenli Gül, nadir Gökkuşağı Gül) ════════════════
+  // Mint saksıda kök salmış iri gül: saksının altından çıkan iki tombul kökle paytak paytak yürür. İnce yeşil sapında YUMUŞAK,
+  // ucu şeker gibi yuvarlak dikenler; iki yaprağı kolları. Başı kocaman pembe-kırmızı gül: yüzü ortada, çevresinde iki sıra taç
+  // yaprağı, tepesinde kıvrık gül sarmalı. Hazırlık: geriye esner, taç yaprakları kabarır, ağzının önünde pembe diken topu büyür;
+  // saldırı: öne fırlayıp topu atar (Feza'ya değince "pıt!" diye kalpler çıkar). Bekleme: taç yapraklarını açıp kapar, burnu
+  // kaşınır, "hapşu!" — taç yaprakları uçuşur, kıkırdar. Elit: koyu pembe, lila saksılı, taçlı. Nadir: gökkuşağı yapraklı, inci saksı.
+  const GUL_RB = ['#ff5a6a', '#ff9a3a', '#ffd84a', '#5ccf6a', '#4ab0ff', '#9a7aff', '#ff6fc0'];
+  function potDots(potD, pot, potL, y0, h, dotY, n, dotCol) {   // saksı rengi: alttan koyu, kenar açık, boyalı benek kuşağı
+    const out = new THREE.Color(), dc = Array.isArray(dotCol) ? dotCol.map(col) : [col(dotCol)];
+    return (x, y, z) => {
+      out.copy(potD).lerp(pot, sm((y - y0) / (h * 0.45))).lerp(potL, 0.4 * sm((y - y0 - h * 0.82) / (h * 0.12)));
+      const a = Math.atan2(x, z), f = ((a / TAU * n) % 1 + 1) % 1, dd = Math.hypot((f - 0.5) * 0.11, y - dotY);
+      const k = sm((0.019 - dd) / 0.005);
+      if (k > 0) out.lerp(dc[(Math.floor(a / TAU * n + 40)) % dc.length], k);
+      return out;
+    };
+  }
+  function buildGul(r, o) {
+    const E = o.elite, RB = o.rare;
+    const pt = RB ? ['#fff0f8', '#ffffff', '#e8c8e0'] : E ? ['#c8a8f0', '#ece0ff', '#8a6ac8'] : ['#8fd8c0', '#d0f6e8', '#4a9e88'];
+    const P0 = E ? '#d4185a' : '#ee3a62', P1 = E ? '#ff4f94' : '#ff7a9c', P2 = E ? '#ff9cc8' : '#ffb6c8';
+    const pc = i => (RB ? GUL_RB[i % 7] : null);
+    r.bone('body', 'root', [0, 0.1, 0]);
+    r.bone('rootL', 'root', [0.07, 0.13, 0.02]); r.bone('rootR', 'root', [-0.07, 0.13, 0.02]);
+    r.bone('stem', 'body', [0, 0.42, 0]);
+    r.bone('leafL', 'stem', [0.02, 0.56, 0.01]); r.bone('leafR', 'stem', [-0.02, 0.5, 0.01]);
+    r.bone('head', 'stem', [0, 0.74, 0.03]);
+    r.bone('petals', 'head', [0, 0.86, 0]);
+    r.bone('fly', 'head', [0, 0.86, 0.04]);
+    r.bone('ammo', 'head', [0, 0.84, 0.27]);
+    // saksı (Saksıcık'la aynı geometri, küçültülmüş) + toprak
+    r.on('body').fx(0, RB ? 1.4 : 0.55).add(K.lathe('bkPot', POT_P, 40, 4), potDots(col(pt[2]), col(pt[0]), col(pt[1]), 0.1, 0.35, 0.3, 10, RB ? GUL_RB : E ? '#ffe680' : '#ffffff'), [0, 0.1, 0], null, 0.78);
+    r.fx(1, 0).add(G.sphere(10, 6), hdr('#ffffff', RB ? 1.5 : 1.15), [-0.11, 0.28, 0.12], [0, -0.7, 0], [0.02, 0.055, 0.008]);
+    r.fx(0, 0.05).add(G.cyl(1, 1, 24), '#6a4028', [0, 0.428, 0], null, [0.172, 0.016, 0.172]);
+    // kökler (bacak): saksının dibinden çıkar, uçları yuvarlak
+    for (const sd of [-1, 1]) {
+      r.on(sd > 0 ? 'rootL' : 'rootR').fx(0, 0.3);
+      r.seg([0.06 * sd, 0.13, 0.02], [0.1 * sd, 0.05, 0.05], 0.03, '#9a6a40', 0.024, 8);
+      r.add(G.sphere(12, 8), '#b07a4a', [0.11 * sd, 0.035, 0.07], null, [0.04, 0.032, 0.05]);
+      r.seg([0.1 * sd, 0.05, 0.05], [0.15 * sd, 0.03, 0.02], 0.016, '#9a6a40', 0.01, 6);
+    }
+    r.fx(0, 0);
+    // sap + yumuşak şeker dikenler
+    r.on('stem').fx(0, 0.45);
+    r.seg([0, 0.42, 0], [0, 0.6, 0.01], 0.026, '#4fa83e', 0.024, 10);
+    r.seg([0, 0.6, 0.01], [0, 0.76, 0.03], 0.024, '#58b246', 0.022, 10);
+    const TH = [[0.47, 1], [0.53, -1], [0.64, 1], [0.7, -1]];
+    for (const [y, sd] of TH) {
+      K.softSpike(r, [0.016 * sd, y, 0.01], [sd, 0.5, 0.35], 0.075, 0.022, '#78cc5c');
+      r.fx(0, 0.8).add(G.sphere(8, 6), '#d8ffb8', [0.016 * sd + sd * 0.05, y + 0.027, 0.03], null, 0.012);
+      r.fx(0, 0.45);
+    }
+    // yaprak kollar (damarlı)
+    for (const sd of [-1, 1]) {
+      const y = sd > 0 ? 0.57 : 0.51;
+      r.on(sd > 0 ? 'leafL' : 'leafR').fx(0, 0.5);
+      r.add(G.sphere(14, 8), K.vgrad(y - 0.04, y + 0.06, [[0, '#3f8a34'], [1, '#86d468']]), [0.1 * sd, y + 0.03, 0.02], [0, 0, sd * 0.4], [0.1, 0.024, 0.055]);
+      r.fx(0, 0).add(G.sphere(6, 4), '#3a7a2c', [0.1 * sd, y + 0.05, 0.024], [0, 0, sd * 0.4], [0.075, 0.006, 0.008]);
+    }
+    // çanak yapraklar (başın altında)
+    r.on('head').fx(0, 0.4);
+    for (let i = 0; i < 5; i++) { const a = i / 5 * TAU + 0.3; r.add(G.sphere(10, 6), '#5cb84a', [Math.sin(a) * 0.08, 0.725, 0.03 + Math.cos(a) * 0.06], [0.35, a, 0], [0.034, 0.016, 0.085]); }
+    // baş: yüz topu + iki sıra taç yaprağı + tepede gül sarmalı
+    const C = [0, 0.86, 0.04], R = 0.17;
+    r.fx(0, 0.45).add(G.sphere(26, 18), RB ? K.vgrad(0.72, 1.0, [[0, '#ffd0e8'], [1, '#fff4fb']]) : K.vgrad(0.72, 1.02, [[0, P1], [1, P2]]), C, null, R);
+    r.on('petals').fx(0, 0.5);
+    for (let i = 0; i < 11; i++) {
+      const a = i / 11 * TAU, d = 0.195;
+      r.add(G.sphere(14, 8), pc(i) || mixc(P0, P1, 0.25 * hash(i, 4, 2)), [Math.sin(a) * d, 0.86 + Math.cos(a) * d, -0.045], [0, 0, -a], [0.105, 0.13, 0.045]);
+    }
+    for (let i = 0; i < 9; i++) {
+      const a = i / 9 * TAU + 0.35, d = 0.165;
+      r.add(G.sphere(14, 8), pc(i + 3) ? mixc(pc(i + 3), '#ffffff', 0.3) : mixc(P1, P2, 0.3 * hash(i, 9, 1)), [Math.sin(a) * d, 0.86 + Math.cos(a) * d, 0.0], [0, 0, -a], [0.085, 0.095, 0.04]);
+    }
+    r.on('head').fx(0, 0.5);
+    r.add(G.sphere(16, 10), RB ? '#ff9ad0' : P0, [0, 1.0, 0.0], [0.25, 0, 0], [0.13, 0.065, 0.1]);
+    r.add(G.sphere(12, 8), RB ? '#ffd84a' : mixc(P0, P1, 0.5), [0.055, 1.035, -0.01], [0, 0, -0.4], [0.07, 0.05, 0.065]);
+    r.add(G.torus(PI * 1.6, 0.32, 18), RB ? '#9a7aff' : mixc(P0, '#a01040', 0.35), [-0.01, 1.05, 0.0], [PI / 2 - 0.3, 0, 0], [0.055, 0.055, 0.04]);
+    r.fx(0, 0);
+    // yüz
+    K.face(r, C, R, yuz({ bone: 'head', tilt: 0.14, ex: 0.062, ey: 0.018, er: 0.054, iris: '#5a1a2a', skin: col(RB ? '#ffe0f0' : P2), browCol: '#a01a3a', browY: 1.34,
+      mouthY: -0.066, mouthW: 0.062, noHearts: true, blushCol: '#ff4f7a' }));
+    hearts(r, [[0.27, 1.06, 0.1, 0.065], [-0.25, 1.11, 0.1, 0.055]]);
+    if (E) K.crown(r.on('head'), [0, 1.04, -0.02], 0.45);
+    if (RB) glints(r.on('head'), [[0.22, 1.02, 0.12, 0.028], [-0.24, 0.72, 0.1, 0.022], [0.05, 1.12, 0.05, 0.02]]);
+    // hapşırınca uçuşan taç yaprakları
+    r.on('fly').fx(0, 0.5);
+    for (let i = 0; i < 7; i++) { const a = i / 7 * TAU + 0.3; r.add(G.sphere(10, 6), pc(i) || (i & 1 ? P1 : P2), [Math.sin(a) * 0.23, 0.86 + Math.cos(a) * 0.23, 0.1], [0.4, 0, -a], [0.05, 0.065, 0.02]); }
+    // ağzın önünde büyüyen yumuşak diken topu
+    r.on('ammo').fx(0.2, 0.8).add(G.sphere(14, 10), RB ? '#c89aff' : '#ff7aa8', [0, 0.84, 0.27], null, 0.055);
+    for (let i = 0; i < 6; i++) { const [p] = K.onEll([0, 0.84, 0.27], [0.055, 0.055, 0.055], 0.6 + (i & 1) * 1.2, i * 1.05); r.add(G.sphere(8, 6), '#ffd8ea', p, null, 0.016); }
+    r.fx(0, 0);
+    r.on('head').mark('muzzle', [0, 0.84, 0.3]);
+    return { height: 1.08, glowC: col(RB ? '#e0c0ff' : '#ff9ab8'), hide: ['fly', 'ammo'],
+      mat: { rough: 0.45, sss: col('#ffb0c8').multiplyScalar(0.04), rim: RB ? '#fff4ff' : '#ffe8f0', rimK: 0.34, rimP: 2.3 } };
+  }
+  // Gülün attığı top Feza'ya değince: "pıt!" — kalpler (07_game'e dokunmadan: atış nesnesine onHit takılır)
+  function pit(x, y, z) {
+    try {
+      if (typeof FX !== 'undefined' && FX) { if (FX.burst) FX.burst('hearts', x, y + 0.2, z, { count: 6, scale: 0.7 }); if (FX.floatText) FX.floatText(x, y + 0.7, z, 'pıt!', 'word'); }
+      if (typeof AUD !== 'undefined' && AUD && AUD.sfx) AUD.sfx('pop', { x, z, pitch: 1.35, vol: 0.7 });
+    } catch (err) { /* yok say */ }
+  }
+  function heartShot(m) {
+    try {
+      if (typeof GAME === 'undefined' || !GAME || !GAME.projectiles || !m.root) return;
+      const R0 = m.root.position;
+      for (const p of GAME.projectiles) {
+        if (p.owner !== 'enemy' || p._gul || p.t > 0.3) continue;
+        if ((p.x - R0.x) ** 2 + (p.z - R0.z) ** 2 > 4) continue;
+        p._gul = 1; const h0 = p.onHit;
+        p.onHit = (q, e, h) => { if (h0) h0(q, e, h); if (!e) pit(q.x, q.y, q.z); };
+      }
+    } catch (err) { /* yok say */ }
+  }
+  function animGul(m, dt, st, s) {
+    const B = m.B, b = B.body, k = walkPh(s, dt, 7), ph = s.walk;
+    const hop = Math.abs(Math.sin(ph)) * 0.05 * k;
+    b.position.y += hop; b.rotation.z = Math.sin(ph) * 0.1 * k + Math.sin(s.t * 1.3 + s.ph) * 0.03;
+    B.rootL.rotation.x = Math.sin(ph) * 0.6 * k; B.rootR.rotation.x = -Math.sin(ph) * 0.6 * k;
+    B.rootL.position.y += hop * 0.6 + Math.max(0, Math.sin(ph)) * 0.03 * k; B.rootR.position.y += hop * 0.6 + Math.max(0, -Math.sin(ph)) * 0.03 * k;
+    let sz = Math.sin(s.t * 1.8 + s.ph) * 0.06 - Math.sin(ph) * 0.1 * k, srx = 0.05 * k, hx = 0, hz = 0;
+    let pet = 1 + 0.03 * breath(s), lf = 0.15 + Math.sin(ph) * 0.35 * k + 0.08 * breath(s, 2), ammo = 0, fly = -1, sy = 1;
+    if (st.windup >= 0) {   // geriye esner, taç yaprakları kabarır, diken topu büyür
+      const w = sm(st.windup * 1.2);
+      srx -= 0.3 * w; hx -= 0.1 * w; pet += 0.14 * w; lf += 0.7 * w; ammo = w; sy *= 1 - 0.06 * w;
+      b.position.x += Math.sin(s.t * 55) * 0.008 * st.windup;
+    }
+    if (st.attack >= 0 && st.attack < 1) { const kk = Math.sin(PI * st.attack); srx += 0.55 * kk; hx += 0.25 * kk; pet *= 1 - 0.12 * kk; lf -= 0.3 * kk; }
+    if (st.attack >= 0) { if (!s.shotTag) { s.shotTag = 1; heartShot(m); } } else s.shotTag = 0;
+    { const u = gag(s, st, dt, 3.4, 5.5);   // bekleme: taç yapraklarını açıp kapar, burnu kaşınır, hapşu! yapraklar uçuşur
+      if (u >= 0) {
+        const oc = u < 0.45 ? 0.5 - 0.5 * Math.cos(u / 0.45 * TAU * 2) : 0;
+        pet += 0.32 * oc; s.eyeK = 1 + 0.25 * oc;
+        const back = u < 0.66 ? sm((u - 0.48) / 0.16) : 0, sn = u >= 0.66 ? 1 - sm((u - 0.72) / 0.28) : 0;
+        hx += -0.45 * back + 0.55 * sn; srx += -0.2 * back + 0.3 * sn; pet += 0.15 * back - 0.12 * sn;
+        if (back > 0) s.eyeK = lerp(s.eyeK, 0.35, back);
+        if (sn > 0.05) s.eyeK = 0.12;
+        fly = u >= 0.66 ? (u - 0.66) / 0.34 : -1;
+        const gig = bumpU(u, 0.78, 1);
+        hz += Math.sin(s.t * 22) * 0.08 * gig; lf += 0.5 * gig;
+      }
+    }
+    B.stem.rotation.z = sz; B.stem.rotation.x = srx;
+    B.head.rotation.x = hx; B.head.rotation.z = hz - sz * 0.5 + Math.sin(s.t * 1.4 + s.ph) * 0.04;
+    B.petals.scale.set(pet, pet, 1);
+    B.leafL.rotation.z = lf; B.leafR.rotation.z = -lf;
+    b.scale.set(1 - (sy - 1) * 0.5, sy, 1 - (sy - 1) * 0.5);
+    B.ammo.scale.setScalar(ammo > 0.02 ? 0.3 + 0.8 * ammo : 0.0001);
+    if (fly >= 0) { B.fly.scale.setScalar(1 + 1.7 * fly); B.fly.position.y += 0.3 * fly; B.fly.rotation.z = fly * 2.2; } else B.fly.scale.setScalar(0.0001);
+    boing(s, st, dt, b);
+  }
+
+  // ════════════════ KAKTÜS ÇİÇEĞİ ve KAKTÜS ════════════════
+  // Ortak: tombul yeşil kaktüs gövdesi (ince koyu oluklu), üstünde beyaz YUMUŞAK tüy demetleri (sivri değil), pastel saksı,
+  // ayakkabılar. Saldırı: yerde önceden kırmızı halka belirir (07 'agir'), vuruşta halkadan yumuşak yeşil diken topları fışkırır.
+  //   kaktusCicegi  yuvarlak fıçı kaktüs, tepesinde sarı çiçek, minik yan kolları; ara sıra takla atıp yuvarlanır; hazırlıkta
+  //                 çömelip zıplar, "güm!" iner. Bekleme: kendi dikeniyle kaşınır, gıdıklanıp kıkırdar.
+  //   kaktus        klasik uzun kaktüs: iki kolu yukarı kalkık, kocaman gülen yüz; kollarını sallayarak hoplar; hazırlıkta kollarını
+  //                 açıp titrer, saldırıda kollarını savurup diken toplarını saçar. Bekleme: kollarıyla dans eder, gıdıklanıp güler.
+  //                 Elit (Kocaman Kaktüs): pembe kurdeleli hasır şapka.
+  function tuft(r, c, A, phi, th, s = 1) {   // yumuşak beyaz tüy demeti (elipsoid yüzeyinde)
+    const [p, n] = K.onEll(c, A, phi, th);
+    r.push(p, K.qz(n[0], n[1], n[2]));
+    r.add(G.sphere(6, 4), '#fffaf0', [0, 0, 0.006 * s], null, 0.013 * s);
+    for (let q = 0; q < 3; q++) { const b = q / 3 * TAU + th; r.add(G.sphere(6, 4), '#ffffff', [Math.cos(b) * 0.009 * s, Math.sin(b) * 0.009 * s, 0.02 * s], [Math.sin(b) * 0.5, -Math.cos(b) * 0.5, 0], [0.005 * s, 0.005 * s, 0.018 * s]); }
+    r.pop();
+  }
+  function cactCol(y0, y1, cG, cL, cD, ribs = 8) {
+    const out = new THREE.Color();
+    return (x, y, z) => {
+      const a = Math.atan2(x, z), rib = 0.5 + 0.5 * Math.cos(a * ribs + PI);
+      return out.copy(cD).lerp(cG, sm((y - y0) / ((y1 - y0) * 0.35))).lerp(cL, 0.32 * sm((y - y1 + (y1 - y0) * 0.2) / ((y1 - y0) * 0.2))).lerp(cD, 0.3 * Math.pow(rib, 6));
+    };
+  }
+  function spikeRing(r, RR) {   // vuruş halkası: zeminden fışkıran yumuşak diken topları (ring kemiği; normalde gizli)
+    r.on('ring').fx(0, 0.6);
+    for (let i = 0; i < 12; i++) {
+      const a = i / 12 * TAU, x = Math.sin(a) * RR, z = 0.4 + Math.cos(a) * RR;
+      r.add(G.sphere(14, 10), i & 1 ? '#7ad86a' : '#5cc45a', [x, 0.08, z], [Math.cos(a) * 0.25, 0, -Math.sin(a) * 0.25], [0.085, 0.17, 0.085]);   // tombul, yuvarlak uçlu
+      r.add(G.sphere(10, 8), '#f4ffe0', [x + Math.sin(a) * 0.03, 0.235, z + Math.cos(a) * 0.03], null, 0.042);
+      r.fx(1, 0).add(G.sphere(6, 4), hdr('#ffffff', 1.2), [x - 0.03, 0.15, z + 0.06], null, [0.015, 0.03, 0.01]);
+      r.fx(0, 0.6);
+    }
+    r.fx(0, 0);
+  }
+  function buildKaktusCicegi(r, o) {
+    const E = o.elite;
+    const cG = col('#5cc46a'), cL = col('#b0f090'), cD = col('#2a8248');
+    r.bone('roll', 'root', [0, 0.45, 0]);
+    r.bone('body', 'roll', [0, 0.06, 0]);
+    r.bone('feet', 'body', [0, 0.03, 0.03]);
+    r.bone('cact', 'body', [0, 0.4, 0]);
+    r.bone('armL', 'cact', [0.17, 0.55, 0]); r.bone('armR', 'cact', [-0.17, 0.55, 0]);
+    r.bone('flower', 'cact', [0, 0.86, 0]);
+    r.bone('ring', 'root', [0, 0, 0.4]);
+    r.on('body').fx(0, 0.6).add(K.lathe('bkPot', POT_P, 40, 4), potDots(col('#3f86c8'), col('#7cc8f0'), col('#c8eeff'), 0.06, 0.38, 0.27, 9, ['#ffffff', '#ff9ac0']), [0, 0.06, 0], null, 0.85);
+    r.fx(1, 0).add(G.sphere(10, 6), hdr('#ffffff', 1.2), [-0.12, 0.27, 0.14], [0, -0.7, 0], [0.022, 0.06, 0.008]);
+    r.fx(0, 0.05).add(G.cyl(1, 1, 24), '#6a4028', [0, 0.425, 0], null, [0.19, 0.016, 0.19]);
+    r.on('feet');
+    for (const sd of [-1, 1]) shoe(r, 0.085 * sd, 0.03, 0.05, 0.06, 0.04, 0.085, '#ff7aa8');
+    const CC = [0, 0.62, 0], A = [0.205, 0.25, 0.195];
+    r.on('cact').fx(0, 0.35).add(G.sphere(28, 20), cactCol(0.37, 0.87, cG, cL, cD), CC, null, A);
+    for (let j = 0; j < 8; j++) {
+      const th = (j + 0.5) / 8 * TAU, wth = Math.atan2(Math.sin(th), Math.cos(th));
+      for (const phi of [0.35, 0.85, 1.4, 1.95]) { if (Math.abs(wth) < 0.95 && phi > 0.6 && phi < 2.2) continue; tuft(r, CC, A, phi, th); }
+    }
+    // minik yan kollar
+    for (const sd of [-1, 1]) {
+      r.on(sd > 0 ? 'armL' : 'armR').fx(0, 0.35);
+      r.add(G.sphere(16, 12), cG, [0.2 * sd, 0.55, 0], null, [0.06, 0.05, 0.055]);
+      r.add(G.sphere(16, 12), K.vgrad(0.55, 0.72, [[0, '#4cb45c'], [1, '#a8ec8a']]), [0.245 * sd, 0.63, 0], [0, 0, -sd * 0.2], [0.052, 0.085, 0.052]);
+      tuft(r, [0.25 * sd, 0.63, 0], [0.052, 0.085, 0.052], 0.2, 0, 0.9);
+      tuft(r, [0.25 * sd, 0.63, 0], [0.052, 0.085, 0.052], 1.3, sd * 1.4, 0.9);
+    }
+    // tepede sarı çiçek
+    r.on('flower').push([0, 0.865, 0.0], [-0.3, 0, 0]).fx(0, 0.5);
+    for (let i = 0; i < 9; i++) { const b = i / 9 * TAU; r.add(G.sphere(12, 6), i & 1 ? '#ffe680' : '#ffd23a', [Math.sin(b) * 0.055, 0.006 * (i & 1), Math.cos(b) * 0.055], [0, b, 0], [0.032, 0.012, 0.062]); }
+    r.add(G.sphere(14, 10), '#ff9a2e', [0, 0.012, 0], null, [0.032, 0.02, 0.032]);
+    r.fx(1, 0).add(G.sphere(6, 4), hdr('#ffffff', 1.2), [-0.01, 0.03, 0.01], null, 0.007);
+    r.pop().fx(0, 0);
+    r.on('cact');
+    K.face(r, [0, 0.6, 0], 0.195, yuz({ bone: 'cact', tilt: 0.1, ex: 0.07, ey: 0.02, er: 0.062, iris: '#1e4a1a', skin: cG, browCol: '#1f5a24', browY: 1.34,
+      mouthY: -0.075, mouthW: 0.07, noHearts: true, blushCol: '#ff7f9a' }));
+    hearts(r, [[0.27, 0.98, 0.1, 0.065], [-0.25, 1.03, 0.1, 0.055]]);
+    if (E) K.crown(r.on('flower'), [0, 0.9, -0.04], 0.4);
+    r.on('cact').mark('muzzle', [0, 0.7, 0.25]);
+    spikeRing(r, 1.3);
+    return { height: 0.95, glowC: col('#b8f08a'), hide: ['ring'],
+      mat: { rough: 0.55, sss: col('#c8ffb0').multiplyScalar(0.03), rim: '#f0ffe0', rimK: 0.3, rimP: 2.3 } };
+  }
+  function ringAnim(B, st) {   // vuruş halkası: iner inmez zeminden fışkırıp geri çekilir
+    const a = st.attack;
+    if (a >= 0 && a < 1) { const k = Math.sin(PI * Math.min(1, a * 1.25)); B.ring.scale.set(1, Math.max(0.0001, k), 1); }
+    else B.ring.scale.setScalar(0.0001);
+  }
+  function animKaktusCicegi(m, dt, st, s) {
+    const B = m.B, b = B.body, g = hopGait(s, st, dt, 2.2, 0.12);
+    let y = g.y, sy = g.sy * (1 + 0.025 * breath(s)), sxz = g.sxz, rx = 0, rz = Math.sin(s.t * 1.5 + s.ph) * 0.04;
+    let arm = 0.2 + 0.6 * g.air, scr = 0, fl = Math.sin(s.t * 2 + s.ph) * 0.1, puff = 1, flY = 0;
+    // yürürken ara sıra takla atarak yuvarlanır
+    const ro = act(s, 'rollT', dt, 2.5, 5, 0.75, st.move > 0.3 && st.windup < 0 && st.attack < 0 && !(st.dying >= 0));
+    if (ro >= 0) { B.roll.rotation.x = TAU * sm(ro); B.roll.position.y += 0.25 * Math.sin(PI * ro); y = 0; sy = 1; sxz = 1; arm = 1.1; }
+    if (st.windup >= 0) {   // çömel… zıpla… "güm!" (iniş = vuruş anı)
+      const w = st.windup;
+      if (w < 0.45) { const c = sm(w / 0.45); sy *= 1 - 0.25 * c; sxz *= 1 + 0.12 * c; arm = 0.2 + 0.5 * c; b.position.x += Math.sin(s.t * 55) * 0.01 * c; }
+      else { const q = (w - 0.45) / 0.55, h = Math.sin(PI * q); y += 0.55 * h; sy *= 1 + 0.15 * h; sxz *= 1 - 0.06 * h; arm = 1.4; s.eyeK = 1.25; puff = 1 + 0.12 * sm(q); }
+    }
+    if (st.attack >= 0) { const a = st.attack, kk = Math.sin(PI * Math.min(1, a / 0.5)); sy *= 1 - 0.28 * kk; sxz *= 1 + 0.16 * kk; puff = 1 + 0.15 * kk; arm = 1.2 * (1 - a); }
+    { const u = gag(s, st, dt, 3.0, 5);   // bekleme: kendi dikeniyle kaşınır, gıdıklanıp kıkırdar
+      if (u >= 0) {
+        const inn = sm(u / 0.15) * (1 - sm((u - 0.82) / 0.15)), gig = bumpU(u, 0.2, 0.95);
+        scr = inn; s.eyeK = lerp(1, 0.12, gig); rz += Math.sin(s.t * 24) * 0.07 * gig; y += 0.03 * Math.abs(Math.sin(s.t * 12)) * gig;
+        fl += Math.sin(s.t * 18) * 0.3 * gig; flY = gig * 3 * u; sy *= 1 + 0.04 * Math.sin(s.t * 24) * gig;
+      }
+    }
+    b.position.y += y; b.scale.set(sxz, sy, sxz); b.rotation.x = rx; b.rotation.z = rz;
+    B.cact.scale.setScalar(puff);
+    B.armL.rotation.z = -arm; B.armR.rotation.z = arm + scr * (1.7 + 0.35 * Math.sin(s.t * 30));
+    B.flower.rotation.z = fl; B.flower.rotation.y = flY;
+    ringAnim(B, st);
+    boing(s, st, dt, b);
+  }
+  // Klasik kaktüs: uzun tombul gövde, iki kolu yukarı kalkık (dirsekli)
+  function buildKaktus(r, o) {
+    const E = o.elite;
+    const cG = col(E ? '#4fbf6a' : '#58c266'), cL = col('#b4f294'), cD = col('#26804a');
+    r.bone('body', 'root', [0, 0.06, 0]);
+    r.bone('feet', 'root', [0, 0.03, 0.03]);
+    r.bone('cact', 'body', [0, 0.42, 0]);
+    r.bone('armL', 'cact', [0.17, 0.66, 0]); r.bone('armR', 'cact', [-0.17, 0.58, 0]);
+    r.bone('top', 'cact', [0, 1.08, 0]);
+    r.bone('ring', 'root', [0, 0, 0.4]);
+    r.on('body').fx(0, 0.6).add(K.lathe('bkPot', POT_P, 40, 4), potDots(col('#c8532e'), col('#ee8a5a'), col('#ffc8a0'), 0.06, 0.4, 0.28, 9, ['#ffffff', '#ffd23a']), [0, 0.06, 0], null, 0.9);
+    r.fx(1, 0).add(G.sphere(10, 6), hdr('#ffffff', 1.15), [-0.13, 0.28, 0.15], [0, -0.7, 0], [0.022, 0.06, 0.008]);
+    r.fx(0, 0.05).add(G.cyl(1, 1, 24), '#6a4028', [0, 0.445, 0], null, [0.2, 0.016, 0.2]);
+    r.on('feet');
+    for (const sd of [-1, 1]) shoe(r, 0.09 * sd, 0.03, 0.05, 0.062, 0.04, 0.088, E ? '#8a6aff' : '#ffb020');
+    // gövde: uzun tombul elipsoid (yüz önde)
+    const CC = [0, 0.76, 0], A = [0.19, 0.36, 0.18];
+    r.on('cact').fx(0, 0.35).add(G.sphere(30, 22), cactCol(0.4, 1.12, cG, cL, cD), CC, null, A);
+    for (let j = 0; j < 8; j++) {
+      const th = (j + 0.5) / 8 * TAU, wth = Math.atan2(Math.sin(th), Math.cos(th));
+      for (const phi of [0.3, 0.75, 1.2, 1.65, 2.1]) { if (Math.abs(wth) < 0.95 && phi > 0.55 && phi < 2.3) continue; tuft(r, CC, A, phi, th); }
+    }
+    // kollar: yana çıkıp dirsekten yukarı kalkar (sol yüksek, sağ alçak: klasik kaktüs)
+    for (const sd of [-1, 1]) {
+      const y0 = sd > 0 ? 0.66 : 0.58, ex = 0.29 * sd, up = sd > 0 ? 0.22 : 0.18;
+      r.on(sd > 0 ? 'armL' : 'armR').fx(0, 0.35);
+      r.seg([0.12 * sd, y0, 0], [ex, y0 + 0.01, 0], 0.062, cG, 0.058, 14);
+      r.add(G.sphere(16, 12), cG, [ex, y0 + 0.01, 0], null, 0.058);
+      r.seg([ex, y0 + 0.01, 0], [ex + 0.01 * sd, y0 + up, 0], 0.058, cG, 0.054, 14);
+      r.add(G.sphere(16, 12), K.vgrad(y0 + up - 0.05, y0 + up + 0.06, [[0, '#58c266'], [1, '#b4f294']]), [ex + 0.01 * sd, y0 + up, 0], null, 0.055);
+      const ac = [ex + 0.01 * sd, y0 + up * 0.55, 0], aa = [0.058, up * 0.6, 0.058];
+      tuft(r, [ex + 0.01 * sd, y0 + up, 0], [0.055, 0.055, 0.055], 0.15, 0, 0.9);
+      tuft(r, ac, aa, PI / 2, sd * PI / 2, 0.9); tuft(r, ac, aa, PI / 2, sd * 2.4, 0.9);
+      tuft(r, [0.21 * sd, y0, 0], [0.09, 0.06, 0.06], 0.5, sd * 0.4, 0.85);
+    }
+    r.on('cact');
+    K.face(r, [0, 0.74, 0], 0.18, yuz({ bone: 'cact', tilt: 0.08, ex: 0.07, ey: 0.03, er: 0.064, iris: '#1e4a1a', skin: cG, browCol: '#1f5a24', browY: 1.34,
+      mouthY: -0.085, mouthW: 0.08, smileK: 1.7, noHearts: true, blushCol: '#ff7f9a' }));
+    hearts(r, [[0.3, 1.16, 0.1, 0.07], [-0.28, 1.2, 0.1, 0.058]]);
+    if (E) {   // pembe kurdeleli hasır şapka
+      r.on('top').push([0, 1.1, -0.01], [-0.12, 0, 0.08]).fx(0, 0.25);
+      const straw = (x, y, z) => mixc('#e8c060', '#fff0b0', 0.5 + 0.5 * Math.sin(Math.atan2(x, z) * 18 + y * 60));
+      r.add(G.cyl(1, 1, 30), straw, [0, 0, 0], null, [0.27, 0.018, 0.27]);
+      r.add(G.sphere(20, 12), straw, [0, 0.02, 0], null, [0.13, 0.11, 0.13]);
+      r.fx(0, 0.5).add(G.cyl(1, 1, 24), '#ff5a9a', [0, 0.045, 0], null, [0.133, 0.03, 0.133]);
+      r.add(G.sphere(10, 8), '#ff7ab0', [0.11, 0.05, 0.06], null, [0.035, 0.03, 0.02]);
+      r.pop().fx(0, 0);
+    } else {   // tepede minik pembe tomurcuk
+      r.on('top').fx(0, 0.5).add(G.sphere(12, 8), '#ff8ab8', [0.02, 1.12, 0.02], null, [0.035, 0.03, 0.035]);
+      r.fx(0, 0);
+    }
+    r.on('cact').mark('muzzle', [0, 0.85, 0.22]);
+    spikeRing(r, 1.3);
+    return { height: 1.2, glowC: col('#b8f08a'), hide: ['ring'],
+      mat: { rough: 0.55, sss: col('#c8ffb0').multiplyScalar(0.03), rim: '#f0ffe0', rimK: 0.3, rimP: 2.3 } };
+  }
+  function animKaktus(m, dt, st, s) {
+    const B = m.B, b = B.body, g = hopGait(s, st, dt, 2.0, 0.1);
+    let y = g.y, sy = g.sy * (1 + 0.025 * breath(s)), sxz = g.sxz, rz = Math.sin(s.t * 1.4 + s.ph) * 0.04, rx = 0;
+    let wv = Math.sin(s.t * 2.2 + s.ph) * 0.12 + Math.sin(s.hop * TAU) * 0.35 * Math.min(1, s.mv * 2), open = 0, tilt = 0;
+    if (st.windup >= 0) {   // kollarını açıp titrer, geriye yaslanır
+      const w = sm(st.windup * 1.2);
+      open = w; rx = -0.15 * w; sy *= 1 - 0.1 * w; b.position.x += Math.sin(s.t * 55) * 0.01 * st.windup; s.eyeK = 1 + 0.25 * w;
+    }
+    if (st.attack >= 0) { const a = st.attack, kk = Math.sin(PI * Math.min(1, a / 0.45)); open = 1 - sm(a); rx = 0.2 * kk; sy *= 1 + 0.08 * kk; y += 0.08 * kk; }
+    { const u = gag(s, st, dt, 3.6, 5);   // bekleme: kollarıyla dans eder, sonra kendini gıdıklayıp güler
+      if (u >= 0) {
+        const d = bumpU(u, 0, 0.55), gig = bumpU(u, 0.55, 1);
+        wv += Math.sin(u * 40) * 0.6 * d; tilt = Math.sin(u * 20) * 0.18 * d; y += 0.06 * Math.abs(Math.sin(u * 20)) * d;
+        s.eyeK = lerp(1, 0.12, gig); rz += Math.sin(s.t * 24) * 0.06 * gig; open -= 0.9 * gig + 0.12 * Math.sin(s.t * 30) * gig;
+      }
+    }
+    b.position.y += y; b.scale.set(sxz, sy, sxz); b.rotation.x = rx; b.rotation.z = rz + tilt;
+    B.armL.rotation.z = wv - 0.6 * open; B.armR.rotation.z = -wv * 0.8 + 0.6 * open;   // açılınca kollar yana iner, sallanınca dalgalanır
+    B.armL.rotation.x = -0.2 * open; B.armR.rotation.x = -0.2 * open;
+    B.top.rotation.z = Math.sin(s.t * 2.4 + s.ph) * 0.06;
+    ringAnim(B, st);
+    boing(s, st, dt, b);
+  }
+
   // ════════════════ Kayıt ════════════════
   const RARE_STATS = { hp: 14, dmg: 2, speed: 3.0, xp: 30, gold: 12, aggro: 7 };
   const T = [
@@ -774,10 +1122,16 @@
     ['mandal', 'Mandal', 'yogurt', 'ziplayan', { eliteAd: 'Kocaman Mandal', hp: 22, dmg: 4, speed: 2.5, r: 0.42, height: 1.02, atkRange: 2.4, atkCd: 2.0, windup: 0.75, aggro: 9 }, buildMandal, animMandal, 0.55, 'ilk_mandal'],
     ['eldiven', 'Bahçe Eldiveni', 'goblin', 'yakin', { eliteAd: 'Kocaman Eldiven', hp: 24, dmg: 4, speed: 2.6, r: 0.45, height: 1.0, atkRange: 1.1, atkCd: 1.9, windup: 0.8, aggro: 9 }, buildEldiven, animEldiven, 0.55, 'ilk_eldiven'],
     ['altinSaksi', 'Altın Saksı', 'goblin', 'yuvarlanan', Object.assign({ r: 0.46, height: 0.95, atkRange: 2.4, atkCd: 2.5, windup: 0.95, trailCol: '#ffd84a' }, RARE_STATS), (r, o) => buildSaksi(r, Object.assign({}, o, { rare: true })), animSaksi, 0.55, 'ilk_altinSaksi', true],
+    // huysuz dikenli çiçekler (dikenler yumuşacık, uçları yuvarlak)
+    ['dikenliGul', 'Dikenli Gül', 'mantar', 'uzak', { eliteAd: 'Kocaman Dikenli Gül', hp: 18, dmg: 4, speed: 2.0, r: 0.42, height: 1.08, atkRange: 6.0, range: 6.0, atkCd: 3.0, windup: 0.95, aggro: 9, shot: { kind: 'spore', speed: 3.4, r: 0.24, col: '#ff7aa8' } }, buildGul, animGul, 0.55, 'ilk_dikenliGul'],
+    ['kaktusCicegi', 'Kaktüs Çiçeği', 'goblin', 'agir', { eliteAd: 'Kocaman Kaktüs Çiçeği', hp: 24, dmg: 5, speed: 2.1, r: 0.44, height: 0.95, atkRange: 1.5, atkCd: 2.8, windup: 1.05, slamR: 1.6, aggro: 9 }, buildKaktusCicegi, animKaktusCicegi, 0.55, 'ilk_kaktusCicegi'],
+    ['kaktus', 'Kaktüs', 'goblin', 'agir', { eliteAd: 'Kocaman Kaktüs', hp: 24, dmg: 5, speed: 2.0, r: 0.44, height: 1.2, atkRange: 1.5, atkCd: 2.7, windup: 1.0, slamR: 1.6, aggro: 9 }, buildKaktus, animKaktus, 0.55, 'ilk_kaktus'],
+    ['gokkusagiGul', 'Gökkuşağı Gül', 'mantar', 'uzak', Object.assign({ r: 0.42, height: 1.08, atkRange: 6.0, range: 6.0, atkCd: 3.2, windup: 1.0, shot: { kind: 'spore', speed: 3.2, r: 0.24, col: '#c89aff' } }, RARE_STATS), (r, o) => buildGul(r, Object.assign({}, o, { rare: true })), animGul, 0.55, 'ilk_gokkusagiGul', true],
   ];
   const RARE = {};
   for (const [id, ad, base, saldiri, stats, mk, an, lod, ilk, rare] of T) {
     const def = { ad, base, saldiri, stats, ilkSoz: ilk };
+    if (rare) def.nadir = true;
     if (HAS) {
       EMODEL.addType(id, mk, an, lod);
       def.model = o => EMODEL.buildRaw(id, o || {});
@@ -791,7 +1145,9 @@
     bossKit: { add: 'mandal', at: [0.66, 0.33], n: [2, 2], col: '#8fd8ff', roar: 1.3 } };
   if (HAS) { EMODEL.addType('uykucuHortum', buildHortum, animHortum, 0.8); bdef.model = o => EMODEL.buildRaw('uykucuHortum', o || {}); }
   HUYSUZ.boss('uykucuHortum', bdef);
-  HUYSUZ.zone('balkon', { enemies: { saksicik: 3, sulamaKabi: 3, mandal: 4, eldiven: 3, altinSaksi: 0.3 }, elites: ['mandal'], boss: 'uykucuHortum' });
+  HUYSUZ.zone('balkon', { enemies: { saksicik: 3, sulamaKabi: 3, mandal: 3, eldiven: 3, altinSaksi: 0.3, dikenliGul: 2.5, kaktusCicegi: 2.5, kaktus: 3, gokkusagiGul: 0.25 },
+    elites: ['mandal', 'dikenliGul', 'kaktus'], boss: 'uykucuHortum' });
+  // (Çiçek Tepesi'nde dikenli çiçekler daha sık, her alanda birkaç kaktüs: src/06z_balkon.js yerlesim)
 
   // Eski kayıtlardaki (ilk Balkon sürümünün) çıkartma adları yenilerine taşınır: albümde görünmez, kaybolmaz
   const ESKI = { bahceSalyangozu: 'saksicik', ugurBocegi: 'sulamaKabi', karinca: 'mandal', tirtil: 'eldiven', altinUgur: 'altinSaksi', ariKralice: 'uykucuHortum' };

@@ -107,6 +107,18 @@
       L.balkonBirds = []; const rb = room(2, 1) || r3;
       if (rb) for (let i = 0; i < 4; i++) { const a = i * 1.6 + 0.4, x = rb.x + Math.sin(a) * 4.5, z = rb.z + Math.cos(a) * 3.5; if (api.isFloor(x, z)) L.balkonBirds.push({ x, z }); }
       L.balkonChime = r3 ? { x: r3.x + 3.5, z: r3.z - 3.2 } : null;
+      // huysuz karışımı: Çiçek Tepesi'nde dikenli çiçekler (gül, kaktüs çiçeği) daha sık; her alanda en az birkaç kaktüs
+      const areaOfRoom = {}; A.forEach((a, k) => { if (!a.boss) a.rooms.forEach(ri => { areaOfRoom[ri] = k; }); });
+      const FLOW = ['dikenliGul', 'kaktusCicegi'], kakN = {};
+      for (const sp of L.spawns || []) {
+        const ai = areaOfRoom[sp.room]; if (ai === undefined || sp.elite || /altin|gokkusagi/i.test(sp.type)) continue;
+        if (ai === 1 && sp.type !== 'kaktus' && api.rnd() < 0.45) { sp.type = FLOW[(api.rnd() * 2) | 0]; delete sp.variant; }
+        if (sp.type === 'kaktus') kakN[ai] = (kakN[ai] || 0) + 1;
+      }
+      for (const ai of [0, 1, 2]) {   // eksikse: alanın huysuzlarından birkaçı kaktüs olur
+        const list = (L.spawns || []).filter(sp => areaOfRoom[sp.room] === ai && !sp.elite && !/altin|gokkusagi|kaktus/i.test(sp.type) && !(ai === 1 && FLOW.includes(sp.type)));
+        for (let n = kakN[ai] || 0; n < 3 && list.length; n++) { const sp = list.splice((api.rnd() * list.length) | 0, 1)[0]; sp.type = 'kaktus'; delete sp.variant; }
+      }
     },
 
     kur(L, api) {
@@ -161,6 +173,37 @@
           if (dark) for (const o of [-0.18, 0.18]) api.put(seed, sx + Math.cos(yaw) * o * k, k * 0.125, sz - Math.sin(yaw) * o * k, k * 0.14, k * 1.04, k * 0.9, 0xf4f0f8, yaw, 0, 0);   // açık çizgiler
         }
       }
+      // saksıda süs kaktüsü (Feza kaktüsleri çok seviyor): low = yuvarlak fıçı kaktüs (çiçekli), değilse kollu uzun kaktüs
+      const CPOT = [0x7cc8f0, 0xee8a5a, 0xf2c94c, 0xf08aa8, 0xb9a4f0];
+      function cactusPot(x, z, s, low) {
+        const pc = CPOT[(rnd() * CPOT.length) | 0], ps = s * 0.62, top = ps * 1.0, g = 0x58c266, gd = 0x3fa850;
+        api.put(pot, x, 0, z, ps, ps, ps, pc, rnd() * PI);
+        api.put(tor, x, top, z, ps * 0.98, ps * 0.98, ps * 0.98, pc, 0, PI / 2);
+        api.cyl(x, top * 0.97, z, ps * 0.84, 0.05, 0x6a4430);
+        const tufts = (cx, cy, cz, rx, ry, n) => { for (let i = 0; i < n; i++) { const a = PI + (i / n - 0.5) * PI * 1.6, ph = 0.5 + 0.9 * ((i * 0.618) % 1); api.put(sph, cx + Math.sin(a) * Math.sin(ph) * rx, cy + Math.cos(ph) * ry, cz + Math.cos(a) * Math.sin(ph) * rx, s * 0.045, s * 0.045, s * 0.045, 0xfffaf0); } };
+        if (low) {   // fıçı kaktüs + sarı/pembe çiçek
+          const r0 = ps * 0.7, h = ps * 0.75;
+          api.put(sph, x, top + h * 0.8, z, r0, h, r0, g);
+          for (let k = 0; k < 6; k++) { const a = k / 6 * PI * 2; api.put(sph, x + Math.sin(a) * r0 * 0.55, top + h * 0.8, z + Math.cos(a) * r0 * 0.55, r0 * 0.48, h * 0.98, r0 * 0.48, k & 1 ? g : gd); }   // oluklar
+          tufts(x, top + h * 0.8, z, r0 * 1.02, h * 1.0, 7);
+          const fc = rnd() < 0.5 ? 0xffd23a : 0xff8ab8;
+          for (let k = 0; k < 7; k++) api.put(petal, x, top + h * 1.78, z, s * 0.28, s * 0.28, s * 0.28, fc, k / 7 * PI * 2, -0.3, 0);
+          api.put(sph, x, top + h * 1.8, z, s * 0.07, s * 0.05, s * 0.07, 0xff9a2e);
+          return;
+        }
+        const r0 = ps * 0.5, h = s * (1.0 + rnd() * 0.5), cy = top + h * 0.85;   // kollu uzun kaktüs: kollar yana ve yukarı
+        api.put(sph, x, cy, z, r0, h, r0, g);
+        tufts(x, cy, z, r0 * 1.02, h, 8);
+        for (const sd of [-1, 1]) {
+          if (rnd() < 0.2) continue;
+          const ay = cy + h * (0.05 + rnd() * 0.3) * (sd > 0 ? 1 : 0.7), ar = r0 * 0.5, ex = x + sd * (r0 + ar * 1.4), up = h * (0.45 + rnd() * 0.25);
+          api.put(cyl, x + sd * (r0 * 0.5 + ar * 0.7), ay, z, ar, r0 + ar * 1.4, ar, g, 0, 0, PI / 2);
+          api.put(sph, ex, ay, z, ar, ar, ar, g);
+          api.put(cyl, ex, ay + up / 2, z, ar, up, ar, g);
+          api.put(sph, ex, ay + up, z, ar, ar * 1.1, ar, gd);
+        }
+        if (rnd() < 0.5) api.put(sph, x, cy + h * 0.98, z, s * 0.09, s * 0.07, s * 0.09, 0xff8ab8);   // tepede pembe tomurcuk
+      }
       // ── alanlara göre süsleme: yürünür alanın kenarı boyunca (ekranda görünsün), her nokta en yakın odanın alanına göre ──
       const A = L.areas || [{ rooms: L.rooms.map((r, i) => i) }];
       const areaOf = (x, z) => { let best = 0, bd = 1e9; A.forEach((ar, ai) => { for (const ri of ar.rooms) { const rm = L.rooms[ri]; if (!rm) continue; const d = (rm.x - x) ** 2 + (rm.z - z) ** 2; if (d < bd) { bd = d; best = ai; } } }); return best; };
@@ -173,6 +216,7 @@
         if (!edge && !far) continue;
         if (far && rnd() < 0.3) continue;
         const ai = areaOf(px, pz), ar = A[ai], low = edge || !southOpen(px, pz), r = rnd();   // kenarda hep alçak; uzun şeyler geride
+        if (r > 0.84 && !(ar && ar.boss && !low)) { cactusPot(px, pz, low ? 0.9 + rnd() * 0.6 : 1.6 + rnd() * 1.2, low); continue; }
         if (ar && ar.boss) { if (r < 0.6) bigPot(px, pz, low ? 1.3 + rnd() * 0.4 : 1.8 + rnd() * 0.8, low); else flower(px, pz, low ? 1.3 : 2.2, low ? 0.9 : 3.2 + rnd() * 1.5, rnd() < 0.5 ? 'papatya' : 'gerbera'); continue; }
         if (ai === 0) { if (r < 0.7) bigPot(px, pz, low ? 1.2 + rnd() * 0.5 : 2.0 + rnd() * 1.4, low); else if (low) { for (let k = 0; k < 3; k++) flower(px + (rnd() - 0.5) * 1.6, pz + (rnd() - 0.5) * 1.6, 0.7 + rnd() * 0.3, 0.35 + rnd() * 0.3, rnd() < 0.5 ? 'papatya' : 'gerbera'); } else for (let k = 0; k < 3; k++) { const ls = 0.6 + rnd() * 0.4; api.put(leaf, px, 0.05, pz, ls, ls, ls, GREEN[k % 4], PI + (rnd() - 0.5) * 2.4, 0.15, 0); } }
         else if (ai === 1) { flower(px, pz, low ? 1.2 + rnd() * 0.4 : 2.0 + rnd() * 1.2, low ? 0.6 + rnd() * 0.5 : 2.6 + rnd() * 2.6, rnd() < 0.5 ? 'papatya' : 'gerbera'); }

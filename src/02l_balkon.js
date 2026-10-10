@@ -22,6 +22,10 @@ Object.assign(AUD.LINES, {
   ilk_mandal: 'Mandallar zıplıyor! Çıt çıt, ağızlarını açıp kapıyorlar.',
   ilk_eldiven: 'Bahçe eldivenim canlanmış! Parmaklarını kıpır kıpır oynatıyor.',
   ilk_altinSaksi: 'Vay, altın bir saksı! Ne nadir bir şey!',
+  ilk_dikenliGul: 'Bak bak, dikenli bir gül! Dikenleri şeker gibi yumuşacık.',
+  ilk_kaktusCicegi: 'Minik bir kaktüs çiçeği! Tüylü dikenleriyle kıkır kıkır gülüyor.',
+  ilk_kaktus: 'Bak bak, kaktüs! Feza’nın sevdiği kaktüs, kollarını sallıyor!',
+  ilk_gokkusagiGul: 'Vay, gökkuşağı renkli bir gül! Çok nadir, hadi yakala!',
   // boss: Uykucu Hortum
   uykucuHortum_giris: 'Hortum uyandı ama çok huysuz. Su fışkırtacak, kenara kaç!',
   uykucuHortum_yarim: 'Bak bak, esniyor! Hortumun uykusu geldi.',
