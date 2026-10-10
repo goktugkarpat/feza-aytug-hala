@@ -319,6 +319,23 @@ Merkezdeki 5. kapı: 06z_balkon masa `yerlesim`/`kur`'unu sarar (`kapi_balkon`, 
 `window.__step(n, dt=1/60)` (rAF'tan bağımsız kare), `window.__qa = { start(sınıf), zone(id|no), put(x,z), spawn(tip, dx, dz, {elite, boss}),
 cheerAll(), hurt(n), down(), info() }`. Python: `scratchpad/qa/hala_qa.py` (sınıf `Hala`, kullanım dosyanın başında), duman testi `hala_smoke.py`.
 
+### Denge doğrulaması (Dev Ev, 10 Ekim 2026; eski "Normal-mode balance" rakamlarının önüne geçer)
+Bütün ayarlar 07_game.js'te `LEVEL_ROLES`'un hemen üstünde: `ENEMY_HP_MUL 1.25` (hepsi), `SMALL_MOB_HP_MUL 1.6` (elit/boss olmayan; aile
+isteği 1.2 → çocuk-bot ile 1.6), `ELITE_HP_MUL 1.5` (elitin kendi ×1.8'inin üstüne), `DEV_BOSS_HP { uykucuHortum: 2.2 }` (05c'de hpK'sı olmayan
+Balkon bossu diğerleriyle aynı uzunlukta), `MOB_HIT_K / BOSS_HIT_K 2.5` (gelen vuruş = seviye canının payı × bu; Normal'de `DIFF.damageTaken`
+kendini götürür, asıl düğme budur). `DIFF.normal.bossLength .57 → 1`. Hata düzeltmesi: boss ilk saldırıda (`bossAggro` → `bossHpNow`) canı
+yeniden kurulurken ENEMY_HP_MUL düşüyordu; artık `bossHpNow` içinde. Değişmeyen: giriş seviyesi donması (`P.zoneLevel`), Hala sarılma
+(can < %35, 3×%14, 22 s bekleme), xp eğrisi `230 + 75l + 10l²`, alan geçitleri.
+Ölçüm: "5 yaş çocuk botu" (`scratchpad/qa/denge/kidbot.js` + `run_kid.py` + `batch.py` + `summ.py`; `__step`, rAF tutulur): en yakın huysuza
+dokunur, 0,4–0,8 s tepki, dokunuşların %25'i boşa, uyarılardan %20 kaçar, can < %25'te %35 iksir, yetenek/Takım ara sıra, arada 2–3 s oyalanır.
+5 oda × giriş seviyesi 1/3/5/8/12 × başlangıç/seviyeye uygun eşya × 2 tohum (90 koşu; ek 12 koşu Şövalye kostümü). Sonra (önce):
+normal huysuz başına Feza'nın kılıç vuruşu 2,6–3,5 (2,1–3,0) + yetenek/Hala/Takım payı ~%30-45, huysuz başına 2,1–3,7 s; elit 3–7 vuruş;
+boss 50–83 s, pasta 82 s (16–47 s); oda başına alınan hasar seviye canının %118–224'ü (%35–66), en düşük can %30–60 (%80–90),
+%30 altı 0–0,8 kez, Hala sarılması 0,1–1,5 (0), düşme 0–0,2 (0); seviyeler arası oranlar benzer (başlangıç eşyası hep biraz daha zor:
+şapka canı ve pelerin zırhı referansa girmez — bilerek). Alan temizleme 13–36 s, oda (boss dahil) ~2,2–2,8 dk: hedef 1,5–4 dk/alan
+bu huysuz sayısıyla (alan başına 3 / 5–12 / 6–12 + ikinci dalga) can artırarak tutturulamaz; gerçek süre oyuncak, mini oyun, Bilbo ve
+hikâye ile uzar. Daha uzun alan istenirse huysuz/dalga sayısı artırılmalı (bölüm dosyaları), can değil.
+
 ## Open Dream Map and entry-level balance (8 October 2026; overrides earlier map locks and gear/zone scaling)
 
 - Hayal Haritası is available on the first launch and from title, play, pause and ending screens. All eight decorated islands are selectable in any order. Completed-adventure/legacy map-unlock storage is not a travel prerequisite. M opens the same map.

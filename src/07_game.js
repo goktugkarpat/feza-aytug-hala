@@ -97,7 +97,7 @@ const GAME = (() => {
   const DIFF = {
     // Both modes scale from the chapter's entry level. Normal has shorter boss fights,
     // faster wand swings and a stronger reward for playing a boss's bonus game.
-    normal: { bossLength: .57, wandSwing: 0.5, bonusHit: 1.25 },
+    normal: { bossLength: 1, wandSwing: 0.5, bonusHit: 1.25 },
     // Repeat adventures use a saved start-of-round reference, never the currently equipped item.
     repeat: { health: [105, 120, 140, 185, 250, 310, 370, 440], pressure: 0.06, maxPressureRounds: 5 },
     hp: 3.4,            // normal enemy hp (was 2.6; zone 0 jelly: ~6 sword hits at the start)
@@ -1229,9 +1229,9 @@ const GAME = (() => {
   // ELITE_HP_MUL: elites on top of their own ×1.8, so a "Kocaman" one stays clearly sturdier than the small ones.
   // DEV_BOSS_HP: bosses without a BOSSDAV hpK (05c) get the same length as the others (Balkon's Uykucu Hortum).
   // MOB_HIT_K / BOSS_HIT_K: incoming hits as a share of level health × this (Normal and Zor alike).
-  const ENEMY_HP_MUL = 1.25, SMALL_MOB_HP_MUL = 1.2, ELITE_HP_MUL = 1;
-  const DEV_BOSS_HP = { uykucuHortum: 1 };
-  const MOB_HIT_K = 1, BOSS_HIT_K = 1;
+  const ENEMY_HP_MUL = 1.25, SMALL_MOB_HP_MUL = 1.6, ELITE_HP_MUL = 1.5;
+  const DEV_BOSS_HP = { uykucuHortum: 2.2 };
+  const MOB_HIT_K = 2.5, BOSS_HIT_K = 2.5;
   // Chapter order must not decide combat strength. Size a creature by its role and captured player level.
   const LEVEL_ROLES = {
     melee:  { hits: 4, hp: 28, damage: 0.060, dmg: 8 },
