@@ -57,7 +57,8 @@ const BOLUM = (() => {
     if (id !== FINAL) return true;   // (masa ve odalar hep açık)
     if (typeof Q !== 'undefined' && Q.has && Q.has('hepsiacik')) return true;
     const m = P && P.malzemeler ? Object.keys(P.malzemeler).filter(k => P.malzemeler[k]).length : 0;
-    const b = P && P.bossNese ? Object.keys(P.bossNese).filter(k => P.bossNese[k]).length : 0;
+    // (yalnız malzemeli odaların bossları sayılır: isteğe bağlı Balkon Bahçesi kilidi değiştirmez)
+    const b = P && P.bossNese ? Object.keys(P.bossNese).filter(k => P.bossNese[k] && (!ZONE_DEFS[k] || ZONE_DEFS[k].malzeme)).length : 0;
     return m >= NEED || b >= NEED;
   }
   // Ortak yer tutucu görünüm (bölüm ajanı kendi kur() fonksiyonuyla değiştirir): yürünür alanın kenarına alçak bordür,
