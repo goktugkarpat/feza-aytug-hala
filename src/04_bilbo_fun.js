@@ -40,7 +40,7 @@ const BILBO_FUN = (() => {
   function setRide(on, secs, c) {
     if (!c || !c.P) return false;
     if (!on) { if (ride) endRide(c, false); return true; }
-    if (c.state !== 'play' || c.P.dead || !c.Bilbo || bossNow()) return false;   // boss savaşında binilmez
+    if (c.state !== 'play' || c.P.dead || !c.Bilbo || bossNow() || inArena(c)) return false;   // boss savaşında binilmez
     abortDig(c, 2);
     if (ride) { ride.dur = Math.max(ride.dur - ride.t, secs || 14); ride.t = 0; return true; }
     ride = { t: 0, dur: secs || 14, puff: 0, end: 0, area: c.P.area };

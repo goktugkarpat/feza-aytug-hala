@@ -1044,7 +1044,7 @@ BOLUM.define('masa', {
     try {
       const P = typeof GAME !== 'undefined' && GAME.P, Zs = typeof ZONES !== 'undefined' ? ZONES : null, prev = P && Zs && Zs[P.zone] && Zs[P.zone].id;
       const d = prev && T.doorList().find(q => q.zone === prev);
-      if (d) { let x = d.x, z = T.z0 + 3.6; if (!api.circleFree(x, z, 0.7)) { const q = api.randomFloorNear(x, z + 1, 0, 2.5); if (q) { x = q.x; z = q.z; } } L.start = { x, z }; }
+      if (d) { let x = d.x, z = T.z0 + 4.3; if (!api.circleFree(x, z, 0.9)) { const q = api.randomFloorNear(x, z + 1, 0, 2.5); if (q) { x = q.x; z = q.z; } } L.start = { x, z }; }
     } catch (e) { /* başlangıç noktası */ }
     L.cakeSpot = { x: T.cake.x, z: T.cake.z };
     api.solid(T.cake.x, T.cake.z, T.cake.r, 'pasta');
@@ -1054,8 +1054,8 @@ BOLUM.define('masa', {
     put('pasta', 'pasta', T.cake.x, T.cake.z, { r: T.cake.r + 0.65 });   // pastaya değince süsleme açılır
     for (const id of ['gardirop', 'bilbo', 'album', 'mini', 'surpriz']) put(id, id, T.st[id].x, T.st[id].z, { r: id === 'surpriz' ? 1.5 : 1.7 });
     // istasyon nesnelerinin katı gövdeleri (Feza önüne gelir, içine girmez)
-    api.solid(T.st.gardirop.x, T.st.gardirop.z - 2.6, 1.5, 'gardirop');
-    api.solid(T.st.bilbo.x, T.st.bilbo.z - 2.5, 1.5, 'bilbo');
+    api.solid(T.st.gardirop.x - 0.25, T.st.gardirop.z - 2.7, 1.15, 'gardirop');   // Feza'nın kapıdan gelen yolunu kesmesin
+    api.solid(T.st.bilbo.x + 0.25, T.st.bilbo.z - 2.6, 1.15, 'bilbo');
     api.solid(T.st.surpriz.x, T.st.surpriz.z - 1.6, 0.75, 'surpriz');
     api.solid(T.toys.muzik.x, T.toys.muzik.z - 0.6, 1.0, 'muzik');
     for (const s of st) if (!api.isFloor(s.x, s.z)) { const p = api.randomFloorNear(s.x, s.z, 0, 3); if (p) { s.x = p.x; s.z = p.z; } }
