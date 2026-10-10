@@ -1533,6 +1533,7 @@ const UI = (() => {
 
   // ───────────────────────── HUD refresh ─────────────────────────
   function hudTick(dt) {
+    if (bBusy && S.bannerEnd && S.t > S.bannerEnd && D.banner.classList.contains('on')) { S.bannerEnd = 0; clearTimeout(bTimer); D.banner.classList.remove('on'); D.banner.classList.add('out'); bTimer = setTimeout(() => { D.banner.classList.remove('out'); nextBanner(); }, 430); }   // (S.hold'da takılı kalmasın)
     const g = M.GAME; if (!g || !S.hud || S.menu) return;   // menus dim the HUD: don't redraw under the blur
     const P = g.P;
     const hpf = clamp(P.hp / Math.max(1, P.maxHp), 0, 1);
@@ -1998,12 +1999,18 @@ const UI = (() => {
     void b.offsetWidth;
     b.classList.add('on');
     clearTimeout(bTimer);
-    const dur = (o.dur || 2.4) * (BQ.length ? 0.7 : 1);
+    const dur = Math.min(3, (o.dur || 2.4) * (BQ.length ? 0.7 : 1));
+    S.bannerEnd = S.t + dur + 0.6;
     if (S.hold) return;
     bTimer = setTimeout(() => {
       b.classList.remove('on'); b.classList.add('out');
       bTimer = setTimeout(() => { b.classList.remove('out'); nextBanner(); }, 430);
     }, dur * 1000);
+  }
+  // boss başlarken: ekrandaki ve sıradaki bölge bantları kapanır (boss görünür)
+  function dropZoneBanners() {
+    for (let i = BQ.length - 1; i >= 0; i--) if (BQ[i].kind === 'zone') BQ.splice(i, 1);
+    if (bBusy && D.banner.classList.contains('zone')) { clearTimeout(bTimer); D.banner.classList.remove('on'); D.banner.classList.add('out'); bTimer = setTimeout(() => { D.banner.classList.remove('out'); nextBanner(); }, 300); }
   }
   function clearBanners() { BQ.length = 0; clearTimeout(bTimer); bBusy = false; D.banner.className = 'u-banner'; }
 
@@ -2040,6 +2047,7 @@ const UI = (() => {
   const rarCol = r => { const I = M.ITEMS; return (I && I.RARITY && I.RARITY[r] && I.RARITY[r].color) || RAR[r] || '#fff'; };
   const rarAd = r => { const I = M.ITEMS; return (I && I.RARITY && I.RARITY[r] && I.RARITY[r].ad) || RAR_AD[r] || ''; };
   function nextCard() {
+    if (bBusy && CQ.length) { cBusy = true; clearTimeout(cTimer); cTimer = setTimeout(() => { cBusy = false; nextCard(); }, 350); return; }   // bant açıkken bekle
     const o = CQ.shift();
     if (!o) { cBusy = false; return; }
     cBusy = true;
@@ -2556,7 +2564,7 @@ const UI = (() => {
     on('skill', d => {
       const s = g.skills && g.skills[d.index], def = (s && s.def) || {};
       showSkill(d.index, true);
-      banner({ kind: 'skill', icon: def.icon || '✨', med: true, color: def.color, title: 'Yeni Yetenek!', sub: def.ad || '', rays: true, dur: 2.8 });
+      banner({ kind: 'skill', icon: def.svg || def.icon || '✨', med: true, color: def.color, title: 'Yeni Yetenek!', sub: def.ad || '', rays: true, dur: 2.8 });
     });
     on('item', d => {
       itemCard(d.item, d.equipped);
@@ -2581,7 +2589,7 @@ const UI = (() => {
       fadeSnap(0.92, 'flash');
       fade(0, 0.9, null);
     });
-    on('boss', d => { if (d.on) showBoss(d); else hideBoss(); });
+    on('boss', d => { if (d.on) { dropZoneBanners(); showBoss(d); } else hideBoss(); });   // (boss başlarken bölge bandı hemen kapanır)
     on('bonus', d => bonusPips(d));   // Round 6: the boss's bonus (07 bonusStep) — pips on the boss bar
     on('bossHp', d => {
       S.bossFrac = clamp(d.frac, 0, 1);
@@ -2600,6 +2608,7 @@ const UI = (() => {
     });
     on('happy', d => {
       S.cheered++;
+      if (d.boss) S.celeUntil = S.t + 9;   // boss kutlaması: elit uyarısı / kombo susar, kart ve seviye sırayla
       if (d.boss) {   // camera story beat: the boss cheers up → the castle's crystal rises / the zone's portal wakes up
         const L = g.L, Z = M.ZONES && g.P && M.ZONES[g.P.zone | 0];
         S.cine = { t: 0, bx: d.x, bz: d.z, fin: !!(L && L.crystalSpot) || !!(Z && Z.final) || d.type === 'ejderha' };
@@ -2612,7 +2621,7 @@ const UI = (() => {
       if (d.stage === 'drink') { c.drink = 1; c.dT = 0; c.dDur = clamp(Number(d.dur) || 1.6, 0.5, 4); }
       else if (d.stage === 'drunk') { c.drink = 2; c.dT = 0; }
     });
-    on('toast', d => toast(d.text || ''));
+    on('toast', d => { const t = d.text || ''; if (S.t < (S.celeUntil || 0) && /geliyor!$/.test(t)) return; toast(t); });
     on('checkpoint', () => toast('✨ Neşe taşı parladı!', true));
     on('difficulty', () => syncDifficulty());
     on('merchant', () => openMerchant());
