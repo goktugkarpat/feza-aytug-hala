@@ -6,7 +6,7 @@ const ZONE_DEFS = {};
 const BOLUM = (() => {
   'use strict';
   // Harita / kayıt sırası. Bir kimliğin yeri kayıttaki bölge numarasıdır: sırayı değiştirme, sona ekle.
-  const ORDER = ['masa', 'oturma', 'mutfak', 'buzdolabi', 'pasta'];   // masa = merkez (hub), oyun buradan başlar
+  const ORDER = ['masa', 'oturma', 'mutfak', 'buzdolabi', 'balkon', 'pasta'];   // kilitli final (pasta) hep en sonda   // masa = merkez (hub), oyun buradan başlar
   const FINAL = 'pasta';
   const NEED = 3;   // pasta için gereken malzeme sayısı (ya da neşelenen boss sayısı)
   const DEF = {
