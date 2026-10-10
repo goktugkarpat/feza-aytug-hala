@@ -322,7 +322,7 @@ const HIS = (() => {
     }
     if (t - S.lastShake > 0.1 && fxOk('shake')) { S.lastShake = t; FX.shake(0.035 + Math.min(10, c) * 0.004); }
     const cele = typeof UI !== 'undefined' && UI._S && UI._S.t < (UI._S.celeUntil || 0);   // boss kutlamasında kombo susar
-    if (c >= 3 && !cele) showCombo(c);
+    if (c >= 5 && c % 5 === 0 && !cele) showCombo(c);   // yalnız 5'in katlarında, kısa
     const ms = cele ? 0 : MILESTONE[c];
     if (ms) {
       if (G.hitStop) G.hitStop(0.05 + ms * 0.012);
@@ -339,7 +339,7 @@ const HIS = (() => {
     D.combo.style.setProperty('--h', ((c * 37) % 360).toFixed(0));
     D.combo.classList.add('on');
     restart(D.combo, 'hit');
-    S.comboShownT = 1.6;
+    S.comboShownT = 1.0;
   }
   // Övgü: ARA SIRA ve çeşitli (aynı cümle art arda gelmez, en az 18 s arayla, Hala başka bir şey söylerken susar)
   const PRAISE = { kombo: ['his_kombo_1', 'his_kombo_2', 'his_kombo_3', 'his_kombo_4', 'his_kombo_5', 'his_kombo_6', 'his_kombo_7', 'his_kombo_8'],
@@ -360,7 +360,7 @@ const HIS = (() => {
     burst('hearts', e.x, y + 0.4, e.z, { count: e.boss ? 30 : e.elite ? 14 : 6 });
     burst('confetti', e.x, y + 0.8, e.z, { count: e.boss ? 60 : e.elite ? 30 : 14 });
     sfx('heart', { vol: 0.5, x: e.x, z: e.z });
-    if (e.boss) { rain(); setTimeout(() => addStarCandy(2), 1800); return; }
+    if (e.boss) { setTimeout(() => addStarCandy(2), 6000); return; }   // (boss kutlamasında tek büyük an: oyunun kendisi)
     if (e.elite && Math.random() < 0.5) setTimeout(() => addStarCandy(1), 700);
     if (Math.random() < 0.18) praise('nese');
   }
@@ -395,7 +395,7 @@ const HIS = (() => {
     const c = S.card = S.lvlQ.shift();
     if (c.kind === 'lvl') {
       // (09_ui kendi "Seviye N!" yıldızını gösterir: burada yalnız ekran konfetisi + yıldız şeker; sonraki kart 2 s bekler)
-      S.cardT = 2.0; rain();
+      S.cardT = 2.0; if (!(typeof UI !== 'undefined' && UI._S && UI._S.t < (UI._S.celeUntil || 0))) rain();
       if (G.P && G.P.pos) burst('confetti', G.P.pos.x, 2.2, G.P.pos.z, { count: 50 });
       sfx('cheer', { vol: 0.6 });
     } else {
