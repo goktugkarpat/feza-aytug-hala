@@ -554,7 +554,7 @@ BOLUM.define('mutfak', {
   isik: { fog: [0xe6d8c6, 36, 92], hemiSky: 0xfff8ee, hemiGround: 0xb89a7a, sunColor: 0xfff0d8, env: [0xfff0dc, 0xffe8d0, 0xa88a6a, 0.9], bloom: 0.3, exposure: 0.93, sat: 1.1, vig: 0.3 },
   zemin: { tA: 0xfff4e0, tB: 0xf6e2c4, tC: 0xffffff, out: 0xc89a6a, outAmt: 0.6, macro: 0xfff8ec },
   minimap: { zemin: '#efd9b4' },
-  harita: { ad: 'Mutfak', detay: 'Tezgâh tepeleri, lavabo gölü ve dolap içi', renk: '#f3d49b', x: 50, y: 30, simge: '🍳' },
+  harita: { ad: 'Mutfak', detay: 'Tezgâh tepeleri, lavabo gölü ve dolap içi', renk: '#f3d49b', x: 78, y: 34, simge: '🍳' },
   yerlesim(L, api) { MUTFAK.yerlesim(L, api); },
   kur(L, api) { return MUTFAK.kur(L, api); },
 });

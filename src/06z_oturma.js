@@ -676,7 +676,7 @@ BOLUM.define('oturma', {
   isik: { fog: [0xdfe3e8, 26, 72], hemiSky: 0xfff4e6, hemiGround: 0x8f8778, sunColor: 0xffe2bf, env: [0xe4e8ee, 0xf6ead8, 0x8a8478, 0.95], bloom: 0.34, sat: 1.08 },
   zemin: { tA: 0xd8b07a, tB: 0xd0a670, tC: 0xe6c496, out: 0x8a7a68, outAmt: 0.6, macro: 0xfff4e4 },
   minimap: { zemin: '#c9a06a' },
-  harita: { ad: 'Oturma Odası', detay: 'Halı ormanı, kitaplık dağı ve koltuk altı', renk: '#9fb4cf', x: 22, y: 34, simge: '🛋️' },
+  harita: { ad: 'Oturma Odası', detay: 'Halı ormanı, kitaplık dağı ve koltuk altı', renk: '#9fb4cf', x: 50, y: 30, simge: '🛋️' },
   yerlesim(L, api) { OTURMA.yerlesim(L, api); },
   kur(L, api) { return OTURMA.kur(L, api); },
 });

@@ -834,7 +834,7 @@
       env: [0xffe0f0, 0xfff0e4, 0xd8a8c0, 0.6], bloom: 0.34, exposure: 0.95, sat: 1.16, vig: 0.22, fezaLight: 0, moss: [0xffe0ec, 0], rim: [0xfff0f6, 0.12] },
     zemin: { tA: 0xffdde9, tB: 0xffe4c0, tC: 0xffffff, out: 0xf0a8c0, outAmt: 0.5, macro: 0xfff0f6 },
     minimap: { zemin: '#f6c8d8' },
-    harita: { ad: 'Pasta Krallığı', detay: 'Krema nehirleri, çilek ormanı, şeker dağı', renk: '#f4a8c4', x: 76, y: 70, simge: '🎂' },
+    harita: { ad: 'Pasta Krallığı', detay: 'Krema nehirleri, çilek ormanı, şeker dağı', renk: '#f4a8c4', x: 22, y: 70, simge: '🎂' },
     yerlesim, kur,
   });
 })();

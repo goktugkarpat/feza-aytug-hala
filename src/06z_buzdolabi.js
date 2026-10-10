@@ -1388,7 +1388,7 @@ const ODAB = (() => {
       env: [0xd6efff, 0xfff0e8, 0x9ab8d0, 0.62], bloom: 0.34, exposure: 0.98, fezaLight: 0, sat: 1.06, vig: 0.2, moss: [0xc7e4f4, 0], rim: [0xf0faff, 0.22] },
     zemin: { tA: 0xeaf5fc, tB: 0xdcedf9, tC: 0xf6fbff, out: 0x9cc8e6, outAmt: 0.7, macro: 0xf2f9ff },
     minimap: { zemin: '#cfe8f7' },
-    harita: { ad: 'Buzdolabı', detay: 'Buz pisti, jöle tepeleri, dondurma kaydırağı', renk: '#9fd6ef', x: 78, y: 34, simge: '🧊' },
+    harita: { ad: 'Buzdolabı', detay: 'Buz pisti, jöle tepeleri, dondurma kaydırağı', renk: '#9fd6ef', x: 76, y: 70, simge: '🧊' },
     yerlesim, kur,
     // çıkış kapısı (portal) buzlansın: taş kemer → yarı saydam buz blokları, üstünde kar, sarkıtlar
     kurSon(L, api) {

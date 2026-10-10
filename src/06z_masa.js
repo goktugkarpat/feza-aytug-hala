@@ -1022,7 +1022,7 @@ BOLUM.define('masa', {
   isik: { fog: [0xf2dcc4, 52, 140], hemiSky: 0xfff0dc, hemiGround: 0x9a6a48, hemi: 0.55, sunColor: 0xffe2b8, sun: 1.7, sunOffset: [10, 26, -16],
     env: [0xfff0e0, 0xffe2c8, 0x8a6248, 0.55], bloom: 0.28, exposure: 0.9, sat: 1.1, vig: 0.26 },
   minimap: { zemin: '#d29a62' },
-  harita: { ad: 'Mutfak Masası', detay: 'Aytuğ Hala’nın pastası burada', renk: '#f6c08a', x: 22, y: 70, simge: '🍰' },
+  harita: { ad: 'Mutfak Masası', detay: 'Aytuğ Hala’nın pastası burada', renk: '#f6c08a', x: 22, y: 34, simge: '🍰' },
   // Saf veri: kendi masa zeminini çizer, istasyonlar, pasta, katı engeller
   yerlesim(L, api) {
     const T = MASA.T;
