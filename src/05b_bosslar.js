@@ -515,7 +515,11 @@
       case 'sweep': { const on = st.spin ? 1 : 0; s.spinA = (s.spinA || 0) + dt * 0.85 * (st.spin || 0); ry = on ? 0 : 0; aL = aR = 1.5 * smooth01(t / 0.15) * (1 - smooth01((t - 0.9) / 0.1)); aLx = aRx = -0.4; mR += Math.sin(s.t * 6) * 0.03 * on; s.mouthO = 0.5; s.eyeK = 1.1; break; }
       case 'jump': { const a = clamp(+st.air || 0, 0, 1), cr = t < 0.22 ? bump(t, 0.44) : 0, land = bump(t - 0.75, 0.25); sy *= 1 - 0.15 * cr + 0.12 * Math.sin(PI * a) - 0.2 * land; sxz *= 1 + 0.08 * cr - 0.05 * Math.sin(PI * a) + 0.12 * land; aL = aR = 1.2 * Math.sin(PI * a); tY = 0.2 * Math.sin(PI * a) - 0.1 * land; s.eyeK = 1 - 0.5 * cr; wob = 0.03 + 0.04 * land; break; }
       case 'shock': { const k = 1 - smooth01((t - 0.8) / 0.2); s.eyeK = 1.35; s.mouthO = k; s.browY = 0.05 * k; rz += Math.sin(s.t * 30) * 0.05 * k; mR += Math.sin(s.t * 28 + 1) * 0.05 * k; tR += Math.sin(s.t * 26 + 2) * 0.07 * k; tY = 0.2 * bump(t, 0.2); aL = aR = 1.5 * k; aLx = aRx = -0.5 * k; wob = 0.05 * k; break; }
-      case 'tired': { s.eyeK = 0.45 + 0.1 * Math.sin(s.t * 2); sy *= 0.95 + 0.03 * Math.sin(s.t * 3); rz += Math.sin(s.t * 1.5) * 0.04; tR += Math.sin(s.t * 1.5 + 1) * 0.06; aL = aR = -0.2; s.mouthO = 0.35 + 0.25 * Math.sin(s.t * 3); break; }
+      case 'tired': {   // 'yoruldum': sarkık, iç çeker; her 2,6 s'de kocaman komik bir esneme (kollar yukarı, ağız kocaman)
+        const yw = bump((s.pT % 2.6) / 2.6, 0.45);
+        s.eyeK = lerp(0.4 + 0.08 * Math.sin(s.t * 2), 0.15, yw); sy *= (0.93 + 0.02 * Math.sin(s.t * 3)) * (1 + 0.14 * yw); sxz *= 1 + 0.04 * (1 - yw);
+        rz += Math.sin(s.t * 1.5) * 0.05 * (1 - yw); tR += Math.sin(s.t * 1.5 + 1) * 0.08 * (1 - yw) - 0.1 * yw; tY = 0.15 * yw;
+        aL = aR = lerp(-0.35, 1.6, yw); aLx = aRx = -0.3 * yw; s.mouthO = Math.max(0.25, yw); wob = 0.02 + 0.03 * yw; break; }
       case 'summon': { const k = smooth01(t / 0.15) * (1 - smooth01((t - 0.85) / 0.15)); aL = aR = 1.3 * k; y += Math.abs(Math.sin(t * PI * 3)) * 0.2 * k; break; }
       case 'dying': { aL = aR = 1.3 + Math.sin(s.t * 10) * 0.3; tY = Math.abs(Math.sin(s.t * 8)) * 0.15; mR = Math.sin(s.t * 5) * 0.05; wob = 0.03; break; }
     }
