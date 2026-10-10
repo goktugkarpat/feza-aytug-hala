@@ -117,7 +117,8 @@
       }
       for (const ai of [0, 1, 2]) {   // eksikse: alanın huysuzlarından birkaçı kaktüs olur
         const list = (L.spawns || []).filter(sp => areaOfRoom[sp.room] === ai && !sp.elite && !/altin|gokkusagi|kaktus/i.test(sp.type) && !(ai === 1 && FLOW.includes(sp.type)));
-        for (let n = kakN[ai] || 0; n < 3 && list.length; n++) { const sp = list.splice((api.rnd() * list.length) | 0, 1)[0]; sp.type = 'kaktus'; delete sp.variant; }
+        const tot = (L.spawns || []).filter(sp => areaOfRoom[sp.room] === ai).length, want = Math.min(3, Math.ceil(tot / 2));
+        for (let n = kakN[ai] || 0; n < want && list.length; n++) { const sp = list.splice((api.rnd() * list.length) | 0, 1)[0]; sp.type = 'kaktus'; delete sp.variant; }
       }
     },
 
@@ -191,7 +192,7 @@
           api.put(sph, x, top + h * 1.8, z, s * 0.07, s * 0.05, s * 0.07, 0xff9a2e);
           return;
         }
-        const r0 = ps * 0.5, h = s * (1.0 + rnd() * 0.5), cy = top + h * 0.85;   // kollu uzun kaktüs: kollar yana ve yukarı
+        const r0 = ps * 0.5, h = s * (0.65 + rnd() * 0.35), cy = top + h * 0.85;   // kollu uzun kaktüs: kollar yana ve yukarı
         api.put(sph, x, cy, z, r0, h, r0, g);
         tufts(x, cy, z, r0 * 1.02, h, 8);
         for (const sd of [-1, 1]) {
@@ -216,7 +217,7 @@
         if (!edge && !far) continue;
         if (far && rnd() < 0.3) continue;
         const ai = areaOf(px, pz), ar = A[ai], low = edge || !southOpen(px, pz), r = rnd();   // kenarda hep alçak; uzun şeyler geride
-        if (r > 0.84 && !(ar && ar.boss && !low)) { cactusPot(px, pz, low ? 0.9 + rnd() * 0.6 : 1.6 + rnd() * 1.2, low); continue; }
+        if (r > 0.8) { const tall = !edge && !southOpen(px, pz); cactusPot(px, pz, tall ? 1.6 + rnd() * 1.0 : 1.3 + rnd() * 0.7, !tall); continue; }   // uzun kaktüs yalnız oyun alanının arkasında (kameradan uzak)
         if (ar && ar.boss) { if (r < 0.6) bigPot(px, pz, low ? 1.3 + rnd() * 0.4 : 1.8 + rnd() * 0.8, low); else flower(px, pz, low ? 1.3 : 2.2, low ? 0.9 : 3.2 + rnd() * 1.5, rnd() < 0.5 ? 'papatya' : 'gerbera'); continue; }
         if (ai === 0) { if (r < 0.7) bigPot(px, pz, low ? 1.2 + rnd() * 0.5 : 2.0 + rnd() * 1.4, low); else if (low) { for (let k = 0; k < 3; k++) flower(px + (rnd() - 0.5) * 1.6, pz + (rnd() - 0.5) * 1.6, 0.7 + rnd() * 0.3, 0.35 + rnd() * 0.3, rnd() < 0.5 ? 'papatya' : 'gerbera'); } else for (let k = 0; k < 3; k++) { const ls = 0.6 + rnd() * 0.4; api.put(leaf, px, 0.05, pz, ls, ls, ls, GREEN[k % 4], PI + (rnd() - 0.5) * 2.4, 0.15, 0); } }
         else if (ai === 1) { flower(px, pz, low ? 1.2 + rnd() * 0.4 : 2.0 + rnd() * 1.2, low ? 0.6 + rnd() * 0.5 : 2.6 + rnd() * 2.6, rnd() < 0.5 ? 'papatya' : 'gerbera'); }

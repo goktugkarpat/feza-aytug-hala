@@ -945,14 +945,18 @@
       return out.copy(cD).lerp(cG, sm((y - y0) / ((y1 - y0) * 0.35))).lerp(cL, 0.32 * sm((y - y1 + (y1 - y0) * 0.2) / ((y1 - y0) * 0.2))).lerp(cD, 0.3 * Math.pow(rib, 6));
     };
   }
-  function spikeRing(r, RR) {   // vuruş halkası: zeminden fışkıran yumuşak diken topları (ring kemiği; normalde gizli)
-    r.on('ring').fx(0, 0.6);
-    for (let i = 0; i < 12; i++) {
-      const a = i / 12 * TAU, x = Math.sin(a) * RR, z = 0.4 + Math.cos(a) * RR;
-      r.add(G.sphere(14, 10), i & 1 ? '#7ad86a' : '#5cc45a', [x, 0.08, z], [Math.cos(a) * 0.25, 0, -Math.sin(a) * 0.25], [0.085, 0.17, 0.085]);   // tombul, yuvarlak uçlu
-      r.add(G.sphere(10, 8), '#f4ffe0', [x + Math.sin(a) * 0.03, 0.235, z + Math.cos(a) * 0.03], null, 0.042);
-      r.fx(1, 0).add(G.sphere(6, 4), hdr('#ffffff', 1.2), [x - 0.03, 0.15, z + 0.06], null, [0.015, 0.03, 0.01]);
-      r.fx(0, 0.6);
+  // vuruş halkası: zeminden fışkıran yumuşak diken topları. Her biri kendi kemiğinde, durağan hâlde halkanın ORTASINDA kurulur
+  // (albüm resminin çerçevesi büyümesin); ringAnim kemikleri halkaya yayar. Normalde gizli.
+  const RING_N = 12, RING_R = 1.3;
+  const RING_HIDE = Array.from({ length: RING_N }, (_, i) => 'rg' + i);
+  function spikeRing(r) {
+    for (let i = 0; i < RING_N; i++) {
+      const a = i / RING_N * TAU, b = 'rg' + i;
+      r.bone(b, 'root', [0, 0, 0.4]);
+      r.on(b).fx(0, 0.6);
+      r.add(G.sphere(14, 10), i & 1 ? '#7ad86a' : '#5cc45a', [0, 0.08, 0.4], [Math.cos(a) * 0.25, 0, -Math.sin(a) * 0.25], [0.085, 0.17, 0.085]);   // tombul, yuvarlak uçlu
+      r.add(G.sphere(10, 8), '#f4ffe0', [Math.sin(a) * 0.03, 0.235, 0.4 + Math.cos(a) * 0.03], null, 0.042);
+      r.fx(1, 0).add(G.sphere(6, 4), hdr('#ffffff', 1.2), [-0.03, 0.15, 0.46], null, [0.015, 0.03, 0.01]);
     }
     r.fx(0, 0);
   }
@@ -965,8 +969,7 @@
     r.bone('cact', 'body', [0, 0.4, 0]);
     r.bone('armL', 'cact', [0.17, 0.55, 0]); r.bone('armR', 'cact', [-0.17, 0.55, 0]);
     r.bone('flower', 'cact', [0, 0.86, 0]);
-    r.bone('ring', 'root', [0, 0, 0.4]);
-    r.on('body').fx(0, 0.6).add(K.lathe('bkPot', POT_P, 40, 4), potDots(col('#3f86c8'), col('#7cc8f0'), col('#c8eeff'), 0.06, 0.38, 0.27, 9, ['#ffffff', '#ff9ac0']), [0, 0.06, 0], null, 0.85);
+        r.on('body').fx(0, 0.6).add(K.lathe('bkPot', POT_P, 40, 4), potDots(col('#3f86c8'), col('#7cc8f0'), col('#c8eeff'), 0.06, 0.38, 0.27, 9, ['#ffffff', '#ff9ac0']), [0, 0.06, 0], null, 0.85);
     r.fx(1, 0).add(G.sphere(10, 6), hdr('#ffffff', 1.2), [-0.12, 0.27, 0.14], [0, -0.7, 0], [0.022, 0.06, 0.008]);
     r.fx(0, 0.05).add(G.cyl(1, 1, 24), '#6a4028', [0, 0.425, 0], null, [0.19, 0.016, 0.19]);
     r.on('feet');
@@ -997,14 +1000,18 @@
     hearts(r, [[0.27, 0.98, 0.1, 0.065], [-0.25, 1.03, 0.1, 0.055]]);
     if (E) K.crown(r.on('flower'), [0, 0.9, -0.04], 0.4);
     r.on('cact').mark('muzzle', [0, 0.7, 0.25]);
-    spikeRing(r, 1.3);
-    return { height: 0.95, glowC: col('#b8f08a'), hide: ['ring'],
+    spikeRing(r);
+    return { height: 0.95, glowC: col('#b8f08a'), hide: RING_HIDE,
       mat: { rough: 0.55, sss: col('#c8ffb0').multiplyScalar(0.03), rim: '#f0ffe0', rimK: 0.3, rimP: 2.3 } };
   }
   function ringAnim(B, st) {   // vuruş halkası: iner inmez zeminden fışkırıp geri çekilir
     const a = st.attack;
-    if (a >= 0 && a < 1) { const k = Math.sin(PI * Math.min(1, a * 1.25)); B.ring.scale.set(1, Math.max(0.0001, k), 1); }
-    else B.ring.scale.setScalar(0.0001);
+    const k = a > 0 && a < 1 ? Math.sin(PI * Math.min(1, a * 1.25)) : 0;
+    for (let i = 0; i < RING_N; i++) {
+      const bn = B['rg' + i], an = i / RING_N * TAU;
+      if (k > 0.03) { bn.scale.set(1, k, 1); bn.position.x += Math.sin(an) * RING_R; bn.position.z += Math.cos(an) * RING_R; }
+      else bn.scale.setScalar(0.0001);   // (k≈0 iken tamamen gizli: albüm resmi attack 0 ile çizilir)
+    }
   }
   function animKaktusCicegi(m, dt, st, s) {
     const B = m.B, b = B.body, g = hopGait(s, st, dt, 2.2, 0.12);
@@ -1042,8 +1049,7 @@
     r.bone('cact', 'body', [0, 0.42, 0]);
     r.bone('armL', 'cact', [0.17, 0.66, 0]); r.bone('armR', 'cact', [-0.17, 0.58, 0]);
     r.bone('top', 'cact', [0, 1.08, 0]);
-    r.bone('ring', 'root', [0, 0, 0.4]);
-    r.on('body').fx(0, 0.6).add(K.lathe('bkPot', POT_P, 40, 4), potDots(col('#c8532e'), col('#ee8a5a'), col('#ffc8a0'), 0.06, 0.4, 0.28, 9, ['#ffffff', '#ffd23a']), [0, 0.06, 0], null, 0.9);
+        r.on('body').fx(0, 0.6).add(K.lathe('bkPot', POT_P, 40, 4), potDots(col('#c8532e'), col('#ee8a5a'), col('#ffc8a0'), 0.06, 0.4, 0.28, 9, ['#ffffff', '#ffd23a']), [0, 0.06, 0], null, 0.9);
     r.fx(1, 0).add(G.sphere(10, 6), hdr('#ffffff', 1.15), [-0.13, 0.28, 0.15], [0, -0.7, 0], [0.022, 0.06, 0.008]);
     r.fx(0, 0.05).add(G.cyl(1, 1, 24), '#6a4028', [0, 0.445, 0], null, [0.2, 0.016, 0.2]);
     r.on('feet');
@@ -1085,8 +1091,8 @@
       r.fx(0, 0);
     }
     r.on('cact').mark('muzzle', [0, 0.85, 0.22]);
-    spikeRing(r, 1.3);
-    return { height: 1.2, glowC: col('#b8f08a'), hide: ['ring'],
+    spikeRing(r);
+    return { height: 1.2, glowC: col('#b8f08a'), hide: RING_HIDE,
       mat: { rough: 0.55, sss: col('#c8ffb0').multiplyScalar(0.03), rim: '#f0ffe0', rimK: 0.3, rimP: 2.3 } };
   }
   function animKaktus(m, dt, st, s) {
