@@ -32,7 +32,7 @@ const ODAB = (() => {
     }
     return (M[k] = kp(m));
   }
-  const OPAQUE = { cream: 1, candy: 1, gloss: 1, matte: 1, snow: 1, gold: 1 }, CAST = { cream: 1, gloss: 1, snow: 1 };
+  const OPAQUE = { cream: 1, candy: 1, gloss: 1, matte: 1, snow: 1, gold: 1 }, CAST = { cream: 1 };   // (gölge yalnız krema parçalı büyük süslerden: kek, külah, süt şişesi; küçük/parlak süsler gölgesiz)
   const C = (hex, k = 1) => (k === 1 ? new THREE.Color(hex) : new THREE.Color(hex).multiplyScalar(k));
 
   // ── Birleştirilmiş çizim: malzeme + 24 m'lik parça başına tek mesh (Kit: renkli ilkel parçalar) ──
@@ -55,7 +55,7 @@ const ODAB = (() => {
     return B;
   }
   // tek parça (hareketli) mesh: Kit → Mesh
-  function solo(kit, mk, api) { const m = new THREE.Mesh(kit.build(), mat(mk)); m.castShadow = !!OPAQUE[mk]; m.receiveShadow = true; if (api) api.add(m); return m; }
+  function solo(kit, mk, api, cast) { const m = new THREE.Mesh(kit.build(), mat(mk)); m.castShadow = !!cast && !!OPAQUE[mk]; m.receiveShadow = true; if (api) api.add(m); return m; }
 
   // ── Oyun bağlantıları ──
   const A = () => (typeof GAME !== 'undefined' && GAME.halaApi) || null;
@@ -110,7 +110,7 @@ const ODAB = (() => {
       haloGeo = h.build(); haloGeo.userData.keep = true;
     }
     const g = new THREE.Group();
-    const m = new THREE.Mesh(goldGeo, mat('gold')); m.castShadow = true; g.add(m);
+    const m = new THREE.Mesh(goldGeo, mat('gold')); g.add(m);
     const h = new THREE.Mesh(haloGeo, mat('halo')); h.renderOrder = 3; g.add(h);
     g.userData.spin = m;
     return g;
@@ -1291,7 +1291,7 @@ const ODAB = (() => {
     const k = new Kit();
     k.add(G.sphere(18, 12), C(0xffffff), [0, 0, 0], null, [1, 1, 1]);
     for (let i = 0; i < 14; i++) { const a = i * 2.4, b = i * 1.1; k.add(G.sphere(7, 5), C(0xeaf6ff), [Math.sin(a) * Math.cos(b) * 0.9, Math.sin(b) * 0.9, Math.cos(a) * Math.cos(b) * 0.9], null, [0.28, 0.2, 0.28]); }
-    const ball = O.solo(k, 'snow', api); const rad = 0.95; ball.position.set(S.x, rad, S.z); ball.scale.setScalar(rad);
+    const ball = O.solo(k, 'snow', api, true); const rad = 0.95; ball.position.set(S.x, rad, S.z); ball.scale.setScalar(rad);
     // buz duvarı / iglo: buz bloklarından kubbe, içinde parlayan hazine
     const ig = new Kit(), ix = S.ix, iz = S.iz;
     for (let ring = 0; ring < 3; ring++) {
@@ -1403,7 +1403,7 @@ const ODAB = (() => {
       const k = new Kit();
       for (let n = 0; n <= 10; n++) { const a = n / 10 * PI; k.add(G.sphere(8, 6), C(0xffffff), [Math.cos(a) * 1.65, 2.3 + Math.sin(a) * 1.65 + 0.38, 0], null, [0.42, 0.24, 0.5]); }
       for (const sx of [-1, 1]) k.add(G.sphere(8, 6), C(0xffffff), [sx * 1.58, 2.35, 0], null, [0.5, 0.2, 0.5]);
-      const snow = new THREE.Mesh(k.build(), O.mat('snow')); snow.castShadow = true; g.add(snow);
+      const snow = new THREE.Mesh(k.build(), O.mat('snow')); g.add(snow);
       const ic = new Kit();
       for (let n = 1; n < 10; n++) { const a = n / 10 * PI, l = 0.35 + (n % 3) * 0.18; ic.add(G.cone(6), C(0xd4f0ff), [Math.cos(a) * 1.3, 2.3 + Math.sin(a) * 1.3 - l / 2, 0.3], [PI, 0, 0], [0.08, l, 0.08]); }
       g.add(new THREE.Mesh(ic.build(), O.mat('ice')));

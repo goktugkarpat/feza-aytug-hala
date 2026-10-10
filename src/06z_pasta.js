@@ -430,7 +430,7 @@
     k.add(G.torus(TAU, 0.3, 14), C(0xff7aa8), [0, 0, -1.2], null, [1.0, 1.0, 1.0]);
     for (let i = 0; i < 8; i++) { const a = i * TAU / 8; k.add(G.cone(4), C(0xd8dee8), [Math.sin(a) * 0.14, Math.cos(a) * 0.14, 2.05], [PI / 2, 0, 0], [0.09, 0.4, 0.09]); }
     k.add(G.sphere(12, 8), C(0xffe6f0), [0, 0, 2.25], null, [0.3, 0.3, 0.3]);
-    const bag = O.solo(k, 'cream', api), yaw = Math.atan2(-S.dx, -S.dz);
+    const bag = O.solo(k, 'cream', api, true), yaw = Math.atan2(-S.dx, -S.dz);
     bag.position.set(S.bx, 1.15, S.bz); bag.rotation.set(0, yaw, 0); bag.rotateX(0.32);
     B.add('cream', G.sphere(12, 8), C(0xfff2f6), [S.bx, 0.05, S.bz], null, [1.6, 0.3, 1.3]);
     const ring = new Kit(); ring.add(G.torus(TAU, 0.12, 32), C(0xffd24a, 1.6), [0, 0.06, 0], [PI / 2, 0, 0], [0.85, 0.85, 0.85]);
@@ -535,7 +535,7 @@
     }
     k.add(G.cyl(1, 1, 12), C(0xff7aa8), [1.0, 4.0, -0.6], null, [0.28, 1.2, 0.28]);
     for (let i = 0; i < 3; i++) k.add(G.sphere(8, 6), C(0xffd0e4), [1.0 + i * 0.25, 4.85 + i * 0.4, -0.6], null, [0.35 + i * 0.1, 0.3 + i * 0.08, 0.35 + i * 0.1]);
-    const house = O.solo(k, 'gloss', api); house.position.set(h.x, 0, h.z); house.rotation.y = h.yaw;
+    const house = O.solo(k, 'gloss', api, true); house.position.set(h.x, 0, h.z); house.rotation.y = h.yaw;
     api.light(h.x + Math.sin(h.yaw) * 2.2, 1.8, h.z + Math.cos(h.yaw) * 2.2, 0xffd08a, 1.8, 5.5, 0.12);
     // kapı (çikolata tablet): menteşeden açılır
     const dk = new Kit();
@@ -730,7 +730,11 @@
     }
     const ropeMesh = ropes.parts.length ? O.solo(ropes, 'candy', api) : null;
     if (ropeMesh) { ropeMesh.visible = false; ropeMesh.scale.set(1, 1, 1); }
-    const fl = flameGeo(), flames = candlesA.map(c => { const m = new THREE.Mesh(fl, O.mat('glow')); m.position.set(c.x, c.h + 0.2, c.z); m.scale.setScalar(0.01); api.add(m); m.userData.li = api.light(c.x, c.h + 0.8, c.z, 0xffc070, 0, 9, 0.2) - 1; return m; });
+    const flameIM = new THREE.InstancedMesh(flameGeo(), O.mat('glow'), Math.max(1, candlesA.length)); flameIM.count = candlesA.length; flameIM.frustumCulled = false; api.add(flameIM);
+    const _fm = new THREE.Matrix4(), _fp = new THREE.Vector3(), _fq = new THREE.Quaternion(), _fs = new THREE.Vector3();
+    candlesA.forEach((c, i) => { _fp.set(c.x, -5, c.z); _fs.set(0.01, 0.01, 0.01); flameIM.setMatrixAt(i, _fm.compose(_fp, _fq, _fs)); });
+    const flameLi = candlesA.map(c => api.light(c.x, c.h + 0.8, c.z, 0xffc070, 0, 9, 0.2) - 1);
+    const setFlames = k => { candlesA.forEach((c, i) => { const f = 1 + Math.sin(st.t * 15 + i) * 0.08; _fp.set(c.x, c.h + 0.2, c.z); _fs.set(Math.max(0.01, 1.5 * k * f), Math.max(0.01, 1.6 * k * (1 + (f - 1) * 2)), Math.max(0.01, 1.5 * k * f)); flameIM.setMatrixAt(i, _fm.compose(_fp, _fq, _fs)); }); flameIM.instanceMatrix.needsUpdate = true; };
     // arenanın üstünde süzülen ışık balonları (2. aşamada belirir)
     const orbs = new Kit();
     for (let i = 0; i < 10; i++) { const a = i / 10 * TAU, x = A.x + Math.sin(a) * (A.r * 0.7), z = A.z + Math.cos(a) * (A.r * 0.7) - 2; orbs.add(G.sphere(10, 7), C(CANDY[i % CANDY.length], 1.6), [x - A.x, 6.5 + (i % 3) * 0.6, z - A.z], null, [0.28, 0.28, 0.28]); }
@@ -770,7 +774,7 @@
       }
       if (st.phase >= 3) {
         st.ph3 = Math.min(1, st.ph3 + dt * 1.2);
-        flames.forEach((m, i) => { const f = 1 + Math.sin(st.t * 15 + i) * 0.08; m.scale.set(1.5 * st.ph3 * f, 1.6 * st.ph3 * (1 + (f - 1) * 2), 1.5 * st.ph3 * f); const L0 = LT[m.userData.li]; if (L0) L0.int = 2.6 * st.ph3; });
+        setFlames(st.ph3); for (const li of flameLi) { const L0 = LT[li]; if (L0) L0.int = 2.6 * st.ph3; }
       }
       // final: Koca Huysuz Pasta neşelendi → şeker ışığı havai fişekleri
       if (frac <= 0 && !st.fin && ((b && b.dead) || nowDone)) { st.fin = true; st.finT = 0; setTimeout(() => O.say('odp_kutlama', { gap: 0 }), 4200); }
