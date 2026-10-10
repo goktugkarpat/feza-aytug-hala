@@ -577,7 +577,10 @@ const UI = (() => {
     if (from !== 'dream') S.dreamChoiceIndex = null;
     S.choiceFrom = from; S.atkHeld = false;
     if (S.clearKeys) S.clearKeys();
-    aud('stopVoice'); setPaused(true); setMode('choose'); showScreen(D.choice, true);
+    aud('stopVoice'); setPaused(true); setMode('choose');
+    // Dev Ev (5 yaş): kahraman seçimi yok — her zaman doğrudan oyna (varsayılan sınıf); seçim ekranı yalnız ?secim ile
+    if (!Q.has('secim')) { chooseHero('warrior'); return; }
+    showScreen(D.choice, true);
     aud('say', 'kahraman_sec', { prio: 3 });
     D.heroes[0].focus({ preventScroll: true });
   }
