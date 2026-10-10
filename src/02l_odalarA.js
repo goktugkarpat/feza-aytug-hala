@@ -5,6 +5,9 @@ Object.assign(AUD.LINES, {
   kapi_kapali_1: 'Önce şu huysuzları güldürelim, sonra yol açılır!',
   kapi_kapali_2: 'Şeker çit kapalı. Huysuzlar neşelenince açılacak!',
   kapi_kapali_3: 'Birkaç huysuz daha kaldı. Ok onları gösteriyor!',
+  dalga_1: 'Bak bak, daha çok huysuz geliyor! Hazır mısın Feza?',
+  dalga_2: 'Vay, yeni huysuzlar geldi! Onları da güldürelim!',
+  dalga_3: 'Bir grup daha! Hep birlikte neşelendirelim!',
   kapi_acildi: 'Yaşasın, yol açıldı! Hadi devam edelim!',
   // Oturma Odası · Halı Ormanı
   oda_hali_gir: 'Bak bak, halının tüyleri orman gibi kocaman olmuş!',

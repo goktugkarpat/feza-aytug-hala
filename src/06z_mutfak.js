@@ -148,6 +148,7 @@ const MUTFAK = (() => {
   // ── yerleşim (saf veri) ──
   function yerlesim(L, api) {
     K.gentle(L, PER_AREA, 3);
+    for (const sp of L.spawns) if (!api.circleFree(sp.x, sp.z, 1.0)) { const q = api.randomFloorNear(sp.x, sp.z, 0.5, 4); if (q && api.circleFree(q.x, q.z, 1.0)) { sp.x = q.x; sp.z = q.z; } }   // (Feza'nın ulaşamayacağı sıkışık yerde doğmasın)
     const A = L.areas || [], a3 = A[2];
     if (a3) {   // Aytuğ Hala'nın anahtarı: dolabın içinde (3. alanın yan odası ya da son odası)
       const side = a3.rooms.find(i => L.rooms[i].kind === 'side'), rm = L.rooms[side ?? a3.rooms[a3.rooms.length - 1]];

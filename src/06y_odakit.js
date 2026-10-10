@@ -680,8 +680,35 @@ const ODAKIT = (() => {
   function gateCheer(e) {
     const st = GS; if (!st || e.boss || e.room === undefined) return;
     const g0 = G_(); if (!g0 || g0.L !== st.L) return;
+    if (e._gate) { e._gate.c2++; return; }   // ikinci dalga
     const k = st.areaOf[e.room]; if (k === undefined) return;
     st.cheered[k]++;
+  }
+  // İkinci dalga: alanın kenarlarından, Feza'nın görebileceği yerlerde (5-9 m), mor şeker parıltısıyla doğar ve Feza'ya gelir
+  function spawnWave(g0, st, gt, hx, hz) {
+    const L = st.L, A = L.areas, area = A[gt.prev], rooms = new Set(area.rooms);
+    const types = (L.spawns || []).filter(s => rooms.has(s.room) && !isBossT(s.type)).map(s => s.type);
+    if (!types.length || !g0.spawnEnemy) return 0;
+    const n = Math.max(2, Math.round(st.total[gt.prev] * 0.8)), pts = [];
+    for (let t = 0; t < 160 && pts.length < n; t++) {
+      const a = Math.random() * TAU, d = 5 + Math.random() * 4, x = hx + Math.sin(a) * d, z = hz + Math.cos(a) * d;
+      if (!LEVEL.isFloor(L, x, z) || !LEVEL.circleFree(L, x, z, 1.0) || (z > hz + 4.5)) continue;   // (güneyde çok aşağıda değil: ekranda görünsün)
+      let ri = -1, bd = 1e9; for (const r of area.rooms) { const rm = L.rooms[r], dd = Math.hypot(rm.x - x, rm.z - z) - (rm.r || 6); if (dd < bd) { bd = dd; ri = r; } }
+      if (bd > 3 || pts.some(q => Math.hypot(q.x - x, q.z - z) < 1.8) || Math.hypot(x - gt.g.x, z - gt.g.z) < 3) continue;
+      pts.push({ x, z, room: ri });
+    }
+    for (let t = 0; t < 200 && pts.length < n; t++) {   // yakında yer yoksa: alanın odalarında, Feza'ya 4-14 m
+      const ri = area.rooms[t % area.rooms.length], rm = L.rooms[ri], a = Math.random() * TAU, d = Math.sqrt(Math.random()) * (rm.r || 6) * 0.8, x = rm.x + Math.sin(a) * d, z = rm.z + Math.cos(a) * d, dh = Math.hypot(x - hx, z - hz);
+      if (dh < 4 || dh > 14 || !LEVEL.isFloor(L, x, z) || !LEVEL.circleFree(L, x, z, 1.0) || pts.some(q => Math.hypot(q.x - x, q.z - z) < 1.8)) continue;
+      pts.push({ x, z, room: ri });
+    }
+    gt.wave = []; gt.c2 = 0;
+    pts.forEach((q, i) => {
+      const type = types[i % types.length], elite = i === 0 && st.total[gt.prev] >= 4;
+      gt.wave.push(Object.assign({ type, elite, at: st.t + 0.9 + i * 0.35 }, q));
+      burst('magic', q.x, 0.6, q.z, { color: '#b28dff' });
+    });
+    return pts.length;
   }
   function nearestLeft(g0, area, hx, hz) {
     if (!g0.roomEnemies) return null;
@@ -697,6 +724,27 @@ const ODAKIT = (() => {
       if (gt.open) { if (gt.anim < 1 && gt.grp.visible) { gt.anim = Math.min(1, gt.anim + dt * 1.6); gt.grp.position.y = -gt.anim * 2.8; gt.grp.scale.setScalar(1 - gt.anim * 0.3); if (gt.anim >= 1) gt.grp.visible = false; } continue; }
       let left = Math.max(0, gt.need - st.cheered[gt.prev]);
       if (left > 0 && Math.hypot(hx - gt.g.x, hz - gt.g.z) < 10 && g0.roomEnemies && !g0.roomEnemies(A[gt.prev].rooms).length) left = 0;   // (alanda huysuz kalmadıysa yine de açılır)
+      // ikinci dalga (boss arenasının geçidinde yok): ilk grup bitince Hala uyarır, yeni grup kenarlardan doğar
+      const arenaGate = !!A[gt.k].boss;
+      if (left <= 0 && !arenaGate && gt.wave === undefined) {
+        const n = spawnWave(g0, st, gt, hx, hz);
+        if (n > 0) { gt.need2 = Math.ceil(n * GATE_K); say('dalga_' + (1 + (gt.k % 3)), 3); if (typeof HALA !== 'undefined' && HALA && HALA.expr) { try { HALA.expr('saskin', 2); } catch (e) { /* */ } } }
+        else gt.wave = null;   // doğamadıysa çıkmaz olmasın: geçit açılır
+      }
+      if (gt.wave && gt.wave.length) {   // sırayla doğur (mor parıltı + pop), hemen Feza'ya gelsin
+        for (let i = gt.wave.length - 1; i >= 0; i--) {
+          const w = gt.wave[i]; if (st.t < w.at) continue;
+          gt.wave.splice(i, 1);
+          let e = null; try { e = g0.spawnEnemy(w.type, w.x, w.z, { elite: w.elite, room: w.room, pack: 'dalga' + gt.k }); } catch (err) { e = null; }
+          if (e) { e._gate = gt; gt.spawned = (gt.spawned || 0) + 1; burst('magic', w.x, 1, w.z, { color: '#c08cff' }); burst('sparkle', w.x, 1.2, w.z, { color: '#e0b0ff' }); sfx('pop', { x: w.x, z: w.z, pitch: 0.8 }); }
+        }
+        if (!gt.wave.length && g0.wakeRooms) { try { g0.wakeRooms(A[gt.prev].rooms); } catch (err) { /* */ } }
+      }
+      if (gt.wave !== undefined && gt.wave !== null) {
+        if (!gt.wave.length && !gt.spawned) gt.need2 = 0;
+        left = gt.wave.length ? Math.max(1, gt.need2 - gt.c2) : Math.max(0, gt.need2 - gt.c2);
+        if (left > 0 && !gt.wave.length && g0.roomEnemies && !g0.roomEnemies(A[gt.prev].rooms).length) left = 0;
+      }
       if (left !== gt.shown) { gt.shown = left; gt.bm.map.dispose(); gt.bm.map = badgeTex(left); gt.bm.needsUpdate = true; }
       gt.badge.position.y = 3.4 + Math.sin(st.t * 3) * 0.12;
       if (left <= 0) {   // yol açıldı!
@@ -707,6 +755,15 @@ const ODAKIT = (() => {
         continue;
       }
       const d = Math.hypot(hx - gt.g.x, hz - gt.g.z), here = (P.area ?? -1) === gt.prev;
+      if (here && st.t - (gt.fixT || 0) > 1 && g0.roomEnemies) {   // ulaşılamayan yerdeki (yürünmez, sıkışık) huysuzları yürünür bir yere al
+        gt.fixT = st.t;
+        for (const e of g0.roomEnemies(A[gt.prev].rooms)) {
+          if (!e.m || e.dead) continue;
+          if (!LEVEL.isFloor(st.L, e.x, e.z) || !LEVEL.circleFree(st.L, e.x, e.z, Math.min(0.5, (e.r || 0.5) * 0.8))) {
+            const q = LEVEL.randomFloorNear(st.L, e.x, e.z, 0.5, 4); if (q && LEVEL.circleFree(st.L, q.x, q.z, 0.6)) { e.x = q.x; e.z = q.z; burst('sparkle', q.x, 0.8, q.z); }
+          }
+        }
+      }
       if (d < 7 && st.t - gt.lastSay > 9 && playing()) {
         gt.lastSay = st.t; say('kapi_kapali_' + (1 + (gt.sayI++ % 3)), 2);
         const q = nearestLeft(g0, A[gt.prev], hx, hz);
