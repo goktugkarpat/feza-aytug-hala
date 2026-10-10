@@ -18,7 +18,7 @@ Object.assign(AUD.LINES, {
   oda_tv_kapa: 'Çizgi film bitti. Hadi maceraya devam!',
   // Koltuk Altı
   oda_koltuk_gir: 'Koltuğun altındayız. Ne çok kayıp eşya var burada!',
-  oda_bilbo_ipucu: 'Bilbo yarışmak istiyor! Patili halkaya gel!',
+  oda_bilbo_ipucu: 'Patili halkaya gel, Bilbo’ya bin! Toz yumaklarını toplayalım!',
   oda_bilbo_yaris: 'Hadi Bilbo, koş koş! Toz yumaklarını topla!',
   oda_bilbo_bitti: 'Ne hızlıydınız! Bilbo çok mutlu oldu.',
   oda_bilbo_hepsi: 'Hepsini topladınız! Bilbo kuyruğunu sallıyor!',
@@ -53,6 +53,7 @@ Object.assign(AUD.LINES, {
   mut_makarna: 'Makarna köprüsünden geçelim, çıtır çıtır!',
   mut_anahtar_ipucu: 'Bilbo bir şey kokluyor. Ne buldu acaba?',
   mut_anahtar: 'Anahtarım! Bilbo buldu, ne akıllı köpek!',
+  mut_bilbo_ipucu: 'Patili halkaya gel, Bilbo’ya bin! Tezgâhta koşalım!',
   mut_mini_ipucu: 'Hediye kutusunda bir oyun saklı! Halkaya gir bakalım!',
   mut_arena_gir: 'Ocağın üstü. Merak etme, ocak kapalı.',
 });

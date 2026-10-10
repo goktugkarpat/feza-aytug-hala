@@ -602,7 +602,7 @@ const OTURMA = (() => {
     // Bilbo ile yarış: patili halkaya basınca 14 s hız; odanın çevresindeki toz yumaklarını topla
     const big = L._otPaw ? L._otPaw.room : L.rooms[rooms.slice().sort((p, q) => L.rooms[q].r - L.rooms[p].r)[0]];
     const pp = L._otPaw || K.inRoom(L, api, big, Math.PI * 0.75, 0.35, 1.5);
-    api.put(pawGeo(), pp.x, 0.03, pp.z, 1, 1, 1, null, 0.4);
+    K.pawPad(api, pp.x, pp.z);
     const balls = [];
     for (let i = 0; i < 10; i++) {
       const q = K.inRoom(L, api, big, i * TAU / 10 + 0.3, 0.72, 0.6);
@@ -610,7 +610,7 @@ const OTURMA = (() => {
       balls.push({ m, x: q.x, z: q.z, on: false });
     }
     let race = 0, got = 0, goldGiven = false, endAt = null;
-    T.add({ x: pp.x, z: pp.z, r: 1.6, hint: { y: 1.8 }, line: 'oda_bilbo_ipucu', near: 9, cd: 5, repeat: true,
+    T.add({ x: pp.x, z: pp.z, r: 1.8, hint: { y: 2.4 }, line: 'oda_bilbo_ipucu', near: 9, cd: 5, repeat: true,
       can: () => race <= 0,
       use: () => {
         race = 14; got = 0; balls.forEach(b => { b.on = true; b.m.visible = true; b.m.scale.setScalar(0.01); });
