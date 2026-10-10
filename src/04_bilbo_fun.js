@@ -40,7 +40,7 @@ const BILBO_FUN = (() => {
   function setRide(on, secs, c) {
     if (!c || !c.P) return false;
     if (!on) { if (ride) endRide(c, false); return true; }
-    if (c.state !== 'play' || c.P.dead || !c.Bilbo || bossNow() || inArena(c)) return false;   // boss savaşında binilmez
+    if (c.state !== 'play' || c.P.dead || !c.Bilbo) return false;   // normal savaşta ve boss karşısında da binilebilir
     abortDig(c, 2);
     if (ride) { ride.dur = Math.max(ride.dur - ride.t, secs || 14); ride.t = 0; return true; }
     ride = { t: 0, dur: secs || 14, puff: 0, end: 0, area: c.P.area };
@@ -54,9 +54,6 @@ const BILBO_FUN = (() => {
     sayLine(c, 'bilbo_bin', 2);
     return true;
   }
-  // boss uyanık mı / Feza boss arenasında mı (biniş orada kendiliğinden biter)
-  function bossNow() { const b = typeof GAME !== 'undefined' && GAME ? GAME.boss : null; return !!(b && !b.dead && (b.aggro || b.encounter)); }
-  function inArena(c) { const A = c.L && c.L.areas, a = A && c.P && A[c.P.area]; return !!(a && a.boss); }
   function endRide(c, quiet, silent) {
     if (!ride) return;
     ride = null;
@@ -80,8 +77,7 @@ const BILBO_FUN = (() => {
     const P = c.P;
     ride.t += dt;
     if (P.dead || c.state !== 'play' || ride.t >= ride.dur) { endRide(c, c.state !== 'play'); return null; }
-    // boss arenası / boss uyanınca ya da başka bir alana geçince biniş biter (boss cümleleriyle üst üste konuşmasın: sessiz iniş)
-    if (bossNow() || inArena(c)) { endRide(c, false, true); return null; }
+    // Başka bir alana geçince biniş biter; savaşlar binişi durdurmaz.
     if (ride.area !== P.area) { if (ride.area === undefined || ride.area < 0) ride.area = P.area; else { endRide(c, false, false); return null; } }
     const f = P.face, back = .10 * (c.scale || .78);
     OUT.x = P.pos.x + Math.sin(f) * back; OUT.z = P.pos.z + Math.cos(f) * back; OUT.face = f; OUT.hop = 0;

@@ -1541,7 +1541,7 @@ const HALA = (() => {
     }
     for (const k in S.cd) S.cd[k] = Math.max(0, S.cd[k] - dt);
     if (ctx.state === 'play') api.charge = Math.min(1, api.charge + dt * TEAM_FILL);
-    if (api.charge >= 1 && !S.chargeWasFull) { S.chargeWasFull = true; if (S.cd.ready <= 0 && ctx.state === 'play') { S.cd.ready = 60; S.timers.push([1.2, () => sayVar2('hala_takim_hazir', 1)]); } }
+    if (api.charge >= 1) S.chargeWasFull = true;
     if (api.charge < 1) S.chargeWasFull = false;
     if (!S.hooked && typeof GAME !== 'undefined' && GAME && GAME.on) {   // oyun olaylarına sevinç
       S.hooked = true;

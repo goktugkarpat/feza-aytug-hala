@@ -26,14 +26,13 @@ Anlatıcı Aytuğ Hala'nın kendisi. Bütün yaratıklar sevimli ve güler yüzl
 - **Yetenekler:** Seviye atladıkça vuruş düğmesinin çevresinde açılır: **Krema Fışkırtma** (kirazlı krema topları), **Kaşık Kasırgası**
   (Feza'nın çevresinde dönen tahta kaşıklar) ve **Şeker Yağmuru** (gökten renkli şekerler). Her biri **yıldız şekerle** üç kademe güçlenir
   (mor yıldız düğmesi). Yıldız şeker mini oyunlardan, seviye atlamaktan ve bosslardan gelir.
-- **Takım Hamlesi:** Sağ alttaki **Takım** düğmesi dolunca parlar. Basınca Feza ve Aytuğ Hala el ele zıplar, etraftaki bütün huysuzlar neşelenir;
-  ardından Feza bir süre Bilbo'ya biner (boss savaşı dışında).
+- **Takım Hamlesi:** Hala hazır olduğunda yakındaki huysuzlara karşı kendiliğinden yardım eder; Feza ile el ele zıplayıp onları neşelendirir. Ayrı düğme yoktur.
 - **Can:** Sol alttaki kırmızı top Feza'nın canıdır. Yanındaki iksirle doldurulur; Feza 5 iksirle başlar (en fazla 5 taşır), huysuzlardan ara sıra yenisi düşer. Kaybetmek yok: Feza yorulup düşerse Aytuğ Hala
   koşup elinden tutar ve onu kaldırır; bölüm baştan başlamaz.
 - **Hazineler:** Sandıklardan ve oyuncaklardan ev temalı eşyalar çıkar. Daha güçlüsü bulununca Feza hemen giyer; 🎒 çantadan istediğin silahı,
   şapkayı ve pelerini seçebilirsin. Sıradan eşyalar sessizce çantaya girer, özel eşyalar savaş bitince kartla gösterilir.
 - **Okumak gerekmez:** Bütün yönergeleri Aytuğ Hala sesle söyler; sol üstte konuşurken ağzı oynayan Hala yüzü görünür.
-- **Klavye (yedek):** WASD / oklar yürür, **Boşluk** vurur, **1–2–3** yetenekler, **Q** iksir, **K** Bilbo'ya kemik, **T** Takım Hamlesi (ve Bilbo'ya biniş),
+- **Klavye (yedek):** WASD / oklar yürür, **Boşluk** vurur, **1–2–3** yetenekler, **Q** iksir, **K** Bilbo'ya bin,
   **Y** yetenek güçlendirme, **B** çanta, **M** harita, **Esc** mola.
 
 ## Aytuğ Hala
@@ -51,9 +50,8 @@ Kırmızı polarlı, gür kıvırcık saçlı, başında siyah desenli bandana v
 
 Çikolata renkli Labrador Bilbo Feza'yı takip eder, yakındaki huysuzlara havlar ve ara sıra zıplayıp onları sakinleştirir.
 
-- **Kemik oyunu:** Sağdaki **kemik** düğmesiyle Feza kemik atar; Bilbo kapıp çiğner, sonra huysuzlara minik lokmalar püskürtür.
-- **Bilbo'ya binmek:** **Takım** düğmesine basınca Feza ile Hala el ele zıpladıktan sonra Feza 15 saniyeliğine Bilbo'nun sırtına atlar
-  ve hızlı koşar (binerken vurabilir). Boss savaşında binilmez; orada Takım yalnızca el ele zıplamadır. Oturma Odası'ndaki patili halka
+- **Bilbo'ya binmek:** Sağdaki **Bin** düğmesiyle Feza 10 saniye Bilbo'nun sırtında hızlı koşar; vuruş ve yetenekler savaşta da çalışır.
+  Bekleme süresi basıldığı anda başlar ve 30 saniyedir. Oturma Odası'ndaki patili halka
   ise bir yarış başlatır: Bilbo'yla koşup 10 toz yumağı toplayana altın şeker.
 - **Kayıp eşyalar:** Her odada Aytuğ Hala'nın bir eşyası kaybolmuştur (gözlük, anahtar, toka, telefon). Bilbo koklayıp havlar, kazar ve eşyayı çıkarır.
 - **Aksesuarlar:** Kırmızı tasma, mavi puantiyeli bandana, parti şapkası, güneş gözlüğü ve minik pelerin.
@@ -110,7 +108,7 @@ Her saldırı önceden büyük renkli bir yer işaretiyle görünür ve yavaşt�
 - **Dondurma Kralı:** kar topları atar, karnının üstünde kayar, tepesindeki top katını yuvarlar. Canı azaldıkça erir: "Eriyorum!"
 - **Uykucu Hortum:** fıskiyesinden su püskürtür, damla atar, hoplayıp yerde dalga yapar, mandal çağırır.
 - **Koca Huysuz Pasta:** üç aşamalıdır: krema halkaları, kurabiye askerleri ve çilek yağmuru, dönen krema dalgası. Sonunda yorulur:
-  ekranda büyük **Takım!** işareti çıkar ve Feza ile Hala Takım Hamlesi'yle onu neşelendirir.
+  Feza ile Hala kendiliğinden Takım Hamlesi yaparak onu neşelendirir.
 
 Final töreninde herkes normal boyuna döner, Aytuğ Hala mumları yakar ("İyi ki varsın Feza!"), Feza **Üfle!** düğmesiyle mumları söndürür,
 konfeti patlar, Bilbo kremayı yalar ve Hala Feza'ya sarılır. Kısa jenerikten sonra masaya dönülür ve **Şeker Yağmuru** tekrar turu başlar.

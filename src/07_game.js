@@ -886,8 +886,8 @@ const GAME = (() => {
   }
   function bilboSneeze() { return !!funCall('sneeze', bilboCtx()); }
   // "Bilbo'ya bin" button (Feza loves riding): RIDE_SEC of riding, then RIDE_CD before the next ride.
-  // BILBO_FUN.ride itself refuses in a boss arena / while a boss is awake and ends the ride there.
-  const RIDE_SEC = 15, RIDE_CD = 25;
+  // Ten seconds riding; the thirty-second cooldown starts on the successful press.
+  const RIDE_SEC = 10, RIDE_CD = 20;
   let rideReadyAt = 0;
   function rideButton() {
     if (GAME.state !== 'play' || GAME.paused || P.dead || finale || gt < storyUntil || gt < rideReadyAt) return false;
@@ -895,6 +895,13 @@ const GAME = (() => {
     const ok = rideBilbo(true, RIDE_SEC);
     if (ok) rideReadyAt = gt + RIDE_SEC + RIDE_CD;
     return ok;
+  }
+  function autoTeam() {
+    if (GAME.state !== 'play' || GAME.paused || P.dead || finale || merchantNear() || gt < storyUntil ||
+        C.lockT > 0 || C.swing || P.castT > 0 || P.spin > 0 ||
+        (typeof BILBO_FUN !== 'undefined' && BILBO_FUN.busy()) || hala('teamReady') !== true) return;
+    const tired = boss && !boss.dead && boss.dv && boss.dv.tired && boss.ph === 'tired';
+    if (tired || enemies.some(e => !e.dead && e.aggro && !hidden(e) && dist2(e.x, e.z, P.pos.x, P.pos.z) < sq(7) && los(P.pos.x, P.pos.z, e.x, e.z))) teamMove();
   }
   function bone() {
     if(!Bilbo || GAME.state!=='play' || GAME.paused || P.dead || finale || merchantNear() || gt<storyUntil || gt<boneAt || Bilbo.isFetching() || funCall('busy'))return false;
@@ -6812,6 +6819,7 @@ const GAME = (() => {
     updateHero(dt);
     updateBilbo(dt);
     hala('update', dt, halaCtx(dt));
+    autoTeam();
     moustacheStep(dt);
   }
   function titleUpdate(dt) {
@@ -6933,14 +6941,6 @@ const GAME = (() => {
     const r = hala('teamMove', { blast: teamBlast, P, H });
     if (r === undefined) teamBlast();
     emit('team', {});
-    // Takım + Bilbo (family request): after the hand-in-hand jump Feza hops onto Bilbo for a while.
-    // BILBO_FUN.ride refuses during a boss fight / in a boss arena, so there the Takım move stays the plain jump.
-    const heldL = L;
-    setTimeout(() => {
-      if (L !== heldL || GAME.state !== 'play' || GAME.paused || P.dead || finale) return;
-      if (typeof BILBO_FUN !== 'undefined' && BILBO_FUN && BILBO_FUN.riding) return;
-      rideBilbo(true, RIDE_SEC);
-    }, 1300);
     return true;
   }
   // Bölüm kilitleri ve sıradaki bölüm (BOLUM.isOpen: pasta 3 malzemeyle açılır)

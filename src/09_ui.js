@@ -487,12 +487,9 @@ const UI = (() => {
     D.atkBlade = D.atk.querySelector('.u-blade');
     D.atk.style.setProperty('--x', 0); D.atk.style.setProperty('--y', 0);
     D.sk = [];
-    D.boneBtn = el('button', 'u-skill u-bone', pad, '<span class="u-ico">🦴</span><span class="u-cd"></span><span class="u-cdn"></span><span class="u-key">K</span><span class="u-bone-label">Bilbo</span>');
-    D.boneBtn.style.setProperty('--x', 0); D.boneBtn.style.setProperty('--y', -265);
-    D.boneBtn.setAttribute('aria-label', FEZA_LANG.t('Bilbo’ya kemik at'));
-    D.teamBtn = el('button', 'u-skill u-team', pad, '<span class="u-ico">💞</span><span class="u-team-fill"></span><span class="u-key">T</span><span class="u-bone-label">Takım</span>');
-    D.teamBtn.style.setProperty('--x', -265); D.teamBtn.style.setProperty('--y', 0);
-    D.teamBtn.setAttribute('aria-label', 'Aytuğ Hala ile Takım Hamlesi, sonra Bilbo’ya bin');
+    D.rideBtn = el('button', 'u-skill u-bone u-ride', pad, '<span class="u-ico">🐕</span><span class="u-cd"></span><span class="u-cdn"></span><span class="u-key">K</span><span class="u-bone-label">Bin</span>');
+    D.rideBtn.style.setProperty('--x', 0); D.rideBtn.style.setProperty('--y', -265);
+    D.rideBtn.setAttribute('aria-label', FEZA_LANG.t('Bilbo’ya bin'));
     const nSk = clamp((M.SKILLS && M.SKILLS.length) || 3, 1, ARC.length);
     for (let i = 0; i < nSk; i++) {
       const b = el('button', 'u-skill u-hide', pad, `<span class="u-ico"></span><span class="u-cd"></span><span class="u-cdn"></span><span class="u-key">${i + 1}</span>`);
@@ -870,17 +867,9 @@ const UI = (() => {
     } catch (e) { warn('dream travel', e); fade(0, 0.4, null); }
     finally { S.busy = false; }
   }
-  function teamMove() {
-    const g = M.GAME; if (!g || !playing() || !g.teamMove) return;
-    if (safe('teamMove', () => g.teamMove())) bump(D.teamBtn, 1.2, true); else nope(D.teamBtn, true);
-  }
   function rideNow() {
     const g = M.GAME; if (!g || !playing() || !g.rideButton) return;
-    if (safe('ride', () => g.rideButton())) bump(D.rideBtn, 1.2, true); else nope(D.rideBtn, true);
-  }
-  function throwBone() {
-    const g = M.GAME; if (!g || !playing() || !g.bone) return;
-    if (safe('bone', () => g.bone())) bump(D.boneBtn, 1.15, true); else nope(D.boneBtn, true);
+    if (safe('ride', () => g.rideButton())) bump(D.rideBtn, 1.15, true); else nope(D.rideBtn, true);
   }
   function buildDreamTravel(root) {
     D.dreamTravel = el('div', 'u-screen u-dream-travel', root);
@@ -938,8 +927,7 @@ const UI = (() => {
 
   function wireButtons() {
     [D.dreamBtn, D.titleMap, D.pauseMap, D.winMap].forEach(b => accessiblePress(b, openDreamMap));
-    accessiblePress(D.boneBtn, throwBone, false);
-    accessiblePress(D.teamBtn, teamMove, false);
+    accessiblePress(D.rideBtn, rideNow, false);
     onPress(D.playBtn, () => startGame(false), { menu: true });
     onPress(D.contBtn, () => startGame(true), { menu: true });
     onPress(D.tMus, () => setPref('music', !S.prefs.music), { menu: true });
@@ -1074,8 +1062,7 @@ const UI = (() => {
       if (S.mode === 'title' && (c === 'Enter' || c === 'Space')) { e.preventDefault(); startGame(false); return; }
       if (!playing()) return;
       if (c === 'Space') { e.preventDefault(); attack(); bump(D.atk, 1.1, true); }
-      else if (c === 'KeyK') { e.preventDefault(); throwBone(); }
-      else if (c === 'KeyT') { e.preventDefault(); teamMove(); }
+      else if (c === 'KeyK') { e.preventDefault(); rideNow(); }
       else if (/^Digit[1-6]$/.test(c)) { const i = +c.slice(5) - 1, s = D.sk[i]; if (s && s.shown) { const ok = safe('cast', () => M.GAME.input.cast(i)); if (ok) { s.b.classList.remove('new'); bump(s.b, 1.15, true); } } }
       else if (c === 'KeyE') { if (M.GAME.visitMerchant) M.GAME.visitMerchant(); }
       else if (c === 'KeyQ') { if (safe('potion', () => M.GAME.input.potion())) bump(D.pot, 1.18); }
@@ -1584,21 +1571,10 @@ const UI = (() => {
     const hint = low && !empty;
     if (hint !== last.hint) { last.hint = hint; D.pot.classList.toggle('hint', hint); }
     // skills
-    const boneCd = Math.max(0, Number(g.boneCooldown) || 0), boneMax = Math.max(1, Number(g.boneCooldownMax) || 1);
-    D.boneBtn.classList.toggle('cool', boneCd > 0);
-    D.boneBtn.querySelector('.u-cd').style.setProperty('--p', clamp(boneCd / boneMax, 0, 1).toFixed(3));
-    D.boneBtn.querySelector('.u-cdn').textContent = FEZA_LANG.t(boneCd > 0.05 ? Math.ceil(boneCd) : '');
-    if (false && D.rideBtn) {   // (Bin! düğmesi Takım'a katıldı) Bilbo'ya bin: dolum + boss sırasında soluk
-      const rc = Math.max(0, Number(g.rideCooldown) || 0), rm = Math.max(1, Number(g.rideCooldownMax) || 1);
-      const bossOn = !!(g.boss && !g.boss.dead && (g.boss.aggro || g.boss.encounter));
-      D.rideBtn.classList.toggle('cool', rc > 0 || bossOn);
-      D.rideBtn.querySelector('.u-cd').style.setProperty('--p', bossOn ? '1' : clamp(rc / rm, 0, 1).toFixed(3));
-      D.rideBtn.querySelector('.u-cdn').textContent = FEZA_LANG.t(!bossOn && rc > 0.05 ? Math.ceil(rc) : '');
-    }
-    if (D.teamBtn) {   // Takım Hamlesi: HALA.charge (0..1) dolunca parlar
-      const tc = clamp(Number(g.teamCharge) || 0, 0, 1), tk = Math.round(tc * 100);
-      if (tk !== S.teamK) { S.teamK = tk; D.teamBtn.style.setProperty('--fill', tc.toFixed(2)); D.teamBtn.classList.toggle('ready', tc >= 1); D.teamBtn.classList.toggle('cool', tc < 1); }
-    }
+    const boneCd = Math.max(0, Number(g.rideCooldown) || 0), boneMax = Math.max(1, Number(g.rideCooldownMax) || 1);
+    D.rideBtn.classList.toggle('cool', boneCd > 0);
+    D.rideBtn.querySelector('.u-cd').style.setProperty('--p', clamp(boneCd / boneMax, 0, 1).toFixed(3));
+    D.rideBtn.querySelector('.u-cdn').textContent = FEZA_LANG.t(boneCd > 0.05 ? Math.ceil(boneCd) : '');
     const list = g.skills || [];
     for (let i = 0; i < D.sk.length; i++) {
       const s = list[i], v = D.sk[i];
@@ -1767,8 +1743,6 @@ const UI = (() => {
     if (D.bilboFace && !D.bilboFace.firstChild && typeof BILBO !== 'undefined') {
       const bilboUrl = safe('BILBO.portrait', () => BILBO.portrait());
       if (bilboUrl) D.bilboFace.innerHTML = FEZA_LANG.html(`<img src="${bilboUrl}" alt="">`);
-      // Takım düğmesine Bilbo rozeti: Takım Hamlesi'nden sonra Feza Bilbo'ya biner
-      if (bilboUrl && D.teamBtn && !D.teamBtn.querySelector('.u-team-bilbo')) { const b = document.createElement('span'); b.className = 'u-team-bilbo'; b.innerHTML = `<img src="${bilboUrl}" alt="">`; D.teamBtn.appendChild(b); }
     }
     let url = null;
     if (F && F.portrait && g && g.H) url = safe('FEZA.portrait', () => F.portrait(g.H));

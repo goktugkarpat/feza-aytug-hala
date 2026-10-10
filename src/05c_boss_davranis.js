@@ -596,12 +596,11 @@ const BOSSDAV = (() => {
         if (b.did === 1 && t > 1.2) { b.did = 2; const m = A.muzzle(b); A.burst('sparkle', b.x, 0.9, b.z + b.r * 0.8, { color: '#ffe27a', count: 26 }); A.sfx('unlock', { x: b.x, z: b.z, vol: 0.6 }); void m; }
         if (t >= b.phD) A.bossEnd(b, 0.5, 0.8);
       },
-      // Son an: pasta yoruldu, gülümsemeye hazır. Takım düğmesi dolu ve parlıyor; Feza + Aytuğ Hala el ele zıplayınca neşelenir.
+      // Son an: pasta yoruldu, gülümsemeye hazır; otomatik takım hamlesiyle neşelenir.
       tired(b, S, dt) {
         const t = b.stT; S.tiredT += dt; b.st.slots = 4;
         fillTeam();
         if (b.did === 0) { b.did = 1; S.tiredT = 0; S.sayT = 0; A.ftext(b.x, b.height + 0.6, b.z, 'Yoruldum!', 'word'); A.sfx('sigh', { x: b.x, z: b.z, pitch: 0.8 }); A.burst('sparkle', b.x, b.height, b.z, { color: '#ffe27a', count: 30 }); }
-        if ((S.sayT -= dt) <= 0) { S.sayT = 9; say('pasta_takim', 3); }
         if ((S.tkT = (S.tkT || 0) - dt) <= 0) { S.tkT = 3.5; const P = A.P; A.ftext(P.pos.x, 2.4, P.pos.z, 'Takım Hamlesi!', 'word'); A.burst('hearts', P.pos.x, 1.6, P.pos.z, { count: 5 }); }
         if ((S.glowT = (S.glowT || 0) - dt) <= 0) { S.glowT = 0.5; A.burst('sparkle', b.x + rnd(-1, 1), b.height * rnd(0.4, 1), b.z + rnd(-1, 1), { color: '#ffd6f0', count: 4 }); }
         void t;
@@ -611,7 +610,7 @@ const BOSSDAV = (() => {
 
   const HINT = { suck: 'ipucu_vakum', blow: 'ipucu_toz', cable: 'ipucu_kablo', lid: 'ipucu_kapak', steam: 'ipucu_buhar', rain: 'ipucu_mercimek',
     snow: 'ipucu_kartopu', slide: 'ipucu_kaydirak', scoop: 'ipucu_top', squirt: 'ipucu_krema', strawrain: 'ipucu_cilek', jump: 'ipucu_zipla' };
-  // Takım düğmesini doldur (HALA.charge; Hala ajanı başka bir yol açtıysa onu da dener, hata oyunu durdurmaz)
+  // Takım yardımını hazırla (HALA.charge; Hala ajanı başka bir yol açtıysa onu da dener, hata oyunu durdurmaz)
   function fillTeam() {
     if (typeof HALA === 'undefined' || !HALA) return;
     try { if (typeof HALA.setCharge === 'function') HALA.setCharge(1); else if (typeof HALA.charge === 'number') HALA.charge = 1; } catch (e) { /* salt okunur */ }
@@ -672,7 +671,7 @@ const BOSSDAV = (() => {
     if (b.ph === 'shock') return 0;
     if (S.tired) {
       if (o && o.kind === 'team') return b.hp + 1;
-      if (S.tiredT > 8) return amount;   // (yedek: 8 s içinde Takım'a basılmazsa normal vuruşlar da işler)
+      if (S.tiredT > 8) return amount;   // (yedek: takım yardımı gecikirse 8 s sonra normal vuruşlar da işler)
       if ((S.nopeT = (S.nopeT || 0) - 1) <= 0) { S.nopeT = 4; A.burst('sparkle', b.x, b.height * 0.7, b.z, { color: '#ffd6f0', count: 6 }); A.ftext(b.x, b.height + 0.3, b.z, 'Takım!', 'word'); }
       return 0;
     }
@@ -686,33 +685,6 @@ const BOSSDAV = (() => {
     return amount;
   }
 
-  // Pasta yoruldu: ekranın ortasında büyük 'T Takım!' işareti + Takım düğmesini gösteren ok; Takım düğmesi kocaman (ui.css #ui.boss-team).
-  // İşarete dokunmak da Takım Hamlesi yapar.
-  const TS = { on: false, el: null, ok: null };
-  function teamSign(on) {
-    if (typeof document === 'undefined') return;
-    const ui = document.getElementById('ui');
-    if (on !== TS.on) {
-      TS.on = on; if (ui) ui.classList.toggle('boss-team', on);
-      if (on && !TS.el) {
-        TS.el = document.createElement('div'); TS.el.className = 'u-takim-isaret'; TS.el.innerHTML = '<b>T</b><span>Takım!</span>';
-        TS.el.addEventListener('pointerdown', ev => { ev.stopPropagation(); ev.preventDefault(); try { GAME.teamMove(); } catch (e) { /* yok */ } });
-        TS.ok = document.createElement('div'); TS.ok.className = 'u-takim-ok'; TS.ok.textContent = '➜';
-        document.body.appendChild(TS.el); document.body.appendChild(TS.ok);
-      }
-      if (TS.el) { TS.el.style.display = on ? 'flex' : 'none'; TS.ok.style.display = on ? 'block' : 'none'; }
-    }
-    if (!on || !TS.el) return;
-    const W0 = innerWidth, H0 = innerHeight, r = TS.el.getBoundingClientRect();
-    TS.el.style.left = Math.round(W0 * 0.5 - r.width / 2) + 'px'; TS.el.style.top = Math.round(H0 * 0.46) + 'px';
-    const btn = ui && ui.querySelector('.u-team'), br = btn && btn.getBoundingClientRect();
-    if (br && br.width) {   // ok: işaretin sağ altından Takım düğmesine doğru
-      const sx = W0 * 0.5 + r.width / 2, sy = H0 * 0.46 + r.height, tx = br.left + br.width / 2, ty = br.top + br.height / 2;
-      const mx = (sx + tx) / 2, my = (sy + ty) / 2, a = Math.atan2(ty - sy, tx - sx), wob = Math.sin(performance.now() / 160) * 8;
-      TS.ok.style.left = Math.round(mx - 36 + Math.cos(a) * wob) + 'px'; TS.ok.style.top = Math.round(my - 36 + Math.sin(a) * wob) + 'px';
-      TS.ok.style.transform = 'rotate(' + a.toFixed(3) + 'rad)';
-    }
-  }
   let warmN = 0;
   function update(dt) {
     if (!A) return;
@@ -724,7 +696,6 @@ const BOSSDAV = (() => {
       W.gol.position.set(b.x, 0, b.z); const k = b.r * (0.9 + 0.7 * melt); W.gol.scale.set(k, 1, k * 0.92);
     } else if (W.gol) { putProp(W.gol); W.gol = null; }
     if (W.marks && W.marks.length > 40) W.marks.splice(0, W.marks.length - 40);
-    teamSign(!!(b && !b.dead && b.dv && b.dv.tired && b.ph === 'tired' && A.P && !A.P.dead));
   }
 
   function install(api) {
@@ -732,7 +703,7 @@ const BOSSDAV = (() => {
     A.on = (n, fn) => on0(n, o => { try { fn(o); } catch (e) { console.warn('[BOSSDAV] ' + n, e); } });
     try { warmProps(); } catch (e) { console.warn('[BOSSDAV] warm', e); }
     A.on('boss', o => { if (o && !o.on && DEFS[o.type]) { clearAll(); const b = W.boss; if (b && b.dv) { if (b.st) { b.st.lid = null; b.st.spin = 0; b.st.sleep = 0; } } } });
-    A.on('zone', () => { teamSign(false); clearAll(); for (const f of W.fests) if (f.ing) putProp(f.ing); W.fests.length = 0; W.boss = null; });
+    A.on('zone', () => { clearAll(); for (const f of W.fests) if (f.ing) putProp(f.ing); W.fests.length = 0; W.boss = null; });
     A.on('happy', o => { if (o && o.boss && DEFS[o.type]) { const b = W.boss; festStart(o.x, o.z, (b && b.height) || 3, o.type); } });
     A.on('ingredient', o => {
       const b = W.boss, kind = o && ING[o.id]; if (!b || !kind) return;
